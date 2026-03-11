@@ -1,0 +1,11 @@
+node_modules
+.next
+.codex
+.env
+.env.local
+.env.production
+.env.preview
+coverage
+.DS_Store
+prisma/dev.db
+dev-server.log

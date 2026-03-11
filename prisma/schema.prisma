@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  FAN
+  ARTIST
+  DJ
+  VENUE
+  ADMIN
+}
+
+enum ShowStatus {
+  DRAFT
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELED
+}
+
+enum ProfileType {
+  ARTIST
+  DJ
+  VENUE
+  LISTENER
+}
+
+enum ConnectionRequestType {
+  LISTENER
+  PROMOTER
+}
+
+enum ConnectionRequestStatus {
+  PENDING
+  BOOKED
+  DISMISSED
+}
+
+model User {
+  id                      String                   @id @default(cuid())
+  name                    String?
+  email                   String                   @unique
+  passwordHash            String?
+  mfaSecret               String?
+  mfaEnabledAt            DateTime?
+  image                   String?
+  role                    Role                     @default(FAN)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  accounts                Account[]
+  mfaChallenges           MfaChallenge[]
+  sessions                Session[]
+  profiles                Profile[]
+  shows                   Show[]                   @relation("CreatedShows")
+  hypeEvents              HypeEvent[]
+  profileHypeEvents       ProfileHypeEvent[]
+  venueConnectionRequests VenueConnectionRequest[]
+}
+
+model Profile {
+  id                            String                   @id @default(cuid())
+  slug                          String                   @unique
+  type                          ProfileType
+  name                          String
+  headline                      String?
+  bio                           String?
+  aboutContent                  String?
+  journalContent                String?
+  mediaContent                  String?
+  tourContent                   String?
+  merchContent                  String?
+  requestContent                String?
+  recommendContent              String?
+  topFiveContent                String?
+  city                          String?
+  stateRegion                   String?
+  country                       String?
+  postalCode                    String?
+  latitude                      Float?
+  longitude                     Float?
+  heroImage                     String?
+  avatarImage                   String?
+  genres                        String[]
+  songUploadCount               Int                      @default(0)
+  verified                      Boolean                  @default(false)
+  hypeCount                     Int                      @default(0)
+  ownerId                       String
+  owner                         User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt                     DateTime                 @default(now())
+  updatedAt                     DateTime                 @updatedAt
+  hostedShows                   Show[]                   @relation("VenueShows")
+  headlinerShows                Show[]                   @relation("HeadlinerShows")
+  promotedShows                 Show[]                   @relation("PromotedShows")
+  profileHypes                  ProfileHypeEvent[]
+  venueConnectionRequests       VenueConnectionRequest[] @relation("VenueConnectionRequests")
+  recommendedConnectionRequests VenueConnectionRequest[] @relation("RecommendedProfileConnectionRequests")
+}
+
+model Show {
+  id                    String        @id @default(cuid())
+  slug                  String        @unique
+  title                 String
+  description           String?
+  status                ShowStatus    @default(DRAFT)
+  startsAt              DateTime
+  endsAt                DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  creatorId             String
+  creator               User          @relation("CreatedShows", fields: [creatorId], references: [id], onDelete: Cascade)
+  venueProfileId        String?
+  venueProfile          Profile?      @relation("VenueShows", fields: [venueProfileId], references: [id])
+  headlinerProfileId    String?
+  headlinerProfile      Profile?      @relation("HeadlinerShows", fields: [headlinerProfileId], references: [id])
+  promoterProfileId     String?
+  promoterProfile       Profile?      @relation("PromotedShows", fields: [promoterProfileId], references: [id])
+  streamProvider        String?
+  streamPlaybackId      String?
+  streamKeyMasked       String?
+  posterImage           String?
+  isTicketed            Boolean       @default(false)
+  ticketPriceCents      Int           @default(0)
+  ticketCapacity        Int?
+  venuePayoutPercent    Int?
+  artistPayoutPercent   Int?
+  promoterPayoutPercent Int           @default(5)
+  ticketsSoldCount      Int           @default(0)
+  hypeCount             Int           @default(0)
+  tags                  String[]
+  hypes                 HypeEvent[]
+  ticketOrders          TicketOrder[]
+}
+
+model TicketOrder {
+  id                  String   @id @default(cuid())
+  confirmationCode    String   @unique
+  showId              String
+  buyerName           String
+  buyerEmail          String
+  quantity            Int
+  subtotalCents       Int
+  venuePayoutCents    Int
+  artistPayoutCents   Int
+  promoterPayoutCents Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  show                Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+}
+
+model MfaChallenge {
+  id               String   @id @default(cuid())
+  token            String   @unique
+  userId           String
+  secretCiphertext String?
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HypeEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  showId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  show      Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, showId])
+}
+
+model ProfileHypeEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  profileId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, profileId])
+}
+
+model VenueConnectionRequest {
+  id              String                  @id @default(cuid())
+  venueProfileId  String
+  artistProfileId String?
+  requesterId     String
+  requesterType   ConnectionRequestType
+  status          ConnectionRequestStatus @default(PENDING)
+  artistName      String
+  note            String?
+  notifyOnBooking Boolean                 @default(false)
+  createdAt       DateTime                @default(now())
+  respondedAt     DateTime?
+  updatedAt       DateTime                @updatedAt
+  venueProfile    Profile                 @relation("VenueConnectionRequests", fields: [venueProfileId], references: [id], onDelete: Cascade)
+  artistProfile   Profile?                @relation("RecommendedProfileConnectionRequests", fields: [artistProfileId], references: [id], onDelete: SetNull)
+  requester       User                    @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
