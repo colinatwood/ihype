@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { shortenHexId } from '@/lib/hex-id';
 import { buildArtistMediaCollection } from '@/lib/media';
+import { isAdminSession } from '@/lib/permissions';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 
 function formatRequesterType(value: 'LISTENER' | 'PROMOTER') {
@@ -54,6 +55,7 @@ function parseTopFiveItems(value: string | null, fallbackArtists: string[]) {
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user) redirect('/login');
+  const isAdmin = isAdminSession(session);
   const sessionEmail = session.user.email?.toLowerCase() ?? '';
 
   const [
@@ -65,17 +67,24 @@ export default async function DashboardPage() {
     showHypePointsGiven,
     profileHypePointsGiven,
     ticketOrders,
-    recentMediaListens
+    recentMediaListens,
+    adminUserCount
   ] = await Promise.all([
-    db.profile.findMany({ where: { ownerId: session.user.id }, orderBy: { createdAt: 'desc' } }),
-    db.show.findMany({ where: { creatorId: session.user.id }, orderBy: { createdAt: 'desc' } }),
+    db.profile.findMany({
+      where: isAdmin ? undefined : { ownerId: session.user.id },
+      orderBy: { createdAt: 'desc' }
+    }),
+    db.show.findMany({
+      where: isAdmin ? undefined : { creatorId: session.user.id },
+      orderBy: { createdAt: 'desc' }
+    }),
     db.venueConnectionRequest.findMany({
-      where: { venueProfile: { ownerId: session.user.id } },
+      where: isAdmin ? undefined : { venueProfile: { ownerId: session.user.id } },
       include: { venueProfile: true, requester: true, artistProfile: true },
       orderBy: { createdAt: 'desc' }
     }),
     db.venueConnectionRequest.findMany({
-      where: { requesterId: session.user.id },
+      where: isAdmin ? undefined : { requesterId: session.user.id },
       include: { venueProfile: true, artistProfile: true },
       orderBy: { createdAt: 'desc' }
     }),
@@ -99,15 +108,16 @@ export default async function DashboardPage() {
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
       take: 8
-    })
+    }),
+    isAdmin ? db.user.count() : Promise.resolve(0)
   ]);
 
   const attendedShowIds = new Set(ticketOrders.map((order) => order.showId));
   const visitedVenueIds = new Set(
     ticketOrders.map((order) => order.show.venueProfileId).filter((venueProfileId): venueProfileId is string => Boolean(venueProfileId))
   );
-  const listenerProfile = profiles.find((profile) => profile.type === 'LISTENER') ?? null;
-  const hasAdvancedDashboard = profiles.some((profile) => profile.type !== 'LISTENER');
+  const listenerProfile = isAdmin ? null : profiles.find((profile) => profile.type === 'LISTENER') ?? null;
+  const hasAdvancedDashboard = isAdmin || profiles.some((profile) => profile.type !== 'LISTENER');
   const isListenerOnlyDashboard = Boolean(listenerProfile) && !hasAdvancedDashboard;
   const promoterProfiles = profiles.filter((profile) => profile.type === 'DJ');
   const artistProfiles = promoterProfiles.length
@@ -146,13 +156,21 @@ export default async function DashboardPage() {
       entries: buildArtistMediaCollection(artistProfile.mediaContent, artistProfile.mediaUploads).entries
     }))
     .filter((artistProfile) => artistProfile.entries.length > 0);
-  const dashboardStats = [
-    { label: 'Songs listened to', value: songsListenedCount },
-    { label: 'Hype points given', value: showHypePointsGiven + profileHypePointsGiven },
-    { label: 'Shows attended', value: attendedShowIds.size },
-    { label: 'Venues visited', value: visitedVenueIds.size },
-    { label: 'Recommendations made', value: sentRecommendations.length }
-  ];
+  const dashboardStats = isAdmin
+    ? [
+        { label: 'Users', value: adminUserCount },
+        { label: 'Profiles', value: profiles.length },
+        { label: 'Shows', value: shows.length },
+        { label: 'Live now', value: shows.filter((show) => show.status === 'LIVE').length },
+        { label: 'Venue requests', value: venueConnectionRequests.length }
+      ]
+    : [
+        { label: 'Songs listened to', value: songsListenedCount },
+        { label: 'Hype points given', value: showHypePointsGiven + profileHypePointsGiven },
+        { label: 'Shows attended', value: attendedShowIds.size },
+        { label: 'Venues visited', value: visitedVenueIds.size },
+        { label: 'Recommendations made', value: sentRecommendations.length }
+      ];
   const recentPlaylist = recentMediaListens.map((listen, index) => ({
     ...listen,
     order: index + 1
@@ -283,9 +301,11 @@ export default async function DashboardPage() {
   return (
     <main className="container section">
       <div className="panel" style={{ padding: '1.5rem' }}>
-        <h1>{listenerProfile ? 'Listener dashboard' : 'Dashboard'}</h1>
+        <h1>{isAdmin ? 'Admin dashboard' : listenerProfile ? 'Listener dashboard' : 'Dashboard'}</h1>
         <p className="kicker">
-          {listenerProfile
+          {isAdmin
+            ? 'Review every account, page, show, and venue request from one admin workspace.'
+            : listenerProfile
             ? 'Keep your profile, playlist, stats, and top five in one fast listener workspace.'
             : 'Manage accounts, shows, hype, and venue connection requests without pretending spreadsheets are a product strategy.'}
         </p>
@@ -438,7 +458,7 @@ export default async function DashboardPage() {
 
       <section className={hasAdvancedDashboard || shows.length ? 'section grid grid-2' : 'section'}>
         <div className="panel" style={{ padding: '1.5rem' }}>
-          <h2>Your profiles</h2>
+            <h2>{isAdmin ? 'All profiles' : 'Your profiles'}</h2>
           {profiles.length ? (
             <table className="table">
               <thead><tr><th>Name</th><th>Type</th><th>Hex ID</th><th>Slug</th><th>Hype</th><th>Page</th></tr></thead>
@@ -449,7 +469,7 @@ export default async function DashboardPage() {
 
         {hasAdvancedDashboard || shows.length ? (
           <div className="panel" style={{ padding: '1.5rem' }}>
-            <h2>Your shows</h2>
+            <h2>{isAdmin ? 'All shows' : 'Your shows'}</h2>
             {shows.length ? (
               <table className="table">
                 <thead><tr><th>Title</th><th>Status</th><th>Ticketing</th><th>Sold</th><th>Gross</th><th>Hype</th></tr></thead>
@@ -463,7 +483,7 @@ export default async function DashboardPage() {
       {venueConnectionRequests.length || hasAdvancedDashboard ? (
         <section className="section">
           <div className="panel" style={{ padding: '1.5rem' }}>
-            <h2>Venue connection requests</h2>
+            <h2>{isAdmin ? 'All venue connection requests' : 'Venue connection requests'}</h2>
             {venueConnectionRequests.length ? (
               <table className="table">
                 <thead>
@@ -501,7 +521,7 @@ export default async function DashboardPage() {
       {sentRecommendations.length || hasAdvancedDashboard ? (
         <section className="section">
           <div className="panel" style={{ padding: '1.5rem' }}>
-            <h2>Recommendations you sent</h2>
+            <h2>{isAdmin ? 'All sent recommendations' : 'Recommendations you sent'}</h2>
             {sentRecommendations.length ? (
               <table className="table">
                 <thead>

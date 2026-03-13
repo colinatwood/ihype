@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
@@ -9,9 +9,11 @@ type ResetStage = 'request' | 'confirm';
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const requestedCallbackUrl = searchParams.get('callbackUrl');
+  const callbackUrl = requestedCallbackUrl || '/dashboard';
+  const defaultEmail = searchParams.get('email') || '';
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -24,6 +26,22 @@ export default function LoginPage() {
   const [resetConfirmPassword, setResetConfirmPassword] = useState('');
   const [resetPending, setResetPending] = useState(false);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEmail(defaultEmail);
+    setResetEmail(defaultEmail);
+  }, [defaultEmail]);
+
+  async function resolveLandingPath() {
+    const response = await fetch('/api/auth/landing');
+
+    if (!response.ok) {
+      return callbackUrl;
+    }
+
+    const data = (await response.json()) as { path?: string };
+    return data.path || callbackUrl;
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +61,12 @@ export default function LoginPage() {
       return;
     }
 
-    router.push(result?.url ?? callbackUrl);
+    const destination =
+      !requestedCallbackUrl || requestedCallbackUrl === '/dashboard'
+        ? await resolveLandingPath()
+        : result?.url ?? callbackUrl;
+
+    router.push(destination);
     router.refresh();
   }
 
@@ -130,7 +153,8 @@ export default function LoginPage() {
         <div className="panel auth-panel">
           <h1>Login</h1>
           <p className="kicker">
-            Demo users: fan@ihype.org, dj@ihype.org, artist@ihype.org, venue@ihype.org. Password: demo12345.
+            Demo users: fan@ihype.org, dj@ihype.org, artist@ihype.org, venue@ihype.org. Password: demo12345. Admin:
+            admin@ihype.org / 123456.
           </p>
 
           <form className="form" onSubmit={handleSubmit}>

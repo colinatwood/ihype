@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { canManageOwnedResource } from '@/lib/permissions';
 
 const schema = z.object({
   status: z.enum(['BOOKED', 'DISMISSED'])
@@ -35,7 +36,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Request not found' }, { status: 404 });
     }
 
-    if (connectionRequest.venueProfile.ownerId !== session.user.id) {
+    if (!canManageOwnedResource(session, connectionRequest.venueProfile.ownerId)) {
       return NextResponse.json({ error: 'Only the venue owner can update this request' }, { status: 403 });
     }
 

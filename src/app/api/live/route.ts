@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getMuxClient } from '@/lib/mux';
+import { canManageOwnedResource } from '@/lib/permissions';
 
 const schema = z.object({ showId: z.string().cuid() });
 
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     const { showId } = schema.parse(await request.json());
     const show = await db.show.findUnique({ where: { id: showId } });
 
-    if (!show || show.creatorId !== session.user.id) {
+    if (!show || !canManageOwnedResource(session, show.creatorId)) {
       return NextResponse.json({ error: 'Show not found' }, { status: 404 });
     }
 

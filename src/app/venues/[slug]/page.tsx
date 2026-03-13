@@ -11,6 +11,7 @@ import { VenueConnectionRequestActions } from '@/components/VenueConnectionReque
 import { VenueConnectionRequestForm } from '@/components/VenueConnectionRequestForm';
 import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
+import { canManageOwnedResource } from '@/lib/permissions';
 
 const venueSections = ['about', 'upcoming', 'previous', 'request', 'stats'] as const;
 
@@ -52,6 +53,7 @@ export default async function VenuePage({
 
   const profile = await db.profile.findUnique({ where: { slug } });
   if (!profile || profile.type !== 'VENUE') return notFound();
+  const isOwner = canManageOwnedResource(session, profile.ownerId);
 
   const [shows, bookableProfiles, connectionRequests, myRequests, totalRequestCount, pendingRequestCount] = await Promise.all([
     db.show.findMany({
@@ -64,7 +66,7 @@ export default async function VenuePage({
       orderBy: [{ verified: 'desc' }, { name: 'asc' }],
       select: { id: true, name: true, type: true }
     }),
-    session?.user?.id === profile.ownerId
+    isOwner
       ? db.venueConnectionRequest.findMany({
           where: { venueProfileId: profile.id },
           include: { requester: true, artistProfile: true },
@@ -97,7 +99,6 @@ export default async function VenuePage({
   const previousShows = shows.filter((show) => show.status === 'ENDED' || (show.startsAt < now && show.status !== 'LIVE'));
   const ticketedShows = shows.filter((show) => show.isTicketed);
   const totalTicketsSold = shows.reduce((sum, show) => sum + show.ticketsSoldCount, 0);
-  const isOwner = session?.user?.id === profile.ownerId;
   const advertisingRecommendations = await getAdvertisingRecommendations({
     profile: {
       type: 'VENUE',

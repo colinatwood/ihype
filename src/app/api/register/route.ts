@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { ProfileType } from '@prisma/client';
+import { getProfilePathForType } from '@/lib/account-routing';
 import { db } from '@/lib/db';
 import { createHexId } from '@/lib/hex-id';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
@@ -38,13 +39,6 @@ function getProfileType(role: 'FAN' | 'ARTIST' | 'DJ' | 'VENUE'): ProfileType {
   if (role === 'DJ') return 'DJ';
   if (role === 'VENUE') return 'VENUE';
   return 'LISTENER';
-}
-
-function getProfilePath(type: ProfileType, slug: string) {
-  if (type === 'ARTIST') return `/artists/${slug}`;
-  if (type === 'DJ') return `/promoters/${slug}`;
-  if (type === 'VENUE') return `/venues/${slug}`;
-  return `/listeners/${slug}`;
 }
 
 function getProfileCopy(type: ProfileType, name: string) {
@@ -176,7 +170,7 @@ export async function POST(request: Request) {
       mfaRequired: false,
       profileHexId: profile.hexId,
       profileSlug: profile.slug,
-      profilePath: getProfilePath(profile.type, profile.slug)
+      profilePath: getProfilePathForType(profile.type, profile.slug)
     });
   } catch {
     return NextResponse.json({ error: 'Invalid registration payload' }, { status: 400 });

@@ -10,6 +10,7 @@ import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
 import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
 import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
+import { canManageOwnedResource } from '@/lib/permissions';
 import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
 
 const artistSections = ['about', 'journal', 'media', 'tour', 'merch', 'stats'] as const;
@@ -68,7 +69,7 @@ export default async function ArtistPage({
   const now = new Date();
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
   const previousShows = shows.filter((show) => show.status === 'ENDED' || (show.startsAt < now && show.status !== 'LIVE'));
-  const isOwner = session?.user?.id === profile.ownerId;
+  const isOwner = canManageOwnedResource(session, profile.ownerId);
   const advertisingRecommendations = await getAdvertisingRecommendations({
     profile: {
       type: 'ARTIST',

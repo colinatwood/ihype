@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { sortShowsForFeed } from '@/lib/integrity';
+import { canManageOwnedResource, isAdminSession } from '@/lib/permissions';
 import { showProductionPlanSchema } from '@/lib/show-composer';
 import { PROMOTER_POOL_PERCENT, validateTicketSplit } from '@/lib/ticketing';
 import { slugify } from '@/lib/utils';
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Login required' }, { status: 401 });
   }
+  const isAdmin = isAdminSession(session);
 
   try {
     const body = schema.parse(await request.json());
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Venue profile not found' }, { status: 404 });
       }
 
-      if (venueProfile.ownerId !== session.user.id) {
+      if (!canManageOwnedResource(session, venueProfile.ownerId)) {
         return NextResponse.json({ error: 'Only the venue owner can schedule events for this venue' }, { status: 403 });
       }
     }
@@ -76,7 +78,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Promoter must be a promoter profile' }, { status: 400 });
     }
 
-    if (body.promoterProfileId && promoterProfile?.ownerId !== session.user.id && !body.venueProfileId) {
+    if (
+      body.promoterProfileId &&
+      !isAdmin &&
+      promoterProfile?.ownerId !== session.user.id &&
+      !body.venueProfileId
+    ) {
       return NextResponse.json({ error: 'Only the promoter owner can create streaming shows from this promoter page' }, { status: 403 });
     }
 

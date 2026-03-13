@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { ArtistUploadPolicy } from '@/components/ArtistUploadPolicy';
 import { RegisterAccountChoices } from '@/components/RegisterAccountChoices';
 
@@ -25,6 +27,7 @@ export function RegisterForm({
   title = 'Create account',
   intro = 'Create your account, then sign in with your email and password to start building your page.'
 }: RegisterFormProps) {
+  const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [acceptedPolicy, setAcceptedPolicy] = useState(false);
   const selectedRole = defaultRole;
@@ -34,6 +37,8 @@ export function RegisterForm({
   async function handleSubmit(formData: FormData) {
     setMessage(null);
     const payload = Object.fromEntries(formData.entries()) as Record<string, FormDataEntryValue | boolean>;
+    const email = String(payload.email ?? '');
+    const password = String(payload.password ?? '');
 
     payload.role = selectedRole;
     payload.acceptedArtistUploadPolicy = showPolicy ? acceptedPolicy : true;
@@ -45,13 +50,31 @@ export function RegisterForm({
     });
 
     const data = await response.json();
-    setMessage(
-      response.ok
-        ? data.profilePath
-          ? `Account created. Your page is ready at ${data.profilePath} after login, and your share ID is ${data.profileHexId}.`
-          : 'Account created.'
-        : data.error ?? 'Registration failed'
-    );
+
+    if (!response.ok) {
+      setMessage(data.error ?? 'Registration failed');
+      return;
+    }
+
+    const destination = data.profilePath ?? '/dashboard';
+    const signInResult = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+      callbackUrl: destination
+    });
+
+    if (signInResult?.error) {
+      setMessage(
+        data.profilePath
+          ? `Account created. Sign in did not complete automatically, but your page is ready at ${data.profilePath}.`
+          : 'Account created. Sign in did not complete automatically.'
+      );
+      return;
+    }
+
+    router.push(destination);
+    router.refresh();
   }
 
   return (

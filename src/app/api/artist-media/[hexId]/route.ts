@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db, withDbRetry } from '@/lib/db';
+import { canManageOwnedResource } from '@/lib/permissions';
 
 export async function DELETE(
   _request: Request,
@@ -34,7 +35,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Media upload not found.' }, { status: 404 });
     }
 
-    if (asset.profile.ownerId !== session.user.id) {
+    if (!canManageOwnedResource(session, asset.profile.ownerId)) {
       return NextResponse.json({ error: 'Only the artist who owns this page can remove media.' }, { status: 403 });
     }
 

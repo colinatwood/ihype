@@ -120,8 +120,17 @@ async function upsertDemoUser({
 
 async function main() {
   const passwordHash = await bcrypt.hash('demo12345', 10);
+  const adminPasswordHash = await bcrypt.hash('123456', 10);
 
   await prisma.mfaChallenge.deleteMany();
+
+  await upsertDemoUser({
+    email: 'admin@ihype.org',
+    legacyEmail: 'admin@ihype.org',
+    name: 'iHYPE Admin',
+    passwordHash: adminPasswordHash,
+    role: Role.ADMIN
+  });
 
   const venueOwner = await upsertDemoUser({
     email: 'venue@ihype.org',

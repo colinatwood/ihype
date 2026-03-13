@@ -7,6 +7,7 @@ import { HypeButton } from '@/components/HypeButton';
 import { ProfilePageEditor } from '@/components/ProfilePageEditor';
 import { ListenerAvatarCreator } from '@/components/ListenerAvatarCreator';
 import { ListenerVenueMap } from '@/components/ListenerVenueMap';
+import { canManageOwnedResource } from '@/lib/permissions';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
 
@@ -96,7 +97,7 @@ export default async function ListenerPage({
   const shows = hypedShows.map((entry) => entry.show);
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
   const previousShows = shows.filter((show) => show.status === 'ENDED' || (show.startsAt < now && show.status !== 'LIVE'));
-  const isOwner = session?.user?.id === profile.ownerId;
+  const isOwner = canManageOwnedResource(session, profile.ownerId);
   const defaultAvatarPrompt = [
     `Cartoon avatar for ${profile.name}.`,
     profile.genres.length ? `Inspired by ${profile.genres.join(', ')}.` : '',

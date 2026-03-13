@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db, withDbRetry } from '@/lib/db';
 import { createHexId } from '@/lib/hex-id';
+import { canManageOwnedResource } from '@/lib/permissions';
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
@@ -62,7 +63,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Artist profile not found.' }, { status: 404 });
     }
 
-    if (profile.ownerId !== session.user.id) {
+    if (!canManageOwnedResource(session, profile.ownerId)) {
       return NextResponse.json({ error: 'Only the artist who owns this page can upload media.' }, { status: 403 });
     }
 

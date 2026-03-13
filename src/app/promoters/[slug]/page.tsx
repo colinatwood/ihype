@@ -9,6 +9,7 @@ import { ProfilePageEditor } from '@/components/ProfilePageEditor';
 import { PromoterShowCreationTool } from '@/components/PromoterShowCreationTool';
 import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
+import { canManageOwnedResource } from '@/lib/permissions';
 
 const promoterSections = ['about', 'upcoming', 'previous', 'recommend', 'stats'] as const;
 
@@ -54,7 +55,7 @@ export default async function PromoterPage({
 
   const profile = await db.profile.findUnique({ where: { slug } });
   if (!profile || profile.type !== 'DJ') return notFound();
-  const isOwner = session?.user?.id === profile.ownerId;
+  const isOwner = canManageOwnedResource(session, profile.ownerId);
 
   const [shows, sentRecommendations, artistProfiles] = await Promise.all([
     db.show.findMany({

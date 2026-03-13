@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { RegisterAccountChoices } from '@/components/RegisterAccountChoices';
 import {
   getProfileDesignStyleVars,
@@ -112,6 +114,7 @@ function getLocationLine(values: VenueRegisterFormValues) {
 }
 
 export function VenueRegisterWizard() {
+  const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -164,13 +167,33 @@ export function VenueRegisterWizard() {
     });
 
     const data = await response.json();
-    setMessage(
-      response.ok
-        ? data.profilePath
-          ? `Venue account created. Your page is ready at ${data.profilePath} after login, and your share ID is ${data.profileHexId}.`
-          : 'Venue account created.'
-        : data.error ?? 'Venue registration failed'
-    );
+
+    if (!response.ok) {
+      setMessage(data.error ?? 'Venue registration failed');
+      setPending(false);
+      return;
+    }
+
+    const destination = data.profilePath ?? '/dashboard';
+    const signInResult = await signIn('credentials', {
+      email: formValues.email,
+      password: formValues.password,
+      redirect: false,
+      callbackUrl: destination
+    });
+
+    if (signInResult?.error) {
+      setMessage(
+        data.profilePath
+          ? `Venue account created. Sign in did not complete automatically, but your page is ready at ${data.profilePath}.`
+          : 'Venue account created. Sign in did not complete automatically.'
+      );
+      setPending(false);
+      return;
+    }
+
+    router.push(destination);
+    router.refresh();
     setPending(false);
   }
 

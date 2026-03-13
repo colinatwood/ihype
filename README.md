@@ -61,11 +61,18 @@ npm run dev
 - `dj@ihype.org`
 - `artist@ihype.org`
 - `venue@ihype.org`
+- `admin@ihype.org`
 
 Password for all demo users:
 
 ```text
 demo12345
+```
+
+Temporary admin password:
+
+```text
+123456
 ```
 
 Demo logins currently use email and password only.

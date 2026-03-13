@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { env } from '@/lib/env';
+import { canManageOwnedResource } from '@/lib/permissions';
 
 const generateSchema = z.object({
   profileId: z.string().cuid(),
@@ -160,7 +161,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Listener page not found' }, { status: 404 });
     }
 
-    if (profile.ownerId !== session.user.id) {
+    if (!canManageOwnedResource(session, profile.ownerId)) {
       return NextResponse.json({ error: 'Only the listener who owns this page can generate an avatar' }, { status: 403 });
     }
 

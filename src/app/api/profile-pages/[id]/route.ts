@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { canManageOwnedResource } from '@/lib/permissions';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
 
 const schema = z.object({
@@ -54,7 +55,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });
     }
 
-    if (profile.ownerId !== session.user.id) {
+    if (!canManageOwnedResource(session, profile.ownerId)) {
       return NextResponse.json({ error: 'Only the page owner can edit this page' }, { status: 403 });
     }
 
