@@ -223,6 +223,7 @@ button, input, select, textarea { font: inherit; }
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
+  justify-content: center;
 }
 .home-submenu-tab {
   display: inline-flex;

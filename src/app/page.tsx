@@ -1,7 +1,5 @@
 import Link from 'next/link';
 import { ActivityMap } from '@/components/ActivityMap';
-import { ProfileCard } from '@/components/ProfileCard';
-import { ShowCard } from '@/components/ShowCard';
 import { db, withDbRetry } from '@/lib/db';
 import { buildActivityMapPoints, buildActivityScopeCards } from '@/lib/activity-stats';
 import { FEED_HEURISTICS_VERSION, sortShowsForFeed } from '@/lib/integrity';
@@ -9,7 +7,7 @@ import { getTransparencySnapshot } from '@/lib/transparency';
 
 export const dynamic = 'force-dynamic';
 
-const homeTabs = ['overview', 'geo', 'stats', 'feed', 'profiles'] as const;
+const homeTabs = ['mission', 'geography', 'stats'] as const;
 
 type HomeTab = (typeof homeTabs)[number];
 
@@ -18,11 +16,13 @@ function getActiveHomeTab(tab: string | string[] | undefined): HomeTab {
     return tab as HomeTab;
   }
 
-  return 'overview';
+  return 'mission';
 }
 
 function getHomeTabLabel(tab: HomeTab) {
-  return tab.charAt(0).toUpperCase() + tab.slice(1);
+  if (tab === 'mission') return 'Mission';
+  if (tab === 'geography') return 'Geography';
+  return 'Stats';
 }
 
 export default async function HomePage({
@@ -112,9 +112,8 @@ export default async function HomePage({
     getTransparencySnapshot()
   ]);
 
-  const profiles = allProfiles.slice(0, 6);
-  const shows = sortShowsForFeed(allShows).slice(0, 6);
-  const featured = shows[0] ?? null;
+  const rankedShows = sortShowsForFeed(allShows);
+  const featured = rankedShows[0] ?? null;
   const activityScopes = buildActivityScopeCards({
     profiles: allProfiles,
     shows: allShows,
@@ -165,37 +164,20 @@ export default async function HomePage({
   return (
     <main className="container home-shell">
       <section className="home-submenu-shell">
-        <div className="home-submenu-head">
-          <div>
-            <div className="badge">Main page menu</div>
-            <h1 className="home-submenu-title">Everything on the front page now lives inside one scrollable tab deck.</h1>
-          </div>
-          <p className="kicker home-submenu-kicker">
-            Switch tabs to move between the overview, geo intelligence, transparency stats, live feed, and network
-            pages without leaving the same main-page module.
-          </p>
-        </div>
-
         <nav className="home-submenu-tabs" aria-label="Homepage sections">
           {homeTabs.map((tab) => (
             <Link
               key={tab}
               className={tab === activeTab ? 'home-submenu-tab active' : 'home-submenu-tab'}
-              href={tab === 'overview' ? '/' : `/?tab=${tab}`}
+              href={tab === 'mission' ? '/' : `/?tab=${tab}`}
             >
               {getHomeTabLabel(tab)}
             </Link>
           ))}
         </nav>
 
-        <div className="home-submenu-status">
-          <span className="home-eyebrow">Chicago-born live discovery with transparent momentum.</span>
-          <span className="home-topline-meta">{getHomeTabLabel(activeTab)} tab active</span>
-          <span className="home-topline-meta">Feed heuristics v{FEED_HEURISTICS_VERSION}</span>
-        </div>
-
         <div className="home-submenu-body">
-          {activeTab === 'overview' ? (
+          {activeTab === 'mission' ? (
             <div className="home-tab-stack">
               <section className="home-pill-section">
                 <div className="home-pill-hero">
@@ -233,11 +215,11 @@ export default async function HomePage({
                     </p>
                     <div className="home-pill-metrics">
                       <div className="home-metric-pill">
-                        <strong>{shows.length}</strong>
+                        <strong>{rankedShows.length}</strong>
                         Featured shows
                       </div>
                       <div className="home-metric-pill">
-                        <strong>{profiles.length}</strong>
+                        <strong>{allProfiles.length}</strong>
                         Active profiles
                       </div>
                       <div className="home-metric-pill">
@@ -337,7 +319,7 @@ export default async function HomePage({
             </div>
           ) : null}
 
-          {activeTab === 'geo' ? (
+          {activeTab === 'geography' ? (
             <div className="home-tab-stack">
               <section className="home-section-panel">
                 <div className="home-section-header">
@@ -438,44 +420,6 @@ export default async function HomePage({
                       </article>
                     ))}
                   </div>
-                </div>
-              </section>
-            </div>
-          ) : null}
-
-          {activeTab === 'feed' ? (
-            <div className="home-tab-stack">
-              <section className="home-gallery-panel">
-                <div className="home-section-header">
-                  <div>
-                    <div className="badge">Streaming feed</div>
-                    <h2>Live and upcoming signals</h2>
-                  </div>
-                  <p className="kicker">Still the core feed, now tucked into its own sub-menu lane.</p>
-                </div>
-                <div className="grid grid-2">
-                  {shows.map((show) => (
-                    <ShowCard key={show.id} show={show} />
-                  ))}
-                </div>
-              </section>
-            </div>
-          ) : null}
-
-          {activeTab === 'profiles' ? (
-            <div className="home-tab-stack">
-              <section className="home-gallery-panel">
-                <div className="home-section-header">
-                  <div>
-                    <div className="badge">Network pages</div>
-                    <h2>Artists, promoters, venues, and listeners</h2>
-                  </div>
-                  <p className="kicker">The profile layer is now one tab away instead of living in a long page stack.</p>
-                </div>
-                <div className="grid grid-3">
-                  {profiles.map((profile) => (
-                    <ProfileCard key={profile.id} profile={profile} />
-                  ))}
                 </div>
               </section>
             </div>
