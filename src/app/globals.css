@@ -842,9 +842,16 @@ button, input, select, textarea { font: inherit; }
   gap: 1.25rem;
   align-items: start;
 }
+.venue-register-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+}
 .register-panel,
 .policy-panel {
   padding: 1.5rem;
+}
+.venue-register-layout .register-panel {
+  overflow: visible;
 }
 .register-header {
   display: grid;

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { ProfileType } from '@prisma/client';
 import { db } from '@/lib/db';
 import { createHexId } from '@/lib/hex-id';
+import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
 import { slugify } from '@/lib/utils';
 
 const schema = z.object({
@@ -11,7 +12,25 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   role: z.enum(['FAN', 'ARTIST', 'DJ', 'VENUE']).default('FAN'),
-  acceptedArtistUploadPolicy: z.boolean().optional().default(false)
+  acceptedArtistUploadPolicy: z.boolean().optional().default(false),
+  headline: z.string().trim().max(140).optional(),
+  bio: z.string().trim().max(280).optional(),
+  heroImage: z.string().trim().url().or(z.literal('')).optional(),
+  aboutContent: z.string().trim().max(5000).optional(),
+  requestContent: z.string().trim().max(5000).optional(),
+  addressLine1: z.string().trim().max(200).optional(),
+  hoursText: z.string().trim().max(200).optional(),
+  city: z.string().trim().max(120).optional(),
+  stateRegion: z.string().trim().max(120).optional(),
+  postalCode: z.string().trim().max(32).optional(),
+  country: z.string().trim().max(120).optional(),
+  parkingDetails: z.string().trim().max(5000).optional(),
+  stayRecommendations: z.string().trim().max(5000).optional(),
+  upcomingContent: z.string().trim().max(5000).optional(),
+  previousShowHighlights: z.string().trim().max(5000).optional(),
+  themePreset: z.enum(profileDesignPresetIds).optional(),
+  themeAccentTone: z.enum(profileAccentToneIds).optional(),
+  themeBackdropTone: z.enum(profileBackdropToneIds).optional()
 });
 
 function getProfileType(role: 'FAN' | 'ARTIST' | 'DJ' | 'VENUE'): ProfileType {
@@ -64,6 +83,29 @@ function getProfileCopy(type: ProfileType, name: string) {
     bio: 'Introduce yourself, the scenes you love, and what you are always looking for next.',
     aboutContent: 'Tell people what kind of listener you are and what sounds stay in rotation.',
     topFiveContent: 'List your current top 5 artists, records, or live moments here.'
+  };
+}
+
+function getVenueProfileOverrides(body: z.infer<typeof schema>) {
+  return {
+    headline: body.headline || null,
+    bio: body.bio || null,
+    heroImage: body.heroImage || null,
+    aboutContent: body.aboutContent || null,
+    requestContent: body.requestContent || null,
+    addressLine1: body.addressLine1 || null,
+    hoursText: body.hoursText || null,
+    city: body.city || null,
+    stateRegion: body.stateRegion || null,
+    postalCode: body.postalCode || null,
+    country: body.country || null,
+    parkingDetails: body.parkingDetails || null,
+    stayRecommendations: body.stayRecommendations || null,
+    upcomingContent: body.upcomingContent || null,
+    previousShowHighlights: body.previousShowHighlights || null,
+    themePreset: body.themePreset ?? undefined,
+    themeAccentTone: body.themeAccentTone ?? undefined,
+    themeBackdropTone: body.themeBackdropTone ?? undefined
   };
 }
 
@@ -123,7 +165,8 @@ export async function POST(request: Request) {
         type: profileType,
         name: body.name,
         ownerId: user.id,
-        ...getProfileCopy(profileType, body.name)
+        ...getProfileCopy(profileType, body.name),
+        ...(profileType === 'VENUE' ? getVenueProfileOverrides(body) : {})
       }
     });
 

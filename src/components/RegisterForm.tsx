@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { ArtistUploadPolicy } from '@/components/ArtistUploadPolicy';
 
@@ -34,6 +35,7 @@ export function RegisterForm({
   title = 'Create account',
   intro = 'Create your account, then sign in with your email and password to start building your page.'
 }: RegisterFormProps) {
+  const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<RegisterRole>(defaultRole);
   const [acceptedPolicy, setAcceptedPolicy] = useState(false);
@@ -42,6 +44,12 @@ export function RegisterForm({
 
   async function handleSubmit(formData: FormData) {
     setMessage(null);
+
+    if (!lockedRole && selectedRole === 'VENUE') {
+      router.push('/register/venue');
+      return;
+    }
+
     const payload = Object.fromEntries(formData.entries()) as Record<string, FormDataEntryValue | boolean>;
 
     payload.role = selectedRole;
@@ -77,6 +85,9 @@ export function RegisterForm({
                 </Link>
                 <Link className="button small secondary" href="/register/promoter">
                   Promoter sign up
+                </Link>
+                <Link className="button small secondary" href="/register/venue">
+                  Venue sign up
                 </Link>
               </div>
             ) : (
@@ -143,8 +154,14 @@ export function RegisterForm({
               </label>
             ) : null}
 
+            {!lockedRole && selectedRole === 'VENUE' ? (
+              <div className="empty">
+                Venue accounts now use a guided sign up wizard for page design, hours, local guidance, and future show sections.
+              </div>
+            ) : null}
+
             <button className="button" type="submit">
-              Create account
+              {!lockedRole && selectedRole === 'VENUE' ? 'Open venue wizard' : 'Create account'}
             </button>
             {message ? <p className="meta">{message}</p> : null}
           </form>
