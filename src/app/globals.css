@@ -637,6 +637,98 @@ button, input, select, textarea { font: inherit; }
 .tag-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .tag { padding: 0.35rem 0.7rem; border-radius: 999px; background: rgba(35,208,216,0.12); color: #aef4f6; border: 1px solid rgba(35,208,216,0.22); font-size: 0.85rem; }
 .form { display: grid; gap: 1rem; }
+.field {
+  display: grid;
+  gap: 0.45rem;
+}
+.field span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.field input::placeholder,
+.field textarea::placeholder {
+  color: rgba(255,255,255,0.32);
+}
+.auth-shell {
+  display: grid;
+  gap: 1rem;
+  max-width: 760px;
+}
+.auth-panel {
+  padding: 1.5rem;
+}
+.auth-inline-actions {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 1rem;
+}
+.text-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #aef4f6;
+  cursor: pointer;
+  font-weight: 700;
+}
+.text-link:hover {
+  color: #d8f8ff;
+}
+.status-note {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(35,208,216,0.18);
+  background: rgba(35,208,216,0.08);
+  color: #d8f8ff;
+}
+.auth-reset-panel {
+  background:
+    radial-gradient(circle at top right, rgba(143,91,255,0.14), transparent 32%),
+    rgba(16,24,42,0.85);
+}
+.auth-reset-header {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.auth-reset-header h2 {
+  margin: 0 0 0.35rem;
+}
+.field-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: end;
+}
+.field-row .field {
+  flex: 1;
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0.85rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+  white-space: nowrap;
+}
 .launch-grid { display: grid; gap: 1rem; }
 .launch-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .launch-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -3053,6 +3145,8 @@ button, input, select, textarea { font: inherit; }
     max-height: 30svh;
   }
   .checkbox-row { align-items: flex-start; }
+  .auth-reset-header,
+  .field-row { flex-direction: column; align-items: stretch; }
   .artist-editor-header { flex-direction: column; }
   .register-grid { grid-template-columns: 1fr; }
   .composer-grid,

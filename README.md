@@ -18,6 +18,7 @@ A production-oriented Next.js application for hosting artist, DJ, and venue page
 - Curated in-app launch-readiness page for the Chicago pilot and September 6, 2026 launch target.
 - Public integrity page plus transparency snapshot endpoint with versioned feed heuristics and explainable show surfacing.
 - Account registration and login.
+- Password reset by emailed six-digit passcode with a 5-minute reset window.
 - Essential auth cookies only, with session cookies shortened and non-session auth cookies scoped to `/api/auth`.
 - Hype button that works like an upvote, one hype per account per show.
 - Authenticated API route for creating shows.
@@ -107,8 +108,9 @@ Demo logins currently use email and password only.
 4. Connect a managed PostgreSQL database such as Neon and set `DATABASE_URL` per environment.
 5. Add your Mux credentials and webhook secret.
 6. Add `OPENAI_API_KEY` if you want listener avatar generation enabled.
-7. Deploy with the included `vercel.json`, which runs `npm run vercel-build`.
-8. Point your production domain to Vercel and verify auth callbacks, show creation, hype voting, Mux webhooks, listener avatar generation, and the integrity/transparency routes.
+7. Add SMTP delivery settings (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`) if you want live password reset emails enabled.
+8. Deploy with the included `vercel.json`, which runs `npm run vercel-build`.
+9. Point your production domain to Vercel and verify auth callbacks, password reset email delivery, show creation, hype voting, Mux webhooks, listener avatar generation, and the integrity/transparency routes.
 
 ### Vercel config refresh
 
