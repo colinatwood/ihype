@@ -9,6 +9,8 @@ import { VenuePageWizard } from '@/components/VenuePageWizard';
 import { VenueEventScheduler } from '@/components/VenueEventScheduler';
 import { VenueConnectionRequestActions } from '@/components/VenueConnectionRequestActions';
 import { VenueConnectionRequestForm } from '@/components/VenueConnectionRequestForm';
+import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
+import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 
 const venueSections = ['about', 'upcoming', 'previous', 'request', 'stats'] as const;
 
@@ -96,6 +98,20 @@ export default async function VenuePage({
   const ticketedShows = shows.filter((show) => show.isTicketed);
   const totalTicketsSold = shows.reduce((sum, show) => sum + show.ticketsSoldCount, 0);
   const isOwner = session?.user?.id === profile.ownerId;
+  const advertisingRecommendations = await getAdvertisingRecommendations({
+    profile: {
+      type: 'VENUE',
+      city: profile.city,
+      country: profile.country
+    },
+    stats: {
+      pageHype: profile.hypeCount,
+      upcomingCount: upcomingShows.length,
+      previousCount: previousShows.length,
+      ticketsSold: totalTicketsSold,
+      requestCount: totalRequestCount
+    }
+  });
   const bookedActs = Array.from(
     new Map(
       connectionRequests
@@ -186,6 +202,8 @@ export default async function VenuePage({
           </div>
         </>
       ) : null}
+
+      <MarketRecommendationsPanel recommendations={advertisingRecommendations} roleLabel="venue page" />
 
       <section className="section">
         <nav className="section-tabs" aria-label="Venue page sections">

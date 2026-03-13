@@ -8,6 +8,8 @@ import { HypeButton } from '@/components/HypeButton';
 import { ProfilePageEditor } from '@/components/ProfilePageEditor';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
 import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
+import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
+import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
 
 const artistSections = ['about', 'journal', 'media', 'tour', 'merch', 'stats'] as const;
@@ -67,6 +69,19 @@ export default async function ArtistPage({
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
   const previousShows = shows.filter((show) => show.status === 'ENDED' || (show.startsAt < now && show.status !== 'LIVE'));
   const isOwner = session?.user?.id === profile.ownerId;
+  const advertisingRecommendations = await getAdvertisingRecommendations({
+    profile: {
+      type: 'ARTIST',
+      city: profile.city,
+      country: profile.country
+    },
+    stats: {
+      pageHype: profile.hypeCount,
+      upcomingCount: upcomingShows.length,
+      previousCount: previousShows.length,
+      songUploads: profile.songUploadCount
+    }
+  });
   const sharedThemePreset = isOwner || profile.fanShareEnabled ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET;
   const bannerStyle = profile.heroImage
     ? {
@@ -146,6 +161,8 @@ export default async function ArtistPage({
           </div>
         </>
       ) : null}
+
+      <MarketRecommendationsPanel recommendations={advertisingRecommendations} roleLabel="artist page" />
 
       <section className="section">
         <nav className="section-tabs" aria-label="Artist page sections">

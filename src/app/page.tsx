@@ -193,7 +193,7 @@ export default async function HomePage({
                       <Link href={featured ? `/shows/${featured.slug}` : '/artists'} className="button">
                         {featured ? 'Watch featured signal' : 'Explore artists'}
                       </Link>
-                      <Link href="/?tab=geo" className="button secondary">
+                      <Link href="/?tab=geography" className="button secondary">
                         Open geo tab
                       </Link>
                       <Link href="/integrity" className="button secondary">
@@ -247,7 +247,7 @@ export default async function HomePage({
                       <div className="home-card-label">Geo</div>
                       <h2>Where the rooms are heating up.</h2>
                     </div>
-                    <Link href="/?tab=geo" className="home-inline-link">
+                    <Link href="/?tab=geography" className="home-inline-link">
                       Open geo tab
                     </Link>
                   </div>

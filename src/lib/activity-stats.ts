@@ -108,7 +108,7 @@ function requestMatches(
   return matcher(request.venueProfile) || matcher(request.artistProfile);
 }
 
-function getScopeKeysForProfile(profile: Pick<ActivityShowProfileRecord, 'city' | 'country'>): ScopeKey[] {
+export function getScopeKeysForProfile(profile: Pick<ActivityShowProfileRecord, 'city' | 'country'>): ScopeKey[] {
   const scopeKeys: ScopeKey[] = ['global'];
 
   if (isUsa(profile.country)) {
