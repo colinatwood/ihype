@@ -9,6 +9,7 @@ export default async function ArtistsIndexPage() {
   return (
     <ProfileDirectoryPage
       badge="ARTISTS"
+      currentHref="/artists"
       description="Artist pages hold uploads, journal updates, tour context, and the hype signal building around each act."
       profiles={artists}
       title="Artist directory"

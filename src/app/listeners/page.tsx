@@ -9,6 +9,7 @@ export default async function ListenersIndexPage() {
   return (
     <ProfileDirectoryPage
       badge="LISTENERS"
+      currentHref="/listeners"
       description="Listener pages collect avatars, top fives, saved shows, and the local rooms each fan keeps in rotation."
       profiles={listeners}
       title="Listener directory"

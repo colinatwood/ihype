@@ -3384,6 +3384,69 @@ button, input, select, textarea { font: inherit; }
 .directory-section-head h2 {
   margin: 0;
 }
+.directory-browser {
+  display: grid;
+  gap: 1rem;
+}
+.directory-browser-topline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  justify-content: space-between;
+  align-items: end;
+}
+.directory-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.directory-switcher-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.directory-switcher-link:hover,
+.directory-switcher-link.active {
+  color: var(--text);
+  border-color: rgba(35,208,216,0.22);
+  background: rgba(35,208,216,0.1);
+}
+.directory-search {
+  min-width: min(100%, 360px);
+  display: grid;
+  gap: 0.35rem;
+}
+.directory-search span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.directory-search input {
+  width: min(100%, 360px);
+  padding: 0.82rem 0.95rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.directory-search input::placeholder {
+  color: rgba(255,255,255,0.34);
+}
+.directory-browser-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+}
 .footer {
   display: flex;
   flex-wrap: wrap;
@@ -3544,6 +3607,8 @@ button, input, select, textarea { font: inherit; }
   .home-transparency-grid,
   .directory-hero,
   .home-browse-card-grid { grid-template-columns: 1fr; }
+  .directory-browser-topline,
+  .directory-browser-meta { align-items: stretch; }
   .nav-logo-left {
     grid-area: logo;
     justify-self: start;

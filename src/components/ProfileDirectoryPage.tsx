@@ -1,20 +1,7 @@
 import Link from 'next/link';
-import { ProfileCard } from '@/components/ProfileCard';
+import { ProfileDirectoryBrowser, type DirectoryBrowserProfile } from '@/components/ProfileDirectoryBrowser';
 
-type DirectoryProfile = {
-  id: string;
-  type: 'ARTIST' | 'DJ' | 'VENUE' | 'LISTENER';
-  slug: string;
-  hexId: string;
-  name: string;
-  city: string | null;
-  stateRegion: string | null;
-  country: string | null;
-  hypeCount: number;
-  bio: string | null;
-  genres: string[];
-  avatarImage: string | null;
-};
+type DirectoryProfile = DirectoryBrowserProfile;
 
 function getTopMarkets(profiles: DirectoryProfile[]) {
   const counts = new Map<string, number>();
@@ -38,12 +25,14 @@ export function ProfileDirectoryPage({
   badge,
   title,
   description,
-  profiles
+  profiles,
+  currentHref
 }: {
   badge: string;
   title: string;
   description: string;
   profiles: DirectoryProfile[];
+  currentHref: string;
 }) {
   const topMarkets = getTopMarkets(profiles);
   const totalHype = profiles.reduce((sum, profile) => sum + profile.hypeCount, 0);
@@ -92,13 +81,7 @@ export function ProfileDirectoryPage({
       ) : null}
 
       <section className="section">
-        <div className="grid grid-3">
-          {profiles.length ? (
-            profiles.map((profile) => <ProfileCard key={profile.id} profile={profile} />)
-          ) : (
-            <div className="empty">Nothing is published here yet.</div>
-          )}
-        </div>
+        <ProfileDirectoryBrowser currentHref={currentHref} profiles={profiles} />
       </section>
     </main>
   );
