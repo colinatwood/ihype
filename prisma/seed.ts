@@ -21,12 +21,20 @@ const profileHexIds = {
   midwestMove: '0x4e1dc9f07ab32568c2d4ef9a3107b85d',
   lakefrontFrequency: '0xb8a20c6ef39d5174ac2f807e1b6d43c9',
   southLoopSignal: '0x63df1b49ac72e8055d1af40bc98e2673',
-  riverwestEcho: '0xce9041ab56d2f3e87c0b1a64d829f75e'
+  riverwestEcho: '0xce9041ab56d2f3e87c0b1a64d829f75e',
+  velvetCircuit: '0x91f4c2be7d6a03ef54b8c10ad9e24731',
+  staticBloom: '0x3cbf50d71a96e2488de102c7fa64b59e',
+  sunsetRelay: '0xaf4e31b9627dc8051e3f4a9cb270d68f',
+  signalYard: '0x5d87ab34ce1092f7e6b43ad810fc2961'
 } as const;
 
 const mediaHexIds = {
   novaPulseStudioCut: '0x6f0a4de2b75c9a1084ef26d30bc91a7d',
-  southLoopSignalLiveCut: '0xa1c39e57d24bf68031fa7cd42e9850b6'
+  southLoopSignalLiveCut: '0xa1c39e57d24bf68031fa7cd42e9850b6',
+  velvetCircuitNightdrive: '0xf17e4ca982d06b351e8f2ac4479d013b',
+  velvetCircuitAfterimage: '0x2bc648af731ed905c4a1b2876dfe9032',
+  staticBloomBlueStatic: '0x7ad4ef30c1589b624e03da7fc91b25e8',
+  staticBloomCloudline: '0xc93d10e7ab6f2451d8e40bc79f321a6d'
 } as const;
 
 async function upsertArtistMediaAsset({
@@ -601,6 +609,282 @@ async function main() {
     sourceFileUrl: new URL('../public/audio/samples/sweep-rise.wav', import.meta.url)
   });
 
+  const velvetCircuit = await prisma.profile.upsert({
+    where: { slug: 'velvet-circuit' },
+    update: {
+      hexId: profileHexIds.velvetCircuit,
+      type: ProfileType.ARTIST,
+      name: 'Velvet Circuit',
+      headline: 'Austin midnight disco built for mirrorball hooks, warm air, and a fan-first live room.',
+      bio: 'Indie-dance artist blending disco basslines, neon vocals, and crowd-ready live edits.',
+      aboutContent: 'Velvet Circuit writes songs for rooftop heat, late close times, and the kind of rooms where the chorus hits right as the skyline settles in.',
+      journalContent: 'Studio note: finishing a brighter encore, tightening the bass rig, and testing a tour package that can jump from Austin to the coast without losing its pulse.',
+      mediaContent:
+        'Media notes: teaser loops, live crowd clips, and a glossy one-sheet for promoters who want the fast read.\n\nMirrorline Demo | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3 | Indie-dance single draft\nHeatwave Avenue | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3 | Open-air festival mix',
+      tourContent: 'Tour notes: Austin rooftops first, then a run through Dallas, Phoenix, and any coastal room that wants a warmer late-night headline.',
+      merchContent: 'Merch notes: satin poster prints, chrome logo tees, and a small-run lyric book for fans who catch the early shows.',
+      city: 'Austin',
+      stateRegion: 'TX',
+      country: 'USA',
+      postalCode: '78701',
+      latitude: 30.2672,
+      longitude: -97.7431,
+      themePreset: 'midnight-neon',
+      fanShareEnabled: true,
+      genres: ['Indie Dance', 'Nu Disco'],
+      songUploadCount: 12,
+      verified: true,
+      ownerId: artistOwner.id,
+      hypeCount: 24
+    },
+    create: {
+      slug: 'velvet-circuit',
+      hexId: profileHexIds.velvetCircuit,
+      type: ProfileType.ARTIST,
+      name: 'Velvet Circuit',
+      headline: 'Austin midnight disco built for mirrorball hooks, warm air, and a fan-first live room.',
+      bio: 'Indie-dance artist blending disco basslines, neon vocals, and crowd-ready live edits.',
+      aboutContent: 'Velvet Circuit writes songs for rooftop heat, late close times, and the kind of rooms where the chorus hits right as the skyline settles in.',
+      journalContent: 'Studio note: finishing a brighter encore, tightening the bass rig, and testing a tour package that can jump from Austin to the coast without losing its pulse.',
+      mediaContent:
+        'Media notes: teaser loops, live crowd clips, and a glossy one-sheet for promoters who want the fast read.\n\nMirrorline Demo | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3 | Indie-dance single draft\nHeatwave Avenue | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3 | Open-air festival mix',
+      tourContent: 'Tour notes: Austin rooftops first, then a run through Dallas, Phoenix, and any coastal room that wants a warmer late-night headline.',
+      merchContent: 'Merch notes: satin poster prints, chrome logo tees, and a small-run lyric book for fans who catch the early shows.',
+      city: 'Austin',
+      stateRegion: 'TX',
+      country: 'USA',
+      postalCode: '78701',
+      latitude: 30.2672,
+      longitude: -97.7431,
+      themePreset: 'midnight-neon',
+      fanShareEnabled: true,
+      genres: ['Indie Dance', 'Nu Disco'],
+      songUploadCount: 12,
+      verified: true,
+      ownerId: artistOwner.id,
+      hypeCount: 24
+    }
+  });
+
+  await upsertArtistMediaAsset({
+    profileId: velvetCircuit.id,
+    hexId: mediaHexIds.velvetCircuitNightdrive,
+    title: 'Neon Lace Upload',
+    notes: 'Demo club edit uploaded to the artist page.',
+    originalFileName: 'velvet-circuit-neon-lace.wav',
+    mimeType: 'audio/wav',
+    sourceFileUrl: new URL('../public/audio/samples/club-stab.wav', import.meta.url)
+  });
+
+  await upsertArtistMediaAsset({
+    profileId: velvetCircuit.id,
+    hexId: mediaHexIds.velvetCircuitAfterimage,
+    title: 'Afterimage Rehearsal Upload',
+    notes: 'Alternate live arrangement for promoter demos and fan previews.',
+    originalFileName: 'velvet-circuit-afterimage.wav',
+    mimeType: 'audio/wav',
+    sourceFileUrl: new URL('../public/audio/samples/impact-hit.wav', import.meta.url)
+  });
+
+  const staticBloom = await prisma.profile.upsert({
+    where: { slug: 'static-bloom' },
+    update: {
+      hexId: profileHexIds.staticBloom,
+      type: ProfileType.ARTIST,
+      name: 'Static Bloom',
+      headline: 'Seattle rain-glow electronics with breakbeat pressure and a cinematic live build.',
+      bio: 'Dream-electronic artist shaping breakbeat textures, soft-focus hooks, and widescreen late-night sets.',
+      aboutContent: 'Static Bloom leans into fog, drums, and synth movement that feels half club set, half slow-burn soundtrack for a city after midnight.',
+      journalContent: 'Field notes: expanding the visual rig, leaning harder into the drum transitions, and finishing a set sequence that can scale from basement rooms to a festival tent.',
+      mediaContent:
+        'Media notes: rehearsal clips, motion stills, and fan-facing snippets that make the live set easy to imagine.\n\nCloudline Draft | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3 | Atmospheric opening pass\nBlue Static | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3 | Breakbeat showcase cut',
+      tourContent: 'Tour notes: targeting Seattle, Portland, Vancouver, and a handful of converted industrial rooms that reward patience and volume.',
+      merchContent: 'Merch notes: weatherproof posters, photo zines, and a soft-shell capsule for fall tour runs.',
+      city: 'Seattle',
+      stateRegion: 'WA',
+      country: 'USA',
+      postalCode: '98101',
+      latitude: 47.6062,
+      longitude: -122.3321,
+      themePreset: 'silver-signal',
+      fanShareEnabled: true,
+      genres: ['Breakbeat', 'Dream Electronic'],
+      songUploadCount: 10,
+      verified: true,
+      ownerId: artistOwner.id,
+      hypeCount: 20
+    },
+    create: {
+      slug: 'static-bloom',
+      hexId: profileHexIds.staticBloom,
+      type: ProfileType.ARTIST,
+      name: 'Static Bloom',
+      headline: 'Seattle rain-glow electronics with breakbeat pressure and a cinematic live build.',
+      bio: 'Dream-electronic artist shaping breakbeat textures, soft-focus hooks, and widescreen late-night sets.',
+      aboutContent: 'Static Bloom leans into fog, drums, and synth movement that feels half club set, half slow-burn soundtrack for a city after midnight.',
+      journalContent: 'Field notes: expanding the visual rig, leaning harder into the drum transitions, and finishing a set sequence that can scale from basement rooms to a festival tent.',
+      mediaContent:
+        'Media notes: rehearsal clips, motion stills, and fan-facing snippets that make the live set easy to imagine.\n\nCloudline Draft | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3 | Atmospheric opening pass\nBlue Static | https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3 | Breakbeat showcase cut',
+      tourContent: 'Tour notes: targeting Seattle, Portland, Vancouver, and a handful of converted industrial rooms that reward patience and volume.',
+      merchContent: 'Merch notes: weatherproof posters, photo zines, and a soft-shell capsule for fall tour runs.',
+      city: 'Seattle',
+      stateRegion: 'WA',
+      country: 'USA',
+      postalCode: '98101',
+      latitude: 47.6062,
+      longitude: -122.3321,
+      themePreset: 'silver-signal',
+      fanShareEnabled: true,
+      genres: ['Breakbeat', 'Dream Electronic'],
+      songUploadCount: 10,
+      verified: true,
+      ownerId: artistOwner.id,
+      hypeCount: 20
+    }
+  });
+
+  await upsertArtistMediaAsset({
+    profileId: staticBloom.id,
+    hexId: mediaHexIds.staticBloomBlueStatic,
+    title: 'Blue Static Upload',
+    notes: 'Bright breakbeat teaser for the artist page media rack.',
+    originalFileName: 'static-bloom-blue-static.wav',
+    mimeType: 'audio/wav',
+    sourceFileUrl: new URL('../public/audio/samples/signal-chime.wav', import.meta.url)
+  });
+
+  await upsertArtistMediaAsset({
+    profileId: staticBloom.id,
+    hexId: mediaHexIds.staticBloomCloudline,
+    title: 'Cloudline Rehearsal Upload',
+    notes: 'Atmospheric interlude used in fan previews and promoter decks.',
+    originalFileName: 'static-bloom-cloudline.wav',
+    mimeType: 'audio/wav',
+    sourceFileUrl: new URL('../public/audio/samples/sweep-rise.wav', import.meta.url)
+  });
+
+  const sunsetRelay = await prisma.profile.upsert({
+    where: { slug: 'sunset-relay' },
+    update: {
+      hexId: profileHexIds.sunsetRelay,
+      type: ProfileType.VENUE,
+      name: 'Sunset Relay',
+      headline: 'Austin rooftop pulse with skyline light, open-air fans, and clean room for a showcase set.',
+      bio: 'Rooftop venue profile for open-air nights, warm-weather streams, and polished indie-electronic bills.',
+      aboutContent: 'Sunset Relay is tuned for twilight sets, camera-friendly crowds, and the kind of artist showcase that needs both breeze and low-end.',
+      requestContent: 'Recommend artists who can own a rooftop room, keep a crowd through sunset, and make stream clips look effortless.',
+      parkingDetails: 'Valet opens at 6PM, with overflow garage access one block east and a dedicated rideshare lane on Trinity.',
+      stayRecommendations: 'Touring artists usually stay near Rainey or East Austin for quick load-in, late food, and fast airport access the next morning.',
+      upcomingContent: 'Expect rooftop showcases, co-billed fan nights, and smaller launch sets that can punch above their capacity online.',
+      previousShowHighlights: 'Recent rooms here have leaned bright, packed early, and converted a lot of first-time fans into repeat RSVPs.',
+      addressLine1: '312 Trinity Street',
+      hoursText: 'Thu-Sun 7PM-2AM',
+      city: 'Austin',
+      stateRegion: 'TX',
+      country: 'USA',
+      postalCode: '78701',
+      latitude: 30.2648,
+      longitude: -97.7398,
+      themePreset: 'sunset-paper',
+      themeAccentTone: 'sunset-gold',
+      themeBackdropTone: 'city-lights',
+      genres: ['Indie Dance', 'House'],
+      verified: true,
+      ownerId: venueOwner.id,
+      hypeCount: 26
+    },
+    create: {
+      slug: 'sunset-relay',
+      hexId: profileHexIds.sunsetRelay,
+      type: ProfileType.VENUE,
+      name: 'Sunset Relay',
+      headline: 'Austin rooftop pulse with skyline light, open-air fans, and clean room for a showcase set.',
+      bio: 'Rooftop venue profile for open-air nights, warm-weather streams, and polished indie-electronic bills.',
+      aboutContent: 'Sunset Relay is tuned for twilight sets, camera-friendly crowds, and the kind of artist showcase that needs both breeze and low-end.',
+      requestContent: 'Recommend artists who can own a rooftop room, keep a crowd through sunset, and make stream clips look effortless.',
+      parkingDetails: 'Valet opens at 6PM, with overflow garage access one block east and a dedicated rideshare lane on Trinity.',
+      stayRecommendations: 'Touring artists usually stay near Rainey or East Austin for quick load-in, late food, and fast airport access the next morning.',
+      upcomingContent: 'Expect rooftop showcases, co-billed fan nights, and smaller launch sets that can punch above their capacity online.',
+      previousShowHighlights: 'Recent rooms here have leaned bright, packed early, and converted a lot of first-time fans into repeat RSVPs.',
+      addressLine1: '312 Trinity Street',
+      hoursText: 'Thu-Sun 7PM-2AM',
+      city: 'Austin',
+      stateRegion: 'TX',
+      country: 'USA',
+      postalCode: '78701',
+      latitude: 30.2648,
+      longitude: -97.7398,
+      themePreset: 'sunset-paper',
+      themeAccentTone: 'sunset-gold',
+      themeBackdropTone: 'city-lights',
+      genres: ['Indie Dance', 'House'],
+      verified: true,
+      ownerId: venueOwner.id,
+      hypeCount: 26
+    }
+  });
+
+  const signalYard = await prisma.profile.upsert({
+    where: { slug: 'signal-yard' },
+    update: {
+      hexId: profileHexIds.signalYard,
+      type: ProfileType.VENUE,
+      name: 'Signal Yard',
+      headline: 'Seattle industrial glow with enough ceiling and texture for a full-scale live build.',
+      bio: 'Converted rail-yard venue for cinematic electronic shows, immersive visuals, and fan-heavy late-night bills.',
+      aboutContent: 'Signal Yard balances warehouse edges, strong sightlines, and a modular room layout that lets live electronic sets feel big without losing intimacy.',
+      requestContent: 'Recommend artists who can bring atmosphere, visual ambition, and just enough low-end to make the room feel electric.',
+      parkingDetails: 'Paid lot access starts at the east gate after 5PM, with limited street parking and a marked rideshare zone by the freight arch.',
+      stayRecommendations: 'Artists usually stay in Pioneer Square or Belltown for easy soundcheck access, good food, and a quick post-show trip back north.',
+      upcomingContent: 'The next run leans immersive: visual-heavy club nights, cinematic live electronics, and fan-first showcases that photograph well.',
+      previousShowHighlights: 'Past nights have sold best when the lineup blends atmosphere with drum pressure and gives fans room to stay late.',
+      addressLine1: '815 Railroad Way S',
+      hoursText: 'Fri-Sat 8PM-3AM',
+      city: 'Seattle',
+      stateRegion: 'WA',
+      country: 'USA',
+      postalCode: '98134',
+      latitude: 47.5904,
+      longitude: -122.3275,
+      themePreset: 'silver-signal',
+      themeAccentTone: 'electric-cyan',
+      themeBackdropTone: 'warehouse-smoke',
+      genres: ['Breakbeat', 'Electronic'],
+      verified: true,
+      ownerId: venueOwner.id,
+      hypeCount: 22
+    },
+    create: {
+      slug: 'signal-yard',
+      hexId: profileHexIds.signalYard,
+      type: ProfileType.VENUE,
+      name: 'Signal Yard',
+      headline: 'Seattle industrial glow with enough ceiling and texture for a full-scale live build.',
+      bio: 'Converted rail-yard venue for cinematic electronic shows, immersive visuals, and fan-heavy late-night bills.',
+      aboutContent: 'Signal Yard balances warehouse edges, strong sightlines, and a modular room layout that lets live electronic sets feel big without losing intimacy.',
+      requestContent: 'Recommend artists who can bring atmosphere, visual ambition, and just enough low-end to make the room feel electric.',
+      parkingDetails: 'Paid lot access starts at the east gate after 5PM, with limited street parking and a marked rideshare zone by the freight arch.',
+      stayRecommendations: 'Artists usually stay in Pioneer Square or Belltown for easy soundcheck access, good food, and a quick post-show trip back north.',
+      upcomingContent: 'The next run leans immersive: visual-heavy club nights, cinematic live electronics, and fan-first showcases that photograph well.',
+      previousShowHighlights: 'Past nights have sold best when the lineup blends atmosphere with drum pressure and gives fans room to stay late.',
+      addressLine1: '815 Railroad Way S',
+      hoursText: 'Fri-Sat 8PM-3AM',
+      city: 'Seattle',
+      stateRegion: 'WA',
+      country: 'USA',
+      postalCode: '98134',
+      latitude: 47.5904,
+      longitude: -122.3275,
+      themePreset: 'silver-signal',
+      themeAccentTone: 'electric-cyan',
+      themeBackdropTone: 'warehouse-smoke',
+      genres: ['Breakbeat', 'Electronic'],
+      verified: true,
+      ownerId: venueOwner.id,
+      hypeCount: 22
+    }
+  });
+
   const regionalPromoter = await prisma.profile.upsert({
     where: { slug: 'riverwest-echo' },
     update: {
@@ -869,6 +1153,94 @@ async function main() {
     }
   });
 
+  const sunsetRelayShow = await prisma.show.upsert({
+    where: { slug: 'velvet-circuit-sunset-relay' },
+    update: {
+      title: 'Velvet Circuit at Sunset Relay',
+      description: 'Open-air Austin showcase with warm-weather visuals, mirrored lighting, and a fan-heavy rooftop crowd.',
+      status: ShowStatus.SCHEDULED,
+      startsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      creatorId: artistOwner.id,
+      venueProfileId: sunsetRelay.id,
+      headlinerProfileId: velvetCircuit.id,
+      promoterProfileId: dj.id,
+      isTicketed: true,
+      ticketPriceCents: 2600,
+      ticketCapacity: 190,
+      venuePayoutPercent: 44,
+      artistPayoutPercent: 51,
+      promoterPayoutPercent: PROMOTER_POOL_PERCENT,
+      tags: ['scheduled', 'austin', 'indie-dance'],
+      ticketsSoldCount: 132,
+      hypeCount: 31
+    },
+    create: {
+      slug: 'velvet-circuit-sunset-relay',
+      title: 'Velvet Circuit at Sunset Relay',
+      description: 'Open-air Austin showcase with warm-weather visuals, mirrored lighting, and a fan-heavy rooftop crowd.',
+      status: ShowStatus.SCHEDULED,
+      startsAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      creatorId: artistOwner.id,
+      venueProfileId: sunsetRelay.id,
+      headlinerProfileId: velvetCircuit.id,
+      promoterProfileId: dj.id,
+      isTicketed: true,
+      ticketPriceCents: 2600,
+      ticketCapacity: 190,
+      venuePayoutPercent: 44,
+      artistPayoutPercent: 51,
+      promoterPayoutPercent: PROMOTER_POOL_PERCENT,
+      tags: ['scheduled', 'austin', 'indie-dance'],
+      ticketsSoldCount: 132,
+      hypeCount: 31
+    }
+  });
+
+  const signalYardShow = await prisma.show.upsert({
+    where: { slug: 'static-bloom-yard-session' },
+    update: {
+      title: 'Static Bloom Yard Session',
+      description: 'Seattle industrial-room set with widescreen visuals, slow-burn builds, and an after-hours encore.',
+      status: ShowStatus.ENDED,
+      startsAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      endsAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000 + 95 * 60 * 1000),
+      creatorId: artistOwner.id,
+      venueProfileId: signalYard.id,
+      headlinerProfileId: staticBloom.id,
+      promoterProfileId: regionalPromoter.id,
+      isTicketed: true,
+      ticketPriceCents: 3000,
+      ticketCapacity: 220,
+      venuePayoutPercent: 46,
+      artistPayoutPercent: 49,
+      promoterPayoutPercent: PROMOTER_POOL_PERCENT,
+      tags: ['archive', 'seattle', 'breakbeat'],
+      ticketsSoldCount: 159,
+      hypeCount: 29
+    },
+    create: {
+      slug: 'static-bloom-yard-session',
+      title: 'Static Bloom Yard Session',
+      description: 'Seattle industrial-room set with widescreen visuals, slow-burn builds, and an after-hours encore.',
+      status: ShowStatus.ENDED,
+      startsAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      endsAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000 + 95 * 60 * 1000),
+      creatorId: artistOwner.id,
+      venueProfileId: signalYard.id,
+      headlinerProfileId: staticBloom.id,
+      promoterProfileId: regionalPromoter.id,
+      isTicketed: true,
+      ticketPriceCents: 3000,
+      ticketCapacity: 220,
+      venuePayoutPercent: 46,
+      artistPayoutPercent: 49,
+      promoterPayoutPercent: PROMOTER_POOL_PERCENT,
+      tags: ['archive', 'seattle', 'breakbeat'],
+      ticketsSoldCount: 159,
+      hypeCount: 29
+    }
+  });
+
   await prisma.hypeEvent.upsert({
     where: { userId_showId: { userId: fan.id, showId: liveShow.id } },
     update: {},
@@ -885,6 +1257,18 @@ async function main() {
     where: { userId_showId: { userId: fan.id, showId: chicagoLiveShow.id } },
     update: {},
     create: { userId: fan.id, showId: chicagoLiveShow.id }
+  });
+
+  await prisma.hypeEvent.upsert({
+    where: { userId_showId: { userId: fan.id, showId: sunsetRelayShow.id } },
+    update: {},
+    create: { userId: fan.id, showId: sunsetRelayShow.id }
+  });
+
+  await prisma.hypeEvent.upsert({
+    where: { userId_showId: { userId: fan.id, showId: signalYardShow.id } },
+    update: {},
+    create: { userId: fan.id, showId: signalYardShow.id }
   });
 
   await prisma.profileHypeEvent.upsert({
@@ -921,6 +1305,30 @@ async function main() {
     where: { userId_profileId: { userId: midwestMoveFan.id, profileId: regionalPromoter.id } },
     update: {},
     create: { userId: midwestMoveFan.id, profileId: regionalPromoter.id }
+  });
+
+  await prisma.profileHypeEvent.upsert({
+    where: { userId_profileId: { userId: fan.id, profileId: velvetCircuit.id } },
+    update: {},
+    create: { userId: fan.id, profileId: velvetCircuit.id }
+  });
+
+  await prisma.profileHypeEvent.upsert({
+    where: { userId_profileId: { userId: fan.id, profileId: staticBloom.id } },
+    update: {},
+    create: { userId: fan.id, profileId: staticBloom.id }
+  });
+
+  await prisma.profileHypeEvent.upsert({
+    where: { userId_profileId: { userId: fan.id, profileId: sunsetRelay.id } },
+    update: {},
+    create: { userId: fan.id, profileId: sunsetRelay.id }
+  });
+
+  await prisma.profileHypeEvent.upsert({
+    where: { userId_profileId: { userId: fan.id, profileId: signalYard.id } },
+    update: {},
+    create: { userId: fan.id, profileId: signalYard.id }
   });
 
   await prisma.venueConnectionRequest.deleteMany({
@@ -986,7 +1394,15 @@ async function main() {
   await prisma.ticketOrder.deleteMany({
     where: {
       showId: {
-        in: [liveShow.id, rooftopShow.id, chicagoLiveShow.id, midwestShow.id, archiveShow.id]
+        in: [
+          liveShow.id,
+          rooftopShow.id,
+          chicagoLiveShow.id,
+          midwestShow.id,
+          archiveShow.id,
+          sunsetRelayShow.id,
+          signalYardShow.id
+        ]
       }
     }
   });
@@ -1006,7 +1422,13 @@ async function main() {
     { show: midwestShow, buyerName: 'Midwest Move', buyerEmail: 'midwest-move@ihype.org', quantity: 36 },
     { show: archiveShow, buyerName: 'Night Owl', buyerEmail: 'fan@ihype.org', quantity: 71 },
     { show: archiveShow, buyerName: 'Pulse Scout', buyerEmail: 'pulse-scout@ihype.org', quantity: 68 },
-    { show: archiveShow, buyerName: 'Midwest Move', buyerEmail: 'midwest-move@ihype.org', quantity: 72 }
+    { show: archiveShow, buyerName: 'Midwest Move', buyerEmail: 'midwest-move@ihype.org', quantity: 72 },
+    { show: sunsetRelayShow, buyerName: 'Night Owl', buyerEmail: 'fan@ihype.org', quantity: 52 },
+    { show: sunsetRelayShow, buyerName: 'Pulse Scout', buyerEmail: 'pulse-scout@ihype.org', quantity: 39 },
+    { show: sunsetRelayShow, buyerName: 'Midwest Move', buyerEmail: 'midwest-move@ihype.org', quantity: 41 },
+    { show: signalYardShow, buyerName: 'Night Owl', buyerEmail: 'fan@ihype.org', quantity: 67 },
+    { show: signalYardShow, buyerName: 'Pulse Scout', buyerEmail: 'pulse-scout@ihype.org', quantity: 48 },
+    { show: signalYardShow, buyerName: 'Midwest Move', buyerEmail: 'midwest-move@ihype.org', quantity: 44 }
   ].map(({ show, buyerName, buyerEmail, quantity }, index) => {
     const payouts = calculateTicketOrderPayouts({
       ticketPriceCents: show.ticketPriceCents,
@@ -1065,8 +1487,34 @@ async function main() {
     },
     orderBy: { createdAt: 'desc' }
   });
+  const velvetUploads = await prisma.artistMediaAsset.findMany({
+    where: { profileId: velvetCircuit.id },
+    select: {
+      hexId: true,
+      title: true,
+      notes: true,
+      mimeType: true,
+      fileSizeBytes: true,
+      createdAt: true
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+  const staticBloomUploads = await prisma.artistMediaAsset.findMany({
+    where: { profileId: staticBloom.id },
+    select: {
+      hexId: true,
+      title: true,
+      notes: true,
+      mimeType: true,
+      fileSizeBytes: true,
+      createdAt: true
+    },
+    orderBy: { createdAt: 'desc' }
+  });
   const novaEntries = buildArtistMediaCollection(artist.mediaContent, novaUploads).entries;
   const chicagoEntries = buildArtistMediaCollection(chicagoArtist.mediaContent, chicagoUploads).entries;
+  const velvetEntries = buildArtistMediaCollection(velvetCircuit.mediaContent, velvetUploads).entries;
+  const staticBloomEntries = buildArtistMediaCollection(staticBloom.mediaContent, staticBloomUploads).entries;
 
   await prisma.mediaListen.createMany({
     data: [
@@ -1101,6 +1549,22 @@ async function main() {
         mediaUrl: chicagoEntries[1]?.url ?? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
         artistName: chicagoArtist.name,
         artistProfileSlug: chicagoArtist.slug
+      },
+      {
+        userId: fan.id,
+        mediaId: velvetEntries[0]?.hexId ?? '0x-demo-velvet-1',
+        title: velvetEntries[0]?.title ?? 'Mirrorline Demo',
+        mediaUrl: velvetEntries[0]?.url ?? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
+        artistName: velvetCircuit.name,
+        artistProfileSlug: velvetCircuit.slug
+      },
+      {
+        userId: fan.id,
+        mediaId: staticBloomEntries[0]?.hexId ?? '0x-demo-static-bloom-1',
+        title: staticBloomEntries[0]?.title ?? 'Cloudline Draft',
+        mediaUrl: staticBloomEntries[0]?.url ?? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3',
+        artistName: staticBloom.name,
+        artistProfileSlug: staticBloom.slug
       }
     ]
   });
