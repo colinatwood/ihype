@@ -8,6 +8,8 @@ import {
   normalizeEmailAddress,
   PASSWORD_RESET_MAX_ATTEMPTS
 } from '@/lib/password-reset';
+import { consumeRateLimit } from '@/lib/rate-limit';
+import { readClientAddress } from '@/lib/request-meta';
 
 const confirmSchema = z
   .object({
@@ -23,8 +25,42 @@ const confirmSchema = z
 
 export async function POST(request: Request) {
   try {
+    const clientAddress = readClientAddress(request);
+    const ipRateLimit = consumeRateLimit(`password-reset-confirm:${clientAddress}`, {
+      limit: 10,
+      windowMs: 15 * 60 * 1000
+    });
+
+    if (!ipRateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many reset attempts. Please wait a few minutes and try again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(ipRateLimit.retryAfterSeconds)
+          }
+        }
+      );
+    }
+
     const body = confirmSchema.parse(await request.json());
     const email = normalizeEmailAddress(body.email);
+    const emailRateLimit = consumeRateLimit(`password-reset-confirm:${email}`, {
+      limit: 6,
+      windowMs: 15 * 60 * 1000
+    });
+
+    if (!emailRateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many reset attempts. Please request a fresh code in a few minutes.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(emailRateLimit.retryAfterSeconds)
+          }
+        }
+      );
+    }
 
     const resetCode = await withDbRetry(() =>
       db.passwordResetCode.findFirst({

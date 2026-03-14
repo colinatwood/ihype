@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getSafeImageUrl } from '@/lib/asset-safety';
 import { shortenHexId } from '@/lib/hex-id';
 
 type ProfileCardProfile = {
@@ -28,12 +29,13 @@ function getProfileLabel(type: ProfileCardProfile['type']) {
 
 export function ProfileCard({ profile }: { profile: ProfileCardProfile }) {
   const basePath = getProfileBasePath(profile.type);
+  const avatarImage = getSafeImageUrl(profile.avatarImage);
 
   return (
     <article className="card">
-      {profile.avatarImage ? (
+      {avatarImage ? (
         <div className="card-avatar">
-          <img alt={`${profile.name} avatar`} className="profile-avatar" src={profile.avatarImage} />
+          <img alt={`${profile.name} avatar`} className="profile-avatar" src={avatarImage} />
         </div>
       ) : null}
       <div className="badge">{getProfileLabel(profile.type)}</div>

@@ -9,6 +9,7 @@ import { ProfilePageEditor } from '@/components/ProfilePageEditor';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
 import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
 import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
+import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
@@ -84,12 +85,9 @@ export default async function ArtistPage({
     }
   });
   const sharedThemePreset = isOwner || profile.fanShareEnabled ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET;
-  const bannerStyle = profile.heroImage
-    ? {
-        backgroundImage: `linear-gradient(rgba(7, 11, 20, 0.45), rgba(7, 11, 20, 0.88)), url(${profile.heroImage})`
-      }
-    : undefined;
+  const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
   const pageDesignStyle = getProfileDesignStyleVars(sharedThemePreset);
+  const artworkUrl = getSafeImageUrl(profile.heroImage);
 
   return (
     <main className="container section profile-design-shell" style={pageDesignStyle}>
@@ -202,7 +200,7 @@ export default async function ArtistPage({
                 <ArtistMediaPlaylist
                   artistName={profile.name}
                   artistSlug={profile.slug}
-                  artworkUrl={profile.heroImage}
+                  artworkUrl={artworkUrl}
                   entries={media.entries}
                   isOwner={isOwner}
                 />

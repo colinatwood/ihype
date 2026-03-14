@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ProfileType } from '@prisma/client';
 import { PromoterShowCreationTool } from '@/components/PromoterShowCreationTool';
+import { getSafeImageUrl } from '@/lib/asset-safety';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { shortenHexId } from '@/lib/hex-id';
@@ -181,6 +182,7 @@ export default async function DashboardPage() {
   const listenerTopFive = listenerProfile
     ? parseTopFiveItems(listenerProfile.topFiveContent, fallbackTopFiveArtists)
     : [];
+  const listenerAvatarImage = listenerProfile ? getSafeImageUrl(listenerProfile.avatarImage) : null;
 
   if (isListenerOnlyDashboard && listenerProfile) {
     return (
@@ -197,11 +199,11 @@ export default async function DashboardPage() {
                 </div>
 
                 <div className="listener-dashboard-profile-body">
-                  {listenerProfile.avatarImage ? (
+                  {listenerAvatarImage ? (
                     <img
                       alt={`${listenerProfile.name} avatar`}
                       className="profile-avatar profile-avatar-large"
-                      src={listenerProfile.avatarImage}
+                      src={listenerAvatarImage}
                     />
                   ) : (
                     <div className="profile-avatar profile-avatar-large profile-avatar-fallback">
@@ -315,11 +317,11 @@ export default async function DashboardPage() {
         <section className="section listener-dashboard-shell">
           <article className="panel listener-dashboard-hero">
             <div className="listener-dashboard-hero-main">
-              {listenerProfile.avatarImage ? (
+              {listenerAvatarImage ? (
                 <img
                   alt={`${listenerProfile.name} avatar`}
                   className="profile-avatar profile-avatar-large"
-                  src={listenerProfile.avatarImage}
+                  src={listenerAvatarImage}
                 />
               ) : (
                 <div className="profile-avatar profile-avatar-large profile-avatar-fallback">

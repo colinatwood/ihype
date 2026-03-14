@@ -26,6 +26,13 @@ export default auth((request) => {
     return NextResponse.redirect(loginUrl);
   }
 
+  if (
+    request.auth &&
+    (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register' || request.nextUrl.pathname.startsWith('/register/'))
+  ) {
+    return NextResponse.redirect(new URL('/auth/landing', request.url));
+  }
+
   return NextResponse.next();
 });
 

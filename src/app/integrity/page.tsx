@@ -4,7 +4,7 @@ import { getShowVisibilitySignals } from '@/lib/integrity';
 import { getTransparencySnapshot } from '@/lib/transparency';
 import { sortShowsForFeed } from '@/lib/integrity';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Integrity & Transparency | iHYPE.org',

@@ -9,6 +9,8 @@ import {
   PASSWORD_RESET_CODE_TTL_MINUTES,
   hashPasswordResetCode
 } from '@/lib/password-reset';
+import { consumeRateLimit } from '@/lib/rate-limit';
+import { readClientAddress } from '@/lib/request-meta';
 
 const requestSchema = z.object({
   email: z.string().email()
@@ -19,8 +21,34 @@ const GENERIC_SUCCESS_MESSAGE =
 
 export async function POST(request: Request) {
   try {
+    const clientAddress = readClientAddress(request);
+    const ipRateLimit = consumeRateLimit(`password-reset-request:${clientAddress}`, {
+      limit: 5,
+      windowMs: 15 * 60 * 1000
+    });
+
+    if (!ipRateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many reset requests. Please wait a few minutes and try again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(ipRateLimit.retryAfterSeconds)
+          }
+        }
+      );
+    }
+
     const body = requestSchema.parse(await request.json());
     const email = normalizeEmailAddress(body.email);
+    const emailRateLimit = consumeRateLimit(`password-reset-request:${email}`, {
+      limit: 3,
+      windowMs: 15 * 60 * 1000
+    });
+
+    if (!emailRateLimit.allowed) {
+      return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
+    }
 
     if (process.env.NODE_ENV === 'production' && !isPasswordResetEmailConfigured()) {
       return NextResponse.json(

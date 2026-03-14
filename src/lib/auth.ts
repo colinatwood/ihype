@@ -3,6 +3,8 @@ import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
+import { consumeRateLimit } from '@/lib/rate-limit';
+import { readClientAddress } from '@/lib/request-meta';
 
 const useSecureCookies = process.env.NODE_ENV === 'production';
 const sessionMaxAgeSeconds = 12 * 60 * 60;
@@ -86,8 +88,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const clientAddress = readClientAddress(request);
+        const loginRateLimit = consumeRateLimit(`login:${clientAddress}`, {
+          limit: 12,
+          windowMs: 15 * 60 * 1000
+        });
+
+        if (!loginRateLimit.allowed) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
           return null;
         }
 

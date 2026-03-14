@@ -7,6 +7,7 @@ import { HypeButton } from '@/components/HypeButton';
 import { ProfilePageEditor } from '@/components/ProfilePageEditor';
 import { ListenerAvatarCreator } from '@/components/ListenerAvatarCreator';
 import { ListenerVenueMap } from '@/components/ListenerVenueMap';
+import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
@@ -108,19 +109,16 @@ export default async function ListenerPage({
   ]
     .filter(Boolean)
     .join(' ');
-  const bannerStyle = profile.heroImage
-    ? {
-        backgroundImage: `linear-gradient(rgba(7, 11, 20, 0.45), rgba(7, 11, 20, 0.88)), url(${profile.heroImage})`
-      }
-    : undefined;
+  const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
   const pageDesignStyle = getProfileDesignStyleVars(profile.themePreset);
+  const avatarImage = getSafeImageUrl(profile.avatarImage);
 
   return (
     <main className="container section profile-design-shell" style={pageDesignStyle}>
       <header className="artist-banner panel" style={bannerStyle}>
         <div className="profile-banner-row">
-          {profile.avatarImage ? (
-            <img alt={`${profile.name} avatar`} className="profile-avatar profile-avatar-hero" src={profile.avatarImage} />
+          {avatarImage ? (
+            <img alt={`${profile.name} avatar`} className="profile-avatar profile-avatar-hero" src={avatarImage} />
           ) : (
             <div className="profile-avatar profile-avatar-hero profile-avatar-fallback">{getInitials(profile.name)}</div>
           )}

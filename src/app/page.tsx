@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { ActivityMap } from '@/components/ActivityMap';
-import { db, withDbRetry } from '@/lib/db';
 import { buildActivityMapPoints, buildActivityScopeCards } from '@/lib/activity-stats';
-import { FEED_HEURISTICS_VERSION, sortShowsForFeed } from '@/lib/integrity';
-import { getTransparencySnapshot } from '@/lib/transparency';
+import { FEED_HEURISTICS_VERSION, getShowVisibilitySignals } from '@/lib/integrity';
+import { getHomePageData } from '@/lib/public-data';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 const homeTabs = ['mission', 'geography', 'stats'] as const;
 
@@ -32,132 +31,58 @@ export default async function HomePage({
 }) {
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeTab = getActiveHomeTab(resolvedSearchParams.tab);
+  const { rankedShows, featuredShows, profiles, requests, transparencySnapshot } = await getHomePageData();
 
-  const [[allShows, allProfiles, allRequests], transparencySnapshot] = await Promise.all([
-    withDbRetry(() =>
-      db.$transaction([
-        db.show.findMany({
-          where: { status: { not: 'CANCELED' } },
-          select: {
-            id: true,
-            slug: true,
-            title: true,
-            description: true,
-            status: true,
-            startsAt: true,
-            hypeCount: true,
-            isTicketed: true,
-            ticketPriceCents: true,
-            ticketCapacity: true,
-            ticketsSoldCount: true,
-            tags: true,
-            venueProfile: {
-              select: {
-                name: true,
-                city: true,
-                stateRegion: true,
-                country: true,
-                postalCode: true,
-                latitude: true,
-                longitude: true
-              }
-            },
-            headlinerProfile: {
-              select: {
-                name: true,
-                city: true,
-                country: true
-              }
-            }
-          }
-        }),
-        db.profile.findMany({
-          orderBy: [{ verified: 'desc' }, { name: 'asc' }],
-          select: {
-            id: true,
-            type: true,
-            slug: true,
-            hexId: true,
-            name: true,
-            city: true,
-            stateRegion: true,
-            country: true,
-            postalCode: true,
-            latitude: true,
-            longitude: true,
-            hypeCount: true,
-            bio: true,
-            genres: true,
-            avatarImage: true
-          }
-        }),
-        db.venueConnectionRequest.findMany({
-          select: {
-            venueProfile: {
-              select: {
-                city: true,
-                country: true
-              }
-            },
-            artistProfile: {
-              select: {
-                city: true,
-                country: true
-              }
-            }
-          }
-        })
-      ])
-    ),
-    getTransparencySnapshot()
-  ]);
-
-  const rankedShows = sortShowsForFeed(allShows);
-  const featured = rankedShows[0] ?? null;
   const activityScopes = buildActivityScopeCards({
-    profiles: allProfiles,
-    shows: allShows,
-    requests: allRequests
+    profiles,
+    shows: rankedShows,
+    requests
   });
   const activityPoints = buildActivityMapPoints({
-    profiles: allProfiles,
-    shows: allShows
+    profiles,
+    shows: rankedShows
   });
   const hotspots = activityPoints.slice(0, 4);
+  const featuredProfiles = profiles.slice(0, 4);
 
   const signalStripItems = [
-    { label: 'Live now', value: `${transparencySnapshot.counters.liveShows} shows on air` },
-    { label: 'Listeners', value: `${transparencySnapshot.counters.listenersLiveNow} active right now` },
-    { label: 'Tickets', value: `${transparencySnapshot.counters.totalTicketsSold} sold network-wide` },
+    { label: 'Live now', value: `${transparencySnapshot.counters.liveShows} on air` },
+    { label: 'Upcoming', value: `${transparencySnapshot.counters.upcomingShows} in queue` },
+    { label: 'Tickets sold', value: transparencySnapshot.counters.totalTicketsSold.toLocaleString() },
     { label: 'Heuristics', value: `v${FEED_HEURISTICS_VERSION}` }
   ];
 
   const statCards = [
     { label: 'Total listeners', value: transparencySnapshot.counters.totalListeners },
+    { label: 'Listeners live now', value: transparencySnapshot.counters.listenersLiveNow },
     { label: 'Total venues', value: transparencySnapshot.counters.totalVenues },
     { label: 'Total artists', value: transparencySnapshot.counters.totalArtists },
     { label: 'Total promoters', value: transparencySnapshot.counters.totalPromoters },
     { label: 'Events held', value: transparencySnapshot.counters.totalEventsHeld },
     { label: 'Tickets sold', value: transparencySnapshot.counters.totalTicketsSold },
-    { label: 'Songs uploaded', value: transparencySnapshot.counters.totalSongsUploaded },
-    { label: 'Venue requests', value: transparencySnapshot.counters.totalRequests }
+    { label: 'Songs uploaded', value: transparencySnapshot.counters.totalSongsUploaded }
   ];
 
-  const strategyCards = [
+  const browseCards = [
     {
-      title: 'Chicago Pilot',
-      copy:
-        'Built around Chicago rooms first, with a Midwest expansion path and global visibility already baked into the data model.'
+      href: '/shows',
+      title: 'Shows',
+      copy: 'Watch live rooms first, then move into scheduled and recent broadcasts.'
     },
     {
-      title: 'Trust Stack',
-      copy:
-        'Playback verification, hype gating, session security, and visible heuristics keep the product legible instead of mysterious.'
+      href: '/artists',
+      title: 'Artists',
+      copy: 'Profiles, uploads, and direct discovery built around the artist page.'
     },
     {
-      title: 'Zero Commission',
-      copy:
-        'Ticketing math is explicit: venue and artist split the take, while the promoter pool stays fixed at 5% per ticket sold.'
+      href: '/promoters',
+      title: 'Promoters',
+      copy: 'Program nights, build lineups, and shape audience demand around rooms.'
+    },
+    {
+      href: '/venues',
+      title: 'Venues',
+      copy: 'See rooms, request bookings, and track the local demand building around them.'
     }
   ];
 
@@ -179,142 +104,130 @@ export default async function HomePage({
         <div className="home-submenu-body">
           {activeTab === 'mission' ? (
             <div className="home-tab-stack">
-              <section className="home-pill-section">
-                <div className="home-pill-hero">
-                  <div className="home-pill-copy">
-                    <div className="badge home-badge-ink">Live music signal</div>
-                    <h2 className="home-pill-title">A cleaner front page for rooms, artists, venues, and the cities moving first.</h2>
-                    <p className="home-pill-subtitle">
-                      The homepage now follows your sketch: one oversized capsule, one thin signal bar, and a tabbed
-                      lower deck where the network data, ticketing, and transparency machinery can all live in one
-                      controlled space.
-                    </p>
-                    <div className="cta-row">
-                      <Link href={featured ? `/shows/${featured.slug}` : '/artists'} className="button">
-                        {featured ? 'Watch featured signal' : 'Explore artists'}
-                      </Link>
-                      <Link href="/?tab=geography" className="button secondary">
-                        Open geo tab
-                      </Link>
-                      <Link href="/integrity" className="button secondary">
-                        Read heuristics
-                      </Link>
-                    </div>
+              <section className="home-mission-grid">
+                <article className="home-mission-panel">
+                  <div className="badge">Streaming-first discovery</div>
+                  <h1 className="home-mission-title">Live shows stay at the center. Everything else exists to help the right rooms fill faster.</h1>
+                  <p className="home-mission-copy">
+                    iHYPE is built to turn artist uploads, promoter programming, venue demand, and listener hype into a
+                    usable network instead of a black-box feed. Watch what is live, find the next room, and understand
+                    why it surfaced.
+                  </p>
+                  <div className="cta-row">
+                    <Link className="button" href={featuredShows[0] ? `/shows/${featuredShows[0].slug}` : '/shows'}>
+                      {featuredShows[0] ? 'Watch featured show' : 'Browse shows'}
+                    </Link>
+                    <Link className="button secondary" href="/register">
+                      Create account
+                    </Link>
+                    <Link className="button secondary" href="/integrity">
+                      See heuristics
+                    </Link>
                   </div>
 
-                  <aside className="home-pill-feature">
-                    <div className="home-feature-chip">{featured?.status ?? 'Network live'}</div>
-                    <h2>{featured?.title ?? 'Featured signal loading'}</h2>
-                    <p className="meta">
-                      {featured?.venueProfile?.name ?? 'Network venue'}
-                      {featured?.headlinerProfile?.name ? ` | ${featured.headlinerProfile.name}` : ''}
-                    </p>
-                    <p>
-                      {featured?.description ??
-                        'Live and upcoming signals are still the core of the experience, just arranged in a sharper shell.'}
-                    </p>
-                    <div className="home-pill-metrics">
-                      <div className="home-metric-pill">
-                        <strong>{rankedShows.length}</strong>
-                        Featured shows
+                  <div className="home-signal-strip home-signal-strip-dark">
+                    {signalStripItems.map((item) => (
+                      <div className="home-signal-item home-signal-item-dark" key={item.label}>
+                        <span>{item.label}</span>
+                        <strong>{item.value}</strong>
                       </div>
-                      <div className="home-metric-pill">
-                        <strong>{allProfiles.length}</strong>
-                        Active profiles
-                      </div>
-                      <div className="home-metric-pill">
-                        <strong>{transparencySnapshot.counters.liveShows}</strong>
-                        Live broadcasts
-                      </div>
-                    </div>
-                  </aside>
-                </div>
+                    ))}
+                  </div>
+                </article>
 
-                <div className="home-signal-strip">
-                  {signalStripItems.map((item) => (
-                    <div className="home-signal-item" key={item.label}>
-                      <span>{item.label}</span>
-                      <strong>{item.value}</strong>
+                <aside className="home-featured-panel">
+                  <div className="home-featured-head">
+                    <div>
+                      <div className="home-card-label">Live + upcoming</div>
+                      <h2>Signal queue</h2>
                     </div>
-                  ))}
-                </div>
+                    <Link className="home-inline-link" href="/shows">
+                      Open shows
+                    </Link>
+                  </div>
+
+                  <div className="home-featured-list">
+                    {featuredShows.length ? (
+                      featuredShows.map((show) => {
+                        const visibility = getShowVisibilitySignals(show);
+
+                        return (
+                          <Link className="home-featured-card" href={`/shows/${show.slug}`} key={show.id}>
+                            <div className="home-featured-card-topline">
+                              <span className="badge">{show.status}</span>
+                              <span className="meta">{visibility.signals[0]?.value ?? 'Visible now'}</span>
+                            </div>
+                            <strong>{show.title}</strong>
+                            <p className="meta">
+                              {show.venueProfile?.name ?? 'Venue TBA'}
+                              {show.headlinerProfile?.name ? ` | ${show.headlinerProfile.name}` : ''}
+                            </p>
+                            <p>{show.description ?? 'Built for direct discovery and quick tune-in.'}</p>
+                          </Link>
+                        );
+                      })
+                    ) : (
+                      <div className="empty">No shows are ready yet.</div>
+                    )}
+                  </div>
+                </aside>
               </section>
 
-              <section className="home-lens-grid">
-                <article className="home-wire-card home-geo-card">
-                  <div className="home-card-header">
+              <section className="home-browse-grid">
+                <div className="home-browse-panel panel">
+                  <div className="home-featured-head">
                     <div>
-                      <div className="home-card-label">Geo</div>
-                      <h2>Where the rooms are heating up.</h2>
-                    </div>
-                    <Link href="/?tab=geography" className="home-inline-link">
-                      Open geo tab
-                    </Link>
-                  </div>
-
-                  <div className="home-scope-stack">
-                    {activityScopes.map((scope) => (
-                      <div className="home-scope-row" key={scope.key}>
-                        <div>
-                          <strong>{scope.label}</strong>
-                          <span>{scope.footprint}</span>
-                        </div>
-                        <div className="home-scope-values">
-                          <span>{scope.profiles} profiles</span>
-                          <span>{scope.activeShows} live + upcoming</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="home-hotspot-block">
-                    <h3>Top hotspots</h3>
-                    <div className="home-hotspot-list">
-                      {hotspots.map((point) => (
-                        <div className="home-hotspot" key={point.id}>
-                          <div className="home-hotspot-code">{point.postalCode}</div>
-                          <div>
-                            <strong>
-                              {point.city}
-                              {point.stateRegion ? `, ${point.stateRegion}` : ''}
-                            </strong>
-                            <p className="meta">{point.venueCount} venues | {point.showCount} shows | {point.liveCount} live</p>
-                          </div>
-                        </div>
-                      ))}
+                      <div className="home-card-label">Explore the network</div>
+                      <h2>Browse by role</h2>
                     </div>
                   </div>
-                </article>
 
-                <article className="home-wire-card home-stats-card">
-                  <div className="home-card-header">
-                    <div>
-                      <div className="home-card-label">Stats</div>
-                      <h2>Transparent network counts, surfaced up front.</h2>
-                    </div>
-                    <Link href="/?tab=stats" className="home-inline-link">
-                      Open stats tab
-                    </Link>
-                  </div>
-
-                  <div className="home-stat-grid">
-                    {statCards.slice(0, 4).map((card) => (
-                      <div className="home-stat-tile" key={card.label}>
-                        <span>{card.label}</span>
-                        <strong>{card.value}</strong>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="home-strategy-grid">
-                    {strategyCards.map((card) => (
-                      <article className="home-strategy-tile" key={card.title}>
-                        <h3>{card.title}</h3>
+                  <div className="home-browse-card-grid">
+                    {browseCards.map((card) => (
+                      <Link className="home-browse-card" href={card.href} key={card.href}>
+                        <strong>{card.title}</strong>
                         <p>{card.copy}</p>
-                      </article>
+                      </Link>
                     ))}
                   </div>
-                </article>
+                </div>
+
+                <div className="home-browse-panel panel">
+                  <div className="home-featured-head">
+                    <div>
+                      <div className="home-card-label">Early leaders</div>
+                      <h2>Profiles with traction</h2>
+                    </div>
+                  </div>
+
+                  <div className="home-profile-list">
+                    {featuredProfiles.map((profile) => {
+                      const href =
+                        profile.type === 'ARTIST'
+                          ? `/artists/${profile.slug}`
+                          : profile.type === 'DJ'
+                            ? `/promoters/${profile.slug}`
+                            : profile.type === 'VENUE'
+                              ? `/venues/${profile.slug}`
+                              : `/listeners/${profile.slug}`;
+
+                      return (
+                        <Link className="home-profile-row" href={href} key={profile.id}>
+                          <div>
+                            <strong>{profile.name}</strong>
+                            <p className="meta">
+                              {profile.type === 'DJ' ? 'PROMOTER' : profile.type}
+                              {[profile.city, profile.country].filter(Boolean).length
+                                ? ` | ${[profile.city, profile.country].filter(Boolean).join(', ')}`
+                                : ''}
+                            </p>
+                          </div>
+                          <span>{profile.hypeCount} hype</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               </section>
             </div>
           ) : null}
@@ -324,13 +237,10 @@ export default async function HomePage({
               <section className="home-section-panel">
                 <div className="home-section-header">
                   <div>
-                    <div className="badge">Geo intelligence</div>
-                    <h2>Regional, national, and global activity in one view.</h2>
+                    <div className="badge">Geography</div>
+                    <h2>See where shows, venues, and listening energy are clustering.</h2>
                   </div>
-                  <p className="kicker">
-                    Postal clusters, venue density, and live-show presence all stay in one scrollable geo tab for quick
-                    scanning.
-                  </p>
+                  <p className="kicker">Local, regional, national, and global layers stay visible without burying the room-level details.</p>
                 </div>
 
                 <div className="home-lens-grid">
@@ -350,8 +260,8 @@ export default async function HomePage({
                             <span>{scope.description}</span>
                           </div>
                           <div className="home-scope-values">
-                            <span>{scope.totalHype} total hype</span>
-                            <span>{scope.requests} requests</span>
+                            <span>{scope.profiles} profiles</span>
+                            <span>{scope.activeShows} active shows</span>
                           </div>
                         </div>
                       ))}
@@ -366,7 +276,7 @@ export default async function HomePage({
                             <div>
                               <strong>{point.label}</strong>
                               <p className="meta">
-                                {point.profileCount} profiles | {point.venueCount} venues | {point.upcomingCount} active
+                                {point.venueCount} venues | {point.showCount} shows | {point.liveCount} live
                               </p>
                             </div>
                           </div>
@@ -378,8 +288,8 @@ export default async function HomePage({
                   <article className="home-gallery-panel">
                     <div className="home-section-header">
                       <div>
-                        <div className="badge">Map panel</div>
-                        <h2>Listeners can see where the rooms and shows are.</h2>
+                        <div className="badge">Map</div>
+                        <h2>Postal activity map</h2>
                       </div>
                     </div>
                     <ActivityMap points={activityPoints} scopes={activityScopes} />
@@ -394,31 +304,41 @@ export default async function HomePage({
               <section className="home-section-panel">
                 <div className="home-section-header">
                   <div>
-                    <div className="badge">Transparency stats</div>
-                    <h2>Core network counts and the strategy behind them.</h2>
+                    <div className="badge">Transparency</div>
+                    <h2>Core platform counts and the rules shaping visibility.</h2>
                   </div>
-                  <Link href="/api/transparency" className="home-inline-link">
+                  <Link className="home-inline-link" href="/api/transparency">
                     JSON snapshot
                   </Link>
                 </div>
 
-                <div className="home-wire-card home-stats-card">
-                  <div className="home-stat-grid">
-                    {statCards.map((card) => (
-                      <div className="home-stat-tile" key={card.label}>
-                        <span>{card.label}</span>
-                        <strong>{card.value}</strong>
-                      </div>
-                    ))}
+                <div className="home-transparency-grid">
+                  <div className="panel home-transparency-panel">
+                    <div className="home-stat-grid">
+                      {statCards.map((card) => (
+                        <div className="home-stat-tile" key={card.label}>
+                          <span>{card.label}</span>
+                          <strong>{card.value}</strong>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="home-strategy-grid">
-                    {strategyCards.map((card) => (
-                      <article className="home-strategy-tile" key={card.title}>
-                        <h3>{card.title}</h3>
-                        <p>{card.copy}</p>
-                      </article>
-                    ))}
+                  <div className="panel home-transparency-panel">
+                    <div className="home-featured-head">
+                      <div>
+                        <div className="home-card-label">Heuristics ledger</div>
+                        <h2>Visibility rules</h2>
+                      </div>
+                    </div>
+                    <div className="home-heuristics-list">
+                      {transparencySnapshot.heuristicsLedger.slice(0, 4).map((entry) => (
+                        <article className="home-heuristic-card" key={entry.id}>
+                          <strong>{entry.title}</strong>
+                          <p>{entry.summary}</p>
+                        </article>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </section>

@@ -1,4 +1,21 @@
 /** @type {import('next').NextConfig} */
+const isProduction = process.env.NODE_ENV === 'production';
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' data: blob: https:",
+  "font-src 'self' data: https:",
+  "style-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"}`,
+  "connect-src 'self' https://api.mux.com https://stream.mux.com https://*.mux.com",
+  "frame-src 'self' https://*.mux.com",
+  'upgrade-insecure-requests'
+].join('; ');
+
 const securityHeaders = [
   {
     key: 'Strict-Transport-Security',
@@ -19,20 +36,32 @@ const securityHeaders = [
   {
     key: 'Permissions-Policy',
     value: 'camera=(), microphone=(), geolocation=()'
+  },
+  {
+    key: 'Cross-Origin-Opener-Policy',
+    value: 'same-origin'
+  },
+  {
+    key: 'Cross-Origin-Resource-Policy',
+    value: 'same-site'
+  },
+  {
+    key: 'Origin-Agent-Cluster',
+    value: '?1'
+  },
+  {
+    key: 'X-DNS-Prefetch-Control',
+    value: 'off'
+  },
+  {
+    key: 'Content-Security-Policy',
+    value: contentSecurityPolicy
   }
 ];
 
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**'
-      }
-    ]
-  },
   async headers() {
     return [
       {

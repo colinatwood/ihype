@@ -10,6 +10,7 @@ import { VenueEventScheduler } from '@/components/VenueEventScheduler';
 import { VenueConnectionRequestActions } from '@/components/VenueConnectionRequestActions';
 import { VenueConnectionRequestForm } from '@/components/VenueConnectionRequestForm';
 import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
+import { getSafeBackgroundImageStyle } from '@/lib/asset-safety';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 import { canManageOwnedResource } from '@/lib/permissions';
 
@@ -134,11 +135,7 @@ export default async function VenuePage({
     accentTone: profile.themeAccentTone,
     backdropTone: profile.themeBackdropTone
   });
-  const bannerStyle = profile.heroImage
-    ? {
-        backgroundImage: `linear-gradient(rgba(7, 11, 20, 0.45), rgba(7, 11, 20, 0.88)), url(${profile.heroImage})`
-      }
-    : undefined;
+  const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
 
   return (
     <main className="container section profile-design-shell" style={pageDesignStyle}>

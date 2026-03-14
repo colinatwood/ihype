@@ -6,6 +6,8 @@ import { getProfilePathForType } from '@/lib/account-routing';
 import { db } from '@/lib/db';
 import { createHexId } from '@/lib/hex-id';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
+import { consumeRateLimit } from '@/lib/rate-limit';
+import { readClientAddress } from '@/lib/request-meta';
 import { slugify } from '@/lib/utils';
 
 const schema = z.object({
@@ -115,6 +117,24 @@ async function generateUniqueProfileHexId() {
 
 export async function POST(request: Request) {
   try {
+    const clientAddress = readClientAddress(request);
+    const rateLimit = consumeRateLimit(`register:${clientAddress}`, {
+      limit: 8,
+      windowMs: 15 * 60 * 1000
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Too many signup attempts. Please wait a few minutes and try again.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfterSeconds)
+          }
+        }
+      );
+    }
+
     const body = schema.parse(await request.json());
 
     if ((body.role === 'ARTIST' || body.role === 'DJ') && !body.acceptedArtistUploadPolicy) {
