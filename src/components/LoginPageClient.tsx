@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
 
 type ResetStage = 'request' | 'confirm';
 
@@ -11,11 +10,14 @@ export function LoginPageClient() {
   const requestedCallbackUrl = searchParams.get('callbackUrl');
   const callbackUrl = requestedCallbackUrl || '/auth/landing';
   const defaultEmail = searchParams.get('email') || '';
+  const authError = searchParams.get('error');
 
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [csrfToken, setCsrfToken] = useState('');
+  const [csrfReady, setCsrfReady] = useState(false);
 
   const [showReset, setShowReset] = useState(false);
   const [resetStage, setResetStage] = useState<ResetStage>('request');
@@ -31,26 +33,37 @@ export function LoginPageClient() {
     setResetEmail(defaultEmail);
   }, [defaultEmail]);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setMessage(null);
+  useEffect(() => {
+    let cancelled = false;
 
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-      callbackUrl
-    });
+    async function loadCsrfToken() {
+      try {
+        const response = await fetch('/api/auth/csrf', {
+          cache: 'no-store',
+          credentials: 'same-origin'
+        });
+        const data = (await response.json()) as { csrfToken?: string };
 
-    if (result?.error) {
-      setMessage('Invalid email or password.');
-      setPending(false);
-      return;
+        if (!cancelled) {
+          setCsrfToken(data.csrfToken ?? '');
+          setCsrfReady(Boolean(data.csrfToken));
+          setMessage(data.csrfToken ? null : 'Unable to prepare sign-in right now.');
+        }
+      } catch {
+        if (!cancelled) {
+          setCsrfToken('');
+          setCsrfReady(false);
+          setMessage('Unable to prepare sign-in right now.');
+        }
+      }
     }
 
-    window.location.assign(result?.url ?? callbackUrl);
-  }
+    void loadCsrfToken();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function handleResetRequest(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -139,7 +152,17 @@ export function LoginPageClient() {
             accounts are available for fan, dj, artist, and venue roles with password demo12345.
           </p>
 
-          <form className="form" onSubmit={handleSubmit}>
+          <form
+            action="/api/auth/callback/credentials"
+            className="form"
+            method="post"
+            onSubmit={() => {
+              setPending(true);
+              setMessage(null);
+            }}
+          >
+            <input name="csrfToken" type="hidden" value={csrfToken} />
+            <input name="callbackUrl" type="hidden" value={callbackUrl} />
             <label className="field">
               <span>Email</span>
               <input
@@ -165,8 +188,8 @@ export function LoginPageClient() {
                 value={password}
               />
             </label>
-            <button className="button" disabled={pending} type="submit">
-              {pending ? 'Signing in...' : 'Sign in'}
+            <button className="button" disabled={pending || !csrfReady} type="submit">
+              {pending ? 'Signing in...' : csrfReady ? 'Sign in' : 'Preparing sign-in...'}
             </button>
           </form>
 
@@ -185,6 +208,7 @@ export function LoginPageClient() {
             </button>
           </div>
 
+          {authError ? <p className="status-note">Invalid email or password.</p> : null}
           {message ? <p className="status-note">{message}</p> : null}
         </div>
 
