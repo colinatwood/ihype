@@ -5,6 +5,7 @@ import { ListenerDiscoveryModule } from '@/components/ListenerDiscoveryModule';
 import type { ListenerDiscoveryProfile } from '@/components/ListenerDiscoveryModule';
 import { ListenerVenueMap } from '@/components/ListenerVenueMap';
 import { PromoterShowCreationTool } from '@/components/PromoterShowCreationTool';
+import { ShareButton } from '@/components/ShareButton';
 import { getSafeImageUrl } from '@/lib/asset-safety';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -53,6 +54,15 @@ function getMemberYear(date: Date) {
 function formatCountryProvince(stateRegion: string | null, country: string | null) {
   const parts = [stateRegion, country].filter(Boolean);
   return parts.length ? parts.join(', ') : 'Country / province not set';
+}
+
+function formatShowSlot(date: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(date);
 }
 
 function parseTopFiveItems(value: string | null, fallbackArtists: string[]) {
@@ -136,6 +146,8 @@ export default async function DashboardPage() {
   const hasAdvancedDashboard = isAdmin || profiles.some((profile) => profile.type !== 'LISTENER');
   const isListenerOnlyDashboard = Boolean(listenerProfile) && !hasAdvancedDashboard;
   const promoterProfiles = profiles.filter((profile) => profile.type === 'DJ');
+  const primaryPromoterProfile = !isAdmin ? promoterProfiles[0] ?? null : null;
+  const isPromoterDashboard = Boolean(primaryPromoterProfile) && !isListenerOnlyDashboard;
   const artistProfiles = promoterProfiles.length
     ? await db.profile.findMany({
         where: {
@@ -287,6 +299,58 @@ export default async function DashboardPage() {
       longitude: profile.longitude
     }));
   const listenerViewerLocation = isListenerOnlyDashboard ? await detectRequestLocation() : null;
+  const [promoterShows, promoterProfileFans, promoterShowFans] =
+    isPromoterDashboard && primaryPromoterProfile
+      ? await Promise.all([
+          db.show.findMany({
+            where: { promoterProfileId: primaryPromoterProfile.id },
+            orderBy: [{ startsAt: 'asc' }, { createdAt: 'desc' }],
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              startsAt: true,
+              status: true,
+              venueProfile: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          }),
+          db.profileHypeEvent.findMany({
+            where: {
+              profileId: primaryPromoterProfile.id,
+              user: {
+                role: 'FAN'
+              }
+            },
+            distinct: ['userId'],
+            select: {
+              userId: true
+            }
+          }),
+          db.hypeEvent.findMany({
+            where: {
+              user: {
+                role: 'FAN'
+              },
+              show: {
+                promoterProfileId: primaryPromoterProfile.id
+              }
+            },
+            distinct: ['userId'],
+            select: {
+              userId: true
+            }
+          })
+        ])
+      : [[], [], []];
+  const promoterFanCount = new Set([
+    ...promoterProfileFans.map((entry) => entry.userId),
+    ...promoterShowFans.map((entry) => entry.userId)
+  ]).size;
+  const promoterAvatarImage = primaryPromoterProfile ? getSafeImageUrl(primaryPromoterProfile.avatarImage) : null;
 
   if (isListenerOnlyDashboard && listenerProfile) {
     const listenerLocationLabel = formatCountryProvince(listenerProfile.stateRegion, listenerProfile.country);
@@ -388,6 +452,110 @@ export default async function DashboardPage() {
                 ))}
               </div>
             </section>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (isPromoterDashboard && primaryPromoterProfile) {
+    return (
+      <main className="container section promoter-dashboard-page">
+        <section className="promoter-dashboard-shell">
+          <article className="panel promoter-dashboard-profile-panel">
+            <div className="listener-dashboard-module-head promoter-dashboard-profile-head">
+              <div className="badge">PROMOTER</div>
+              <div className="promoter-dashboard-profile-actions">
+                <Link className="fan-dashboard-profile-pill" href={`/profiles/${primaryPromoterProfile.hexId}`}>
+                  {shortenHexId(primaryPromoterProfile.hexId)}
+                </Link>
+                <ShareButton
+                  className="button small secondary"
+                  label="Share"
+                  path={`/promoters/${primaryPromoterProfile.slug}`}
+                  title={`${primaryPromoterProfile.name} on iHYPE`}
+                />
+              </div>
+            </div>
+
+            <div className="listener-dashboard-profile-body promoter-dashboard-profile-body">
+              {promoterAvatarImage ? (
+                <img
+                  alt={`${primaryPromoterProfile.name} avatar`}
+                  className="profile-avatar profile-avatar-large"
+                  src={promoterAvatarImage}
+                />
+              ) : (
+                <div className="profile-avatar profile-avatar-large profile-avatar-fallback">
+                  {getInitials(primaryPromoterProfile.name)}
+                </div>
+              )}
+
+              <div className="listener-dashboard-profile-copy">
+                <h2>{primaryPromoterProfile.name}</h2>
+                <div className="fan-dashboard-profile-meta">
+                  <span className="fan-dashboard-profile-pill">Hype #{primaryPromoterProfile.hypeCount}</span>
+                  <span className="fan-dashboard-profile-pill">
+                    {formatCountryProvince(primaryPromoterProfile.stateRegion, primaryPromoterProfile.country)}
+                  </span>
+                </div>
+                <p className="subtitle">
+                  {primaryPromoterProfile.headline ||
+                    primaryPromoterProfile.bio ||
+                    'Shape lineups, build streaming sets, and move your audience from signal to showtime.'}
+                </p>
+              </div>
+            </div>
+          </article>
+
+          <div className="promoter-dashboard-workspace">
+            <div className="promoter-dashboard-creator-column">
+              <PromoterShowCreationTool
+                artists={artistLibraries}
+                initialPromoterProfileId={primaryPromoterProfile.id}
+                promoters={promoterProfiles.map((profile) => ({
+                  profileId: profile.id,
+                  name: profile.name,
+                  slug: profile.slug
+                }))}
+                surface="dashboard"
+              />
+            </div>
+
+            <aside className="panel promoter-dashboard-stats-panel">
+              <div className="listener-dashboard-module-head">
+                <h3>Stats</h3>
+              </div>
+
+              <details className="promoter-dashboard-stat-card promoter-dashboard-show-card">
+                <summary>
+                  <span># shows</span>
+                  <strong>{promoterShows.length}</strong>
+                </summary>
+
+                {promoterShows.length ? (
+                  <div className="promoter-dashboard-show-list">
+                    {promoterShows.map((show) => (
+                      <Link className="promoter-dashboard-show-item" href={`/shows/${show.slug}`} key={show.id}>
+                        <div>
+                          <strong>{show.title}</strong>
+                          <p>{show.venueProfile?.name ?? 'Venue pending'}</p>
+                        </div>
+                        <span>{formatShowSlot(show.startsAt)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty">No scheduled shows yet.</div>
+                )}
+              </details>
+
+              <article className="promoter-dashboard-stat-card">
+                <span># fans</span>
+                <strong>{promoterFanCount}</strong>
+                <p>Fans who have hyped your page or your promoted shows.</p>
+              </article>
+            </aside>
           </div>
         </section>
       </main>
