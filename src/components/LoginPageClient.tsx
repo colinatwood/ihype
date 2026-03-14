@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { loginAction } from '@/app/login/actions';
 
 type ResetStage = 'request' | 'confirm';
 
@@ -18,9 +18,12 @@ export function LoginPageClient() {
   const defaultEmail = searchParams.get('email') || '';
   const authError = searchParams.get('error');
 
+  const [loginState, loginFormAction, loginPending] = useActionState(loginAction, {
+    error: getAuthErrorMessage(authError),
+    email: defaultEmail
+  });
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
-  const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(getAuthErrorMessage(authError));
 
   const [showReset, setShowReset] = useState(false);
@@ -38,34 +41,11 @@ export function LoginPageClient() {
   }, [defaultEmail]);
 
   useEffect(() => {
-    setMessage(getAuthErrorMessage(authError));
-  }, [authError]);
-
-  async function handleSignIn(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setMessage(null);
-
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-        callbackUrl
-      });
-
-      if (result?.error) {
-        setMessage('Invalid email or password.');
-        return;
-      }
-
-      window.location.assign(result?.url ?? callbackUrl);
-    } catch {
-      setMessage('Sign in failed. Please try again.');
-    } finally {
-      setPending(false);
+    if (loginState.email && loginState.email !== email) {
+      setEmail(loginState.email);
     }
-  }
+    setMessage(loginState.error);
+  }, [authError, email, loginState.email, loginState.error]);
 
   async function handleResetRequest(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -154,7 +134,8 @@ export function LoginPageClient() {
             Admin access uses admin@ihype.org with password demo12345.
           </p>
 
-          <form className="form" onSubmit={handleSignIn}>
+          <form className="form" action={loginFormAction}>
+            <input name="callbackUrl" type="hidden" value={callbackUrl} />
             <label className="field">
               <span>Email</span>
               <input
@@ -180,8 +161,8 @@ export function LoginPageClient() {
                 value={password}
               />
             </label>
-            <button className="button" disabled={pending} type="submit">
-              {pending ? 'Signing in...' : 'Sign in'}
+            <button className="button" disabled={loginPending} type="submit">
+              {loginPending ? 'Signing in...' : 'Sign in'}
             </button>
           </form>
 
