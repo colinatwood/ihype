@@ -120,6 +120,13 @@ async function upsertDemoUser({
 
 async function main() {
   const passwordHash = await bcrypt.hash('demo12345', 10);
+  const demoEmails = [
+    'admin@ihype.org',
+    'fan@ihype.org',
+    'promoter@ihype.org',
+    'artist@ihype.org',
+    'venue@ihype.org'
+  ];
 
   await prisma.mfaChallenge.deleteMany();
 
@@ -140,7 +147,7 @@ async function main() {
   });
 
   const djOwner = await upsertDemoUser({
-    email: 'dj@ihype.org',
+    email: 'promoter@ihype.org',
     legacyEmail: 'dj@ihype.org',
     name: 'DJ Echo',
     passwordHash,
@@ -162,46 +169,11 @@ async function main() {
     passwordHash,
     role: Role.FAN
   });
-
-  const pulseScoutFan = await upsertDemoUser({
-    email: 'pulse-scout@ihype.org',
-    legacyEmail: 'pulse-scout@ihype.org',
-    name: 'Pulse Scout',
-    passwordHash,
-    role: Role.FAN
-  });
-
-  const midwestMoveFan = await upsertDemoUser({
-    email: 'midwest-move@ihype.org',
-    legacyEmail: 'midwest-move@ihype.org',
-    name: 'Midwest Move',
-    passwordHash,
-    role: Role.FAN
-  });
-
-  const chicagoVenueOwner = await upsertDemoUser({
-    email: 'chi-venue@ihype.org',
-    legacyEmail: 'chi-venue@ihype.org',
-    name: 'Lakefront Frequency',
-    passwordHash,
-    role: Role.VENUE
-  });
-
-  const chicagoArtistOwner = await upsertDemoUser({
-    email: 'chi-artist@ihype.org',
-    legacyEmail: 'chi-artist@ihype.org',
-    name: 'South Loop Signal',
-    passwordHash,
-    role: Role.ARTIST
-  });
-
-  const regionalPromoterOwner = await upsertDemoUser({
-    email: 'regional-promoter@ihype.org',
-    legacyEmail: 'regional-promoter@ihype.org',
-    name: 'Riverwest Echo',
-    passwordHash,
-    role: Role.DJ
-  });
+  const pulseScoutFan = fan;
+  const midwestMoveFan = fan;
+  const chicagoVenueOwner = venueOwner;
+  const chicagoArtistOwner = artistOwner;
+  const regionalPromoterOwner = djOwner;
 
   const venue = await prisma.profile.upsert({
     where: { slug: 'neon-harbor' },
@@ -915,18 +887,6 @@ async function main() {
     create: { userId: fan.id, showId: chicagoLiveShow.id }
   });
 
-  await prisma.hypeEvent.upsert({
-    where: { userId_showId: { userId: pulseScoutFan.id, showId: chicagoLiveShow.id } },
-    update: {},
-    create: { userId: pulseScoutFan.id, showId: chicagoLiveShow.id }
-  });
-
-  await prisma.hypeEvent.upsert({
-    where: { userId_showId: { userId: midwestMoveFan.id, showId: liveShow.id } },
-    update: {},
-    create: { userId: midwestMoveFan.id, showId: liveShow.id }
-  });
-
   await prisma.profileHypeEvent.upsert({
     where: { userId_profileId: { userId: fan.id, profileId: artist.id } },
     update: {},
@@ -955,12 +915,6 @@ async function main() {
     where: { userId_profileId: { userId: fan.id, profileId: chicagoVenue.id } },
     update: {},
     create: { userId: fan.id, profileId: chicagoVenue.id }
-  });
-
-  await prisma.profileHypeEvent.upsert({
-    where: { userId_profileId: { userId: pulseScoutFan.id, profileId: chicagoArtist.id } },
-    update: {},
-    create: { userId: pulseScoutFan.id, profileId: chicagoArtist.id }
   });
 
   await prisma.profileHypeEvent.upsert({
@@ -1141,30 +1095,22 @@ async function main() {
         artistProfileSlug: chicagoArtist.slug
       },
       {
-        userId: pulseScoutFan.id,
-        mediaId: chicagoEntries[0]?.hexId ?? '0x-demo-south-loop-1',
-        title: chicagoEntries[0]?.title ?? 'Lakefront Pressure',
-        mediaUrl: chicagoEntries[0]?.url ?? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-        artistName: chicagoArtist.name,
-        artistProfileSlug: chicagoArtist.slug
-      },
-      {
-        userId: pulseScoutFan.id,
+        userId: fan.id,
         mediaId: chicagoEntries[1]?.hexId ?? '0x-demo-south-loop-2',
         title: chicagoEntries[1]?.title ?? 'Red Line Lights',
         mediaUrl: chicagoEntries[1]?.url ?? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
         artistName: chicagoArtist.name,
         artistProfileSlug: chicagoArtist.slug
-      },
-      {
-        userId: midwestMoveFan.id,
-        mediaId: novaEntries[1]?.hexId ?? '0x-demo-nova-2',
-        title: novaEntries[1]?.title ?? 'Cityline Rework',
-        mediaUrl: novaEntries[1]?.url ?? 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        artistName: artist.name,
-        artistProfileSlug: artist.slug
       }
     ]
+  });
+
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        notIn: demoEmails
+      }
+    }
   });
 }
 

@@ -58,7 +58,7 @@ npm run dev
 ## Demo users
 
 - `fan@ihype.org`
-- `dj@ihype.org`
+- `promoter@ihype.org`
 - `artist@ihype.org`
 - `venue@ihype.org`
 - `admin@ihype.org`

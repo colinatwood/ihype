@@ -131,7 +131,7 @@ export function LoginPageClient() {
           <h1>Sign in</h1>
           <p className="kicker">
             Use your iHYPE account to jump back into your fan, artist, promoter, venue, or admin workspace.
-            Admin access uses admin@ihype.org with password demo12345.
+            Demo logins are fan@ihype.org, promoter@ihype.org, artist@ihype.org, venue@ihype.org, and admin@ihype.org, all using demo12345.
           </p>
 
           <form className="form" action={loginFormAction}>
