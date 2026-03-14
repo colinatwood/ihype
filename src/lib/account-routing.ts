@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 export function getProfilePathForType(type: ProfileType, slug: string) {
   if (type === 'DJ') return `/promoters/${slug}`;
   if (type === 'VENUE') return `/venues/${slug}`;
-  if (type === 'LISTENER') return `/listeners/${slug}`;
+  if (type === 'LISTENER') return `/fans/${slug}`;
   return `/artists/${slug}`;
 }
 

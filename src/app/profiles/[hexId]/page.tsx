@@ -5,7 +5,7 @@ import { normalizeHexId } from '@/lib/hex-id';
 function getProfilePath(type: 'ARTIST' | 'DJ' | 'VENUE' | 'LISTENER', slug: string) {
   if (type === 'DJ') return `/promoters/${slug}`;
   if (type === 'VENUE') return `/venues/${slug}`;
-  if (type === 'LISTENER') return `/listeners/${slug}`;
+  if (type === 'LISTENER') return `/fans/${slug}`;
   return `/artists/${slug}`;
 }
 

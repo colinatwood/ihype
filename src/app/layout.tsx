@@ -9,7 +9,7 @@ import { SiteSubnav } from '@/components/SiteSubnav';
 
 export const metadata = {
   title: 'iHYPE.org',
-  description: 'Streaming-first music discovery for artists, promoters, venues, and listeners.'
+  description: 'Streaming-first music discovery for artists, promoters, venues, and fans.'
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -33,7 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <SiteSubnav />
           {children}
           <footer className="footer container">
-            <span>iHYPE.org connects artists, promoters, venues, and listeners through live signals, transparent hype, and direct discovery.</span>{' '}
+            <span>iHYPE.org connects artists, promoters, venues, and fans through live signals, transparent hype, and direct discovery.</span>{' '}
             <Link href="/launch-readiness">Launch readiness</Link>{' '}
             <Link href="/integrity">Integrity</Link>{' '}
             <Link href="/shows">Shows</Link>

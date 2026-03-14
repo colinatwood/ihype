@@ -206,7 +206,7 @@ export function VenueRegisterWizard() {
             </p>
             <div className="register-role-links">
               <Link className="button small secondary" href="/register">
-                Back to listener sign up
+                Back to fan sign up
               </Link>
             </div>
           </div>
@@ -452,7 +452,7 @@ export function VenueRegisterWizard() {
                         <span>Local stay recommendations</span>
                         <textarea
                           onChange={(event) => updateField('stayRecommendations', event.target.value)}
-                          placeholder="Point touring artists and out-of-town listeners to useful nearby stays, food, or coffee."
+                          placeholder="Point touring artists and out-of-town fans to useful nearby stays, food, or coffee."
                           rows={4}
                           value={formValues.stayRecommendations}
                         />
@@ -462,7 +462,7 @@ export function VenueRegisterWizard() {
                         <span>Booking / request guidance</span>
                         <textarea
                           onChange={(event) => updateField('requestContent', event.target.value)}
-                          placeholder="Tell listeners and promoters what kind of artists or concepts you want recommended."
+                          placeholder="Tell fans and promoters what kind of artists or concepts you want recommended."
                           rows={4}
                           value={formValues.requestContent}
                         />
@@ -537,7 +537,7 @@ export function VenueRegisterWizard() {
                         {formValues.headline || 'Set the room tone, neighborhood energy, and what kind of nights belong here.'}
                       </p>
                       <p className="profile-design-preview-copy">
-                        {formValues.bio || 'A quick venue intro gives artists, promoters, and listeners a feel for the room immediately.'}
+                        {formValues.bio || 'A quick venue intro gives artists, promoters, and fans a feel for the room immediately.'}
                       </p>
                       <div className="tag-row">
                         <span className="tag">About</span>
@@ -572,7 +572,7 @@ export function VenueRegisterWizard() {
                         <p>
                           {getPreviewSnippet(
                             formValues.stayRecommendations,
-                            'Recommend nearby stays, food, or useful local stops for touring artists and out-of-town listeners.'
+                            'Recommend nearby stays, food, or useful local stops for touring artists and out-of-town fans.'
                           )}
                         </p>
                       </article>

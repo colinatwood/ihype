@@ -39,7 +39,7 @@ function buildAvatarPrompt({
   const topFiveLine = topFiveContent ? `Top five notes: ${topFiveContent.slice(0, 220)}.` : '';
 
   return [
-    `Create an original simple cartoon avatar portrait for the music listener profile "${name}".`,
+    `Create an original simple cartoon avatar portrait for the music fan profile "${name}".`,
     'Single original character only, head-and-shoulders composition, centered character, clean silhouette, playful expression.',
     'Simple illustrated finish, nightlife energy, music-discovery personality, bold but limited color palette, no text, no watermark, no logos.',
     'Avoid matching any copyrighted character or celebrity likeness.',
@@ -158,11 +158,11 @@ export async function POST(request: Request) {
     });
 
     if (!profile || profile.type !== 'LISTENER') {
-      return NextResponse.json({ error: 'Listener page not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Fan page not found' }, { status: 404 });
     }
 
     if (!canManageOwnedResource(session, profile.ownerId)) {
-      return NextResponse.json({ error: 'Only the listener who owns this page can generate an avatar' }, { status: 403 });
+      return NextResponse.json({ error: 'Only the fan who owns this page can generate an avatar' }, { status: 403 });
     }
 
     if (isSaveRequest) {

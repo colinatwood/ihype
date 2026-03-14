@@ -123,14 +123,14 @@ export default async function ListenerPage({
             <div className="profile-avatar profile-avatar-hero profile-avatar-fallback">{getInitials(profile.name)}</div>
           )}
           <div className="artist-banner-copy">
-            <div className="badge">LISTENER</div>
+            <div className="badge">FAN</div>
             <h1 className="title" style={{ fontSize: '2.9rem' }}>{profile.name}</h1>
             <p className="artist-headline">{profile.headline || 'Capture the shows, artists, and moments you keep coming back to.'}</p>
             <p className="subtitle">{profile.bio}</p>
             <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
             <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
             <div className="tag-row">{profile.genres.map((genre) => <span key={genre} className="tag">{genre}</span>)}</div>
-            <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} entityLabel="listener page" />
+            <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} entityLabel="fan page" />
           </div>
         </div>
       </header>
@@ -144,11 +144,11 @@ export default async function ListenerPage({
             profileName={profile.name}
           />
           <ProfilePageEditor
-            description="Edit your listener banner plus the About and Top 5 sections."
+            description="Edit your fan banner plus the About and Top 5 sections."
             enableDesignCustomizer
             fields={[
               { key: 'headline', label: 'Headline banner', placeholder: 'How should your page feel?' },
-              { key: 'heroImage', label: 'Banner image URL', kind: 'url', placeholder: 'https://example.com/listener.jpg' },
+              { key: 'heroImage', label: 'Banner image URL', kind: 'url', placeholder: 'https://example.com/fan.jpg' },
               { key: 'bio', label: 'Short intro', kind: 'textarea', rows: 3 },
               { key: 'aboutContent', label: 'About', kind: 'textarea' },
               { key: 'topFiveContent', label: 'Top 5', kind: 'textarea', rows: 5 }
@@ -169,11 +169,11 @@ export default async function ListenerPage({
               fanShareEnabled: profile.fanShareEnabled
             }}
             previewGenres={profile.genres}
-            previewRoleLabel="LISTENER"
+            previewRoleLabel="FAN"
             previewTabs={['About', 'Upcoming', 'Previous', 'Top 5', 'Stats']}
             profileId={profile.id}
             profileName={profile.name}
-            title="Customize your listener page"
+            title="Customize your fan page"
           />
         </>
       ) : null}
@@ -181,12 +181,12 @@ export default async function ListenerPage({
       <ListenerVenueMap venues={venues} viewerLocation={viewerLocation} />
 
       <section className="section">
-        <nav className="section-tabs" aria-label="Listener page sections">
+        <nav className="section-tabs" aria-label="Fan page sections">
           {listenerSections.map((section) => (
             <Link
               key={section}
               className={section === activeSection ? 'section-tab active' : 'section-tab'}
-              href={`/listeners/${profile.slug}?section=${section}`}
+              href={`/fans/${profile.slug}?section=${section}`}
             >
               {getSectionLabel(section)}
             </Link>
@@ -197,7 +197,7 @@ export default async function ListenerPage({
           {activeSection === 'about' ? (
             <>
               <h2>About</h2>
-              <div className="artist-copy">{profile.aboutContent || profile.bio || 'This listener has not filled out the About section yet.'}</div>
+              <div className="artist-copy">{profile.aboutContent || profile.bio || 'This fan has not filled out the About section yet.'}</div>
             </>
           ) : null}
 

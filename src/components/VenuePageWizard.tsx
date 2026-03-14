@@ -306,7 +306,7 @@ export function VenuePageWizard({
                       <textarea
                         onChange={(event) => updateField('bio', event.target.value)}
                         rows={3}
-                        placeholder="Give the room a quick read for artists, listeners, and promoters."
+                        placeholder="Give the room a quick read for artists, fans, and promoters."
                         value={formValues.bio}
                       />
                     </label>
@@ -468,7 +468,7 @@ export function VenuePageWizard({
                       <textarea
                         onChange={(event) => updateField('requestContent', event.target.value)}
                         rows={4}
-                        placeholder="Tell listeners and promoters what kind of artists or concepts you want recommended."
+                        placeholder="Tell fans and promoters what kind of artists or concepts you want recommended."
                         value={formValues.requestContent}
                       />
                     </label>
@@ -576,7 +576,7 @@ export function VenuePageWizard({
                       {formValues.headline || 'Set the room tone, city energy, or what kind of nights belong here.'}
                     </p>
                     <p className="profile-design-preview-copy">
-                      {formValues.bio || 'A quick venue intro gives artists, promoters, and listeners a feel for the room immediately.'}
+                      {formValues.bio || 'A quick venue intro gives artists, promoters, and fans a feel for the room immediately.'}
                     </p>
                     <div className="tag-row">
                       <span className="tag">About</span>
@@ -611,7 +611,7 @@ export function VenuePageWizard({
                       <p>
                         {getPreviewSnippet(
                           formValues.stayRecommendations,
-                          'Recommend nearby stays, food, or useful local stops for touring artists and out-of-town listeners.'
+                          'Recommend nearby stays, food, or useful local stops for touring artists and out-of-town fans.'
                         )}
                       </p>
                     </article>

@@ -240,7 +240,7 @@ export function ProfilePageEditor({
                   />
                   <div>
                     <strong>Share this customized look with fans</strong>
-                    <p className="meta">When this is on, listeners see the saved preset on your public artist page.</p>
+                    <p className="meta">When this is on, fans see the saved preset on your public artist page.</p>
                   </div>
                 </label>
               ) : null}

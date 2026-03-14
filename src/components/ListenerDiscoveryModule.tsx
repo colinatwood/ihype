@@ -120,7 +120,7 @@ export function ListenerDiscoveryModule({ profiles }: ListenerDiscoveryModulePro
       <div className="listener-dashboard-module-head">
         <div>
           <h3>Discover</h3>
-          <p className="meta">Search artists, promoters, venues, tours, and local scenes from one listener workspace.</p>
+          <p className="meta">Search artists, promoters, venues, tours, and local scenes from one fan workspace.</p>
         </div>
       </div>
 

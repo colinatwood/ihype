@@ -15,7 +15,7 @@ import { detectRequestLocation } from '@/lib/request-location';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 
 function formatRequesterType(value: 'LISTENER' | 'PROMOTER') {
-  return value === 'LISTENER' ? 'Listener' : 'Promoter';
+  return value === 'LISTENER' ? 'Fan' : 'Promoter';
 }
 
 function formatRequestStatus(value: 'PENDING' | 'BOOKED' | 'DISMISSED') {
@@ -27,8 +27,14 @@ function formatRequestStatus(value: 'PENDING' | 'BOOKED' | 'DISMISSED') {
 function getProfilePath(type: ProfileType, slug: string) {
   if (type === 'DJ') return `/promoters/${slug}`;
   if (type === 'VENUE') return `/venues/${slug}`;
-  if (type === 'LISTENER') return `/listeners/${slug}`;
+  if (type === 'LISTENER') return `/fans/${slug}`;
   return `/artists/${slug}`;
+}
+
+function formatProfileType(type: ProfileType) {
+  if (type === 'DJ') return 'PROMOTER';
+  if (type === 'LISTENER') return 'FAN';
+  return type;
 }
 
 function getInitials(name: string) {
@@ -285,7 +291,7 @@ export default async function DashboardPage() {
             <article className="panel listener-dashboard-profile-panel">
               <div className="listener-dashboard-module-head">
                 <h3>Profile</h3>
-                <Link className="button small secondary" href={`/listeners/${listenerProfile.slug}`}>
+                <Link className="button small secondary" href={`/fans/${listenerProfile.slug}`}>
                   Edit profile
                 </Link>
               </div>
@@ -313,7 +319,7 @@ export default async function DashboardPage() {
                     </Link>
                   </p>
                   <p className="subtitle">
-                    {listenerProfile.headline || listenerProfile.bio || 'Shape your listener page, save your soundtrack, and keep your favorite rooms close.'}
+                    {listenerProfile.headline || listenerProfile.bio || 'Shape your fan page, save your soundtrack, and keep your favorite rooms close.'}
                   </p>
                 </div>
               </div>
@@ -382,7 +388,7 @@ export default async function DashboardPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="empty">Add a top five list on your listener page to pin favorites here.</div>
+                    <div className="empty">Add a top five list on your fan page to pin favorites here.</div>
                   )}
                 </section>
 
@@ -411,12 +417,12 @@ export default async function DashboardPage() {
   return (
     <main className="container section">
       <div className="panel" style={{ padding: '1.5rem' }}>
-        <h1>{isAdmin ? 'Admin dashboard' : listenerProfile ? 'Listener dashboard' : 'Dashboard'}</h1>
+        <h1>{isAdmin ? 'Admin dashboard' : listenerProfile ? 'Fan dashboard' : 'Dashboard'}</h1>
         <p className="kicker">
           {isAdmin
             ? 'Review every account, page, show, and venue request from one admin workspace.'
             : listenerProfile
-            ? 'Keep your profile, playlist, stats, and top five in one fast listener workspace.'
+            ? 'Keep your profile, playlist, stats, and top five in one fast fan workspace.'
             : 'Manage accounts, shows, hype, and venue connection requests without pretending spreadsheets are a product strategy.'}
         </p>
       </div>
@@ -438,7 +444,7 @@ export default async function DashboardPage() {
               )}
 
               <div className="listener-dashboard-hero-copy">
-                <div className="badge">LISTENER</div>
+                <div className="badge">FAN</div>
                 <h2>{listenerProfile.name}</h2>
                 <p className="listener-dashboard-hero-meta">Member since {getMemberYear(listenerProfile.createdAt)}</p>
                 <p className="listener-dashboard-hero-meta">
@@ -448,12 +454,12 @@ export default async function DashboardPage() {
                   </Link>
                 </p>
                 <p className="subtitle">
-                  {listenerProfile.headline || listenerProfile.bio || 'Shape your listener page, save your soundtrack, and keep your favorite rooms close.'}
+                  {listenerProfile.headline || listenerProfile.bio || 'Shape your fan page, save your soundtrack, and keep your favorite rooms close.'}
                 </p>
               </div>
             </div>
 
-            <Link className="button small secondary listener-dashboard-edit" href={`/listeners/${listenerProfile.slug}`}>
+            <Link className="button small secondary listener-dashboard-edit" href={`/fans/${listenerProfile.slug}`}>
               Edit profile
             </Link>
           </article>
@@ -532,7 +538,7 @@ export default async function DashboardPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="empty">Add a top five list on your listener page to pin favorites here.</div>
+                  <div className="empty">Add a top five list on your fan page to pin favorites here.</div>
                 )}
               </section>
             </div>
@@ -572,7 +578,7 @@ export default async function DashboardPage() {
           {profiles.length ? (
             <table className="table">
               <thead><tr><th>Name</th><th>Type</th><th>Hex ID</th><th>Slug</th><th>Hype</th><th>Page</th></tr></thead>
-              <tbody>{profiles.map((profile) => <tr key={profile.id}><td>{profile.name}</td><td>{profile.type}</td><td><Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></td><td>{profile.slug}</td><td>{profile.hypeCount}</td><td><Link href={getProfilePath(profile.type, profile.slug)}>Open page</Link></td></tr>)}</tbody>
+              <tbody>{profiles.map((profile) => <tr key={profile.id}><td>{profile.name}</td><td>{formatProfileType(profile.type)}</td><td><Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></td><td>{profile.slug}</td><td>{profile.hypeCount}</td><td><Link href={getProfilePath(profile.type, profile.slug)}>Open page</Link></td></tr>)}</tbody>
             </table>
           ) : <div className="empty">Create creator and venue profiles with Prisma or extend the dashboard form.</div>}
         </div>

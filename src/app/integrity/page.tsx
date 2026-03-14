@@ -56,7 +56,7 @@ export default async function IntegrityPage() {
         <div className="launch-hero-meta">
           <div className="stat"><strong>{snapshot.heuristicsVersion}</strong>Feed heuristics version</div>
           <div className="stat"><strong>{snapshot.counters.liveShows}</strong>Live shows now</div>
-          <div className="stat"><strong>{snapshot.counters.listenersLiveNow}</strong>Listeners live now</div>
+          <div className="stat"><strong>{snapshot.counters.listenersLiveNow}</strong>Fans live now</div>
           <div className="stat"><strong>{snapshot.counters.showHypes}</strong>Show hype events</div>
           <div className="stat"><strong>{snapshot.counters.profileHypes}</strong>Profile hype events</div>
         </div>
@@ -158,8 +158,8 @@ export default async function IntegrityPage() {
           <div className="stat"><strong>{snapshot.counters.totalArtists}</strong>Artists</div>
           <div className="stat"><strong>{snapshot.counters.totalPromoters}</strong>Promoters</div>
           <div className="stat"><strong>{snapshot.counters.totalVenues}</strong>Venues</div>
-          <div className="stat"><strong>{snapshot.counters.totalListeners}</strong>Listeners</div>
-          <div className="stat"><strong>{snapshot.counters.listenersLiveNow}</strong>Listeners live now</div>
+          <div className="stat"><strong>{snapshot.counters.totalListeners}</strong>Fans</div>
+          <div className="stat"><strong>{snapshot.counters.listenersLiveNow}</strong>Fans live now</div>
           <div className="stat"><strong>{snapshot.counters.totalTicketsSold}</strong>Tickets sold</div>
           <div className="stat"><strong>{snapshot.counters.totalSongsUploaded}</strong>Songs uploaded</div>
           <div className="stat"><strong>{snapshot.counters.totalRequests}</strong>Venue requests</div>

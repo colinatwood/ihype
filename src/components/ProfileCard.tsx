@@ -18,12 +18,13 @@ type ProfileCardProfile = {
 function getProfileBasePath(type: ProfileCardProfile['type']) {
   if (type === 'VENUE') return 'venues';
   if (type === 'DJ') return 'promoters';
-  if (type === 'LISTENER') return 'listeners';
+  if (type === 'LISTENER') return 'fans';
   return 'artists';
 }
 
 function getProfileLabel(type: ProfileCardProfile['type']) {
   if (type === 'DJ') return 'PROMOTER';
+  if (type === 'LISTENER') return 'FAN';
   return type;
 }
 

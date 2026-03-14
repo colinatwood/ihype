@@ -13,8 +13,8 @@ A production-oriented Next.js application for hosting artist, DJ, and venue page
 
 - Streaming shows are the main homepage content.
 - Pages for artists, DJs, and venues.
-- Listener pages with AI cartoon avatar generation.
-- Platform-wide profile hex IDs for listeners, artists, promoters, and venues, plus universal share links at `/profiles/<hexId>`.
+- Fan pages with AI cartoon avatar generation.
+- Platform-wide profile hex IDs for fans, artists, promoters, and venues, plus universal share links at `/profiles/<hexId>`.
 - Curated in-app launch-readiness page for the Chicago pilot and September 6, 2026 launch target.
 - Public integrity page plus transparency snapshot endpoint with versioned feed heuristics and explainable show surfacing.
 - Account registration and login.
@@ -108,10 +108,10 @@ Demo logins currently use email and password only.
 3. Use a separate PostgreSQL database for Preview deployments so preview migrations do not touch Production.
 4. Connect a managed PostgreSQL database such as Neon and set `DATABASE_URL` per environment.
 5. Add your Mux credentials and webhook secret.
-6. Add `OPENAI_API_KEY` if you want listener avatar generation enabled.
+6. Add `OPENAI_API_KEY` if you want fan avatar generation enabled.
 7. Add SMTP delivery settings (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`) if you want live password reset emails enabled.
 8. Deploy with the included `vercel.json`, which runs `npm run vercel-build`.
-9. Point your production domain to Vercel and verify auth callbacks, password reset email delivery, show creation, hype voting, Mux webhooks, listener avatar generation, and the integrity/transparency routes.
+9. Point your production domain to Vercel and verify auth callbacks, password reset email delivery, show creation, hype voting, Mux webhooks, fan avatar generation, and the integrity/transparency routes.
 
 ### Vercel config refresh
 

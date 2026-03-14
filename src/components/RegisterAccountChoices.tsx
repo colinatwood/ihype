@@ -13,7 +13,7 @@ const registerChoices: Array<{
   label: string;
   href: string;
 }> = [
-  { role: 'FAN', label: 'Listener', href: '/register' },
+  { role: 'FAN', label: 'Fan', href: '/register' },
   { role: 'ARTIST', label: 'Artist', href: '/register/artist' },
   { role: 'DJ', label: 'Promoter', href: '/register/promoter' },
   { role: 'VENUE', label: 'Venue', href: '/register/venue' }

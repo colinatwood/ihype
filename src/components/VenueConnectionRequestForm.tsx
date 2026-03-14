@@ -79,7 +79,7 @@ export function VenueConnectionRequestForm({
       <label className="field">
         <span>You are acting as</span>
         <select value={requesterType} onChange={(event) => setRequesterType(event.target.value as 'LISTENER' | 'PROMOTER')}>
-          <option value="LISTENER">Listener</option>
+          <option value="LISTENER">Fan</option>
           <option value="PROMOTER">Promoter</option>
         </select>
       </label>

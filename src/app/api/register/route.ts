@@ -70,14 +70,14 @@ function getProfileCopy(type: ProfileType, name: string) {
       headline: `${name} is opening its doors to the next wave.`,
       bio: 'Describe the room, the neighborhood, and the kind of nights you want to host.',
       aboutContent: 'Tell artists and promoters what the venue feels like, what it supports, and who it is for.',
-      requestContent: 'Set expectations for artist recommendations, booking notes, and how listeners should use this request tab.'
+      requestContent: 'Set expectations for artist recommendations, booking notes, and how fans should use this request tab.'
     };
   }
 
   return {
     headline: `${name} is curating a personal listening world.`,
     bio: 'Introduce yourself, the scenes you love, and what you are always looking for next.',
-    aboutContent: 'Tell people what kind of listener you are and what sounds stay in rotation.',
+    aboutContent: 'Tell people what kind of fan you are and what sounds stay in rotation.',
     topFiveContent: 'List your current top 5 artists, records, or live moments here.'
   };
 }

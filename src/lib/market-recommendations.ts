@@ -152,7 +152,7 @@ function getAdFocus(type: MarketRole, scope: ScopeKey, stats: RecommendationStat
   if (type === 'ARTIST') {
     if (scope === 'local') {
       return stats.upcomingCount
-        ? 'Boost nearby date announcements and track snippets to listeners already moving in your city.'
+      ? 'Boost nearby date announcements and track snippets to fans already moving in your city.'
         : 'Run discovery ads around your strongest uploaded track and profile story to build city-level recognition.';
     }
 
@@ -169,7 +169,7 @@ function getAdFocus(type: MarketRole, scope: ScopeKey, stats: RecommendationStat
 
   if (type === 'DJ') {
     if (scope === 'local') {
-      return 'Push your next room concept to nearby listeners and venue teams who already respond to curated nights.';
+  return 'Push your next room concept to nearby fans and venue teams who already respond to curated nights.';
     }
 
     if (scope === 'regional') {

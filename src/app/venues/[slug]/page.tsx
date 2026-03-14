@@ -31,7 +31,7 @@ function getSectionLabel(section: VenueSection) {
 }
 
 function formatRequesterType(value: 'LISTENER' | 'PROMOTER') {
-  return value === 'LISTENER' ? 'Listener' : 'Promoter';
+  return value === 'LISTENER' ? 'Fan' : 'Promoter';
 }
 
 function formatRequestStatus(value: 'PENDING' | 'BOOKED' | 'DISMISSED') {
@@ -282,7 +282,7 @@ export default async function VenuePage({
           {activeSection === 'request' ? (
             <>
               <h2>Request</h2>
-              <div className="artist-copy">{profile.requestContent || 'Listeners and promoters can recommend artists here and ask to be notified if the booking lands.'}</div>
+              <div className="artist-copy">{profile.requestContent || 'Fans and promoters can recommend artists here and ask to be notified if the booking lands.'}</div>
 
               <div className="request-history">
                 {session?.user ? (

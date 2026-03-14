@@ -154,8 +154,8 @@ export default async function ArtistPage({
             <h2>{profile.fanShareEnabled ? 'Fans can see your custom page design.' : 'Your custom page design is still private.'}</h2>
             <p className="meta">
               {profile.fanShareEnabled
-                ? 'Listeners who visit this page now see the saved preset, layout mood, and visual styling you picked.'
-                : 'Turn on "share with fans" in the customizer when you want listeners to see the saved design instead of the default artist look.'}
+                ? 'Fans who visit this page now see the saved preset, layout mood, and visual styling you picked.'
+                : 'Turn on "share with fans" in the customizer when you want fans to see the saved design instead of the default artist look.'}
             </p>
           </div>
         </>

@@ -53,8 +53,8 @@ export default async function HomePage({
   ];
 
   const statCards = [
-    { label: 'Total listeners', value: transparencySnapshot.counters.totalListeners },
-    { label: 'Listeners live now', value: transparencySnapshot.counters.listenersLiveNow },
+    { label: 'Total fans', value: transparencySnapshot.counters.totalListeners },
+    { label: 'Fans live now', value: transparencySnapshot.counters.listenersLiveNow },
     { label: 'Total venues', value: transparencySnapshot.counters.totalVenues },
     { label: 'Total artists', value: transparencySnapshot.counters.totalArtists },
     { label: 'Total promoters', value: transparencySnapshot.counters.totalPromoters },
@@ -109,7 +109,7 @@ export default async function HomePage({
                   <div className="badge">Streaming-first discovery</div>
                   <h1 className="home-mission-title">Live shows stay at the center. Everything else exists to help the right rooms fill faster.</h1>
                   <p className="home-mission-copy">
-                    iHYPE is built to turn artist uploads, promoter programming, venue demand, and listener hype into a
+                    iHYPE is built to turn artist uploads, promoter programming, venue demand, and fan hype into a
                     usable network instead of a black-box feed. Watch what is live, find the next room, and understand
                     why it surfaced.
                   </p>
@@ -209,14 +209,14 @@ export default async function HomePage({
                             ? `/promoters/${profile.slug}`
                             : profile.type === 'VENUE'
                               ? `/venues/${profile.slug}`
-                              : `/listeners/${profile.slug}`;
+                              : `/fans/${profile.slug}`;
 
                       return (
                         <Link className="home-profile-row" href={href} key={profile.id}>
                           <div>
                             <strong>{profile.name}</strong>
                             <p className="meta">
-                              {profile.type === 'DJ' ? 'PROMOTER' : profile.type}
+                              {profile.type === 'DJ' ? 'PROMOTER' : profile.type === 'LISTENER' ? 'FAN' : profile.type}
                               {[profile.city, profile.country].filter(Boolean).length
                                 ? ` | ${[profile.city, profile.country].filter(Boolean).join(', ')}`
                                 : ''}

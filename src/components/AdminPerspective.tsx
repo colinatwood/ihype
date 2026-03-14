@@ -29,7 +29,7 @@ const AdminPerspectiveContext = createContext<AdminPerspectiveContextValue>({
 
 const adminPerspectiveOptions: Array<{ value: AdminPerspective; label: string; href: string }> = [
   { value: 'ADMIN', label: 'Admin', href: '/dashboard' },
-  { value: 'LISTENER', label: 'Listener', href: '/listeners' },
+  { value: 'LISTENER', label: 'Fan', href: '/fans' },
   { value: 'ARTIST', label: 'Artist', href: '/artists' },
   { value: 'PROMOTER', label: 'Promoter', href: '/promoters' },
   { value: 'VENUE', label: 'Venue', href: '/venues' }
@@ -41,7 +41,7 @@ const defaultNavItems: NavItem[] = [
   { href: '/artists', label: 'Artists', match: '/artists' },
   { href: '/promoters', label: 'Promoters', match: '/promoters' },
   { href: '/venues', label: 'Venues', match: '/venues' },
-  { href: '/listeners', label: 'Listeners', match: '/listeners' },
+  { href: '/fans', label: 'Fans', match: '/fans' },
   { href: '/integrity', label: 'Integrity', match: '/integrity' }
 ];
 
@@ -53,14 +53,14 @@ const perspectiveNavItems: Record<AdminPerspective, NavItem[]> = {
     { href: '/artists', label: 'Artists', match: '/artists' },
     { href: '/promoters', label: 'Promoters', match: '/promoters' },
     { href: '/venues', label: 'Venues', match: '/venues' },
-    { href: '/listeners', label: 'Listeners', match: '/listeners' }
+    { href: '/fans', label: 'Fans', match: '/fans' }
   ],
   ARTIST: [
     { href: '/artists', label: 'Artists', match: '/artists' },
     { href: '/shows', label: 'Shows', match: '/shows' },
     { href: '/promoters', label: 'Promoters', match: '/promoters' },
     { href: '/venues', label: 'Venues', match: '/venues' },
-    { href: '/listeners', label: 'Fans', match: '/listeners' },
+    { href: '/fans', label: 'Fans', match: '/fans' },
     { href: '/', label: 'Discover', match: '/' }
   ],
   PROMOTER: [
@@ -68,7 +68,7 @@ const perspectiveNavItems: Record<AdminPerspective, NavItem[]> = {
     { href: '/shows', label: 'Shows', match: '/shows' },
     { href: '/artists', label: 'Artists', match: '/artists' },
     { href: '/venues', label: 'Venues', match: '/venues' },
-    { href: '/listeners', label: 'Listeners', match: '/listeners' },
+    { href: '/fans', label: 'Fans', match: '/fans' },
     { href: '/', label: 'Discover', match: '/' }
   ],
   VENUE: [
@@ -76,7 +76,7 @@ const perspectiveNavItems: Record<AdminPerspective, NavItem[]> = {
     { href: '/shows', label: 'Shows', match: '/shows' },
     { href: '/artists', label: 'Artists', match: '/artists' },
     { href: '/promoters', label: 'Promoters', match: '/promoters' },
-    { href: '/listeners', label: 'Listeners', match: '/listeners' },
+    { href: '/fans', label: 'Fans', match: '/fans' },
     { href: '/', label: 'Discover', match: '/' }
   ]
 };
