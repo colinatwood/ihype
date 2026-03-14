@@ -111,7 +111,10 @@ export default async function ListenerPage({
     .filter(Boolean)
     .join(' ');
   const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
-  const pageDesignStyle = getProfileDesignStyleVars(profile.themePreset);
+  const pageDesignStyle = getProfileDesignStyleVars(profile.themePreset, {
+    accentTone: profile.themeAccentTone,
+    backdropTone: profile.themeBackdropTone
+  });
   const avatarImage = getSafeImageUrl(profile.avatarImage);
 
   return (
@@ -173,6 +176,8 @@ export default async function ListenerPage({
                 recommendContent: profile.recommendContent ?? '',
                 topFiveContent: profile.topFiveContent ?? '',
                 themePreset: profile.themePreset,
+                themeAccentTone: profile.themeAccentTone ?? '',
+                themeBackdropTone: profile.themeBackdropTone ?? '',
                 fanShareEnabled: profile.fanShareEnabled
               }}
               previewGenres={profile.genres}

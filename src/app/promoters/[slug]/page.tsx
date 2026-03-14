@@ -11,6 +11,7 @@ import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPa
 import { getSafeBackgroundImageStyle } from '@/lib/asset-safety';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 import { canManageOwnedResource } from '@/lib/permissions';
+import { getProfileDesignStyleVars } from '@/lib/profile-design';
 
 const promoterSections = ['about', 'upcoming', 'previous', 'recommend', 'stats'] as const;
 
@@ -126,9 +127,13 @@ export default async function PromoterPage({
     }))
     .filter((artistProfile) => artistProfile.entries.length > 0);
   const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
+  const pageDesignStyle = getProfileDesignStyleVars(profile.themePreset, {
+    accentTone: profile.themeAccentTone,
+    backdropTone: profile.themeBackdropTone
+  });
 
   return (
-    <main className="container section">
+    <main className="container section profile-design-shell" style={pageDesignStyle}>
       <header className="artist-banner panel" style={bannerStyle}>
         <div className="artist-banner-copy">
           <div className="badge">PROMOTER</div>
@@ -145,9 +150,13 @@ export default async function PromoterPage({
       {isOwner ? (
         <ProfilePageEditor
           description="Edit your promoter banner plus the About and Recommend sections."
+          enableDesignCustomizer
           fields={[
             { key: 'headline', label: 'Headline banner', placeholder: 'How do you want artists and venues to read this page?' },
             { key: 'heroImage', label: 'Banner image URL', kind: 'url', placeholder: 'https://example.com/promoter.jpg' },
+            { key: 'city', label: 'City', placeholder: 'Chicago' },
+            { key: 'stateRegion', label: 'State / province', placeholder: 'Illinois' },
+            { key: 'country', label: 'Country', placeholder: 'United States' },
             { key: 'bio', label: 'Short intro', kind: 'textarea', rows: 3 },
             { key: 'aboutContent', label: 'About', kind: 'textarea' },
             { key: 'recommendContent', label: 'Recommend', kind: 'textarea' }
@@ -163,8 +172,17 @@ export default async function PromoterPage({
             merchContent: profile.merchContent ?? '',
             requestContent: profile.requestContent ?? '',
             recommendContent: profile.recommendContent ?? '',
-            topFiveContent: profile.topFiveContent ?? ''
+            topFiveContent: profile.topFiveContent ?? '',
+            city: profile.city ?? '',
+            stateRegion: profile.stateRegion ?? '',
+            country: profile.country ?? '',
+            themePreset: profile.themePreset,
+            themeAccentTone: profile.themeAccentTone ?? '',
+            themeBackdropTone: profile.themeBackdropTone ?? ''
           }}
+          previewGenres={profile.genres}
+          previewRoleLabel="PROMOTER"
+          previewTabs={['About', 'Upcoming', 'Previous', 'Recommend', 'Stats']}
           profileId={profile.id}
           profileName={profile.name}
           title="Customize your promoter page"

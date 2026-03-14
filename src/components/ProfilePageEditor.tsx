@@ -3,14 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  getProfileAccentTone,
+  getProfileBackdropTone,
   getProfileDesignPreset,
   getProfileDesignStyleVars,
+  normalizeProfileAccentTone,
+  normalizeProfileBackdropTone,
   normalizeProfileDesignPreset,
+  profileAccentTones,
+  profileBackdropTones,
   profileDesignPresets,
+  type ProfileAccentTone,
+  type ProfileBackdropTone,
   type ProfileDesignPreset
 } from '@/lib/profile-design';
 
-type EditableFieldKey =
+export type EditableFieldKey =
   | 'headline'
   | 'bio'
   | 'heroImage'
@@ -23,9 +31,17 @@ type EditableFieldKey =
   | 'recommendContent'
   | 'topFiveContent'
   | 'addressLine1'
-  | 'hoursText';
+  | 'hoursText'
+  | 'city'
+  | 'stateRegion'
+  | 'postalCode'
+  | 'country'
+  | 'parkingDetails'
+  | 'stayRecommendations'
+  | 'upcomingContent'
+  | 'previousShowHighlights';
 
-type EditableField = {
+export type ProfilePageEditorField = {
   key: EditableFieldKey;
   label: string;
   kind?: 'input' | 'textarea' | 'url';
@@ -35,11 +51,15 @@ type EditableField = {
 
 type ProfilePageInitialValues = Partial<Record<EditableFieldKey, string>> & {
   themePreset?: string;
+  themeAccentTone?: string;
+  themeBackdropTone?: string;
   fanShareEnabled?: boolean;
 };
 
 type ProfilePageFormValues = Record<EditableFieldKey, string> & {
   themePreset: ProfileDesignPreset;
+  themeAccentTone: ProfileAccentTone;
+  themeBackdropTone: ProfileBackdropTone;
   fanShareEnabled: boolean;
 };
 
@@ -48,7 +68,7 @@ type ProfilePageEditorProps = {
   profileName: string;
   title: string;
   description: string;
-  fields: EditableField[];
+  fields: ProfilePageEditorField[];
   initialValues: ProfilePageInitialValues;
   enableDesignCustomizer?: boolean;
   allowFanShareToggle?: boolean;
@@ -70,7 +90,15 @@ const defaultFormValues: Record<EditableFieldKey, string> = {
   recommendContent: '',
   topFiveContent: '',
   addressLine1: '',
-  hoursText: ''
+  hoursText: '',
+  city: '',
+  stateRegion: '',
+  postalCode: '',
+  country: '',
+  parkingDetails: '',
+  stayRecommendations: '',
+  upcomingContent: '',
+  previousShowHighlights: ''
 };
 
 function getPreviewSnippet(value: string, fallback: string) {
@@ -98,11 +126,15 @@ export function ProfilePageEditor({
     ...defaultFormValues,
     ...initialValues,
     themePreset: normalizeProfileDesignPreset(initialValues.themePreset),
+    themeAccentTone: normalizeProfileAccentTone(initialValues.themeAccentTone),
+    themeBackdropTone: normalizeProfileBackdropTone(initialValues.themeBackdropTone),
     fanShareEnabled: Boolean(initialValues.fanShareEnabled)
   });
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const selectedPreset = getProfileDesignPreset(formValues.themePreset);
+  const selectedAccentTone = getProfileAccentTone(formValues.themeAccentTone);
+  const selectedBackdropTone = getProfileBackdropTone(formValues.themeBackdropTone);
   const aboutPreview = getPreviewSnippet(
     formValues.aboutContent || formValues.bio,
     'Your page preview updates live as you switch presets and edit the copy.'
@@ -135,11 +167,21 @@ export function ProfilePageEditor({
       recommendContent: formValues.recommendContent,
       topFiveContent: formValues.topFiveContent,
       addressLine1: formValues.addressLine1,
-      hoursText: formValues.hoursText
+      hoursText: formValues.hoursText,
+      city: formValues.city,
+      stateRegion: formValues.stateRegion,
+      postalCode: formValues.postalCode,
+      country: formValues.country,
+      parkingDetails: formValues.parkingDetails,
+      stayRecommendations: formValues.stayRecommendations,
+      upcomingContent: formValues.upcomingContent,
+      previousShowHighlights: formValues.previousShowHighlights
     };
 
     if (enableDesignCustomizer) {
       payload.themePreset = formValues.themePreset;
+      payload.themeAccentTone = formValues.themeAccentTone;
+      payload.themeBackdropTone = formValues.themeBackdropTone;
       payload.fanShareEnabled = allowFanShareToggle ? formValues.fanShareEnabled : false;
     }
 
@@ -208,7 +250,11 @@ export function ProfilePageEditor({
                   <h3>Visual preset</h3>
                   <p className="meta">Try a few looks and preview the page before you save it.</p>
                 </div>
-                <span className="badge">{selectedPreset.label}</span>
+                <div className="profile-design-customizer-badges">
+                  <span className="badge">{selectedPreset.label}</span>
+                  <span className="profile-design-tone-pill">{selectedAccentTone.label}</span>
+                  <span className="profile-design-tone-pill">{selectedBackdropTone.label}</span>
+                </div>
               </div>
 
               <div className="profile-design-preset-grid">
@@ -229,6 +275,64 @@ export function ProfilePageEditor({
                 ))}
               </div>
 
+              <div className="profile-design-tone-grid">
+                <div className="profile-design-tone-group">
+                  <div className="profile-design-tone-header">
+                    <strong>Accent color</strong>
+                    <span className="meta">Controls the glow color for highlights, chips, and tabs.</span>
+                  </div>
+                  <div className="profile-design-tone-chip-row">
+                    {profileAccentTones.map((tone) => (
+                      <button
+                        className={
+                          tone.id === formValues.themeAccentTone
+                            ? 'profile-design-tone-chip active'
+                            : 'profile-design-tone-chip'
+                        }
+                        key={tone.id}
+                        onClick={() =>
+                          setFormValues((current) => ({
+                            ...current,
+                            themeAccentTone: tone.id
+                          }))
+                        }
+                        type="button"
+                      >
+                        {tone.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="profile-design-tone-group">
+                  <div className="profile-design-tone-header">
+                    <strong>Backdrop mood</strong>
+                    <span className="meta">Changes the page atmosphere behind the content panels.</span>
+                  </div>
+                  <div className="profile-design-tone-chip-row">
+                    {profileBackdropTones.map((tone) => (
+                      <button
+                        className={
+                          tone.id === formValues.themeBackdropTone
+                            ? 'profile-design-tone-chip active'
+                            : 'profile-design-tone-chip'
+                        }
+                        key={tone.id}
+                        onClick={() =>
+                          setFormValues((current) => ({
+                            ...current,
+                            themeBackdropTone: tone.id
+                          }))
+                        }
+                        type="button"
+                      >
+                        {tone.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
               {allowFanShareToggle ? (
                 <label className="profile-design-share-toggle">
                   <input
@@ -245,7 +349,13 @@ export function ProfilePageEditor({
                 </label>
               ) : null}
 
-              <div className="profile-design-preview-shell profile-design-shell" style={getProfileDesignStyleVars(formValues.themePreset)}>
+              <div
+                className="profile-design-preview-shell profile-design-shell"
+                style={getProfileDesignStyleVars(formValues.themePreset, {
+                  accentTone: formValues.themeAccentTone,
+                  backdropTone: formValues.themeBackdropTone
+                })}
+              >
                 <div className="profile-design-preview-card">
                   <div className="profile-design-preview-hero">
                     <div className="profile-design-preview-topline">

@@ -86,7 +86,10 @@ export default async function ArtistPage({
   });
   const sharedThemePreset = isOwner || profile.fanShareEnabled ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET;
   const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
-  const pageDesignStyle = getProfileDesignStyleVars(sharedThemePreset);
+  const pageDesignStyle = getProfileDesignStyleVars(sharedThemePreset, {
+    accentTone: isOwner || profile.fanShareEnabled ? profile.themeAccentTone : undefined,
+    backdropTone: isOwner || profile.fanShareEnabled ? profile.themeBackdropTone : undefined
+  });
   const artworkUrl = getSafeImageUrl(profile.heroImage);
 
   return (
@@ -139,6 +142,8 @@ export default async function ArtistPage({
               recommendContent: profile.recommendContent ?? '',
               topFiveContent: profile.topFiveContent ?? '',
               themePreset: profile.themePreset,
+              themeAccentTone: profile.themeAccentTone ?? '',
+              themeBackdropTone: profile.themeBackdropTone ?? '',
               fanShareEnabled: profile.fanShareEnabled
             }}
             previewGenres={profile.genres}
