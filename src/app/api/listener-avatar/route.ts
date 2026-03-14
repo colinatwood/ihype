@@ -41,9 +41,9 @@ function buildAvatarPrompt({
   const topFiveLine = topFiveContent ? `Top five notes: ${topFiveContent.slice(0, 220)}.` : '';
 
   return [
-    `Create an original simple cartoon avatar portrait for the music fan profile "${name}".`,
-    'Turn the fan phrase into one animated original character only, head-and-shoulders composition, centered character, clean silhouette, playful expression.',
-    'Simple animated illustration finish, nightlife energy, music-discovery personality, bold but limited color palette, no text, no watermark, no logos.',
+    `Create an original high-definition animated character portrait for the music fan profile "${name}".`,
+    'Turn the fan phrase into one animated original character only, three-quarter head-and-shoulders composition, centered character, clean silhouette, expressive pose, polished cel-shaded detail.',
+    'Animated illustration finish, nightlife energy, music-discovery personality, layered lighting, bold but curated color palette, transparent background, no text, no watermark, no logos.',
     'Avoid matching any copyrighted character or celebrity likeness.',
     genreLine,
     locationLine,
@@ -128,20 +128,27 @@ const fallbackAccentTones = ['#23d0d8', '#ff6ea8', '#ffe066', '#8f5bff', '#7cf29
 
 function buildFallbackAvatarDataUrl({
   seed,
-  label,
-  phrase
+  label
 }: {
   seed: string;
   label: string;
-  phrase: string;
 }) {
   const skin = pickDeterministic(fallbackSkinTones, seed, 'skin');
   const hair = pickDeterministic(fallbackHairTones, seed, 'hair');
   const backdrop = pickDeterministic(fallbackBackdropTones, seed, 'backdrop');
   const accent = pickDeterministic(fallbackAccentTones, seed, 'accent');
-  const eyeOffset = 18 + (createHash('sha256').update(`${seed}:eyes`).digest()[0] % 6);
-  const mouthWidth = 30 + (createHash('sha256').update(`${seed}:mouth`).digest()[0] % 12);
+  const eyeOffset = 18 + (createHash('sha256').update(`${seed}:eyes`).digest()[0] % 8);
+  const mouthWidth = 34 + (createHash('sha256').update(`${seed}:mouth`).digest()[0] % 18);
+  const blushOpacity = 0.18 + (createHash('sha256').update(`${seed}:blush`).digest()[0] % 6) * 0.02;
   const hoodieTone = pickDeterministic(['#f4f6ff', '#d7e7ff', '#f2d7ff', '#d8fff0'], seed, 'hoodie');
+  const shirtTone = pickDeterministic(['#0f1728', '#162033', '#31244f', '#183942'], seed, 'shirt');
+  const eyelidLift = 5 + (createHash('sha256').update(`${seed}:eyelid`).digest()[0] % 8);
+  const haloX = 360 + (createHash('sha256').update(`${seed}:halo`).digest()[0] % 58);
+  const fringeLeft = 192 + (createHash('sha256').update(`${seed}:fringe-left`).digest()[0] % 34);
+  const fringeRight = 320 + (createHash('sha256').update(`${seed}:fringe-right`).digest()[0] % 34);
+  const sparkleOneX = 96 + (createHash('sha256').update(`${seed}:sparkle-1`).digest()[0] % 52);
+  const sparkleTwoX = 414 - (createHash('sha256').update(`${seed}:sparkle-2`).digest()[0] % 42);
+  const energyArcHeight = 340 + (createHash('sha256').update(`${seed}:energy`).digest()[0] % 36);
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="${label}">
@@ -150,23 +157,42 @@ function buildFallbackAvatarDataUrl({
           <stop offset="0%" stop-color="${backdrop}" />
           <stop offset="100%" stop-color="${accent}" stop-opacity="0.9" />
         </linearGradient>
+        <radialGradient id="halo" cx="50%" cy="40%" r="62%">
+          <stop offset="0%" stop-color="${accent}" stop-opacity="0.56" />
+          <stop offset="100%" stop-color="${accent}" stop-opacity="0" />
+        </radialGradient>
+        <linearGradient id="jacket" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${hoodieTone}" />
+          <stop offset="100%" stop-color="${accent}" stop-opacity="0.45" />
+        </linearGradient>
       </defs>
       <rect width="512" height="512" rx="44" fill="url(#bg)" />
-      <circle cx="420" cy="92" r="54" fill="${accent}" fill-opacity="0.16" />
-      <circle cx="108" cy="418" r="72" fill="#ffffff" fill-opacity="0.08" />
-      <ellipse cx="256" cy="202" rx="124" ry="128" fill="${skin}" />
-      <path d="M142 187c0-72 47-118 114-118 59 0 105 34 125 93-34-25-59-34-98-31-42 3-77 13-141 56Z" fill="${hair}" />
-      <path d="M136 197c18-34 43-55 76-68" stroke="${hair}" stroke-width="22" stroke-linecap="round" />
-      <path d="M376 197c-18-34-43-55-76-68" stroke="${hair}" stroke-width="22" stroke-linecap="round" />
-      <rect x="162" y="158" width="42" height="100" rx="21" fill="${accent}" />
-      <rect x="308" y="158" width="42" height="100" rx="21" fill="${accent}" />
-      <rect x="194" y="170" width="124" height="24" rx="12" fill="${accent}" />
-      <circle cx="${256 - eyeOffset}" cy="206" r="10" fill="#10121b" />
-      <circle cx="${256 + eyeOffset}" cy="206" r="10" fill="#10121b" />
-      <path d="M${256 - mouthWidth / 2} 254c12 16 48 16 60 0" stroke="#7a4231" stroke-width="10" stroke-linecap="round" fill="none" />
-      <path d="M154 390c18-64 67-99 102-99 35 0 84 35 102 99" fill="${hoodieTone}" />
-      <path d="M184 324c18 24 42 36 72 36 30 0 54-12 72-36" stroke="${accent}" stroke-width="10" stroke-linecap="round" fill="none" />
-      <text x="256" y="456" text-anchor="middle" fill="#ffffff" fill-opacity="0.82" font-family="Avenir Next, Segoe UI, sans-serif" font-size="20">${phrase.slice(0, 24)}</text>
+      <circle cx="${haloX}" cy="102" r="74" fill="url(#halo)" />
+      <circle cx="98" cy="414" r="84" fill="#ffffff" fill-opacity="0.07" />
+      <path d="M56 ${energyArcHeight}c86-54 136-73 194-73 90 0 146 39 206 87" fill="none" stroke="${accent}" stroke-opacity="0.18" stroke-width="12" stroke-linecap="round" />
+      <path d="M154 398c18-72 63-123 102-123 39 0 84 51 102 123" fill="url(#jacket)" />
+      <path d="M200 326c16 24 35 37 56 37 21 0 40-13 56-37" fill="${shirtTone}" />
+      <ellipse cx="256" cy="384" rx="114" ry="28" fill="#060911" fill-opacity="0.26" />
+      <rect x="232" y="258" width="48" height="54" rx="20" fill="${skin}" />
+      <ellipse cx="256" cy="206" rx="120" ry="128" fill="${skin}" />
+      <path d="M136 194c6-84 52-126 120-126 76 0 124 40 130 132-42-34-77-49-131-45-44 3-85 15-119 39Z" fill="${hair}" />
+      <path d="M170 151c26-30 58-43 96-43 41 0 72 12 101 42-26-7-53-10-87-10-42 0-74 4-110 11Z" fill="${accent}" fill-opacity="0.16" />
+      <path d="M${fringeLeft} 155c22 13 38 19 64 19 29 0 46-6 64-19-12 24-35 46-64 46-27 0-50-18-64-46Z" fill="${hair}" />
+      <ellipse cx="${256 - eyeOffset}" cy="212" rx="15" ry="${eyelidLift}" fill="#10121b" />
+      <ellipse cx="${256 + eyeOffset}" cy="212" rx="15" ry="${eyelidLift}" fill="#10121b" />
+      <circle cx="${256 - eyeOffset + 3}" cy="208" r="3.5" fill="#ffffff" fill-opacity="0.85" />
+      <circle cx="${256 + eyeOffset + 3}" cy="208" r="3.5" fill="#ffffff" fill-opacity="0.85" />
+      <path d="M${256 - eyeOffset - 18} 186c13-11 29-13 40-6" fill="none" stroke="#2a1a14" stroke-width="6" stroke-linecap="round" />
+      <path d="M${256 + eyeOffset - 22} 180c12-7 29-6 41 7" fill="none" stroke="#2a1a14" stroke-width="6" stroke-linecap="round" />
+      <path d="M252 214c4 10 3 20-3 29" fill="none" stroke="#8a5947" stroke-width="5" stroke-linecap="round" />
+      <ellipse cx="${256 - eyeOffset}" cy="247" rx="17" ry="11" fill="#ff9ebd" fill-opacity="${blushOpacity}" />
+      <ellipse cx="${256 + eyeOffset}" cy="247" rx="17" ry="11" fill="#ff9ebd" fill-opacity="${blushOpacity}" />
+      <path d="M${256 - mouthWidth / 2} 272c14 19 60 19 74 0" stroke="#7a4231" stroke-width="10" stroke-linecap="round" fill="none" />
+      <path d="M184 333c20 24 44 36 72 36 28 0 52-12 72-36" stroke="${accent}" stroke-width="9" stroke-linecap="round" fill="none" />
+      <circle cx="164" cy="226" r="8" fill="${accent}" fill-opacity="0.68" />
+      <circle cx="348" cy="234" r="7" fill="${accent}" fill-opacity="0.56" />
+      <path d="M${sparkleOneX} 136l7 16 18 2-14 11 4 18-15-9-15 9 4-18-14-11 18-2Z" fill="#ffffff" fill-opacity="0.78" />
+      <path d="M${sparkleTwoX} 334l5 12 13 1-10 8 3 14-11-7-11 7 3-14-10-8 13-1Z" fill="#ffffff" fill-opacity="0.58" />
     </svg>
   `;
 
@@ -193,10 +219,10 @@ function buildFallbackOptions({
     return {
       id: `option-${index + 1}`,
       label: variant.label,
+      description: variant.description,
       avatarImage: buildFallbackAvatarDataUrl({
         seed,
-        label: variant.label,
-        phrase: prompt
+        label: variant.label
       }),
       revisedPrompt: `Fallback character sketch based on: ${prompt}`
     };
@@ -213,7 +239,8 @@ function buildRandomVariantPrompt() {
 
   return {
     label: mood,
-    prompt: `Make the character feel like a music fan with ${hair}, ${accessory}, ${outfit}, ${mood}, and a ${palette} palette. Use a ${backdrop}. Keep it simple, original, and cute.`
+    description: `${hair}, ${outfit}, ${accessory === 'no accessory' ? 'clean styling' : accessory}, ${palette}`,
+    prompt: `Make the character feel like a music fan with ${hair}, ${accessory}, ${outfit}, ${mood}, and a ${palette} palette. Use a ${backdrop}. Keep it original, detailed, polished, and cute.`
   };
 }
 
@@ -283,6 +310,7 @@ export async function POST(request: Request) {
     const options: Array<{
       id: string;
       label: string;
+      description: string | null;
       avatarImage: string;
       revisedPrompt: string | null;
     }> = [];
@@ -301,7 +329,7 @@ export async function POST(request: Request) {
             userPrompt: [body.prompt, variant.prompt].filter(Boolean).join(' ')
           }),
           size: '1024x1024',
-          quality: 'medium',
+          quality: 'high',
           background: 'transparent',
           output_format: 'png',
           user: `${profile.hexId}-fan-avatar-${index + 1}`
@@ -315,6 +343,7 @@ export async function POST(request: Request) {
         options.push({
           id: `option-${index + 1}`,
           label: variant.label,
+          description: variant.description,
           avatarImage: `data:image/png;base64,${image.b64_json}`,
           revisedPrompt: image.revised_prompt ?? null
         });

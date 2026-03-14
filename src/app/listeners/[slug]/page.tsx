@@ -7,6 +7,7 @@ import { HypeButton } from '@/components/HypeButton';
 import { ProfilePageEditor } from '@/components/ProfilePageEditor';
 import { ListenerAvatarCreator } from '@/components/ListenerAvatarCreator';
 import { ListenerVenueMap } from '@/components/ListenerVenueMap';
+import { FanPageCompanion } from '@/components/FanPageCompanion';
 import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
@@ -114,8 +115,10 @@ export default async function ListenerPage({
   const avatarImage = getSafeImageUrl(profile.avatarImage);
 
   return (
-    <main className="container section profile-design-shell" style={pageDesignStyle}>
-      <header className="artist-banner panel" style={bannerStyle}>
+    <main className="container section profile-design-shell fan-page-shell" data-fan-companion-root style={pageDesignStyle}>
+      <FanPageCompanion avatarImage={avatarImage} fanName={profile.name} initials={getInitials(profile.name)} />
+
+      <header className="artist-banner panel" data-fan-companion-label="profile pulse" style={bannerStyle}>
         <div className="profile-banner-row">
           {avatarImage ? (
             <img alt={`${profile.name} avatar`} className="profile-avatar profile-avatar-hero" src={avatarImage} />
@@ -137,52 +140,58 @@ export default async function ListenerPage({
 
       {isOwner ? (
         <>
-          <ListenerAvatarCreator
-            defaultPrompt={defaultAvatarPrompt}
-            initialAvatarImage={profile.avatarImage}
-            profileId={profile.id}
-            profileHexId={profile.hexId}
-            profileName={profile.name}
-          />
-          <ProfilePageEditor
-            description="Edit your fan banner plus the About and Top 5 sections."
-            enableDesignCustomizer
-            fields={[
-              { key: 'headline', label: 'Headline banner', placeholder: 'How should your page feel?' },
-              { key: 'heroImage', label: 'Banner image URL', kind: 'url', placeholder: 'https://example.com/fan.jpg' },
-              { key: 'bio', label: 'Short intro', kind: 'textarea', rows: 3 },
-              { key: 'aboutContent', label: 'About', kind: 'textarea' },
-              { key: 'topFiveContent', label: 'Top 5', kind: 'textarea', rows: 5 }
-            ]}
-            initialValues={{
-              headline: profile.headline ?? '',
-              bio: profile.bio ?? '',
-              heroImage: profile.heroImage ?? '',
-              aboutContent: profile.aboutContent ?? '',
-              journalContent: profile.journalContent ?? '',
-              mediaContent: profile.mediaContent ?? '',
-              tourContent: profile.tourContent ?? '',
-              merchContent: profile.merchContent ?? '',
-              requestContent: profile.requestContent ?? '',
-              recommendContent: profile.recommendContent ?? '',
-              topFiveContent: profile.topFiveContent ?? '',
-              themePreset: profile.themePreset,
-              fanShareEnabled: profile.fanShareEnabled
-            }}
-            previewGenres={profile.genres}
-            previewRoleLabel="FAN"
-            previewTabs={['About', 'Upcoming', 'Previous', 'Top 5', 'Stats']}
-            profileId={profile.id}
-            profileName={profile.name}
-            title="Customize your fan page"
-          />
+          <div data-fan-companion-label="character lab">
+            <ListenerAvatarCreator
+              defaultPrompt={defaultAvatarPrompt}
+              initialAvatarImage={profile.avatarImage}
+              profileId={profile.id}
+              profileHexId={profile.hexId}
+              profileName={profile.name}
+            />
+          </div>
+          <div data-fan-companion-label="fan page customizer">
+            <ProfilePageEditor
+              description="Edit your fan banner plus the About and Top 5 sections."
+              enableDesignCustomizer
+              fields={[
+                { key: 'headline', label: 'Headline banner', placeholder: 'How should your page feel?' },
+                { key: 'heroImage', label: 'Banner image URL', kind: 'url', placeholder: 'https://example.com/fan.jpg' },
+                { key: 'bio', label: 'Short intro', kind: 'textarea', rows: 3 },
+                { key: 'aboutContent', label: 'About', kind: 'textarea' },
+                { key: 'topFiveContent', label: 'Top 5', kind: 'textarea', rows: 5 }
+              ]}
+              initialValues={{
+                headline: profile.headline ?? '',
+                bio: profile.bio ?? '',
+                heroImage: profile.heroImage ?? '',
+                aboutContent: profile.aboutContent ?? '',
+                journalContent: profile.journalContent ?? '',
+                mediaContent: profile.mediaContent ?? '',
+                tourContent: profile.tourContent ?? '',
+                merchContent: profile.merchContent ?? '',
+                requestContent: profile.requestContent ?? '',
+                recommendContent: profile.recommendContent ?? '',
+                topFiveContent: profile.topFiveContent ?? '',
+                themePreset: profile.themePreset,
+                fanShareEnabled: profile.fanShareEnabled
+              }}
+              previewGenres={profile.genres}
+              previewRoleLabel="FAN"
+              previewTabs={['About', 'Upcoming', 'Previous', 'Top 5', 'Stats']}
+              profileId={profile.id}
+              profileName={profile.name}
+              title="Customize your fan page"
+            />
+          </div>
         </>
       ) : null}
 
-      <ListenerVenueMap venues={venues} viewerLocation={viewerLocation} />
+      <div data-fan-companion-label="venue radar">
+        <ListenerVenueMap venues={venues} viewerLocation={viewerLocation} />
+      </div>
 
-      <section className="section">
-        <nav className="section-tabs" aria-label="Fan page sections">
+      <section className="section" data-fan-companion-label={`${getSectionLabel(activeSection)} section`}>
+        <nav className="section-tabs" aria-label="Fan page sections" data-fan-companion-label="fan section tabs">
           {listenerSections.map((section) => (
             <Link
               key={section}
@@ -194,7 +203,7 @@ export default async function ListenerPage({
           ))}
         </nav>
 
-        <div className="panel artist-section-panel">
+        <div className="panel artist-section-panel" data-fan-companion-label={`${getSectionLabel(activeSection)} highlights`}>
           {activeSection === 'about' ? (
             <>
               <h2>About</h2>

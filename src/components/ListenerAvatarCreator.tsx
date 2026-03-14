@@ -7,6 +7,7 @@ import { shortenHexId } from '@/lib/hex-id';
 type AvatarOption = {
   id: string;
   label: string;
+  description: string | null;
   avatarImage: string;
   revisedPrompt: string | null;
 };
@@ -137,7 +138,7 @@ export function ListenerAvatarCreator({
 
     if (response.ok) {
       setAvatarImage(data.avatarImage ?? selectedOption.avatarImage);
-      setMessage(`Animated avatar saved to ${shortenHexId(data.fanHexId ?? profileHexId)} for future fan interactions.`);
+      setMessage(`Page companion saved to ${shortenHexId(data.fanHexId ?? profileHexId)} for future fan interactions.`);
       router.refresh();
     } else {
       setMessage(data.error ?? 'Could not save this avatar');
@@ -166,6 +167,7 @@ export function ListenerAvatarCreator({
           </div>
 
           <div className="avatar-creator-stage-frame">
+            <div className="avatar-creator-stage-glow" />
             {previewImage ? (
               <img alt={`${profileName} avatar`} className="avatar-creator-stage-image" src={previewImage} />
             ) : (
@@ -181,8 +183,12 @@ export function ListenerAvatarCreator({
             <div className="avatar-creator-chip-row">
               <span className="avatar-creator-chip">{selectedPreset.label}</span>
               <span className="avatar-creator-chip">{selectedMood.label}</span>
+              <span className="avatar-creator-chip">Motion-ready</span>
               {selectedOption ? <span className="avatar-creator-chip">Selected render</span> : null}
             </div>
+            {selectedOption?.description ? (
+              <p className="avatar-creator-stage-description">{selectedOption.description}</p>
+            ) : null}
           </div>
         </div>
 
@@ -252,7 +258,7 @@ export function ListenerAvatarCreator({
               onClick={handleSaveSelection}
               type="button"
             >
-              Save to fan ID
+              Save as page companion
             </button>
           </div>
 
@@ -278,6 +284,7 @@ export function ListenerAvatarCreator({
               <img alt={`${option.label} avatar option`} className="avatar-option-image" src={option.avatarImage} />
               <div className="avatar-option-meta">
                 <strong>{option.label}</strong>
+                {option.description ? <p>{option.description}</p> : null}
                 <span>{option.id === selectedOptionId ? `Selected for ${shortenHexId(profileHexId)}` : 'Choose'}</span>
               </div>
             </button>
