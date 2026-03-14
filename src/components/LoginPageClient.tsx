@@ -18,6 +18,9 @@ export function LoginPageClient() {
   const [message, setMessage] = useState<string | null>(null);
   const [csrfToken, setCsrfToken] = useState('');
   const [csrfReady, setCsrfReady] = useState(false);
+  const [csrfStatus, setCsrfStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [csrfAttemptCount, setCsrfAttemptCount] = useState(0);
+  const [csrfReloadKey, setCsrfReloadKey] = useState(0);
 
   const [showReset, setShowReset] = useState(false);
   const [resetStage, setResetStage] = useState<ResetStage>('request');
@@ -35,42 +38,74 @@ export function LoginPageClient() {
 
   useEffect(() => {
     let cancelled = false;
+    let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    async function loadCsrfToken() {
+    async function loadCsrfToken(attempt: number) {
       if (!cancelled) {
         setCsrfReady(false);
+        setCsrfStatus('loading');
+        setCsrfAttemptCount(attempt);
       }
 
       try {
         const response = await fetch('/api/auth/csrf', {
           cache: 'no-store',
-          credentials: 'same-origin'
+          credentials: 'same-origin',
+          headers: {
+            Accept: 'application/json'
+          }
         });
+
+        if (!response.ok) {
+          throw new Error(`csrf_${response.status}`);
+        }
+
         const data = (await response.json()) as { csrfToken?: string };
 
+        if (!data.csrfToken) {
+          throw new Error('csrf_missing');
+        }
+
         if (!cancelled) {
-          setCsrfToken(data.csrfToken ?? '');
-          setCsrfReady(Boolean(data.csrfToken));
-          setMessage(data.csrfToken ? null : 'Unable to prepare sign-in right now.');
+          setCsrfToken(data.csrfToken);
+          setCsrfReady(true);
+          setCsrfStatus('ready');
+          setMessage(
+            authError === 'MissingCSRF'
+              ? 'Secure sign-in was refreshed. You can try again now.'
+              : null
+          );
         }
       } catch {
         if (!cancelled) {
           setCsrfToken('');
           setCsrfReady(false);
-          setMessage('Unable to prepare sign-in right now.');
+          if (attempt < 3) {
+            const retryDelayMs = attempt === 1 ? 500 : 1500;
+            retryTimeout = setTimeout(() => {
+              void loadCsrfToken(attempt + 1);
+            }, retryDelayMs);
+            return;
+          }
+
+          setCsrfStatus('error');
+          setMessage('Secure sign-in is taking longer than expected. Retry below or reload the page.');
         }
       }
     }
 
-    void loadCsrfToken();
+    void loadCsrfToken(1);
 
     return () => {
       cancelled = true;
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
     };
-  }, []);
+  }, [authError, csrfReloadKey]);
 
   function getAuthErrorMessage() {
-    if (authError === 'MissingCSRF') {
+    if (authError === 'MissingCSRF' && csrfStatus !== 'ready') {
       return 'Secure sign-in was not ready yet. Please try again now that the page has loaded.';
     }
 
@@ -228,6 +263,19 @@ export function LoginPageClient() {
               <button className="button" disabled type="button">
                 Preparing sign-in...
               </button>
+              <div className="auth-inline-actions">
+                <button
+                  className="text-link"
+                  onClick={() => {
+                    setMessage(null);
+                    setCsrfReloadKey((current) => current + 1);
+                  }}
+                  type="button"
+                >
+                  {csrfStatus === 'error' ? 'Retry secure sign-in' : 'Refresh secure sign-in'}
+                </button>
+                <span className="meta">Attempt {Math.max(csrfAttemptCount, 1)} of 3</span>
+              </div>
             </div>
           )}
 
