@@ -102,7 +102,10 @@ export function ListenerAvatarCreator({
       const nextOptions = (data.options ?? []) as AvatarOption[];
       setOptions(nextOptions);
       setSelectedOptionId(nextOptions[0]?.id ?? null);
-      setMessage(nextOptions.length ? 'Choose the cartoon avatar you want to keep.' : 'No avatar options came back.');
+      setMessage(
+        data.notice ??
+          (nextOptions.length ? 'Choose the cartoon avatar you want to keep.' : 'No avatar options came back.')
+      );
     } else {
       setMessage(data.error ?? 'Could not generate avatar');
     }

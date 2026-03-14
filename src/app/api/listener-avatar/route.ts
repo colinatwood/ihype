@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import OpenAI from 'openai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -111,6 +112,97 @@ function pickRandom<T>(values: readonly T[]) {
   return values[Math.floor(Math.random() * values.length)];
 }
 
+function pickDeterministic<T>(values: readonly T[], seed: string, salt: string) {
+  const digest = createHash('sha256').update(`${seed}:${salt}`).digest();
+  return values[digest[0] % values.length];
+}
+
+function encodeSvgAsDataUrl(svg: string) {
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
+const fallbackSkinTones = ['#f7d7c4', '#f0c1a6', '#d89a73', '#9f6a47', '#6f4633'] as const;
+const fallbackHairTones = ['#10121b', '#3d2b1f', '#6e4730', '#cab08b', '#6f4cff', '#1fd4c7'] as const;
+const fallbackBackdropTones = ['#0f1728', '#1b2440', '#281947', '#102a34', '#2b1631'] as const;
+const fallbackAccentTones = ['#23d0d8', '#ff6ea8', '#ffe066', '#8f5bff', '#7cf29c'] as const;
+
+function buildFallbackAvatarDataUrl({
+  seed,
+  label,
+  phrase
+}: {
+  seed: string;
+  label: string;
+  phrase: string;
+}) {
+  const skin = pickDeterministic(fallbackSkinTones, seed, 'skin');
+  const hair = pickDeterministic(fallbackHairTones, seed, 'hair');
+  const backdrop = pickDeterministic(fallbackBackdropTones, seed, 'backdrop');
+  const accent = pickDeterministic(fallbackAccentTones, seed, 'accent');
+  const eyeOffset = 18 + (createHash('sha256').update(`${seed}:eyes`).digest()[0] % 6);
+  const mouthWidth = 30 + (createHash('sha256').update(`${seed}:mouth`).digest()[0] % 12);
+  const hoodieTone = pickDeterministic(['#f4f6ff', '#d7e7ff', '#f2d7ff', '#d8fff0'], seed, 'hoodie');
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="${label}">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${backdrop}" />
+          <stop offset="100%" stop-color="${accent}" stop-opacity="0.9" />
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="44" fill="url(#bg)" />
+      <circle cx="420" cy="92" r="54" fill="${accent}" fill-opacity="0.16" />
+      <circle cx="108" cy="418" r="72" fill="#ffffff" fill-opacity="0.08" />
+      <ellipse cx="256" cy="202" rx="124" ry="128" fill="${skin}" />
+      <path d="M142 187c0-72 47-118 114-118 59 0 105 34 125 93-34-25-59-34-98-31-42 3-77 13-141 56Z" fill="${hair}" />
+      <path d="M136 197c18-34 43-55 76-68" stroke="${hair}" stroke-width="22" stroke-linecap="round" />
+      <path d="M376 197c-18-34-43-55-76-68" stroke="${hair}" stroke-width="22" stroke-linecap="round" />
+      <rect x="162" y="158" width="42" height="100" rx="21" fill="${accent}" />
+      <rect x="308" y="158" width="42" height="100" rx="21" fill="${accent}" />
+      <rect x="194" y="170" width="124" height="24" rx="12" fill="${accent}" />
+      <circle cx="${256 - eyeOffset}" cy="206" r="10" fill="#10121b" />
+      <circle cx="${256 + eyeOffset}" cy="206" r="10" fill="#10121b" />
+      <path d="M${256 - mouthWidth / 2} 254c12 16 48 16 60 0" stroke="#7a4231" stroke-width="10" stroke-linecap="round" fill="none" />
+      <path d="M154 390c18-64 67-99 102-99 35 0 84 35 102 99" fill="${hoodieTone}" />
+      <path d="M184 324c18 24 42 36 72 36 30 0 54-12 72-36" stroke="${accent}" stroke-width="10" stroke-linecap="round" fill="none" />
+      <text x="256" y="456" text-anchor="middle" fill="#ffffff" fill-opacity="0.82" font-family="Avenir Next, Segoe UI, sans-serif" font-size="20">${phrase.slice(0, 24)}</text>
+    </svg>
+  `;
+
+  return encodeSvgAsDataUrl(svg);
+}
+
+function buildFallbackOptions({
+  profile,
+  prompt,
+  variantCount
+}: {
+  profile: {
+    id: string;
+    hexId: string;
+    name: string;
+  };
+  prompt: string;
+  variantCount: number;
+}) {
+  return Array.from({ length: variantCount }, (_, index) => {
+    const variant = buildRandomVariantPrompt();
+    const seed = `${profile.hexId}:${prompt}:${index + 1}`;
+
+    return {
+      id: `option-${index + 1}`,
+      label: variant.label,
+      avatarImage: buildFallbackAvatarDataUrl({
+        seed,
+        label: variant.label,
+        phrase: prompt
+      }),
+      revisedPrompt: `Fallback character sketch based on: ${prompt}`
+    };
+  });
+}
+
 function buildRandomVariantPrompt() {
   const hair = pickRandom(avatarHairChoices);
   const accessory = pickRandom(avatarAccessoryChoices);
@@ -195,45 +287,83 @@ export async function POST(request: Request) {
       revisedPrompt: string | null;
     }> = [];
 
-    for (let index = 0; index < body.variantCount; index += 1) {
-      const variant = buildRandomVariantPrompt();
-      const result = await openai.images.generate({
-        model: 'gpt-image-1',
-        prompt: buildAvatarPrompt({
-          name: profile.name,
-          city: profile.city,
-          country: profile.country,
-          genres: profile.genres,
-          topFiveContent: profile.topFiveContent,
-          userPrompt: [body.prompt, variant.prompt].filter(Boolean).join(' ')
-        }),
-        size: '1024x1024',
-        quality: 'medium',
-        background: 'transparent',
-        output_format: 'png',
-        user: `${profile.hexId}-fan-avatar-${index + 1}`
-      });
+    try {
+      for (let index = 0; index < body.variantCount; index += 1) {
+        const variant = buildRandomVariantPrompt();
+        const result = await openai.images.generate({
+          model: 'gpt-image-1',
+          prompt: buildAvatarPrompt({
+            name: profile.name,
+            city: profile.city,
+            country: profile.country,
+            genres: profile.genres,
+            topFiveContent: profile.topFiveContent,
+            userPrompt: [body.prompt, variant.prompt].filter(Boolean).join(' ')
+          }),
+          size: '1024x1024',
+          quality: 'medium',
+          background: 'transparent',
+          output_format: 'png',
+          user: `${profile.hexId}-fan-avatar-${index + 1}`
+        });
 
-      const image = result.data?.[0];
-      if (!image?.b64_json) {
-        continue;
+        const image = result.data?.[0];
+        if (!image?.b64_json) {
+          continue;
+        }
+
+        options.push({
+          id: `option-${index + 1}`,
+          label: variant.label,
+          avatarImage: `data:image/png;base64,${image.b64_json}`,
+          revisedPrompt: image.revised_prompt ?? null
+        });
       }
+    } catch (error) {
+      const openAiError = error as { code?: string; message?: string };
 
-      options.push({
-        id: `option-${index + 1}`,
-        label: variant.label,
-        avatarImage: `data:image/png;base64,${image.b64_json}`,
-        revisedPrompt: image.revised_prompt ?? null
+      return NextResponse.json({
+        options: buildFallbackOptions({
+          profile: {
+            id: profile.id,
+            hexId: profile.hexId,
+            name: profile.name
+          },
+          prompt: body.prompt,
+          variantCount: body.variantCount
+        }),
+        fanHexId: profile.hexId,
+        generationMode: 'fallback',
+        notice:
+          openAiError.code === 'billing_hard_limit_reached'
+            ? 'OpenAI image credits are unavailable right now, so iHYPE generated local character sketches instead.'
+            : 'The OpenAI image service is temporarily unavailable, so iHYPE generated local character sketches instead.',
+        savedAvatarImage: profile.avatarImage ?? null
       });
     }
 
     if (!options.length) {
-      return NextResponse.json({ error: 'The avatar service returned empty options' }, { status: 502 });
+      return NextResponse.json({
+        options: buildFallbackOptions({
+          profile: {
+            id: profile.id,
+            hexId: profile.hexId,
+            name: profile.name
+          },
+          prompt: body.prompt,
+          variantCount: body.variantCount
+        }),
+        fanHexId: profile.hexId,
+        generationMode: 'fallback',
+        notice: 'The OpenAI image service returned empty results, so iHYPE generated local character sketches instead.',
+        savedAvatarImage: profile.avatarImage ?? null
+      });
     }
 
     return NextResponse.json({
       options,
       fanHexId: profile.hexId,
+      generationMode: 'openai',
       savedAvatarImage: profile.avatarImage ?? null
     });
   } catch (error) {
