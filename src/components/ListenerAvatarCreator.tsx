@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { shortenHexId } from '@/lib/hex-id';
 
 type AvatarOption = {
   id: string;
@@ -12,6 +13,7 @@ type AvatarOption = {
 
 type ListenerAvatarCreatorProps = {
   profileId: string;
+  profileHexId: string;
   profileName: string;
   defaultPrompt: string;
   initialAvatarImage: string | null;
@@ -28,12 +30,13 @@ function getInitials(name: string) {
 
 export function ListenerAvatarCreator({
   profileId,
+  profileHexId,
   profileName,
   defaultPrompt,
   initialAvatarImage
 }: ListenerAvatarCreatorProps) {
   const router = useRouter();
-  const [styleNote, setStyleNote] = useState('');
+  const [characterPhrase, setCharacterPhrase] = useState('');
   const [avatarImage, setAvatarImage] = useState(initialAvatarImage);
   const [options, setOptions] = useState<AvatarOption[]>([]);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -53,7 +56,7 @@ export function ListenerAvatarCreator({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         profileId,
-        prompt: styleNote,
+        prompt: characterPhrase,
         variantCount: 4
       })
     });
@@ -87,6 +90,7 @@ export function ListenerAvatarCreator({
       body: JSON.stringify({
         action: 'save',
         profileId,
+        profileHexId,
         avatarImage: selectedOption.avatarImage
       })
     });
@@ -95,7 +99,7 @@ export function ListenerAvatarCreator({
 
     if (response.ok) {
       setAvatarImage(data.avatarImage ?? selectedOption.avatarImage);
-      setMessage('Avatar updated.');
+      setMessage(`Animated avatar saved to ${shortenHexId(data.fanHexId ?? profileHexId)} for future fan interactions.`);
       router.refresh();
     } else {
       setMessage(data.error ?? 'Could not save this avatar');
@@ -115,34 +119,35 @@ export function ListenerAvatarCreator({
           )}
         </div>
         <div>
-          <h2>AI avatar builder</h2>
+          <h2>Animated fan avatar builder</h2>
           <p className="kicker">
-            Generate a few simple random cartoon characters, preview them live, and save the one that feels right.
+            Write a phrase that describes your animated character, preview a few OpenAI-generated looks, and save one to your fan ID.
           </p>
+          <p className="meta">Fan ID: {profileHexId}</p>
         </div>
       </div>
 
       <form className="form" onSubmit={handleGenerate}>
         <label className="field">
-          <span>Style note (optional)</span>
+          <span>Character phrase</span>
           <textarea
-            onChange={(event) => setStyleNote(event.target.value)}
+            onChange={(event) => setCharacterPhrase(event.target.value)}
             placeholder={defaultPrompt}
             rows={4}
-            value={styleNote}
+            value={characterPhrase}
           />
         </label>
 
         <div className="cta-row">
           <button className="button" disabled={pending} type="submit">
-            {pending ? 'Generating...' : 'Generate choices'}
+            {pending ? 'Generating...' : 'Generate animated avatars'}
           </button>
           <button
             className="button small secondary"
-            onClick={() => setStyleNote('')}
+            onClick={() => setCharacterPhrase('')}
             type="button"
           >
-            Clear note
+            Clear phrase
           </button>
           <button
             className="button small secondary"
@@ -150,7 +155,7 @@ export function ListenerAvatarCreator({
             onClick={handleSaveSelection}
             type="button"
           >
-            Save selected avatar
+            Save to fan ID
           </button>
           {message ? <span className="meta">{message}</span> : null}
         </div>
@@ -168,7 +173,7 @@ export function ListenerAvatarCreator({
               <img alt={`${option.label} avatar option`} className="avatar-option-image" src={option.avatarImage} />
               <div className="avatar-option-meta">
                 <strong>{option.label}</strong>
-                <span>{option.id === selectedOptionId ? 'Selected' : 'Choose'}</span>
+                <span>{option.id === selectedOptionId ? `Selected for ${shortenHexId(profileHexId)}` : 'Choose'}</span>
               </div>
             </button>
           ))}

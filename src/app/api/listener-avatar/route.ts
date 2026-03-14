@@ -8,13 +8,14 @@ import { canManageOwnedResource } from '@/lib/permissions';
 
 const generateSchema = z.object({
   profileId: z.string().cuid(),
-  prompt: z.string().trim().max(600).optional().default(''),
+  prompt: z.string().trim().min(3, 'Write a short phrase for your character first.').max(600),
   variantCount: z.number().int().min(1).max(4).optional().default(4)
 });
 
 const saveSchema = z.object({
   action: z.literal('save'),
   profileId: z.string().cuid(),
+  profileHexId: z.string().regex(/^0x[a-f0-9]+$/i, 'A valid fan hex ID is required.'),
   avatarImage: z.string().startsWith('data:image/').max(8_000_000)
 });
 
@@ -40,13 +41,13 @@ function buildAvatarPrompt({
 
   return [
     `Create an original simple cartoon avatar portrait for the music fan profile "${name}".`,
-    'Single original character only, head-and-shoulders composition, centered character, clean silhouette, playful expression.',
-    'Simple illustrated finish, nightlife energy, music-discovery personality, bold but limited color palette, no text, no watermark, no logos.',
+    'Turn the fan phrase into one animated original character only, head-and-shoulders composition, centered character, clean silhouette, playful expression.',
+    'Simple animated illustration finish, nightlife energy, music-discovery personality, bold but limited color palette, no text, no watermark, no logos.',
     'Avoid matching any copyrighted character or celebrity likeness.',
     genreLine,
     locationLine,
     topFiveLine,
-    `User direction: ${userPrompt}`
+    `Fan phrase: ${userPrompt}`
   ]
     .filter(Boolean)
     .join(' ');
@@ -146,6 +147,7 @@ export async function POST(request: Request) {
       where: { id: baseBody.profileId },
       select: {
         id: true,
+        hexId: true,
         ownerId: true,
         type: true,
         name: true,
@@ -168,13 +170,18 @@ export async function POST(request: Request) {
     if (isSaveRequest) {
       const body = saveSchema.parse(rawBody);
 
+      if (body.profileHexId.toLowerCase() !== profile.hexId.toLowerCase()) {
+        return NextResponse.json({ error: 'That avatar can only be tagged to its matching fan ID.' }, { status: 400 });
+      }
+
       await db.profile.update({
         where: { id: profile.id },
         data: { avatarImage: body.avatarImage }
       });
 
       return NextResponse.json({
-        avatarImage: body.avatarImage
+        avatarImage: body.avatarImage,
+        fanHexId: profile.hexId
       });
     }
 
@@ -204,7 +211,7 @@ export async function POST(request: Request) {
         quality: 'medium',
         background: 'transparent',
         output_format: 'png',
-        user: `${session.user.id}-listener-avatar-${index + 1}`
+        user: `${profile.hexId}-fan-avatar-${index + 1}`
       });
 
       const image = result.data?.[0];
@@ -226,6 +233,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       options,
+      fanHexId: profile.hexId,
       savedAvatarImage: profile.avatarImage ?? null
     });
   } catch (error) {

@@ -141,6 +141,7 @@ export default async function ListenerPage({
             defaultPrompt={defaultAvatarPrompt}
             initialAvatarImage={profile.avatarImage}
             profileId={profile.id}
+            profileHexId={profile.hexId}
             profileName={profile.name}
           />
           <ProfilePageEditor
