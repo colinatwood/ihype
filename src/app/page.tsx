@@ -40,10 +40,27 @@ export default async function HomePage() {
       copy: 'Browse venues by city and signal, then hype the rooms you want to see stay active.'
     }
   ];
+  const spotlightCards = [
+    {
+      label: 'Artist pulse',
+      name: featuredArtists[0]?.name ?? 'Waiting on the next breakout act',
+      href: '/artists'
+    },
+    {
+      label: 'Promoter heat',
+      name: featuredPromoters[0]?.name ?? 'New promoters loading in',
+      href: '/promoters'
+    },
+    {
+      label: 'Venue spotlight',
+      name: featuredVenues[0]?.name ?? 'Fresh rooms about to light up',
+      href: '/venues'
+    }
+  ];
 
   return (
-    <main className="container section">
-      <section className="panel home-discovery-hero">
+    <main className="container section home-refresh-shell">
+      <section className="panel home-discovery-hero home-discovery-hero-energized">
         <div className="home-discovery-hero-copy">
           <div className="badge">Fan-first discovery</div>
           <h1 className="home-discovery-title">Find artists, promoters, and venues worth hyping.</h1>
@@ -61,6 +78,14 @@ export default async function HomePage() {
             <Link className="button secondary" href="/venues">
               Browse venues
             </Link>
+          </div>
+          <div className="home-scene-radar">
+            {spotlightCards.map((card) => (
+              <Link className="home-scene-radar-card" href={card.href} key={card.label}>
+                <span>{card.label}</span>
+                <strong>{card.name}</strong>
+              </Link>
+            ))}
           </div>
         </div>
 
@@ -81,16 +106,24 @@ export default async function HomePage() {
             <span>Total profile hype</span>
             <strong>{profiles.reduce((sum, profile) => sum + profile.hypeCount, 0)}</strong>
           </article>
+          <div className="home-signal-column">
+            <span className="home-signal-column-label">Scene signal</span>
+            <p>
+              Browse fast, open pages that feel real, and use hype to push the strongest artists,
+              venues, and promoters higher.
+            </p>
+          </div>
         </div>
       </section>
 
       <section className="section">
         <div className="home-simple-directory-grid">
           {directoryCards.map((card) => (
-            <Link className="home-simple-directory-card panel" href={card.href} key={card.href}>
+            <Link className="home-simple-directory-card panel home-simple-directory-card-energized" href={card.href} key={card.href}>
               <span className="badge">{card.title}</span>
               <strong>{card.count} to explore</strong>
               <p>{card.copy}</p>
+              <span className="home-card-arrow">Open lane</span>
             </Link>
           ))}
         </div>

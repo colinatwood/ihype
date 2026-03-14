@@ -45,30 +45,41 @@ export function ProfileCard({ profile }: { profile: ProfileCardProfile }) {
   const summary = getProfileSummary(profile.bio);
 
   return (
-    <article className="card">
-      {avatarImage ? (
-        <div className="card-avatar">
-          <img alt={`${profile.name} avatar`} className="profile-avatar" src={avatarImage} />
+    <article className={`card profile-card profile-card-${basePath}`}>
+      <div className="profile-card-head">
+        <div className="badge">{getProfileLabel(profile.type)}</div>
+        <span className="profile-card-hype">{profile.hypeCount} hype</span>
+      </div>
+      <div className="profile-card-identity">
+        {avatarImage ? (
+          <div className="card-avatar profile-card-avatar-shell">
+            <img alt={`${profile.name} avatar`} className="profile-avatar profile-card-avatar" src={avatarImage} />
+          </div>
+        ) : (
+          <div className="profile-avatar profile-avatar-fallback profile-card-avatar profile-card-avatar-shell">
+            {profile.name.slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <div className="profile-card-copy">
+          <h3>{profile.name}</h3>
+          <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
         </div>
-      ) : null}
-      <div className="badge">{getProfileLabel(profile.type)}</div>
-      <h3>{profile.name}</h3>
-      <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
+      </div>
       {profile.type === 'VENUE' && (profile.addressLine1 || profile.hoursText || profile.contactInfo) ? (
-        <p className="meta">
+        <p className="meta profile-card-detail">
           {[profile.addressLine1, profile.hoursText, profile.contactInfo].filter(Boolean).join(' | ')}
         </p>
       ) : null}
-      {profile.type === 'ARTIST' && profile.hometown ? <p className="meta">Hometown: {profile.hometown}</p> : null}
-      <p className="meta">
-        {shortenHexId(profile.hexId)} | {profile.hypeCount} hype
-      </p>
-      {summary ? <p>{summary}</p> : null}
-      <div className="tag-row">
+      {profile.type === 'ARTIST' && profile.hometown ? <p className="meta profile-card-detail">Hometown: {profile.hometown}</p> : null}
+      <p className="meta profile-card-detail">{shortenHexId(profile.hexId)}</p>
+      {summary ? <p className="profile-card-summary">{summary}</p> : null}
+      <div className="tag-row profile-card-tags">
         {profile.genres.map((genre) => <span key={genre} className="tag">{genre}</span>)}
       </div>
-      <HypeButton entityLabel={getProfileLabel(profile.type).toLowerCase()} initialCount={profile.hypeCount} targetId={profile.id} targetType="profile" />
-      <div className="cta-row">
+      <div className="profile-card-actions">
+        <HypeButton entityLabel={getProfileLabel(profile.type).toLowerCase()} initialCount={profile.hypeCount} targetId={profile.id} targetType="profile" />
+      </div>
+      <div className="cta-row profile-card-cta-row">
         <Link className="button small secondary" href={`/${basePath}/${profile.slug}`}>View page</Link>
         <Link className="button small secondary" href={`/profiles/${profile.hexId}`}>Share</Link>
       </div>

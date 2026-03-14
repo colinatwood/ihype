@@ -65,6 +65,7 @@ export function ListenerAvatarCreator({
   initialAvatarImage
 }: ListenerAvatarCreatorProps) {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
   const [characterPhrase, setCharacterPhrase] = useState('');
   const [selectedPresetId, setSelectedPresetId] = useState<(typeof avatarStylePresets)[number]['id']>('night-runner');
   const [selectedMoodId, setSelectedMoodId] = useState<(typeof avatarMoodOptions)[number]['id']>('electric');
@@ -81,6 +82,11 @@ export function ListenerAvatarCreator({
   const generationPrompt = [characterPhrase.trim(), selectedPreset.prompt, selectedMood.prompt]
     .filter(Boolean)
     .join(' ');
+  const compactStatus = selectedOption
+    ? 'Draft character selected and ready to save.'
+    : avatarImage
+      ? 'Saved page companion is attached to this fan page.'
+      : 'No page companion saved yet.';
 
   async function handleGenerate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -149,148 +155,186 @@ export function ListenerAvatarCreator({
 
   return (
     <section className="panel avatar-creator">
-      <div className="avatar-creator-header">
+      <div className="avatar-creator-header avatar-creator-header-compact">
         <div>
           <h2>Animated fan character lab</h2>
           <p className="kicker">
-            Write the fan energy you want, choose a look preset and mood, then preview a few animated character renders before saving one to your fan ID.
+            Build or refresh the animated page companion attached to your fan ID.
           </p>
           <p className="meta">Fan ID: {profileHexId}</p>
         </div>
+        <button
+          className="button small secondary"
+          onClick={() => setIsOpen((current) => !current)}
+          type="button"
+        >
+          {isOpen ? 'Minimize lab' : 'Open lab'}
+        </button>
       </div>
 
-      <div className="avatar-creator-lab">
-        <div className="avatar-creator-stage">
-          <div className="avatar-creator-stage-topline">
-            <span className="badge">Live preview</span>
-            <span className="avatar-creator-stage-id">{shortenHexId(profileHexId)}</span>
-          </div>
-
-          <div className="avatar-creator-stage-frame">
+      {!isOpen ? (
+        <div className="avatar-creator-collapsed">
+          <div className="avatar-creator-collapsed-stage">
             <div className="avatar-creator-stage-glow" />
             {previewImage ? (
-              <img alt={`${profileName} avatar`} className="avatar-creator-stage-image" src={previewImage} />
+              <img alt={`${profileName} avatar`} className="avatar-creator-collapsed-image" src={previewImage} />
             ) : (
-              <div className="profile-avatar profile-avatar-fallback avatar-creator-stage-fallback">
+              <div className="profile-avatar profile-avatar-fallback avatar-creator-collapsed-fallback">
                 {getInitials(profileName)}
               </div>
             )}
           </div>
-
-          <div className="avatar-creator-stage-meta">
+          <div className="avatar-creator-collapsed-copy">
             <strong>{profileName}</strong>
-            <p>{characterPhrase.trim() || defaultPrompt}</p>
+            <p>{compactStatus}</p>
             <div className="avatar-creator-chip-row">
               <span className="avatar-creator-chip">{selectedPreset.label}</span>
               <span className="avatar-creator-chip">{selectedMood.label}</span>
-              <span className="avatar-creator-chip">Motion-ready</span>
-              {selectedOption ? <span className="avatar-creator-chip">Selected render</span> : null}
+              {selectedOption ? <span className="avatar-creator-chip">Unsaved render</span> : null}
             </div>
-            {selectedOption?.description ? (
-              <p className="avatar-creator-stage-description">{selectedOption.description}</p>
-            ) : null}
+            {message ? <span className="meta">{message}</span> : null}
           </div>
         </div>
+      ) : (
+        <>
+          <div className="avatar-creator-lab">
+            <div className="avatar-creator-stage">
+              <div className="avatar-creator-stage-topline">
+                <span className="badge">Live preview</span>
+                <span className="avatar-creator-stage-id">{shortenHexId(profileHexId)}</span>
+              </div>
 
-        <form className="form avatar-creator-controls" onSubmit={handleGenerate}>
-          <label className="field">
-            <span>Character phrase</span>
-            <textarea
-              onChange={(event) => setCharacterPhrase(event.target.value)}
-              placeholder={defaultPrompt}
-              rows={4}
-              value={characterPhrase}
-            />
-          </label>
+              <div className="avatar-creator-stage-frame">
+                <div className="avatar-creator-stage-glow" />
+                {previewImage ? (
+                  <img alt={`${profileName} avatar`} className="avatar-creator-stage-image" src={previewImage} />
+                ) : (
+                  <div className="profile-avatar profile-avatar-fallback avatar-creator-stage-fallback">
+                    {getInitials(profileName)}
+                  </div>
+                )}
+              </div>
 
-          <div className="avatar-creator-section">
-            <div className="avatar-creator-section-head">
-              <strong>Look preset</strong>
-              <span className="meta">{selectedPreset.description}</span>
+              <div className="avatar-creator-stage-meta">
+                <strong>{profileName}</strong>
+                <p>{characterPhrase.trim() || defaultPrompt}</p>
+                <div className="avatar-creator-chip-row">
+                  <span className="avatar-creator-chip">{selectedPreset.label}</span>
+                  <span className="avatar-creator-chip">{selectedMood.label}</span>
+                  <span className="avatar-creator-chip">Motion-ready</span>
+                  {selectedOption ? <span className="avatar-creator-chip">Selected render</span> : null}
+                </div>
+                {selectedOption?.description ? (
+                  <p className="avatar-creator-stage-description">{selectedOption.description}</p>
+                ) : null}
+              </div>
             </div>
-            <div className="avatar-preset-grid">
-              {avatarStylePresets.map((preset) => (
+
+            <form className="form avatar-creator-controls" onSubmit={handleGenerate}>
+              <label className="field">
+                <span>Character phrase</span>
+                <textarea
+                  onChange={(event) => setCharacterPhrase(event.target.value)}
+                  placeholder={defaultPrompt}
+                  rows={4}
+                  value={characterPhrase}
+                />
+              </label>
+
+              <div className="avatar-creator-section">
+                <div className="avatar-creator-section-head">
+                  <strong>Look preset</strong>
+                  <span className="meta">{selectedPreset.description}</span>
+                </div>
+                <div className="avatar-preset-grid">
+                  {avatarStylePresets.map((preset) => (
+                    <button
+                      className={preset.id === selectedPresetId ? 'avatar-preset-card active' : 'avatar-preset-card'}
+                      key={preset.id}
+                      onClick={() => setSelectedPresetId(preset.id)}
+                      type="button"
+                    >
+                      <strong>{preset.label}</strong>
+                      <span>{preset.description}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="avatar-creator-section">
+                <div className="avatar-creator-section-head">
+                  <strong>Mood</strong>
+                </div>
+                <div className="avatar-mood-row">
+                  {avatarMoodOptions.map((mood) => (
+                    <button
+                      className={mood.id === selectedMoodId ? 'avatar-mood-chip active' : 'avatar-mood-chip'}
+                      key={mood.id}
+                      onClick={() => setSelectedMoodId(mood.id)}
+                      type="button"
+                    >
+                      {mood.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="cta-row">
                 <button
-                  className={preset.id === selectedPresetId ? 'avatar-preset-card active' : 'avatar-preset-card'}
-                  key={preset.id}
-                  onClick={() => setSelectedPresetId(preset.id)}
+                  className="button"
+                  disabled={pending}
+                  type="submit"
+                >
+                  {pending ? 'Generating...' : 'Generate animated avatars'}
+                </button>
+                <button
+                  className="button small secondary"
+                  onClick={() => setCharacterPhrase('')}
                   type="button"
                 >
-                  <strong>{preset.label}</strong>
-                  <span>{preset.description}</span>
+                  Clear phrase
                 </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="avatar-creator-section">
-            <div className="avatar-creator-section-head">
-              <strong>Mood</strong>
-            </div>
-            <div className="avatar-mood-row">
-              {avatarMoodOptions.map((mood) => (
                 <button
-                  className={mood.id === selectedMoodId ? 'avatar-mood-chip active' : 'avatar-mood-chip'}
-                  key={mood.id}
-                  onClick={() => setSelectedMoodId(mood.id)}
+                  className="button small secondary"
+                  disabled={!selectedOption || pending}
+                  onClick={handleSaveSelection}
                   type="button"
                 >
-                  {mood.label}
+                  Save as page companion
+                </button>
+              </div>
+
+              {message ? <span className="meta">{message}</span> : null}
+              {selectedOption?.revisedPrompt ? (
+                <div className="avatar-creator-notes">
+                  <span>OpenAI render note</span>
+                  <p>{selectedOption.revisedPrompt}</p>
+                </div>
+              ) : null}
+            </form>
+          </div>
+
+          {options.length ? (
+            <div className="avatar-option-grid">
+              {options.map((option) => (
+                <button
+                  className={option.id === selectedOptionId ? 'avatar-option-card active' : 'avatar-option-card'}
+                  key={option.id}
+                  onClick={() => setSelectedOptionId(option.id)}
+                  type="button"
+                >
+                  <img alt={`${option.label} avatar option`} className="avatar-option-image" src={option.avatarImage} />
+                  <div className="avatar-option-meta">
+                    <strong>{option.label}</strong>
+                    {option.description ? <p>{option.description}</p> : null}
+                    <span>{option.id === selectedOptionId ? `Selected for ${shortenHexId(profileHexId)}` : 'Choose'}</span>
+                  </div>
                 </button>
               ))}
-            </div>
-          </div>
-
-          <div className="cta-row">
-            <button className="button" disabled={pending} type="submit">
-              {pending ? 'Generating...' : 'Generate animated avatars'}
-            </button>
-            <button
-              className="button small secondary"
-              onClick={() => setCharacterPhrase('')}
-              type="button"
-            >
-              Clear phrase
-            </button>
-            <button
-              className="button small secondary"
-              disabled={!selectedOption || pending}
-              onClick={handleSaveSelection}
-              type="button"
-            >
-              Save as page companion
-            </button>
-          </div>
-
-          {message ? <span className="meta">{message}</span> : null}
-          {selectedOption?.revisedPrompt ? (
-            <div className="avatar-creator-notes">
-              <span>OpenAI render note</span>
-              <p>{selectedOption.revisedPrompt}</p>
             </div>
           ) : null}
-        </form>
-      </div>
-
-      {options.length ? (
-        <div className="avatar-option-grid">
-          {options.map((option) => (
-            <button
-              className={option.id === selectedOptionId ? 'avatar-option-card active' : 'avatar-option-card'}
-              key={option.id}
-              onClick={() => setSelectedOptionId(option.id)}
-              type="button"
-            >
-              <img alt={`${option.label} avatar option`} className="avatar-option-image" src={option.avatarImage} />
-              <div className="avatar-option-meta">
-                <strong>{option.label}</strong>
-                {option.description ? <p>{option.description}</p> : null}
-                <span>{option.id === selectedOptionId ? `Selected for ${shortenHexId(profileHexId)}` : 'Choose'}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      ) : null}
+        </>
+      )}
     </section>
   );
 }

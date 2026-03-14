@@ -17,28 +17,40 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <AppProviders>
-          <AdminPerspectiveBar />
-          <header className="nav">
-            <div className="container nav-inner">
-              <Link href="/" className="nav-logo nav-logo-left" aria-label="iHYPE.org home">
-                <span className="nav-logo-word">iHYPE</span>
-                <span className="nav-logo-dot">.org</span>
-              </Link>
-              <div className="nav-player-slot nav-player-slot-centered">
-                <HeaderMediaPlayer />
+          <div aria-hidden="true" className="site-background">
+            <span className="site-background-orb site-background-orb-a" />
+            <span className="site-background-orb site-background-orb-b" />
+            <span className="site-background-grid" />
+          </div>
+          <div className="site-shell">
+            <AdminPerspectiveBar />
+            <header className="nav">
+              <div className="container nav-inner">
+                <Link href="/" className="nav-logo nav-logo-left" aria-label="iHYPE.org home">
+                  <span className="nav-logo-word">iHYPE</span>
+                  <span className="nav-logo-dot">.org</span>
+                </Link>
+                <div className="nav-player-slot nav-player-slot-centered">
+                  <HeaderMediaPlayer />
+                </div>
+                <HeaderAuthLinks />
               </div>
-              <HeaderAuthLinks />
-            </div>
-          </header>
-          <SiteSubnav />
-          {children}
-          <footer className="footer container">
-            <span>iHYPE.org helps fans find and hype artists, promoters, and venues.</span>{' '}
-            <Link href="/artists">Artists</Link>{' '}
-            <Link href="/promoters">Promoters</Link>{' '}
-            <Link href="/venues">Venues</Link>{' '}
-            <Link href="/register">Join</Link>
-          </footer>
+            </header>
+            <SiteSubnav />
+            {children}
+            <footer className="footer container footer-shell">
+              <div className="footer-copy">
+                <strong>Fan energy belongs at the center of the scene.</strong>
+                <span>Find artists, promoters, and venues worth pushing forward.</span>
+              </div>
+              <div className="footer-links">
+                <Link href="/artists">Artists</Link>
+                <Link href="/promoters">Promoters</Link>
+                <Link href="/venues">Venues</Link>
+                <Link href="/register">Join</Link>
+              </div>
+            </footer>
+          </div>
         </AppProviders>
       </body>
     </html>
