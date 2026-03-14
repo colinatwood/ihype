@@ -968,6 +968,30 @@ button, input, select, textarea { font: inherit; }
   margin: 0.25rem 0 0;
   max-width: 52ch;
 }
+.fan-dashboard-profile-panel {
+  gap: 1rem;
+}
+.fan-dashboard-profile-body {
+  align-items: flex-start;
+}
+.fan-dashboard-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.2rem 0 0.15rem;
+}
+.fan-dashboard-profile-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.42rem 0.78rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.05);
+  color: #d8f8ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
 .listener-dashboard-profile-stats {
   display: grid;
   gap: 0.85rem;
@@ -999,6 +1023,74 @@ button, input, select, textarea { font: inherit; }
 }
 .listener-dashboard-discovery-panel {
   padding: 1.35rem;
+}
+.fan-dashboard-middle {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.72fr);
+  align-items: start;
+}
+.fan-dashboard-discovery-column {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.fan-dashboard-topfive-column {
+  min-width: 0;
+}
+.fan-dashboard-discovery-module .listener-discovery-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.fan-dashboard-discovery-module .listener-discovery-keyword-field,
+.fan-dashboard-discovery-module .listener-discovery-tour-field {
+  grid-column: span 2;
+}
+.fan-dashboard-discovery-module .listener-discovery-results-grid {
+  grid-template-columns: 1fr;
+}
+.fan-dashboard-discovery-column .listener-location-panel {
+  padding: 1.2rem;
+}
+.fan-dashboard-discovery-column .listener-location-layout {
+  grid-template-columns: 1fr;
+}
+.fan-dashboard-discovery-column .listener-map-stage {
+  min-height: 360px;
+}
+.fan-dashboard-discovery-column .listener-map-detail {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.fan-dashboard-discovery-column .listener-map-detail-stack {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.fan-dashboard-stats-panel {
+  padding: 1.25rem 1.4rem;
+}
+.fan-dashboard-stats-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.fan-dashboard-stat-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+}
+.fan-dashboard-stat-card span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.fan-dashboard-stat-card strong {
+  font-size: 1.8rem;
+  line-height: 1;
 }
 .listener-discovery-form-grid {
   display: grid;
@@ -3907,19 +3999,25 @@ button, input, select, textarea { font: inherit; }
   .market-recommendations-header,
   .market-recommendations-grid { grid-template-columns: 1fr; flex-direction: column; }
   .listener-dashboard-layout,
+  .fan-dashboard-middle,
   .listener-dashboard-profile-body { grid-template-columns: 1fr; flex-direction: column; }
   .listener-dashboard-shell { min-height: auto; }
   .listener-dashboard-column-left,
   .listener-dashboard-column-right { grid-template-rows: auto; }
+  .fan-dashboard-discovery-column .listener-map-detail-stack,
+  .fan-dashboard-stats-grid,
   .listener-dashboard-profile-stats,
   .listener-discovery-form-grid,
   .listener-discovery-results-grid { grid-template-columns: 1fr; }
   .listener-discovery-keyword-field,
   .listener-discovery-tour-field { grid-column: span 1; }
+  .fan-dashboard-discovery-module .listener-discovery-keyword-field,
+  .fan-dashboard-discovery-module .listener-discovery-tour-field { grid-column: span 1; }
   .listener-dashboard-playlist,
   .listener-dashboard-stats-panel { min-height: 0; }
   .listener-dashboard-topfive-grid { grid-template-columns: 1fr; }
   .listener-dashboard-topfive-pill.featured { grid-column: auto; }
+  .fan-dashboard-profile-meta { width: 100%; }
   .mfa-setup-grid { grid-template-columns: 1fr; }
   .admin-perspective-bar { grid-template-columns: 1fr; align-items: stretch; }
   .admin-perspective-actions { justify-content: stretch; }

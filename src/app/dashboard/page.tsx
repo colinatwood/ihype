@@ -50,6 +50,11 @@ function getMemberYear(date: Date) {
   return new Intl.DateTimeFormat('en-US', { year: 'numeric' }).format(date);
 }
 
+function formatCountryProvince(stateRegion: string | null, country: string | null) {
+  const parts = [stateRegion, country].filter(Boolean);
+  return parts.length ? parts.join(', ') : 'Country / province not set';
+}
+
 function parseTopFiveItems(value: string | null, fallbackArtists: string[]) {
   const savedItems = (value ?? '')
     .split(/\r?\n/)
@@ -284,19 +289,23 @@ export default async function DashboardPage() {
   const listenerViewerLocation = isListenerOnlyDashboard ? await detectRequestLocation() : null;
 
   if (isListenerOnlyDashboard && listenerProfile) {
+    const listenerLocationLabel = formatCountryProvince(listenerProfile.stateRegion, listenerProfile.country);
+
     return (
       <main className="container section listener-dashboard-page">
         <section className="listener-dashboard-shell">
           <div className="listener-dashboard-stack">
-            <article className="panel listener-dashboard-profile-panel">
+            <article className="panel listener-dashboard-profile-panel fan-dashboard-profile-panel">
               <div className="listener-dashboard-module-head">
-                <h3>Profile</h3>
+                <div>
+                  <div className="badge">FAN</div>
+                </div>
                 <Link className="button small secondary" href={`/fans/${listenerProfile.slug}`}>
                   Edit profile
                 </Link>
               </div>
 
-              <div className="listener-dashboard-profile-body">
+              <div className="listener-dashboard-profile-body fan-dashboard-profile-body">
                 {listenerAvatarImage ? (
                   <img
                     alt={`${listenerProfile.name} avatar`}
@@ -311,66 +320,37 @@ export default async function DashboardPage() {
 
                 <div className="listener-dashboard-profile-copy">
                   <h2>{listenerProfile.name}</h2>
-                  <p className="listener-dashboard-hero-meta">Member since {getMemberYear(listenerProfile.createdAt)}</p>
+                  <div className="fan-dashboard-profile-meta">
+                    <span className="fan-dashboard-profile-pill">{listenerLocationLabel}</span>
+                    <span className="fan-dashboard-profile-pill">Hype #{listenerProfile.hypeCount}</span>
+                    <span className="fan-dashboard-profile-pill">Member since {getMemberYear(listenerProfile.createdAt)}</span>
+                  </div>
+                  <p className="subtitle">
+                    {listenerProfile.headline || listenerProfile.bio || 'Shape your fan page, save your soundtrack, and keep your favorite rooms close.'}
+                  </p>
                   <p className="listener-dashboard-hero-meta">
                     Share ID:{' '}
                     <Link href={`/profiles/${listenerProfile.hexId}`}>
                       {shortenHexId(listenerProfile.hexId)}
                     </Link>
                   </p>
-                  <p className="subtitle">
-                    {listenerProfile.headline || listenerProfile.bio || 'Shape your fan page, save your soundtrack, and keep your favorite rooms close.'}
-                  </p>
                 </div>
-              </div>
-
-              <div className="listener-dashboard-profile-stats">
-                {dashboardStats.map((stat) => (
-                  <div className="listener-dashboard-profile-stat" key={stat.label}>
-                    <span>{stat.label}</span>
-                    <strong>{stat.value}</strong>
-                  </div>
-                ))}
               </div>
             </article>
 
-            <ListenerDiscoveryModule profiles={listenerDiscoveryResults} />
+            <div className="fan-dashboard-middle">
+              <div className="fan-dashboard-discovery-column">
+                <ListenerDiscoveryModule
+                  className="fan-dashboard-discovery-module"
+                  description="Search artists, promoters, venues, genres, subgenres, locations, and tours from one fast fan module."
+                  profiles={listenerDiscoveryResults}
+                  title="Globe + events search"
+                />
 
-            <ListenerVenueMap venues={listenerVenueMapVenues} viewerLocation={listenerViewerLocation} />
-
-            <div className="listener-dashboard-layout">
-              <div className="listener-dashboard-column listener-dashboard-column-left">
-                <section className="panel listener-dashboard-playlist">
-                  <div className="listener-dashboard-module-head">
-                    <h3>Playlist</h3>
-                    <span className="meta">{recentPlaylist.length ? `${recentPlaylist.length} recent` : 'Nothing queued yet'}</span>
-                  </div>
-
-                  {recentPlaylist.length ? (
-                    <div className="listener-dashboard-playlist-list">
-                      {recentPlaylist.map((listen) => (
-                        <article className="listener-dashboard-track" key={listen.id}>
-                          <span className="listener-dashboard-track-order">{listen.order.toString().padStart(2, '0')}</span>
-                          <div>
-                            <strong>{listen.title}</strong>
-                            <p className="meta">
-                              {listen.artistProfileSlug ? (
-                                <Link href={`/artists/${listen.artistProfileSlug}`}>{listen.artistName}</Link>
-                              ) : (
-                                listen.artistName
-                              )}
-                            </p>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="empty">Your recent listens will start building a dashboard playlist here.</div>
-                  )}
-                </section>
+                <ListenerVenueMap venues={listenerVenueMapVenues} viewerLocation={listenerViewerLocation} />
               </div>
 
-              <div className="listener-dashboard-column listener-dashboard-column-right">
+              <div className="fan-dashboard-topfive-column">
                 <section className="panel listener-dashboard-topfive-panel">
                   <div className="listener-dashboard-module-head">
                     <h3>Top 5</h3>
@@ -391,23 +371,23 @@ export default async function DashboardPage() {
                     <div className="empty">Add a top five list on your fan page to pin favorites here.</div>
                   )}
                 </section>
-
-                <section className="panel listener-dashboard-stats-panel">
-                  <div className="listener-dashboard-module-head">
-                    <h3>Stats</h3>
-                  </div>
-
-                  <div className="listener-dashboard-stat-lines">
-                    {dashboardStats.map((stat) => (
-                      <div className="listener-dashboard-stat-line" key={stat.label}>
-                        <span>{stat.label}</span>
-                        <strong>{stat.value}</strong>
-                      </div>
-                    ))}
-                  </div>
-                </section>
               </div>
             </div>
+
+            <section className="panel listener-dashboard-stats-panel fan-dashboard-stats-panel">
+              <div className="listener-dashboard-module-head">
+                <h3>Stats</h3>
+              </div>
+
+              <div className="fan-dashboard-stats-grid">
+                {dashboardStats.map((stat) => (
+                  <article className="fan-dashboard-stat-card" key={stat.label}>
+                    <span>{stat.label}</span>
+                    <strong>{stat.value}</strong>
+                  </article>
+                ))}
+              </div>
+            </section>
           </div>
         </section>
       </main>

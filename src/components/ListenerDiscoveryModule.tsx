@@ -21,6 +21,9 @@ export type ListenerDiscoveryProfile = {
 
 type ListenerDiscoveryModuleProps = {
   profiles: ListenerDiscoveryProfile[];
+  title?: string;
+  description?: string;
+  className?: string;
 };
 
 function normalizeValue(value: string) {
@@ -84,7 +87,12 @@ function formatLocation(profile: ListenerDiscoveryProfile) {
   return parts.length ? parts.join(', ') : 'Location not posted yet';
 }
 
-export function ListenerDiscoveryModule({ profiles }: ListenerDiscoveryModuleProps) {
+export function ListenerDiscoveryModule({
+  profiles,
+  title = 'Discover',
+  description = 'Search artists, promoters, venues, tours, and local scenes from one fan workspace.',
+  className
+}: ListenerDiscoveryModuleProps) {
   const [filters, setFilters] = useState({
     keyword: '',
     genre: '',
@@ -116,11 +124,11 @@ export function ListenerDiscoveryModule({ profiles }: ListenerDiscoveryModulePro
   const hasFilters = Object.values(filters).some((value) => value.trim().length > 0);
 
   return (
-    <section className="panel listener-dashboard-discovery-panel">
+    <section className={className ? `panel listener-dashboard-discovery-panel ${className}` : 'panel listener-dashboard-discovery-panel'}>
       <div className="listener-dashboard-module-head">
         <div>
-          <h3>Discover</h3>
-          <p className="meta">Search artists, promoters, venues, tours, and local scenes from one fan workspace.</p>
+          <h3>{title}</h3>
+          <p className="meta">{description}</p>
         </div>
       </div>
 
