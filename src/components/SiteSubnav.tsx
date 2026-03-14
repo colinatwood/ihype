@@ -2,16 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-const navItems = [
-  { href: '/', label: 'Discover', match: '/' },
-  { href: '/shows', label: 'Shows', match: '/shows' },
-  { href: '/artists', label: 'Artists', match: '/artists' },
-  { href: '/promoters', label: 'Promoters', match: '/promoters' },
-  { href: '/venues', label: 'Venues', match: '/venues' },
-  { href: '/listeners', label: 'Listeners', match: '/listeners' },
-  { href: '/integrity', label: 'Integrity', match: '/integrity' }
-] as const;
+import { getSiteNavItemsForPerspective, useAdminPerspective } from '@/components/AdminPerspective';
 
 function isActivePath(pathname: string, match: string) {
   if (match === '/') {
@@ -23,10 +14,13 @@ function isActivePath(pathname: string, match: string) {
 
 export function SiteSubnav() {
   const pathname = usePathname();
+  const { isAdmin, perspective } = useAdminPerspective();
 
   if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
     return null;
   }
+
+  const navItems = getSiteNavItemsForPerspective(isAdmin, perspective);
 
   return (
     <div className="site-subnav-shell">

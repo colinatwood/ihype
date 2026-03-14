@@ -148,8 +148,8 @@ export function LoginPageClient() {
         <div className="panel auth-panel">
           <h1>Sign in</h1>
           <p className="kicker">
-            Use your iHYPE account to jump back into your listener, artist, promoter, or venue page. Public demo
-            accounts are available for fan, dj, artist, and venue roles with password demo12345.
+            Use your iHYPE account to jump back into your listener, artist, promoter, venue, or admin workspace.
+            Admin access uses admin@ihype.org with password demo12345.
           </p>
 
           <form

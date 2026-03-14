@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
+import { getPerspectiveHomeHref, useAdminPerspective } from '@/components/AdminPerspective';
 
 export function HeaderAuthLinks() {
   const { data: session, status } = useSession();
+  const { isAdmin, perspective } = useAdminPerspective();
 
   if (status === 'loading') {
     return (
@@ -15,10 +17,19 @@ export function HeaderAuthLinks() {
   }
 
   if (session?.user) {
+    const primaryHref = isAdmin ? getPerspectiveHomeHref(perspective) : '/dashboard';
+    const primaryLabel = isAdmin ? 'Open View' : 'Dashboard';
+
     return (
       <div className="nav-links nav-links-auth nav-links-compact nav-auth-slot">
-        <Link href="/dashboard">Dashboard</Link>
+        <Link href={primaryHref}>{primaryLabel}</Link>
         <span className="nav-divider">|</span>
+        {isAdmin ? (
+          <>
+            <Link href="/dashboard">Admin</Link>
+            <span className="nav-divider">|</span>
+          </>
+        ) : null}
         <button
           className="nav-text-button"
           onClick={() => {

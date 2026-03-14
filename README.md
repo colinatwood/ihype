@@ -69,12 +69,6 @@ Password for all demo users:
 demo12345
 ```
 
-Temporary admin password:
-
-```text
-123456
-```
-
 Demo logins currently use email and password only.
 
 ## Important production notes

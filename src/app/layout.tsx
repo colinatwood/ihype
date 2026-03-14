@@ -1,6 +1,7 @@
 import './globals.css';
 import Link from 'next/link';
 import { ReactNode } from 'react';
+import { AdminPerspectiveBar } from '@/components/AdminPerspective';
 import { HeaderMediaPlayer } from '@/components/GlobalMediaPlayer';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <AppProviders>
+          <AdminPerspectiveBar />
           <header className="nav">
             <div className="container nav-inner">
               <Link href="/" className="nav-logo nav-logo-left" aria-label="iHYPE.org home">

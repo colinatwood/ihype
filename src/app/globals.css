@@ -27,6 +27,63 @@ button, input, select, textarea { font: inherit; }
   background: rgba(9, 13, 24, 0.72); border-bottom: 1px solid rgba(255,255,255,0.06);
   box-shadow: 0 14px 35px rgba(0, 0, 0, 0.18);
 }
+.admin-perspective-shell {
+  position: sticky;
+  top: 0;
+  z-index: 95;
+  backdrop-filter: blur(16px);
+  background: linear-gradient(180deg, rgba(5, 9, 18, 0.92), rgba(8, 13, 24, 0.82));
+  border-bottom: 1px solid rgba(35,208,216,0.16);
+}
+.admin-perspective-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) auto auto;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.55rem 0;
+}
+.admin-perspective-copy {
+  display: grid;
+  gap: 0.18rem;
+}
+.admin-perspective-copy strong {
+  font-size: 0.92rem;
+}
+.admin-perspective-copy span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.admin-perspective-select {
+  display: grid;
+  gap: 0.25rem;
+}
+.admin-perspective-select span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.admin-perspective-select select {
+  min-width: 170px;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(35,208,216,0.18);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.admin-perspective-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.admin-perspective-shell + .nav {
+  top: 56px;
+}
+.admin-perspective-shell + .nav + .site-subnav-shell {
+  top: 118px;
+}
 .nav-inner {
   display: grid;
   grid-template-columns: auto minmax(280px, 460px) auto;
@@ -3636,6 +3693,9 @@ button, input, select, textarea { font: inherit; }
   .listener-dashboard-topfive-grid { grid-template-columns: 1fr; }
   .listener-dashboard-topfive-pill.featured { grid-column: auto; }
   .mfa-setup-grid { grid-template-columns: 1fr; }
+  .admin-perspective-bar { grid-template-columns: 1fr; align-items: stretch; }
+  .admin-perspective-actions { justify-content: stretch; }
+  .admin-perspective-actions .button { width: 100%; justify-content: center; }
   .nav {
     max-height: 30svh;
   }
@@ -3723,6 +3783,9 @@ button, input, select, textarea { font: inherit; }
   .home-card-header,
   .home-section-header,
   .home-scope-row { width: 100%; }
+  .admin-perspective-shell + .nav {
+    top: 58px;
+  }
   .home-submenu-head {
     flex-direction: column;
   }
@@ -3768,6 +3831,9 @@ button, input, select, textarea { font: inherit; }
     width: auto;
     font-size: 0.68rem;
     gap: 0.3rem;
+  }
+  .admin-perspective-copy span {
+    font-size: 0.72rem;
   }
   .nav-links-primary,
   .home-topline-copy,
@@ -3825,5 +3891,8 @@ button, input, select, textarea { font: inherit; }
   .site-subnav {
     padding-top: 0.45rem;
     padding-bottom: 0.55rem;
+  }
+  .admin-perspective-shell + .nav + .site-subnav-shell {
+    top: 134px;
   }
 }
