@@ -43,31 +43,38 @@ function buildRouteStops(
 
   return rankedShows
     .filter((show) => show.venueProfile?.latitude != null && show.venueProfile?.longitude != null)
-    .slice(0, 16)
-    .map((show) => ({
-      id: show.id,
-      title: show.title,
-      href: `/shows/${show.slug}`,
-      venueName: show.venueProfile?.name ?? 'Venue TBA',
-      city: show.venueProfile?.city ?? null,
-      stateRegion: show.venueProfile?.stateRegion ?? null,
-      country: show.venueProfile?.country ?? null,
-      postalCode: show.venueProfile?.postalCode ?? null,
-      latitude: show.venueProfile?.latitude ?? null,
-      longitude: show.venueProfile?.longitude ?? null,
-      startsAtLabel: new Intl.DateTimeFormat('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-      }).format(show.startsAt),
-      timing:
-        show.status === 'LIVE'
-          ? 'live'
-          : show.startsAt.getTime() < now
-            ? 'past'
-            : 'upcoming'
-    }));
+    .flatMap((show) => {
+      const startsAt = show.startsAt instanceof Date ? show.startsAt : new Date(show.startsAt);
+      if (Number.isNaN(startsAt.getTime())) {
+        return [];
+      }
+
+      return [{
+        id: show.id,
+        title: show.title,
+        href: `/shows/${show.slug}`,
+        venueName: show.venueProfile?.name ?? 'Venue TBA',
+        city: show.venueProfile?.city ?? null,
+        stateRegion: show.venueProfile?.stateRegion ?? null,
+        country: show.venueProfile?.country ?? null,
+        postalCode: show.venueProfile?.postalCode ?? null,
+        latitude: show.venueProfile?.latitude ?? null,
+        longitude: show.venueProfile?.longitude ?? null,
+        startsAtLabel: new Intl.DateTimeFormat('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        }).format(startsAt),
+        timing:
+          show.status === 'LIVE'
+            ? 'live'
+            : startsAt.getTime() < now
+              ? 'past'
+              : 'upcoming'
+      } satisfies NetworkEarthRouteStop];
+    })
+    .slice(0, 16);
 }
 
 export default async function HomePage({
