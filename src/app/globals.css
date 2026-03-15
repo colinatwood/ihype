@@ -1064,6 +1064,49 @@ button, input, select, textarea { font: inherit; }
   border-color: rgba(35,208,216,0.24);
   background: rgba(35,208,216,0.1);
 }
+.dashboard-editor-selector-card {
+  gap: 0.85rem;
+}
+.dashboard-editor-module-head {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  justify-content: space-between;
+}
+.dashboard-editor-module-head h2 {
+  margin: 0.35rem 0 0;
+}
+.dashboard-editor-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+.dashboard-editor-switch {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 160px;
+  padding: 0.75rem 0.95rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--muted);
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+.dashboard-editor-switch strong {
+  color: var(--text);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.dashboard-editor-switch:hover,
+.dashboard-editor-switch:focus-visible,
+.dashboard-editor-switch.active {
+  color: var(--text);
+  border-color: rgba(35,208,216,0.28);
+  background: rgba(35,208,216,0.12);
+  transform: translateY(-1px);
+}
 .dashboard-editor-toolstack {
   display: grid;
   gap: 1rem;

@@ -5,7 +5,6 @@ import { AdminPerspectiveBar } from '@/components/AdminPerspective';
 import { HeaderMediaPlayer } from '@/components/GlobalMediaPlayer';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
-import { SiteSubnav } from '@/components/SiteSubnav';
 
 export const metadata = {
   title: 'iHYPE.org',
@@ -26,7 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <AdminPerspectiveBar />
             <header className="nav">
               <div className="container nav-inner">
-                <Link href="/" className="nav-logo nav-logo-left" aria-label="iHYPE.org home">
+                <Link href="/" className="nav-logo nav-logo-left" aria-label="Go to discover">
                   <span className="nav-logo-word">iHYPE</span>
                   <span className="nav-logo-dot">.org</span>
                 </Link>
@@ -36,20 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <HeaderAuthLinks />
               </div>
             </header>
-            <SiteSubnav />
             {children}
-            <footer className="footer container footer-shell">
-              <div className="footer-copy">
-                <strong>Fan energy belongs at the center of the scene.</strong>
-                <span>Find artists, promoters, and venues worth pushing forward.</span>
-              </div>
-              <div className="footer-links">
-                <Link href="/artists">Artists</Link>
-                <Link href="/promoters">Promoters</Link>
-                <Link href="/venues">Venues</Link>
-                <Link href="/register">Join</Link>
-              </div>
-            </footer>
           </div>
         </AppProviders>
       </body>

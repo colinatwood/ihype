@@ -107,7 +107,7 @@ function getProfileEditorConfig(profile: DashboardProfile) {
         { key: 'topFiveContent', label: 'Top 5', kind: 'textarea', rows: 5 }
       ] satisfies ProfilePageEditorField[],
       previewRoleLabel: 'FAN',
-      previewTabs: ['About', 'Upcoming', 'Previous', 'Top 5', 'Stats']
+      previewTabs: ['About', 'Top 5']
     };
   }
 
@@ -138,7 +138,7 @@ function getProfileEditorConfig(profile: DashboardProfile) {
         { key: 'merchContent', label: 'Merch', kind: 'textarea' }
       ] satisfies ProfilePageEditorField[],
       previewRoleLabel: 'ARTIST',
-      previewTabs: ['About', 'Journal', 'Media', 'Tour', 'Merch', 'Stats']
+      previewTabs: ['About', 'Media', 'Tour', 'Merch']
     };
   }
 
@@ -158,7 +158,7 @@ function getProfileEditorConfig(profile: DashboardProfile) {
       { key: 'recommendContent', label: 'Recommend', kind: 'textarea' }
     ] satisfies ProfilePageEditorField[],
     previewRoleLabel: 'PROMOTER',
-    previewTabs: ['About', 'Upcoming', 'Previous', 'Recommend', 'Stats']
+    previewTabs: ['About', 'Shows', 'Events']
   };
 }
 
@@ -220,9 +220,14 @@ function createEmptyVenueShowCollectionsMap(profiles: DashboardProfile[]) {
   );
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ profile?: string | string[] }>;
+}) {
   const session = await auth();
   if (!session?.user) redirect('/login');
+  const resolvedSearchParams = searchParams ? await searchParams : {};
 
   const isAdmin = isAdminSession(session);
   const profiles = await getDashboardProfiles(isAdmin ? undefined : session.user.id);
@@ -275,34 +280,99 @@ export default async function DashboardPage() {
     }
   }
 
+  const requestedProfileId =
+    typeof resolvedSearchParams.profile === 'string' ? resolvedSearchParams.profile : undefined;
+  const activeProfile =
+    sortedProfiles.find((profile) => profile.id === requestedProfileId) ?? sortedProfiles[0] ?? null;
+
   return (
     <main className="container section dashboard-editor-page">
       <section className="panel dashboard-editor-hero">
-        <div className="dashboard-editor-hero-copy">
-          <div className="badge">{isAdmin ? 'ADMIN EDIT MODE' : 'EDIT STUDIO'}</div>
-          <h1>{isAdmin ? 'Edit every public page from one dashboard.' : 'Dashboard is now your page editor.'}</h1>
-          <p className="subtitle">
-            Focus on headline banners, color schemes, graphics, profile info, and role-specific page
-            sections here first. Open the public page whenever you want to review the final result.
-          </p>
-        </div>
+        {activeProfile ? (
+          <>
+            <div className="dashboard-editor-hero-copy">
+              <div className="badge">{isAdmin ? 'ADMIN EDIT MODE' : `${getProfileLabel(activeProfile.type)} EDIT STUDIO`}</div>
+              <h1>{activeProfile.name}</h1>
+              <p className="subtitle">
+                {getProfileSummary(activeProfile)}
+              </p>
+              <div className="dashboard-editor-link-row">
+                <Link className="dashboard-editor-link" href={getProfilePath(activeProfile.type, activeProfile.slug)}>
+                  Open public page
+                </Link>
+                <Link className="dashboard-editor-link" href={`/profiles/${activeProfile.hexId}`}>
+                  Open share link
+                </Link>
+              </div>
+            </div>
 
-        <div className="dashboard-editor-hero-stats">
-          <article className="dashboard-editor-hero-pill">
-            <span>Editable pages</span>
-            <strong>{sortedProfiles.length}</strong>
-          </article>
-          <article className="dashboard-editor-hero-pill">
-            <span>Scope</span>
-            <strong>{isAdmin ? 'All profiles' : 'Your profiles'}</strong>
-          </article>
-        </div>
+            <div className="dashboard-editor-hero-stats">
+              <article className="dashboard-editor-hero-pill">
+                <span>Share ID</span>
+                <strong>{shortenHexId(activeProfile.hexId)}</strong>
+              </article>
+              <article className="dashboard-editor-hero-pill">
+                <span>Editable pages</span>
+                <strong>{sortedProfiles.length}</strong>
+              </article>
+              <article className="dashboard-editor-hero-pill">
+                <span>Scope</span>
+                <strong>{isAdmin ? 'All profiles' : 'Your profiles'}</strong>
+              </article>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="dashboard-editor-hero-copy">
+              <div className="badge">{isAdmin ? 'ADMIN EDIT MODE' : 'EDIT STUDIO'}</div>
+              <h1>{isAdmin ? 'Edit every public page from one dashboard.' : 'Dashboard is now your page editor.'}</h1>
+              <p className="subtitle">
+                Focus on headline banners, color schemes, graphics, profile info, and role-specific page
+                sections here first. Open the public page whenever you want to review the final result.
+              </p>
+            </div>
+
+            <div className="dashboard-editor-hero-stats">
+              <article className="dashboard-editor-hero-pill">
+                <span>Editable pages</span>
+                <strong>{sortedProfiles.length}</strong>
+              </article>
+              <article className="dashboard-editor-hero-pill">
+                <span>Scope</span>
+                <strong>{isAdmin ? 'All profiles' : 'Your profiles'}</strong>
+              </article>
+            </div>
+          </>
+        )}
       </section>
 
-      {sortedProfiles.length ? (
+      {sortedProfiles.length && activeProfile ? (
         <div className="dashboard-editor-stack">
-          {sortedProfiles.map((profile) => {
-            const publicPath = getProfilePath(profile.type, profile.slug);
+          {sortedProfiles.length > 1 ? (
+            <section className="panel dashboard-editor-card dashboard-editor-selector-card">
+              <div className="dashboard-editor-module-head">
+                <div>
+                  <div className="badge">Profile switcher</div>
+                  <h2>Edit another page</h2>
+                </div>
+              </div>
+              <div className="dashboard-editor-switcher">
+                {sortedProfiles.map((profile) => (
+                  <Link
+                    key={profile.id}
+                    className={profile.id === activeProfile.id ? 'dashboard-editor-switch active' : 'dashboard-editor-switch'}
+                    href={`/dashboard?profile=${profile.id}`}
+                  >
+                    <span>{profile.name}</span>
+                    <strong>{getProfileLabel(profile.type)}</strong>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {(() => {
+            const profile = activeProfile;
             const previewImage = getSafeImageUrl(profile.avatarImage || profile.heroImage);
             const locationLine = getProfileLocation(profile);
             const editorConfig = profile.type === 'VENUE' ? null : getProfileEditorConfig(profile);
@@ -338,15 +408,6 @@ export default async function DashboardPage() {
 
                       <h2>{profile.name}</h2>
                       <p className="subtitle">{getProfileSummary(profile)}</p>
-
-                      <div className="dashboard-editor-link-row">
-                        <Link className="dashboard-editor-link" href={publicPath}>
-                          Open public page
-                        </Link>
-                        <Link className="dashboard-editor-link" href={`/profiles/${profile.hexId}`}>
-                          Open share link
-                        </Link>
-                      </div>
 
                       <div className="dashboard-editor-focus-row">
                         {getProfileFocusAreas(profile.type).map((area) => (
@@ -429,7 +490,7 @@ export default async function DashboardPage() {
                 </div>
               </section>
             );
-          })}
+          })()}
         </div>
       ) : (
         <section className="panel dashboard-editor-empty">
