@@ -32,6 +32,16 @@ type VenueShowCollections = {
   previous: VenueWizardShow[];
 };
 
+type FanEventHistoryItem = {
+  id: string;
+  title: string;
+  startsAtLabel: string;
+  venueName: string | null;
+  headlinerName: string | null;
+  promoterName: string | null;
+  showPath: string;
+};
+
 const profileTypeOrder: ProfileType[] = ['LISTENER', 'ARTIST', 'DJ', 'VENUE'];
 
 function getProfileLabel(type: ProfileType) {
@@ -220,10 +230,38 @@ function createEmptyVenueShowCollectionsMap(profiles: DashboardProfile[]) {
   );
 }
 
+type FanDashboardEditState = 'menu' | 'character-lab' | 'my-scheme' | 'top-5' | 'event-history';
+
+function getFanDashboardEditState(value?: string | string[]): FanDashboardEditState | null {
+  if (typeof value !== 'string') return null;
+
+  if (
+    value === 'menu' ||
+    value === 'character-lab' ||
+    value === 'my-scheme' ||
+    value === 'top-5' ||
+    value === 'event-history'
+  ) {
+    return value;
+  }
+
+  return null;
+}
+
+function formatShowDateTime(value: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(value);
+}
+
 export default async function DashboardPage({
   searchParams
 }: {
-  searchParams?: Promise<{ profile?: string | string[] }>;
+  searchParams?: Promise<{ profile?: string | string[]; edit?: string | string[] }>;
 }) {
   const session = await auth();
   if (!session?.user) redirect('/login');
@@ -284,6 +322,24 @@ export default async function DashboardPage({
     typeof resolvedSearchParams.profile === 'string' ? resolvedSearchParams.profile : undefined;
   const activeProfile =
     sortedProfiles.find((profile) => profile.id === requestedProfileId) ?? sortedProfiles[0] ?? null;
+  const fanDashboardEditState = getFanDashboardEditState(resolvedSearchParams.edit);
+  const fanEventHistory =
+    activeProfile?.type === 'LISTENER'
+      ? await db.hypeEvent.findMany({
+          where: { userId: activeProfile.ownerId },
+          include: {
+            show: {
+              include: {
+                venueProfile: true,
+                headlinerProfile: true,
+                promoterProfile: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 24
+        })
+      : [];
 
   return (
     <main className="container section dashboard-editor-page">
@@ -380,11 +436,29 @@ export default async function DashboardPage({
               upcoming: [],
               previous: []
             };
+            const isFanProfile = profile.type === 'LISTENER';
+            const fanEventHistoryItems = fanEventHistory
+              .map((entry) => entry.show)
+              .filter((show) => show.status === 'ENDED' || show.startsAt < now)
+              .map((show) => ({
+                id: show.id,
+                title: show.title,
+                startsAtLabel: formatShowDateTime(show.startsAt),
+                venueName: show.venueProfile?.name ?? null,
+                headlinerName: show.headlinerProfile?.name ?? null,
+                promoterName: show.promoterProfile?.name ?? null,
+                showPath: `/shows/${show.slug}`
+              }));
+
+            const fanEditHref = (editState: FanDashboardEditState | null) =>
+              editState
+                ? `/dashboard?profile=${profile.id}&edit=${editState}`
+                : `/dashboard?profile=${profile.id}`;
 
             return (
               <section className="panel dashboard-editor-card" key={profile.id}>
                 <div className="dashboard-editor-card-head">
-                  <div className="dashboard-editor-card-summary">
+                  <div className={isFanProfile ? 'dashboard-editor-card-summary dashboard-editor-card-summary-fan' : 'dashboard-editor-card-summary'}>
                     {previewImage ? (
                       <img
                         alt={`${profile.name} preview`}
@@ -417,77 +491,194 @@ export default async function DashboardPage({
                         ))}
                       </div>
                     </div>
+
+                    {isFanProfile ? (
+                      <div className="dashboard-editor-banner-actions">
+                        <Link className="button small secondary" href={fanEditHref(fanDashboardEditState ? null : 'menu')}>
+                          {fanDashboardEditState ? 'Close edit' : 'Edit page'}
+                        </Link>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
-                <div className="dashboard-editor-toolstack">
-                  {profile.type === 'LISTENER' ? (
-                    <ListenerAvatarCreator
-                      defaultPrompt={buildFanAvatarPrompt(profile)}
-                      initialAvatarImage={profile.avatarImage}
-                      profileHexId={profile.hexId}
-                      profileId={profile.id}
-                      profileName={profile.name}
-                    />
-                  ) : null}
+                {isFanProfile ? (
+                  <>
+                    {fanDashboardEditState ? (
+                      <div className="dashboard-editor-tool-pills">
+                        <Link
+                          className={fanDashboardEditState === 'character-lab' ? 'dashboard-editor-tool-pill active' : 'dashboard-editor-tool-pill'}
+                          href={fanEditHref('character-lab')}
+                        >
+                          Character Lab
+                        </Link>
+                        <Link
+                          className={fanDashboardEditState === 'my-scheme' ? 'dashboard-editor-tool-pill active' : 'dashboard-editor-tool-pill'}
+                          href={fanEditHref('my-scheme')}
+                        >
+                          My Scheme
+                        </Link>
+                        <Link
+                          className={fanDashboardEditState === 'top-5' ? 'dashboard-editor-tool-pill active' : 'dashboard-editor-tool-pill'}
+                          href={fanEditHref('top-5')}
+                        >
+                          Top 5
+                        </Link>
+                        <Link
+                          className={fanDashboardEditState === 'event-history' ? 'dashboard-editor-tool-pill active' : 'dashboard-editor-tool-pill'}
+                          href={fanEditHref('event-history')}
+                        >
+                          Event History
+                        </Link>
+                      </div>
+                    ) : null}
 
-                  {profile.type === 'ARTIST' || profile.type === 'VENUE' ? (
-                    <OwnershipVerificationPanel
-                      contactInfo={profile.contactInfo}
-                      profileId={profile.id}
-                      roleLabel={profile.type === 'ARTIST' ? 'artist' : 'venue'}
-                      verificationNotes={profile.verificationNotes}
-                      verificationStatus={profile.verificationStatus}
-                    />
-                  ) : null}
+                    {fanDashboardEditState === 'character-lab' ? (
+                      <div className="dashboard-editor-fan-panel">
+                        <ListenerAvatarCreator
+                          defaultOpen
+                          defaultPrompt={buildFanAvatarPrompt(profile)}
+                          hideToggle
+                          initialAvatarImage={profile.avatarImage}
+                          profileHexId={profile.hexId}
+                          profileId={profile.id}
+                          profileName={profile.name}
+                        />
+                      </div>
+                    ) : null}
 
-                  {profile.type === 'VENUE' ? (
-                    <VenuePageWizard
-                      initialValues={{
-                        headline: profile.headline ?? '',
-                        bio: profile.bio ?? '',
-                        heroImage: profile.heroImage ?? '',
-                        aboutContent: profile.aboutContent ?? '',
-                        requestContent: profile.requestContent ?? '',
-                        addressLine1: profile.addressLine1 ?? '',
-                        contactInfo: profile.contactInfo ?? '',
-                        hoursText: profile.hoursText ?? '',
-                        hometown: profile.hometown ?? '',
-                        city: profile.city ?? '',
-                        stateRegion: profile.stateRegion ?? '',
-                        postalCode: profile.postalCode ?? '',
-                        country: profile.country ?? '',
-                        parkingDetails: profile.parkingDetails ?? '',
-                        stayRecommendations: profile.stayRecommendations ?? '',
-                        upcomingContent: profile.upcomingContent ?? '',
-                        previousShowHighlights: profile.previousShowHighlights ?? '',
-                        themePreset: profile.themePreset,
-                        themeAccentTone: profile.themeAccentTone ?? '',
-                        themeBackdropTone: profile.themeBackdropTone ?? ''
-                      }}
-                      previousShows={venueShowCollections.previous}
-                      profileId={profile.id}
-                      profileName={profile.name}
-                      upcomingShows={venueShowCollections.upcoming}
-                    />
-                  ) : editorConfig ? (
-                    <ProfilePageEditor
-                      allowFanShareToggle={profile.type === 'ARTIST'}
-                      description={editorConfig.description}
-                      enableDesignCustomizer
-                      fields={editorConfig.fields}
-                      initialValues={getProfileInitialValues(profile)}
-                      previewGenres={profile.genres}
-                      previewRoleLabel={editorConfig.previewRoleLabel}
-                      previewTabs={editorConfig.previewTabs}
-                      profileId={profile.id}
-                      profileName={profile.name}
-                      title={editorConfig.title}
-                    />
-                  ) : null}
+                    {fanDashboardEditState === 'my-scheme' ? (
+                      <div className="dashboard-editor-fan-panel">
+                        <ProfilePageEditor
+                          description="Tune your page mood, banner, intro, and color scheme."
+                          enableDesignCustomizer
+                          fields={[
+                            { key: 'headline', label: 'Headline banner', placeholder: 'How should your fan page feel?' },
+                            { key: 'heroImage', label: 'Banner image URL', kind: 'url', placeholder: 'https://example.com/fan.jpg' },
+                            { key: 'bio', label: 'Short intro', kind: 'textarea', rows: 3 },
+                            { key: 'postalCode', label: 'Home ZIP code', placeholder: '60601' },
+                            { key: 'city', label: 'City', placeholder: 'Chicago' },
+                            { key: 'stateRegion', label: 'State / province', placeholder: 'Illinois' },
+                            { key: 'country', label: 'Country', placeholder: 'United States' }
+                          ]}
+                          hideToggle
+                          initialValues={getProfileInitialValues(profile)}
+                          previewGenres={profile.genres}
+                          previewRoleLabel="FAN"
+                          previewTabs={['About', 'Top 5']}
+                          profileId={profile.id}
+                          profileName={profile.name}
+                          startOpen
+                          title="My Scheme"
+                        />
+                      </div>
+                    ) : null}
 
-                  {profile.type === 'ARTIST' ? <ArtistMediaUploadManager profileId={profile.id} /> : null}
-                </div>
+                    {fanDashboardEditState === 'top-5' ? (
+                      <div className="dashboard-editor-fan-panel">
+                        <ProfilePageEditor
+                          description="Update the five artists, venues, promoters, or moments that define your page."
+                          fields={[
+                            { key: 'topFiveContent', label: 'Top 5', kind: 'textarea', rows: 8, placeholder: '1. Artist\n2. Venue\n3. Promoter\n4. Track\n5. Show memory' }
+                          ]}
+                          hideToggle
+                          initialValues={getProfileInitialValues(profile)}
+                          previewGenres={profile.genres}
+                          previewRoleLabel="FAN"
+                          previewTabs={['Top 5']}
+                          profileId={profile.id}
+                          profileName={profile.name}
+                          startOpen
+                          title="Top 5"
+                        />
+                      </div>
+                    ) : null}
+
+                    {fanDashboardEditState === 'event-history' ? (
+                      <section className="panel dashboard-editor-fan-panel dashboard-editor-history-panel">
+                        <div className="dashboard-editor-module-head">
+                          <div>
+                            <div className="badge">Event history</div>
+                            <h2>Shows you have already pushed forward</h2>
+                          </div>
+                        </div>
+                        {fanEventHistoryItems.length ? (
+                          <div className="dashboard-editor-history-list">
+                            {fanEventHistoryItems.map((show) => (
+                              <Link className="dashboard-editor-history-item" href={show.showPath} key={show.id}>
+                                <strong>{show.title}</strong>
+                                <span>{show.startsAtLabel}</span>
+                                <span>{[show.venueName, show.headlinerName, show.promoterName].filter(Boolean).join(' · ')}</span>
+                              </Link>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="empty">No previous event history has been recorded on this fan profile yet.</div>
+                        )}
+                      </section>
+                    ) : null}
+                  </>
+                ) : (
+                  <div className="dashboard-editor-toolstack">
+
+                    {profile.type === 'ARTIST' || profile.type === 'VENUE' ? (
+                      <OwnershipVerificationPanel
+                        contactInfo={profile.contactInfo}
+                        profileId={profile.id}
+                        roleLabel={profile.type === 'ARTIST' ? 'artist' : 'venue'}
+                        verificationNotes={profile.verificationNotes}
+                        verificationStatus={profile.verificationStatus}
+                      />
+                    ) : null}
+
+                    {profile.type === 'VENUE' ? (
+                      <VenuePageWizard
+                        initialValues={{
+                          headline: profile.headline ?? '',
+                          bio: profile.bio ?? '',
+                          heroImage: profile.heroImage ?? '',
+                          aboutContent: profile.aboutContent ?? '',
+                          requestContent: profile.requestContent ?? '',
+                          addressLine1: profile.addressLine1 ?? '',
+                          contactInfo: profile.contactInfo ?? '',
+                          hoursText: profile.hoursText ?? '',
+                          hometown: profile.hometown ?? '',
+                          city: profile.city ?? '',
+                          stateRegion: profile.stateRegion ?? '',
+                          postalCode: profile.postalCode ?? '',
+                          country: profile.country ?? '',
+                          parkingDetails: profile.parkingDetails ?? '',
+                          stayRecommendations: profile.stayRecommendations ?? '',
+                          upcomingContent: profile.upcomingContent ?? '',
+                          previousShowHighlights: profile.previousShowHighlights ?? '',
+                          themePreset: profile.themePreset,
+                          themeAccentTone: profile.themeAccentTone ?? '',
+                          themeBackdropTone: profile.themeBackdropTone ?? ''
+                        }}
+                        previousShows={venueShowCollections.previous}
+                        profileId={profile.id}
+                        profileName={profile.name}
+                        upcomingShows={venueShowCollections.upcoming}
+                      />
+                    ) : editorConfig ? (
+                      <ProfilePageEditor
+                        allowFanShareToggle={profile.type === 'ARTIST'}
+                        description={editorConfig.description}
+                        enableDesignCustomizer
+                        fields={editorConfig.fields}
+                        initialValues={getProfileInitialValues(profile)}
+                        previewGenres={profile.genres}
+                        previewRoleLabel={editorConfig.previewRoleLabel}
+                        previewTabs={editorConfig.previewTabs}
+                        profileId={profile.id}
+                        profileName={profile.name}
+                        title={editorConfig.title}
+                      />
+                    ) : null}
+
+                    {profile.type === 'ARTIST' ? <ArtistMediaUploadManager profileId={profile.id} /> : null}
+                  </div>
+                )}
               </section>
             );
           })()}

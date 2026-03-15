@@ -18,6 +18,8 @@ type ListenerAvatarCreatorProps = {
   profileName: string;
   defaultPrompt: string;
   initialAvatarImage: string | null;
+  defaultOpen?: boolean;
+  hideToggle?: boolean;
 };
 
 const avatarStylePresets = [
@@ -62,10 +64,12 @@ export function ListenerAvatarCreator({
   profileHexId,
   profileName,
   defaultPrompt,
-  initialAvatarImage
+  initialAvatarImage,
+  defaultOpen = false,
+  hideToggle = false
 }: ListenerAvatarCreatorProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [characterPhrase, setCharacterPhrase] = useState('');
   const [selectedPresetId, setSelectedPresetId] = useState<(typeof avatarStylePresets)[number]['id']>('night-runner');
   const [selectedMoodId, setSelectedMoodId] = useState<(typeof avatarMoodOptions)[number]['id']>('electric');
@@ -163,13 +167,15 @@ export function ListenerAvatarCreator({
           </p>
           <p className="meta">Fan ID: {profileHexId}</p>
         </div>
-        <button
-          className="button small secondary"
-          onClick={() => setIsOpen((current) => !current)}
-          type="button"
-        >
-          {isOpen ? 'Minimize lab' : 'Open lab'}
-        </button>
+        {!hideToggle ? (
+          <button
+            className="button small secondary"
+            onClick={() => setIsOpen((current) => !current)}
+            type="button"
+          >
+            {isOpen ? 'Minimize lab' : 'Open lab'}
+          </button>
+        ) : null}
       </div>
 
       {!isOpen ? (

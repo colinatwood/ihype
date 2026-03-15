@@ -77,6 +77,8 @@ type ProfilePageEditorProps = {
   previewTabs?: string[];
   previewGenres?: string[];
   previewRoleLabel?: string;
+  startOpen?: boolean;
+  hideToggle?: boolean;
 };
 
 const defaultFormValues: Record<EditableFieldKey, string> = {
@@ -122,10 +124,12 @@ export function ProfilePageEditor({
   allowFanShareToggle = false,
   previewTabs = [],
   previewGenres = [],
-  previewRoleLabel = 'PROFILE'
+  previewRoleLabel = 'PROFILE',
+  startOpen = false,
+  hideToggle = false
 }: ProfilePageEditorProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(startOpen);
   const [formValues, setFormValues] = useState<ProfilePageFormValues>({
     ...defaultFormValues,
     ...initialValues,
@@ -216,13 +220,15 @@ export function ProfilePageEditor({
           <h2>{title}</h2>
           <p className="kicker">{description}</p>
         </div>
-        <button
-          className="button small secondary"
-          onClick={() => setIsOpen((current) => !current)}
-          type="button"
-        >
-          {isOpen ? 'Hide editor' : 'Edit page'}
-        </button>
+        {!hideToggle ? (
+          <button
+            className="button small secondary"
+            onClick={() => setIsOpen((current) => !current)}
+            type="button"
+          >
+            {isOpen ? 'Hide editor' : 'Edit page'}
+          </button>
+        ) : null}
       </div>
 
       {isOpen ? (

@@ -1036,6 +1036,10 @@ button, input, select, textarea { font: inherit; }
   border: 1px solid rgba(255,255,255,0.08);
   background: rgba(255,255,255,0.03);
 }
+.dashboard-editor-card-summary-fan {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+}
 .dashboard-editor-card-art {
   width: 108px;
   height: 108px;
@@ -1134,6 +1138,76 @@ button, input, select, textarea { font: inherit; }
   border-color: rgba(35,208,216,0.28);
   background: rgba(35,208,216,0.12);
   transform: translateY(-1px);
+}
+.dashboard-editor-banner-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-self: start;
+}
+.dashboard-editor-tool-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.95rem;
+}
+.dashboard-editor-tool-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.5rem 0.88rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+.dashboard-editor-tool-pill:hover,
+.dashboard-editor-tool-pill:focus-visible,
+.dashboard-editor-tool-pill.active {
+  color: var(--text);
+  border-color: rgba(35,208,216,0.3);
+  background: rgba(35,208,216,0.12);
+  transform: translateY(-1px);
+}
+.dashboard-editor-fan-panel {
+  margin-top: 1rem;
+}
+.dashboard-editor-history-panel {
+  padding: 1.2rem;
+}
+.dashboard-editor-history-list {
+  display: grid;
+  gap: 0.75rem;
+}
+.dashboard-editor-history-item {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.95rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+.dashboard-editor-history-item strong {
+  color: var(--text);
+}
+.dashboard-editor-history-item span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+.dashboard-editor-history-item:hover,
+.dashboard-editor-history-item:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(35,208,216,0.24);
+  background: rgba(35,208,216,0.08);
 }
 .dashboard-editor-toolstack {
   display: grid;
@@ -5268,6 +5342,12 @@ button, input, select, textarea { font: inherit; }
     width: 88px;
     height: 88px;
     border-radius: 24px;
+  }
+  .dashboard-editor-card-summary-fan {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-editor-banner-actions {
+    justify-content: flex-start;
   }
   .dashboard-editor-hero,
   .dashboard-editor-card,
