@@ -13,11 +13,19 @@ import { canManageOwnedResource } from '@/lib/permissions';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 
-const promoterSections = ['about', 'upcoming', 'previous', 'recommend', 'stats'] as const;
+const promoterSections = ['about', 'shows', 'events'] as const;
 
 type PromoterSection = (typeof promoterSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): PromoterSection {
+  if (section === 'upcoming' || section === 'previous') {
+    return 'shows';
+  }
+
+  if (section === 'recommend' || section === 'stats') {
+    return 'events';
+  }
+
   if (typeof section === 'string' && promoterSections.includes(section as PromoterSection)) {
     return section as PromoterSection;
   }
@@ -26,6 +34,8 @@ function getActiveSection(section: string | string[] | undefined): PromoterSecti
 }
 
 function getSectionLabel(section: PromoterSection) {
+  if (section === 'shows') return 'Shows';
+  if (section === 'events') return 'Events';
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
@@ -191,7 +201,7 @@ export default async function PromoterPage({
           }}
           previewGenres={profile.genres}
           previewRoleLabel="PROMOTER"
-          previewTabs={['About', 'Upcoming', 'Previous', 'Recommend', 'Stats']}
+          previewTabs={['About', 'Shows', 'Events']}
           profileId={profile.id}
           profileName={profile.name}
           title="Customize your promoter page"
@@ -223,7 +233,7 @@ export default async function PromoterPage({
         />
       ) : null}
 
-      <MarketRecommendationsPanel recommendations={recommendations} roleLabel="promoter" />
+      {isOwner ? <MarketRecommendationsPanel recommendations={recommendations} roleLabel="promoter" /> : null}
 
       <section className="section">
         <nav className="section-tabs" aria-label="Promoter page sections">
@@ -246,39 +256,41 @@ export default async function PromoterPage({
             </>
           ) : null}
 
-          {activeSection === 'upcoming' ? (
+          {activeSection === 'shows' ? (
             <>
-              <h2>Upcoming</h2>
-              <div className="grid grid-2">
-                {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming shows yet.</div>}
+              <h2>Shows</h2>
+              <div className="artist-tour-shows">
+                <h3>Upcoming</h3>
+                <div className="grid grid-2">
+                  {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming shows yet.</div>}
+                </div>
+              </div>
+
+              <div className="artist-tour-shows">
+                <h3>Previous</h3>
+                <div className="grid grid-2">
+                  {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous shows yet.</div>}
+                </div>
               </div>
             </>
           ) : null}
 
-          {activeSection === 'previous' ? (
+          {activeSection === 'events' ? (
             <>
-              <h2>Previous</h2>
-              <div className="grid grid-2">
-                {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous shows yet.</div>}
-              </div>
-            </>
-          ) : null}
-
-          {activeSection === 'recommend' ? (
-            <>
-              <h2>Recommend</h2>
+              <h2>Events</h2>
               <div className="artist-copy">{profile.recommendContent || 'Use this section to explain the rooms, artists, and collaborations you like to champion.'}</div>
-            </>
-          ) : null}
-
-          {activeSection === 'stats' ? (
-            <>
-              <h2>Stats</h2>
-              <div className="grid grid-3">
-                <div className="stat"><strong>{profile.hypeCount}</strong>Page hype</div>
-                <div className="stat"><strong>{upcomingShows.length}</strong>Upcoming shows</div>
-                <div className="stat"><strong>{previousShows.length}</strong>Previous shows</div>
-                <div className="stat"><strong>{sentRecommendations.length}</strong>Recommendations sent</div>
+              <div className="grid grid-2">
+                {recentShows.length ? (
+                  recentShows.map((show) => (
+                    <div key={show.id} className="stat">
+                      <strong>{show.title}</strong>
+                      {show.venueProfile?.name ? `${show.venueProfile.name} · ` : ''}
+                      {formatShowDate(show.startsAt)}
+                    </div>
+                  ))
+                ) : (
+                  <div className="empty">No event history yet.</div>
+                )}
               </div>
             </>
           ) : null}

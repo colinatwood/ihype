@@ -15,11 +15,19 @@ import { getSafeBackgroundImageStyle } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 
-const venueSections = ['about', 'upcoming', 'previous', 'request', 'stats'] as const;
+const venueSections = ['about', 'upcoming', 'request'] as const;
 
 type VenueSection = (typeof venueSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): VenueSection {
+  if (section === 'previous') {
+    return 'upcoming';
+  }
+
+  if (section === 'stats') {
+    return 'about';
+  }
+
   if (typeof section === 'string' && venueSections.includes(section as VenueSection)) {
     return section as VenueSection;
   }
@@ -28,6 +36,8 @@ function getActiveSection(section: string | string[] | undefined): VenueSection 
 }
 
 function getSectionLabel(section: VenueSection) {
+  if (section === 'upcoming') return 'Upcoming Shows';
+  if (section === 'request') return 'Request Artist';
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
@@ -57,7 +67,7 @@ export default async function VenuePage({
   if (!profile || profile.type !== 'VENUE') return notFound();
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
-  const [shows, bookableProfiles, connectionRequests, myRequests, totalRequestCount, pendingRequestCount] = await Promise.all([
+  const [shows, bookableProfiles, connectionRequests, myRequests, totalRequestCount] = await Promise.all([
     db.show.findMany({
       where: { venueProfileId: profile.id },
       include: { venueProfile: true, headlinerProfile: true },
@@ -88,18 +98,11 @@ export default async function VenuePage({
     db.venueConnectionRequest.count({
       where: { venueProfileId: profile.id }
     }),
-    db.venueConnectionRequest.count({
-      where: {
-        venueProfileId: profile.id,
-        status: 'PENDING'
-      }
-    })
   ]);
 
   const now = new Date();
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
   const previousShows = shows.filter((show) => show.status === 'ENDED' || (show.startsAt < now && show.status !== 'LIVE'));
-  const ticketedShows = shows.filter((show) => show.isTicketed);
   const totalTicketsSold = shows.reduce((sum, show) => sum + show.ticketsSoldCount, 0);
   const bookedActs = Array.from(
     new Map(
@@ -213,7 +216,7 @@ export default async function VenuePage({
         </>
       ) : null}
 
-      <MarketRecommendationsPanel recommendations={recommendations} roleLabel="venue" />
+      {isOwner ? <MarketRecommendationsPanel recommendations={recommendations} roleLabel="venue" /> : null}
 
       <section className="section">
         <nav className="section-tabs" aria-label="Venue page sections">
@@ -273,7 +276,7 @@ export default async function VenuePage({
 
           {activeSection === 'upcoming' ? (
             <>
-              <h2>Upcoming</h2>
+              <h2>Upcoming Shows</h2>
               {profile.upcomingContent ? <div className="artist-copy">{profile.upcomingContent}</div> : null}
               <div className="grid grid-2">
                 {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming shows yet.</div>}
@@ -281,19 +284,9 @@ export default async function VenuePage({
             </>
           ) : null}
 
-          {activeSection === 'previous' ? (
-            <>
-              <h2>Previous</h2>
-              {profile.previousShowHighlights ? <div className="artist-copy">{profile.previousShowHighlights}</div> : null}
-              <div className="grid grid-2">
-                {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous shows yet.</div>}
-              </div>
-            </>
-          ) : null}
-
           {activeSection === 'request' ? (
             <>
-              <h2>Request</h2>
+              <h2>Request Artist</h2>
               <div className="artist-copy">{profile.requestContent || 'Fans and promoters can recommend artists here and ask to be notified if the booking lands.'}</div>
 
               <div className="request-history">
@@ -367,21 +360,6 @@ export default async function VenuePage({
                 </div>
               ) : null}
 
-            </>
-          ) : null}
-
-          {activeSection === 'stats' ? (
-            <>
-              <h2>Stats</h2>
-              <div className="grid grid-3">
-                <div className="stat"><strong>{profile.hypeCount}</strong>Page hype</div>
-                <div className="stat"><strong>{upcomingShows.length}</strong>Upcoming shows</div>
-                <div className="stat"><strong>{previousShows.length}</strong>Previous shows</div>
-                <div className="stat"><strong>{ticketedShows.length}</strong>Ticketed shows</div>
-                <div className="stat"><strong>{totalTicketsSold}</strong>Tickets sold</div>
-                <div className="stat"><strong>{totalRequestCount}</strong>Incoming requests</div>
-                <div className="stat"><strong>{pendingRequestCount}</strong>Pending requests</div>
-              </div>
             </>
           ) : null}
         </div>

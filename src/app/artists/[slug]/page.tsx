@@ -15,23 +15,28 @@ import { canManageOwnedResource } from '@/lib/permissions';
 import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 
-const artistSections = ['media', 'events', 'about', 'merch', 'stats'] as const;
+const artistSections = ['about', 'media', 'tour', 'merch'] as const;
 
 type ArtistSection = (typeof artistSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): ArtistSection {
   if (section === 'journal' || section === 'tour') {
-    return section === 'tour' ? 'events' : 'about';
+    return section === 'tour' ? 'tour' : 'about';
+  }
+
+  if (section === 'events') {
+    return 'tour';
   }
 
   if (typeof section === 'string' && artistSections.includes(section as ArtistSection)) {
     return section as ArtistSection;
   }
 
-  return 'media';
+  return 'about';
 }
 
 function getSectionLabel(section: ArtistSection) {
+  if (section === 'tour') return 'Tour';
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
@@ -162,8 +167,8 @@ export default async function ArtistPage({
               fanShareEnabled: profile.fanShareEnabled
             }}
             previewGenres={profile.genres}
-              previewRoleLabel="ARTIST"
-            previewTabs={['Media', 'Events', 'About', 'Merch', 'Stats']}
+            previewRoleLabel="ARTIST"
+            previewTabs={['About', 'Media', 'Tour', 'Merch']}
             profileId={profile.id}
             profileName={profile.name}
             title="Customize your artist page"
@@ -181,7 +186,7 @@ export default async function ArtistPage({
         </>
       ) : null}
 
-      <MarketRecommendationsPanel recommendations={recommendations} roleLabel="artist" />
+      {isOwner ? <MarketRecommendationsPanel recommendations={recommendations} roleLabel="artist" /> : null}
 
       <section className="section">
         <nav className="section-tabs" aria-label="Artist page sections">
@@ -197,6 +202,22 @@ export default async function ArtistPage({
         </nav>
 
         <div className="panel artist-section-panel">
+          {activeSection === 'about' ? (
+            <>
+              <h2>About</h2>
+              <div className="artist-copy">
+                {profile.aboutContent || profile.bio || 'This artist has not filled out the About section yet.'}
+              </div>
+              {profile.journalContent ? (
+                <div className="artist-copy">
+                  <strong>Journal</strong>
+                  <br />
+                  {profile.journalContent}
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
           {activeSection === 'media' ? (
             <>
               <h2>Media</h2>
@@ -220,9 +241,9 @@ export default async function ArtistPage({
             </>
           ) : null}
 
-          {activeSection === 'events' ? (
+          {activeSection === 'tour' ? (
             <>
-              <h2>Events</h2>
+              <h2>Tour</h2>
               <div className="artist-copy">{profile.tourContent || 'No tour notes yet.'}</div>
 
               <div className="artist-tour-shows">
@@ -241,38 +262,10 @@ export default async function ArtistPage({
             </>
           ) : null}
 
-          {activeSection === 'about' ? (
-            <>
-              <h2>About</h2>
-              <div className="artist-copy">
-                {profile.aboutContent || profile.bio || 'This artist has not filled out the About section yet.'}
-              </div>
-              {profile.journalContent ? (
-                <div className="artist-copy">
-                  <strong>Journal</strong>
-                  <br />
-                  {profile.journalContent}
-                </div>
-              ) : null}
-            </>
-          ) : null}
-
           {activeSection === 'merch' ? (
             <>
               <h2>Merch</h2>
               <div className="artist-copy">{profile.merchContent || 'No merch notes yet.'}</div>
-            </>
-          ) : null}
-
-          {activeSection === 'stats' ? (
-            <>
-              <h2>Stats</h2>
-              <div className="grid grid-3">
-                <div className="stat"><strong>{profile.hypeCount}</strong>Page hype</div>
-                <div className="stat"><strong>{upcomingShows.length}</strong>Upcoming dates</div>
-                <div className="stat"><strong>{previousShows.length}</strong>Previous dates</div>
-                <div className="stat"><strong>{profile.songUploadCount}</strong>Uploaded tracks</div>
-              </div>
             </>
           ) : null}
         </div>
