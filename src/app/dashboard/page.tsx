@@ -343,70 +343,66 @@ export default async function DashboardPage({
 
   return (
     <main className="container section dashboard-editor-page">
-      <section className="panel dashboard-editor-hero">
-        {activeProfile ? (
-          <>
-            <div className="dashboard-editor-hero-copy">
-              <div className="badge">{isAdmin ? 'ADMIN EDIT MODE' : `${getProfileLabel(activeProfile.type)} EDIT STUDIO`}</div>
-              <h1>{activeProfile.name}</h1>
-              <p className="subtitle">
-                {getProfileSummary(activeProfile)}
-              </p>
-              <div className="dashboard-editor-link-row">
-                <Link className="dashboard-editor-link" href={getProfilePath(activeProfile.type, activeProfile.slug)}>
-                  {activeProfile.type === 'LISTENER' ? 'View my page' : 'Open public page'}
-                </Link>
-                {activeProfile.type !== 'LISTENER' ? (
+      {activeProfile?.type !== 'LISTENER' ? (
+        <section className="panel dashboard-editor-hero">
+          {activeProfile ? (
+            <>
+              <div className="dashboard-editor-hero-copy">
+                <div className="badge">{isAdmin ? 'ADMIN EDIT MODE' : `${getProfileLabel(activeProfile.type)} EDIT STUDIO`}</div>
+                <h1>{activeProfile.name}</h1>
+                <p className="subtitle">
+                  {getProfileSummary(activeProfile)}
+                </p>
+                <div className="dashboard-editor-link-row">
+                  <Link className="dashboard-editor-link" href={getProfilePath(activeProfile.type, activeProfile.slug)}>
+                    Open public page
+                  </Link>
                   <Link className="dashboard-editor-link" href={`/profiles/${activeProfile.hexId}`}>
                     Open share link
                   </Link>
-                ) : null}
+                </div>
               </div>
-            </div>
 
-            <div className="dashboard-editor-hero-stats">
-              <article className="dashboard-editor-hero-pill">
-                <span>{activeProfile.type === 'LISTENER' ? 'My ID' : 'Share ID'}</span>
-                <strong>{shortenHexId(activeProfile.hexId)}</strong>
-              </article>
-              {activeProfile.type !== 'LISTENER' ? (
-                <>
-                  <article className="dashboard-editor-hero-pill">
-                    <span>Editable pages</span>
-                    <strong>{sortedProfiles.length}</strong>
-                  </article>
-                  <article className="dashboard-editor-hero-pill">
-                    <span>Scope</span>
-                    <strong>{isAdmin ? 'All profiles' : 'Your profiles'}</strong>
-                  </article>
-                </>
-              ) : null}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="dashboard-editor-hero-copy">
-              <div className="badge">{isAdmin ? 'ADMIN EDIT MODE' : 'EDIT STUDIO'}</div>
-              <h1>{isAdmin ? 'Edit every public page from one dashboard.' : 'Dashboard is now your page editor.'}</h1>
-              <p className="subtitle">
-                Focus on headline banners, color schemes, graphics, profile info, and role-specific page
-                sections here first. Open the public page whenever you want to review the final result.
-              </p>
-            </div>
+              <div className="dashboard-editor-hero-stats">
+                <article className="dashboard-editor-hero-pill">
+                  <span>Share ID</span>
+                  <strong>{shortenHexId(activeProfile.hexId)}</strong>
+                </article>
+                <article className="dashboard-editor-hero-pill">
+                  <span>Editable pages</span>
+                  <strong>{sortedProfiles.length}</strong>
+                </article>
+                <article className="dashboard-editor-hero-pill">
+                  <span>Scope</span>
+                  <strong>{isAdmin ? 'All profiles' : 'Your profiles'}</strong>
+                </article>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="dashboard-editor-hero-copy">
+                <div className="badge">{isAdmin ? 'ADMIN EDIT MODE' : 'EDIT STUDIO'}</div>
+                <h1>{isAdmin ? 'Edit every public page from one dashboard.' : 'Dashboard is now your page editor.'}</h1>
+                <p className="subtitle">
+                  Focus on headline banners, color schemes, graphics, profile info, and role-specific page
+                  sections here first. Open the public page whenever you want to review the final result.
+                </p>
+              </div>
 
-            <div className="dashboard-editor-hero-stats">
-              <article className="dashboard-editor-hero-pill">
-                <span>Editable pages</span>
-                <strong>{sortedProfiles.length}</strong>
-              </article>
-              <article className="dashboard-editor-hero-pill">
-                <span>Scope</span>
-                <strong>{isAdmin ? 'All profiles' : 'Your profiles'}</strong>
-              </article>
-            </div>
-          </>
-        )}
-      </section>
+              <div className="dashboard-editor-hero-stats">
+                <article className="dashboard-editor-hero-pill">
+                  <span>Editable pages</span>
+                  <strong>{sortedProfiles.length}</strong>
+                </article>
+                <article className="dashboard-editor-hero-pill">
+                  <span>Scope</span>
+                  <strong>{isAdmin ? 'All profiles' : 'Your profiles'}</strong>
+                </article>
+              </div>
+            </>
+          )}
+        </section>
+      ) : null}
 
       {sortedProfiles.length && activeProfile ? (
         <div className="dashboard-editor-stack">
@@ -481,7 +477,7 @@ export default async function DashboardPage({
                       <div className="dashboard-editor-card-meta">
                         <span className="badge">{getProfileLabel(profile.type)}</span>
                         {isFanProfile ? (
-                          <span className="dashboard-editor-chip">{shortenHexId(profile.hexId)}</span>
+                          <span className="dashboard-editor-chip">My ID {shortenHexId(profile.hexId)}</span>
                         ) : (
                           <Link className="dashboard-editor-chip" href={`/profiles/${profile.hexId}`}>
                             {shortenHexId(profile.hexId)}
@@ -491,19 +487,24 @@ export default async function DashboardPage({
                       </div>
 
                       <h2>{profile.name}</h2>
-                      <p className="subtitle">{getProfileSummary(profile)}</p>
+                      {isFanProfile ? null : <p className="subtitle">{getProfileSummary(profile)}</p>}
 
-                      <div className="dashboard-editor-focus-row">
-                        {getProfileFocusAreas(profile.type).map((area) => (
-                          <span className="dashboard-editor-focus-pill" key={area}>
-                            {area}
-                          </span>
-                        ))}
-                      </div>
+                      {isFanProfile ? null : (
+                        <div className="dashboard-editor-focus-row">
+                          {getProfileFocusAreas(profile.type).map((area) => (
+                            <span className="dashboard-editor-focus-pill" key={area}>
+                              {area}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {isFanProfile ? (
                       <div className="dashboard-editor-banner-actions">
+                        <Link className="button small ghost" href={getProfilePath(profile.type, profile.slug)}>
+                          View my page
+                        </Link>
                         <Link className="button small secondary" href={fanEditHref(fanDashboardEditState ? null : 'menu')}>
                           {fanDashboardEditState ? 'Close edit' : 'Edit page'}
                         </Link>
