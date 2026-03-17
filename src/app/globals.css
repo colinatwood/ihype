@@ -190,29 +190,8 @@ button, input, select, textarea { font: inherit; }
   background-clip: text;
   color: transparent;
 }
-.nav-logo-discover {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.14rem 0.5rem 0.16rem;
-  border-radius: 999px;
-  background:
-    linear-gradient(90deg, rgba(35,208,216,0.2), rgba(255,103,196,0.18), rgba(255,196,87,0.22));
-  color: #fff2d9;
-  font-size: 0.58rem;
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  line-height: 1;
-  text-transform: uppercase;
-  box-shadow: 0 10px 24px rgba(0,0,0,0.18);
-}
 .nav-logo-left {
   justify-self: start;
-}
-.nav-logo:hover .nav-logo-discover,
-.nav-logo:focus-visible .nav-logo-discover {
-  background:
-    linear-gradient(90deg, rgba(35,208,216,0.34), rgba(255,103,196,0.3), rgba(255,196,87,0.34));
-  color: #fff8ec;
 }
 .nav-auth-slot {
   justify-self: end;
@@ -6188,11 +6167,6 @@ button, input, select, textarea { font: inherit; }
   .nav-logo-mark {
     font-size: 0.86rem;
     letter-spacing: 0.05em;
-  }
-  .nav-logo-discover {
-    padding: 0.12rem 0.42rem 0.14rem;
-    font-size: 0.5rem;
-    letter-spacing: 0.11em;
   }
   .nav-auth-slot {
     grid-area: auth;

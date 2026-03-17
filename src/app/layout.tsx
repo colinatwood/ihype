@@ -25,12 +25,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <AdminPerspectiveBar />
             <header className="nav">
               <div className="container nav-inner">
-                <Link href="/" className="nav-logo nav-logo-left" aria-label="Go to discover">
+                <Link href="/" className="nav-logo nav-logo-left" aria-label="Go to iHYPE home">
                   <span className="nav-logo-mark">
                     <span className="nav-logo-word">iHYPE</span>
                     <span className="nav-logo-dot">.org</span>
                   </span>
-                  <span className="nav-logo-discover">Discover</span>
                 </Link>
                 <div className="nav-player-slot nav-player-slot-centered">
                   <HeaderMediaPlayer />
