@@ -230,6 +230,10 @@ button, input, select, textarea { font: inherit; }
 .nav-text-button:hover {
   color: var(--text);
 }
+.nav-inline-form {
+  display: inline;
+  margin: 0;
+}
 .header-player {
   display: grid;
   gap: 0.35rem;

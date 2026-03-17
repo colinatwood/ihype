@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { signOut, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
+import { logoutAction } from '@/app/logout/actions';
 import { getPerspectiveHomeHref, useAdminPerspective } from '@/components/AdminPerspective';
 
 export function HeaderAuthLinks() {
@@ -30,15 +31,11 @@ export function HeaderAuthLinks() {
             <span className="nav-divider">|</span>
           </>
         ) : null}
-        <button
-          className="nav-text-button"
-          onClick={() => {
-            void signOut({ callbackUrl: '/' });
-          }}
-          type="button"
-        >
-          Sign Out
-        </button>
+        <form action={logoutAction} className="nav-inline-form">
+          <button className="nav-text-button" type="submit">
+            Sign Out
+          </button>
+        </form>
       </div>
     );
   }
