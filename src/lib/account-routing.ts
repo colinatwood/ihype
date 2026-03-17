@@ -8,6 +8,13 @@ export function getProfilePathForType(type: ProfileType, slug: string) {
   return `/artists/${slug}`;
 }
 
+export function getDiscoverPathForType(type: ProfileType) {
+  if (type === 'DJ') return '/promoters';
+  if (type === 'VENUE') return '/venues';
+  if (type === 'LISTENER') return '/fans';
+  return '/artists';
+}
+
 function getPreferredProfileTypeForRole(role: string | null | undefined): ProfileType | null {
   if (role === 'ARTIST') return 'ARTIST';
   if (role === 'DJ') return 'DJ';
@@ -36,28 +43,26 @@ export async function getDefaultLandingPathForUser({
         type: preferredProfileType
       },
       select: {
-        slug: true,
         type: true
       },
       orderBy: { createdAt: 'asc' }
     });
 
     if (preferredProfile) {
-      return getProfilePathForType(preferredProfile.type, preferredProfile.slug);
+      return getDiscoverPathForType(preferredProfile.type);
     }
   }
 
   const fallbackProfile = await db.profile.findFirst({
     where: { ownerId: userId },
     select: {
-      slug: true,
       type: true
     },
     orderBy: { createdAt: 'asc' }
   });
 
   if (fallbackProfile) {
-    return getProfilePathForType(fallbackProfile.type, fallbackProfile.slug);
+    return getDiscoverPathForType(fallbackProfile.type);
   }
 
   return '/dashboard';

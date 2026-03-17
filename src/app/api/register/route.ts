@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { ProfileType } from '@prisma/client';
-import { getProfilePathForType } from '@/lib/account-routing';
+import { getDiscoverPathForType, getProfilePathForType } from '@/lib/account-routing';
 import { db } from '@/lib/db';
 import { createHexId } from '@/lib/hex-id';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
@@ -239,7 +239,8 @@ export async function POST(request: Request) {
       mfaRequired: false,
       profileHexId: profile.hexId,
       profileSlug: profile.slug,
-      profilePath: getProfilePathForType(profile.type, profile.slug)
+      publicProfilePath: getProfilePathForType(profile.type, profile.slug),
+      profilePath: getDiscoverPathForType(profile.type)
     });
   } catch {
     return NextResponse.json({ error: 'Invalid registration payload' }, { status: 400 });

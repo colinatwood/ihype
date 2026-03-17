@@ -10,9 +10,11 @@ export default async function ArtistsIndexPage() {
     <ProfileDirectoryPage
       badge="ARTISTS"
       currentHref="/artists"
-      description="Browse artist pages, search by city or genre, and hype the acts you want to see rise."
+      description="Artist discover is where artists browse the scene, track opportunities, and move between the tools tied to artist growth."
+      moduleLabel="Artist modules"
+      modules={['Sign Up Wizard', 'Globe Search', 'Ticket Hub', 'Recommendation Engine']}
       profiles={artists}
-      title="Artist directory"
+      title="Artist discover"
     />
   );
 }

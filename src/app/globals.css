@@ -5017,6 +5017,45 @@ button, input, select, textarea { font: inherit; }
   font-size: 0.82rem;
   font-weight: 700;
 }
+.directory-module-shell {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(circle at top left, rgba(255,122,24,0.12), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(35,208,216,0.12), transparent 34%),
+    rgba(12,18,32,0.82);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+}
+.directory-module-header {
+  display: grid;
+  gap: 0.5rem;
+}
+.directory-module-title {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.08;
+}
+.directory-module-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+.directory-module-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.05);
+  color: #fff0df;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
 .directory-section-head {
   display: flex;
   justify-content: space-between;

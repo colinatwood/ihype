@@ -25,13 +25,17 @@ export function ProfileDirectoryPage({
   title,
   description,
   profiles,
-  currentHref
+  currentHref,
+  moduleLabel,
+  modules
 }: {
   badge: string;
   title: string;
   description: string;
   profiles: DirectoryProfile[];
   currentHref: string;
+  moduleLabel?: string;
+  modules?: string[];
 }) {
   const topMarkets = getTopMarkets(profiles);
 
@@ -59,6 +63,22 @@ export function ProfileDirectoryPage({
           </div>
         </div>
       </section>
+
+      {modules?.length ? (
+        <section className="section directory-module-shell" aria-label={moduleLabel ?? 'Associated modules'}>
+          <div className="directory-module-header">
+            <div className="badge">{moduleLabel ?? 'Associated modules'}</div>
+            <h2 className="directory-module-title">Tools connected to this lane</h2>
+          </div>
+          <div className="directory-module-grid">
+            {modules.map((module) => (
+              <span className="directory-module-pill" key={module}>
+                {module}
+              </span>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {topMarkets.length ? (
         <section className="section directory-market-strip" aria-label="Top markets">

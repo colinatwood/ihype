@@ -10,9 +10,11 @@ export default async function ListenersIndexPage() {
     <ProfileDirectoryPage
       badge="FANS"
       currentHref="/fans"
-      description="Fan pages collect avatars, top fives, saved shows, and the local rooms each fan keeps in rotation."
+      description="Fan discover is where fans browse pages, follow hype, and jump into the tools that shape identity and event discovery."
+      moduleLabel="Fan modules"
+      modules={['Sign Up Wizard', 'Character Lab', 'Globe Search', 'Recommendation Engine', 'Ticket Hub']}
       profiles={listeners}
-      title="Fan directory"
+      title="Fan discover"
     />
   );
 }
