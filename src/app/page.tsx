@@ -4,18 +4,8 @@ import { getHomePageData } from '@/lib/public-data';
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const { featuredShows, transparencySnapshot } = await getHomePageData();
+  const { transparencySnapshot } = await getHomePageData();
   const counters = transparencySnapshot.counters;
-
-  const featuredMoments = featuredShows.slice(0, 3).map((show) => ({
-    slug: show.slug,
-    title: show.title,
-    venue: show.venueProfile?.name ?? 'Venue coming online',
-    detail:
-      show.headlinerProfile?.name ??
-      show.description ??
-      'Live rooms, artist pages, and promoter-led nights are moving through iHYPE.'
-  }));
 
   return (
     <main className="container section home-shell">
@@ -89,84 +79,6 @@ export default async function HomePage() {
           </div>
         </aside>
       </section>
-
-      <section className="home-browse-grid" aria-label="How to explore iHYPE">
-        <div className="home-browse-panel panel">
-          <div className="home-featured-head">
-            <div>
-              <div className="badge">DISCOVER LANES</div>
-              <h2>Explore the network</h2>
-            </div>
-          </div>
-          <div className="home-browse-card-grid">
-            <Link className="home-browse-card" href="/fans">
-              <strong>Fans</strong>
-              <p className="meta">Build identity, discover shows, and track who you are hyping.</p>
-            </Link>
-            <Link className="home-browse-card" href="/artists">
-              <strong>Artists</strong>
-              <p className="meta">Show music, upcoming dates, merch, and what direction the project is taking.</p>
-            </Link>
-            <Link className="home-browse-card" href="/promoters">
-              <strong>Promoters</strong>
-              <p className="meta">Build nights, record shows, and connect audience energy to live programming.</p>
-            </Link>
-            <Link className="home-browse-card" href="/venues">
-              <strong>Venues</strong>
-              <p className="meta">Show the room, the hours, the calendar, and the artists worth bringing through.</p>
-            </Link>
-          </div>
-        </div>
-
-        <div className="home-transparency-panel panel" aria-label="Network activity">
-          <div className="home-featured-head">
-            <div>
-              <div className="badge">LIVE SIGNAL</div>
-              <h2>Scene activity now</h2>
-            </div>
-          </div>
-          <div className="home-heuristics-list">
-            <div className="home-heuristic-card">
-              <strong>{counters.totalShows}</strong>
-              <p className="meta">Shows tracked across the network.</p>
-            </div>
-            <div className="home-heuristic-card">
-              <strong>{counters.liveShows + counters.upcomingShows}</strong>
-              <p className="meta">Live or upcoming sets fans can move toward right now.</p>
-            </div>
-            <div className="home-heuristic-card">
-              <strong>{counters.totalTicketsSold}</strong>
-              <p className="meta">Tickets issued through the serialized iHYPE ticket flow.</p>
-            </div>
-            <div className="home-heuristic-card">
-              <strong>{counters.totalSongsUploaded}</strong>
-              <p className="meta">Tracks uploaded by artists and promoters inside the network.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {featuredMoments.length ? (
-        <section className="section" aria-label="Featured activity">
-          <div className="home-featured-panel">
-            <div className="home-featured-head">
-              <div>
-                <div className="badge">ON DECK</div>
-                <h2>What is moving through iHYPE</h2>
-              </div>
-            </div>
-            <div className="home-featured-list">
-              {featuredMoments.map((moment) => (
-                <Link className="home-featured-card" href={`/shows/${moment.slug}`} key={moment.slug}>
-                  <strong>{moment.title}</strong>
-                  <span>{moment.venue}</span>
-                  <p className="meta">{moment.detail}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
     </main>
   );
 }
