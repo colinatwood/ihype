@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useActionState, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { loginAction } from '@/app/login/actions';
-import { AuthConnectionMap } from '@/components/PageConnectionMap';
 
 type ResetStage = 'request' | 'confirm';
 
@@ -130,10 +129,6 @@ export function LoginPageClient() {
       <div className="auth-shell">
         <div className="panel auth-panel">
           <h1>Sign in</h1>
-          <p className="kicker">
-            Use your iHYPE account to jump back into your fan, artist, promoter, venue, or admin workspace.
-            Sign in with either email or username. Demo logins are fan@ihype.org, promoter@ihype.org, artist@ihype.org, venue@ihype.org, and admin@ihype.org, all using demo12345.
-          </p>
 
           <form className="form" action={loginFormAction}>
             <input name="callbackUrl" type="hidden" value={callbackUrl} />
@@ -187,8 +182,6 @@ export function LoginPageClient() {
 
           {message ? <p className="status-note">{message}</p> : null}
         </div>
-
-        <AuthConnectionMap active="login" />
 
         {showReset ? (
           <div className="panel auth-panel auth-reset-panel">
