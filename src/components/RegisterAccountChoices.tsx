@@ -5,7 +5,7 @@ import Link from 'next/link';
 type RegisterRole = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
 
 type RegisterAccountChoicesProps = {
-  activeRole: RegisterRole;
+  activeRole?: RegisterRole | null;
 };
 
 const registerChoices: Array<{
@@ -13,7 +13,7 @@ const registerChoices: Array<{
   label: string;
   href: string;
 }> = [
-  { role: 'FAN', label: 'Fan', href: '/register' },
+  { role: 'FAN', label: 'Fan', href: '/register/fan' },
   { role: 'ARTIST', label: 'Artist', href: '/register/artist' },
   { role: 'DJ', label: 'Promoter', href: '/register/promoter' },
   { role: 'VENUE', label: 'Venue', href: '/register/venue' }

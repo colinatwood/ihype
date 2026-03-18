@@ -12,7 +12,7 @@ import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from
 import { slugify } from '@/lib/utils';
 
 const schema = z.object({
-  name: z.string().min(2),
+  name: z.string().trim().min(2).optional(),
   email: z.string().email(),
   username: z.string().min(3).max(30),
   password: z.string().min(8),
@@ -166,12 +166,18 @@ export async function POST(request: Request) {
 
     if (body.role === 'FAN' && !body.isThirteenOrOlder) {
       return NextResponse.json(
-        { error: 'Fans must confirm they are 13 or older to use the iHYPE character lab.' },
+        { error: 'Fans must attest that they are 13 or older before creating an account.' },
         { status: 400 }
       );
     }
 
     const normalizedEmail = body.email.toLowerCase();
+    const trimmedName = body.name?.trim() ?? '';
+
+    if (body.role !== 'FAN' && trimmedName.length < 2) {
+      return NextResponse.json({ error: 'Name is required for this account type.' }, { status: 400 });
+    }
+
     const existing = await db.user.findFirst({
       where: {
         OR: [{ email: normalizedEmail }, { username: normalizedUsername }]
@@ -193,7 +199,7 @@ export async function POST(request: Request) {
     const passwordHash = await bcrypt.hash(body.password, 10);
     const user = await db.user.create({
       data: {
-        name: body.name,
+        name: body.role === 'FAN' ? normalizedUsername : trimmedName,
         email: normalizedEmail,
         username: normalizedUsername,
         passwordHash,
@@ -204,7 +210,8 @@ export async function POST(request: Request) {
 
     const profileType = getProfileType(body.role);
     const hexId = await generateUniqueProfileHexId();
-    const baseSlug = slugify(body.name);
+    const slugSource = body.role === 'FAN' ? normalizedUsername : trimmedName;
+    const baseSlug = slugify(slugSource);
     let slug = baseSlug || `profile-${user.id.slice(0, 6)}`;
     let suffix = 1;
 
@@ -213,12 +220,15 @@ export async function POST(request: Request) {
       suffix += 1;
     }
 
+    const profileName = profileType === 'LISTENER' ? hexId : trimmedName;
+    const profileCopyName = profileType === 'LISTENER' ? normalizedUsername : trimmedName;
+
     const profile = await db.profile.create({
       data: {
         slug,
         hexId,
         type: profileType,
-        name: body.name,
+        name: profileName,
         ownerId: user.id,
         contactInfo: body.contactInfo || null,
         hometown: body.hometown || null,
@@ -227,7 +237,7 @@ export async function POST(request: Request) {
         verificationStatus: getVerificationStatusForType(profileType),
         verificationSubmittedAt:
           profileType === 'ARTIST' || profileType === 'VENUE' ? new Date() : null,
-        ...getProfileCopy(profileType, body.name),
+        ...getProfileCopy(profileType, profileCopyName),
         ...(profileType === 'VENUE' ? getVenueProfileOverrides(body) : {})
       }
     });

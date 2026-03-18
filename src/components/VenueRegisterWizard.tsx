@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { AuthConnectionMap } from '@/components/PageConnectionMap';
 import { RegisterAccountChoices } from '@/components/RegisterAccountChoices';
 import {
   getProfileDesignStyleVars,
@@ -205,23 +204,9 @@ export function VenueRegisterWizard() {
         <section className="panel register-panel venue-wizard">
           <div className="register-header">
             <RegisterAccountChoices activeRole="VENUE" />
-            <h1>Venue sign up</h1>
-            <p className="kicker">
-              Build the venue identity, location notes, and future show framing before the page goes live.
-            </p>
-            <div className="register-secondary-strip" aria-label="Secondary venue modules">
-              {['Verification', 'Page Builder', 'Event Calendar', 'Ticketing'].map((module) => (
-                <span className="register-secondary-pill" key={module}>
-                  {module}
-                </span>
-              ))}
-            </div>
             <div className="register-role-links">
-              <Link className="button small secondary" href="/login">
-                Already have an account?
-              </Link>
               <Link className="button small secondary" href="/register">
-                Back to fan sign up
+                Back to account options
               </Link>
             </div>
           </div>
@@ -632,8 +617,6 @@ export function VenueRegisterWizard() {
                 </div>
               </aside>
             </div>
-
-            <AuthConnectionMap active="register" registerHref="/register/venue" />
           </form>
         </section>
       </div>

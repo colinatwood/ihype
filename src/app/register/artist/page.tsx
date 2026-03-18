@@ -6,11 +6,5 @@ export const metadata = {
 };
 
 export default function ArtistRegisterPage() {
-  return (
-    <RegisterForm
-      defaultRole="ARTIST"
-      intro="Artist accounts can upload media that promoters may curate into streaming-only iHYPE shows. Review and accept the limited-use license policy below before creating your account."
-      title="Artist sign up"
-    />
-  );
+  return <RegisterForm defaultRole="ARTIST" />;
 }

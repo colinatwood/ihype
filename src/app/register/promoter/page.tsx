@@ -6,11 +6,5 @@ export const metadata = {
 };
 
 export default function PromoterRegisterPage() {
-  return (
-    <RegisterForm
-      defaultRole="DJ"
-      intro="Promoter accounts can curate artist uploads into streaming-only iHYPE shows, so the artist upload and limited use license policy applies here too. Review and accept it before creating your account."
-      title="Promoter sign up"
-    />
-  );
+  return <RegisterForm defaultRole="DJ" />;
 }
