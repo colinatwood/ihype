@@ -1,6 +1,4 @@
 'use client';
-
-import Link from 'next/link';
 import { useActionState, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { loginAction } from '@/app/login/actions';
@@ -163,9 +161,6 @@ export function LoginPageClient() {
           </form>
 
           <div className="auth-inline-actions">
-            <Link className="text-link" href="/register">
-              Open sign up wizard
-            </Link>
             <button
               className="text-link"
               onClick={() => {
