@@ -4,13 +4,16 @@ import { useSearchParams } from 'next/navigation';
 import { loginAction } from '@/app/login/actions';
 
 type ResetStage = 'request' | 'confirm';
+type LoginPageClientProps = {
+  passwordResetEnabled: boolean;
+};
 
 function getAuthErrorMessage(error: string | null) {
   if (!error) return null;
   return 'Invalid email, username, or password.';
 }
 
-export function LoginPageClient() {
+export function LoginPageClient({ passwordResetEnabled }: LoginPageClientProps) {
   const searchParams = useSearchParams();
   const requestedCallbackUrl = searchParams.get('callbackUrl');
   const callbackUrl = requestedCallbackUrl || '/auth/landing';
@@ -160,25 +163,27 @@ export function LoginPageClient() {
             </button>
           </form>
 
-          <div className="auth-inline-actions">
-            <button
-              className="text-link"
-              onClick={() => {
-                setShowReset((current) => !current);
-                setResetMessage(null);
-                setResetStage('request');
-                setResetEmail('');
-              }}
-              type="button"
-            >
-              {showReset ? 'Hide password reset' : 'Forgot password?'}
-            </button>
-          </div>
+          {passwordResetEnabled ? (
+            <div className="auth-inline-actions">
+              <button
+                className="text-link"
+                onClick={() => {
+                  setShowReset((current) => !current);
+                  setResetMessage(null);
+                  setResetStage('request');
+                  setResetEmail('');
+                }}
+                type="button"
+              >
+                {showReset ? 'Hide password reset' : 'Forgot password?'}
+              </button>
+            </div>
+          ) : null}
 
           {message ? <p className="status-note">{message}</p> : null}
         </div>
 
-        {showReset ? (
+        {passwordResetEnabled && showReset ? (
           <div className="panel auth-panel auth-reset-panel">
             <div className="auth-reset-header">
               <div>

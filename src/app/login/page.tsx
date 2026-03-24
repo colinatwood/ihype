@@ -1,9 +1,22 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LoginPageClient } from '@/components/LoginPageClient';
+import { isPasswordResetEmailConfigured } from '@/lib/mailer';
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Sign In | iHYPE.org',
+  description: 'Sign in to iHYPE.org.',
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 export default function LoginPage() {
+  const passwordResetEnabled =
+    process.env.NODE_ENV !== 'production' || isPasswordResetEmailConfigured();
+
   return (
     <Suspense
       fallback={
@@ -17,7 +30,7 @@ export default function LoginPage() {
         </main>
       }
     >
-      <LoginPageClient />
+      <LoginPageClient passwordResetEnabled={passwordResetEnabled} />
     </Suspense>
   );
 }

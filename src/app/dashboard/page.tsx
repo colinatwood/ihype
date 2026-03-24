@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ProfileType } from '@prisma/client';
 import { redirect } from 'next/navigation';
@@ -11,6 +12,15 @@ import { getSafeImageUrl } from '@/lib/asset-safety';
 import { db } from '@/lib/db';
 import { shortenHexId } from '@/lib/hex-id';
 import { isAdminSession } from '@/lib/permissions';
+
+export const metadata: Metadata = {
+  title: 'Dashboard | iHYPE.org',
+  description: 'Manage your iHYPE.org page.',
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 async function getDashboardProfiles(ownerId?: string) {
   return db.profile.findMany({

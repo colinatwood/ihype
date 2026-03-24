@@ -8,6 +8,7 @@ import { createHexId } from '@/lib/hex-id';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
+import { isReservedPlatformEmail } from '@/lib/runtime-flags';
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
 import { slugify } from '@/lib/utils';
 
@@ -173,6 +174,13 @@ export async function POST(request: Request) {
 
     const normalizedEmail = body.email.toLowerCase();
     const trimmedName = body.name?.trim() ?? '';
+
+    if (isReservedPlatformEmail(normalizedEmail)) {
+      return NextResponse.json(
+        { error: 'Please use an email address you control. @ihype.org email addresses are reserved.' },
+        { status: 400 }
+      );
+    }
 
     if (body.role !== 'FAN' && trimmedName.length < 2) {
       return NextResponse.json({ error: 'Name is required for this account type.' }, { status: 400 });

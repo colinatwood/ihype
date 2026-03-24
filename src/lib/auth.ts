@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
+import { areDemoLoginsEnabled, isDemoIdentifier, isDemoUser } from '@/lib/runtime-flags';
 
 const useSecureCookies = process.env.NODE_ENV === 'production';
 const sessionMaxAgeSeconds = 12 * 60 * 60;
@@ -105,6 +106,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         const identifier = String(credentials.identifier).trim().toLowerCase();
+
+        if (!areDemoLoginsEnabled() && isDemoIdentifier(identifier)) {
+          await new Promise((resolve) => setTimeout(resolve, 300));
+          return null;
+        }
+
         const user = await db.user.findFirst({
           where: {
             OR: [{ email: identifier }, { username: identifier }]
@@ -112,6 +119,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user?.passwordHash) return null;
+        if (!areDemoLoginsEnabled() && isDemoUser(user)) return null;
 
         const isValid = await bcrypt.compare(String(credentials.password), user.passwordHash);
         if (!isValid) return null;

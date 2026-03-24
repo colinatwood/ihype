@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { buildArtistMediaCollection } from '../src/lib/media';
+import { isProductionSeedingAllowed } from '../src/lib/runtime-flags';
 import { createSerializedTicketId } from '../src/lib/tickets';
 import { calculateTicketOrderPayouts, PROMOTER_POOL_PERCENT } from '../src/lib/ticketing';
 
@@ -136,6 +137,12 @@ async function upsertDemoUser({
 }
 
 async function main() {
+  if (process.env.NODE_ENV === 'production' && !isProductionSeedingAllowed()) {
+    throw new Error(
+      'Production seeding is disabled by default. Set ALLOW_PRODUCTION_SEEDING=true only for a controlled maintenance run.'
+    );
+  }
+
   const passwordHash = await bcrypt.hash('demo12345', 10);
   const demoEmails = [
     'admin@ihype.org',
@@ -1617,13 +1624,15 @@ async function main() {
     ]
   });
 
-  await prisma.user.deleteMany({
-    where: {
-      email: {
-        notIn: demoEmails
+  if (process.env.NODE_ENV !== 'production') {
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          notIn: demoEmails
+        }
       }
-    }
-  });
+    });
+  }
 }
 
 main()

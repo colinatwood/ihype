@@ -55,7 +55,7 @@ npm run prisma:seed
 npm run dev
 ```
 
-## Demo users
+## Local demo users only
 
 - `fan@ihype.org`
 - `promoter@ihype.org`
@@ -71,6 +71,8 @@ demo12345
 
 Demo logins currently use email and password only.
 
+These demo accounts are for local development and controlled staging only. Production should not expose shared demo credentials, and the app now locks demo logins by default in production unless `FEATURE_ENABLE_DEMO_LOGINS=true` is explicitly set.
+
 ## Important production notes
 
 - Use a real OAuth provider, email verification, password reset flow, and bot protection before launch.
@@ -78,6 +80,9 @@ Demo logins currently use email and password only.
 - Add object storage for poster images and media uploads.
 - Replace the simple webhook verification helper with the exact provider-recommended verification flow for your chosen streaming vendor.
 - Add observability, background jobs, chat moderation, and rate limiting before trusting the internet with it. The internet is not a serious place.
+- Public signup reserves `@ihype.org` email addresses for internal use only.
+- Auth, signup, and dashboard pages are intentionally marked `noindex`.
+- The Prisma seed is for local/demo data only and refuses production runs unless `ALLOW_PRODUCTION_SEEDING=true` is explicitly set.
 
 ## Cookie posture
 
