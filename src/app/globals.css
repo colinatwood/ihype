@@ -193,6 +193,8 @@ button, input, select, textarea { font: inherit; }
 .nav-logo-discover {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: 74px;
   padding: 0.14rem 0.5rem 0.16rem;
   border-radius: 999px;
   background:

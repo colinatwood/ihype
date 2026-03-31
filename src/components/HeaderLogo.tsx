@@ -4,21 +4,50 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 
-function getDiscoverHref(pathname: string) {
+type HeaderContext = {
+  href: string;
+  label: 'Fan' | 'Artist' | 'Promoter' | 'Venue';
+};
+
+function getContextFromRole(role: string | undefined): HeaderContext | null {
+  if (role === 'FAN') {
+    return { href: '/fans', label: 'Fan' };
+  }
+
+  if (role === 'ARTIST') {
+    return { href: '/artists', label: 'Artist' };
+  }
+
+  if (role === 'DJ') {
+    return { href: '/promoters', label: 'Promoter' };
+  }
+
+  if (role === 'VENUE') {
+    return { href: '/venues', label: 'Venue' };
+  }
+
+  return null;
+}
+
+function getBrowseContext(pathname: string, role: string | undefined): HeaderContext | null {
   if (pathname.startsWith('/fans') || pathname.startsWith('/listeners')) {
-    return '/fans';
+    return { href: '/fans', label: 'Fan' };
   }
 
   if (pathname.startsWith('/artists')) {
-    return '/artists';
+    return { href: '/artists', label: 'Artist' };
   }
 
   if (pathname.startsWith('/promoters') || pathname.startsWith('/djs')) {
-    return '/promoters';
+    return { href: '/promoters', label: 'Promoter' };
   }
 
   if (pathname.startsWith('/venues')) {
-    return '/venues';
+    return { href: '/venues', label: 'Venue' };
+  }
+
+  if (pathname.startsWith('/dashboard')) {
+    return getContextFromRole(role);
   }
 
   return null;
@@ -28,20 +57,20 @@ export function HeaderLogo() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
 
-  const discoverHref = getDiscoverHref(pathname);
-  const showDiscoverCue = status === 'authenticated' && Boolean(session?.user) && Boolean(discoverHref);
+  const browseContext = getBrowseContext(pathname, session?.user?.role);
+  const showBrowseCue = status === 'authenticated' && Boolean(session?.user) && Boolean(browseContext);
 
   return (
     <Link
-      href={showDiscoverCue ? discoverHref ?? '/' : '/'}
+      href={showBrowseCue ? browseContext?.href ?? '/' : '/'}
       className="nav-logo nav-logo-left"
-      aria-label={showDiscoverCue ? 'Open discover page' : 'Go to iHYPE home'}
+      aria-label={showBrowseCue ? `Open ${browseContext?.label ?? ''} discover page` : 'Go to iHYPE home'}
     >
       <span className="nav-logo-mark">
         <span className="nav-logo-word">iHYPE</span>
         <span className="nav-logo-dot">.org</span>
       </span>
-      {showDiscoverCue ? <span className="nav-logo-discover">Discover</span> : null}
+      {showBrowseCue ? <span className="nav-logo-discover">{browseContext?.label}</span> : null}
     </Link>
   );
 }

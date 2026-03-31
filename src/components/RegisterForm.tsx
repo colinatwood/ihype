@@ -11,6 +11,17 @@ type RegisterFormProps = {
   defaultRole: RegisterRole;
 };
 
+type RegisterFormValues = {
+  name: string;
+  contactInfo: string;
+  hometown: string;
+  postalCode: string;
+  username: string;
+  email: string;
+  password: string;
+  addressLine1: string;
+};
+
 type RoleConfig = {
   primaryFields: Array<{
     name: string;
@@ -72,18 +83,33 @@ export function RegisterForm({
   defaultRole
 }: RegisterFormProps) {
   const [message, setMessage] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const [acceptedPolicy, setAcceptedPolicy] = useState(false);
   const [isThirteenOrOlder, setIsThirteenOrOlder] = useState(false);
+  const [formValues, setFormValues] = useState<RegisterFormValues>({
+    name: '',
+    contactInfo: '',
+    hometown: '',
+    postalCode: '',
+    username: '',
+    email: '',
+    password: '',
+    addressLine1: ''
+  });
   const selectedRole = defaultRole;
   const roleConfig = roleConfigs[selectedRole];
   const showPolicy = requiresArtistUploadPolicy(selectedRole);
   const showAgeGate = selectedRole === 'FAN';
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setMessage(null);
-    const payload = Object.fromEntries(formData.entries()) as Record<string, FormDataEntryValue | boolean>;
-    const email = String(payload.email ?? '');
-    const password = String(payload.password ?? '');
+    setPending(true);
+    const payload: Record<string, string | boolean> = {
+      ...formValues
+    };
+    const email = formValues.email;
+    const password = formValues.password;
 
     payload.role = selectedRole;
     payload.acceptedArtistUploadPolicy = showPolicy ? acceptedPolicy : true;
@@ -99,6 +125,7 @@ export function RegisterForm({
 
     if (!response.ok) {
       setMessage(data.error ?? 'Registration failed');
+      setPending(false);
       return;
     }
 
@@ -116,6 +143,7 @@ export function RegisterForm({
           ? `Account created. Sign in did not complete automatically, but your page is ready at ${data.profilePath}.`
           : 'Account created. Sign in did not complete automatically.'
       );
+      setPending(false);
       return;
     }
 
@@ -130,16 +158,23 @@ export function RegisterForm({
             <RegisterAccountChoices activeRole={selectedRole} />
           </div>
 
-          <form className="form register-form-stack" action={handleSubmit}>
+          <form className="form register-form-stack" onSubmit={handleSubmit}>
             {roleConfig.primaryFields.map((field) => (
               <label className="field" key={field.name}>
                 <span>{field.label}</span>
                 <input
                   minLength={field.name === 'password' ? 8 : undefined}
                   name={field.name}
+                  onChange={(event) =>
+                    setFormValues((current) => ({
+                      ...current,
+                      [field.name]: event.target.value
+                    }))
+                  }
                   placeholder={field.placeholder}
                   required={field.required ?? true}
                   type={field.type ?? 'text'}
+                  value={formValues[field.name as keyof RegisterFormValues] ?? ''}
                 />
               </label>
             ))}
@@ -172,8 +207,8 @@ export function RegisterForm({
               </label>
             ) : null}
 
-            <button className="button" type="submit">
-              Create account
+            <button className="button" disabled={pending} type="submit">
+              {pending ? 'Creating account...' : 'Create account'}
             </button>
             {message ? <p className="meta">{message}</p> : null}
           </form>
