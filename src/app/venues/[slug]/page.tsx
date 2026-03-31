@@ -2,22 +2,24 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { getProfileDesignStyleVars } from '@/lib/profile-design';
+import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
 import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
-import { VenuePageWizard } from '@/components/VenuePageWizard';
 import { VenueEventScheduler } from '@/components/VenueEventScheduler';
 import { VenueConnectionRequestActions } from '@/components/VenueConnectionRequestActions';
 import { VenueConnectionRequestForm } from '@/components/VenueConnectionRequestForm';
 import { OwnershipVerificationPanel } from '@/components/OwnershipVerificationPanel';
 import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
-import { getSafeBackgroundImageStyle } from '@/lib/asset-safety';
+import { VenuePageBuilder } from '@/components/VenuePageBuilder';
+import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 
 const venueSections = ['about', 'upcoming', 'request'] as const;
+const venueEditModules = ['builder', 'verification', 'calendar', 'recommendations'] as const;
 
 type VenueSection = (typeof venueSections)[number];
+type VenueEditModule = (typeof venueEditModules)[number];
 
 function getActiveSection(section: string | string[] | undefined): VenueSection {
   if (section === 'previous') {
@@ -41,6 +43,14 @@ function getSectionLabel(section: VenueSection) {
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
+function getActiveEditModule(module: string | string[] | undefined): VenueEditModule | null {
+  if (typeof module === 'string' && venueEditModules.includes(module as VenueEditModule)) {
+    return module as VenueEditModule;
+  }
+
+  return null;
+}
+
 function formatRequesterType(value: 'LISTENER' | 'PROMOTER') {
   return value === 'LISTENER' ? 'Fan' : 'Promoter';
 }
@@ -56,15 +66,17 @@ export default async function VenuePage({
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ section?: string | string[] }>;
+  searchParams?: Promise<{ section?: string | string[]; edit?: string | string[] }>;
 }) {
   const session = await auth();
   const { slug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeSection = getActiveSection(resolvedSearchParams.section);
+  const activeEditModule = getActiveEditModule(resolvedSearchParams.edit);
 
   const profile = await db.profile.findUnique({ where: { slug } });
   if (!profile || profile.type !== 'VENUE') return notFound();
+  const profileSlug = profile.slug;
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
   const [shows, bookableProfiles, connectionRequests, myRequests, totalRequestCount] = await Promise.all([
@@ -121,11 +133,17 @@ export default async function VenuePage({
   const promoterOptions = bookableProfiles
     .filter((bookableProfile) => bookableProfile.type === 'DJ')
     .map((bookableProfile) => ({ id: bookableProfile.id, name: bookableProfile.name }));
-  const pageDesignStyle = getProfileDesignStyleVars(profile.themePreset, {
-    accentTone: profile.themeAccentTone,
-    backdropTone: profile.themeBackdropTone
+  const canViewCustomPage = isOwner || profile.fanShareEnabled;
+  const sharedThemePreset = canViewCustomPage ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET;
+  const pageDesignStyle = getProfileDesignStyleVars(sharedThemePreset, {
+    accentTone: canViewCustomPage ? profile.themeAccentTone : undefined,
+    backdropTone: canViewCustomPage ? profile.themeBackdropTone : undefined,
+    fontPreset: canViewCustomPage ? profile.themeFontPreset : undefined
   });
-  const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
+  const bannerStyle = canViewCustomPage ? getSafeBackgroundImageStyle(profile.heroImage) : undefined;
+  const logoUrl = canViewCustomPage ? getSafeImageUrl(profile.logoImage || profile.avatarImage) : null;
+  const featureImageUrl = canViewCustomPage ? getSafeImageUrl(profile.galleryImage || profile.heroImage) : null;
+  const featureVideoUrl = canViewCustomPage ? getSafeVideoUrl(profile.featureVideoUrl) : null;
   const recommendations = await getAdvertisingRecommendations({
     profile: {
       type: 'VENUE',
@@ -141,10 +159,20 @@ export default async function VenuePage({
     }
   });
 
+  function getPageHref(section: VenueSection, editModule: VenueEditModule | null) {
+    const params = new URLSearchParams();
+    params.set('section', section);
+    if (editModule) {
+      params.set('edit', editModule);
+    }
+    return `/venues/${profileSlug}?${params.toString()}`;
+  }
+
   return (
     <main className="container section profile-design-shell" style={pageDesignStyle}>
       <header className="artist-banner panel" style={bannerStyle}>
         <div className="artist-banner-copy">
+          {logoUrl ? <img alt={`${profile.name} logo`} className="artist-logo-mark" src={logoUrl} /> : null}
           <div className="badge">VENUE</div>
           <h1 className="title" style={{ fontSize: '2.9rem' }}>{profile.name}</h1>
           <p className="artist-headline">{profile.headline || 'Set the tone for the room and what kind of nights belong here.'}</p>
@@ -160,63 +188,111 @@ export default async function VenuePage({
       </header>
 
       {isOwner ? (
-        <>
-          <OwnershipVerificationPanel
-            contactInfo={profile.contactInfo}
-            profileId={profile.id}
-            roleLabel="venue"
-            verificationNotes={profile.verificationNotes}
-            verificationStatus={profile.verificationStatus}
-          />
+        <section className="section owner-edit-shell">
+          <div className="panel owner-edit-panel">
+            <div className="owner-edit-header">
+              <div>
+                <span className="badge">Edit Profile</span>
+                <h2>Venue tools</h2>
+                <p className="meta">Open one module at a time and keep the rest tucked away.</p>
+              </div>
+              {activeEditModule ? (
+                <Link className="button small secondary" href={getPageHref(activeSection, null)}>
+                  Hide tools
+                </Link>
+              ) : null}
+            </div>
 
-          <VenuePageWizard
-            initialValues={{
-              headline: profile.headline ?? '',
-              bio: profile.bio ?? '',
-              heroImage: profile.heroImage ?? '',
-              aboutContent: profile.aboutContent ?? '',
-              requestContent: profile.requestContent ?? '',
-              addressLine1: profile.addressLine1 ?? '',
-              contactInfo: profile.contactInfo ?? '',
-              hometown: profile.hometown ?? '',
-              hoursText: profile.hoursText ?? '',
-              city: profile.city ?? '',
-              stateRegion: profile.stateRegion ?? '',
-              postalCode: profile.postalCode ?? '',
-              country: profile.country ?? '',
-              parkingDetails: profile.parkingDetails ?? '',
-              stayRecommendations: profile.stayRecommendations ?? '',
-              upcomingContent: profile.upcomingContent ?? '',
-              previousShowHighlights: profile.previousShowHighlights ?? '',
-              themePreset: profile.themePreset,
-              themeAccentTone: profile.themeAccentTone ?? '',
-              themeBackdropTone: profile.themeBackdropTone ?? ''
-            }}
-            previousShows={previousShows.map((show) => ({
-              id: show.id,
-              title: show.title,
-              startsAt: show.startsAt.toISOString()
-            }))}
-            profileId={profile.id}
-            profileName={profile.name}
-            upcomingShows={upcomingShows.map((show) => ({
-              id: show.id,
-              title: show.title,
-              startsAt: show.startsAt.toISOString()
-            }))}
-          />
+            <nav className="owner-edit-tabs" aria-label="Venue edit modules">
+              <Link
+                className={activeEditModule === 'builder' ? 'owner-edit-tab active' : 'owner-edit-tab'}
+                href={getPageHref(activeSection, activeEditModule === 'builder' ? null : 'builder')}
+              >
+                Page Builder
+              </Link>
+              <Link
+                className={activeEditModule === 'verification' ? 'owner-edit-tab active' : 'owner-edit-tab'}
+                href={getPageHref(activeSection, activeEditModule === 'verification' ? null : 'verification')}
+              >
+                Verification
+              </Link>
+              <Link
+                className={activeEditModule === 'calendar' ? 'owner-edit-tab active' : 'owner-edit-tab'}
+                href={getPageHref(activeSection, activeEditModule === 'calendar' ? null : 'calendar')}
+              >
+                Event Calendar
+              </Link>
+              <Link
+                className={activeEditModule === 'recommendations' ? 'owner-edit-tab active' : 'owner-edit-tab'}
+                href={getPageHref(activeSection, activeEditModule === 'recommendations' ? null : 'recommendations')}
+              >
+                Recommendations
+              </Link>
+            </nav>
 
-          <div className="request-history">
-            <VenueEventScheduler
-              venueProfileId={profile.id}
-              bookedActs={bookedActs}
-              promoterOptions={promoterOptions}
-            />
+            {activeEditModule === 'builder' ? (
+              <VenuePageBuilder
+                hideToggle
+                initialValues={{
+                  headline: profile.headline ?? '',
+                  bio: profile.bio ?? '',
+                  heroImage: profile.heroImage ?? '',
+                  logoImage: profile.logoImage ?? profile.avatarImage ?? '',
+                  galleryImage: profile.galleryImage ?? '',
+                  featureVideoUrl: profile.featureVideoUrl ?? '',
+                  aboutContent: profile.aboutContent ?? '',
+                  requestContent: profile.requestContent ?? '',
+                  addressLine1: profile.addressLine1 ?? '',
+                  contactInfo: profile.contactInfo ?? '',
+                  hometown: profile.hometown ?? '',
+                  hoursText: profile.hoursText ?? '',
+                  city: profile.city ?? '',
+                  stateRegion: profile.stateRegion ?? '',
+                  postalCode: profile.postalCode ?? '',
+                  country: profile.country ?? '',
+                  parkingDetails: profile.parkingDetails ?? '',
+                  stayRecommendations: profile.stayRecommendations ?? '',
+                  upcomingContent: profile.upcomingContent ?? '',
+                  previousShowHighlights: profile.previousShowHighlights ?? '',
+                  themePreset: profile.themePreset,
+                  themeFontPreset: profile.themeFontPreset,
+                  themeAccentTone: profile.themeAccentTone ?? '',
+                  themeBackdropTone: profile.themeBackdropTone ?? '',
+                  fanShareEnabled: profile.fanShareEnabled
+                }}
+                previewGenres={profile.genres}
+                profileId={profile.id}
+                profileName={profile.name}
+                startOpen
+              />
+            ) : null}
+
+            {activeEditModule === 'verification' ? (
+              <OwnershipVerificationPanel
+                contactInfo={profile.contactInfo}
+                profileId={profile.id}
+                roleLabel="venue"
+                verificationNotes={profile.verificationNotes}
+                verificationStatus={profile.verificationStatus}
+              />
+            ) : null}
+
+            {activeEditModule === 'calendar' ? (
+              <div className="request-history">
+                <VenueEventScheduler
+                  venueProfileId={profile.id}
+                  bookedActs={bookedActs}
+                  promoterOptions={promoterOptions}
+                />
+              </div>
+            ) : null}
+
+            {activeEditModule === 'recommendations' ? (
+              <MarketRecommendationsPanel recommendations={recommendations} roleLabel="venue" />
+            ) : null}
           </div>
-        </>
+        </section>
       ) : null}
-
-      {isOwner ? <MarketRecommendationsPanel recommendations={recommendations} roleLabel="venue" /> : null}
 
       <section className="section">
         <nav className="section-tabs" aria-label="Venue page sections">
@@ -224,7 +300,7 @@ export default async function VenuePage({
             <Link
               key={section}
               className={section === activeSection ? 'section-tab active' : 'section-tab'}
-              href={`/venues/${profile.slug}?section=${section}`}
+              href={`/venues/${profileSlug}?section=${section}`}
             >
               {getSectionLabel(section)}
             </Link>
@@ -235,6 +311,16 @@ export default async function VenuePage({
           {activeSection === 'about' ? (
             <>
               <h2>About</h2>
+              {featureImageUrl ? (
+                <div className="artist-media-visuals">
+                  <img alt={`${profile.name} featured visual`} className="artist-media-visual-image" src={featureImageUrl} />
+                </div>
+              ) : null}
+              {featureVideoUrl ? (
+                <div className="artist-media-visuals">
+                  <video className="artist-media-visual-video" controls preload="metadata" src={featureVideoUrl} />
+                </div>
+              ) : null}
               {(profile.addressLine1 || profile.hoursText || profile.parkingDetails || profile.stayRecommendations) ? (
                 <div className="grid grid-2">
                   {profile.addressLine1 ? (

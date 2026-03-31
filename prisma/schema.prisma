@@ -108,8 +108,12 @@ model Profile {
   longitude                     Float?
   heroImage                     String?
   avatarImage                   String?
+  logoImage                     String?
+  galleryImage                  String?
+  featureVideoUrl               String?
   companionSpriteSheet          String?
   themePreset                   String                   @default("midnight-neon")
+  themeFontPreset               String?
   themeAccentTone               String?
   themeBackdropTone             String?
   fanShareEnabled               Boolean                  @default(false)

@@ -5,19 +5,21 @@ import { db } from '@/lib/db';
 import { buildArtistMediaCollection } from '@/lib/media';
 import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
-import { ProfilePageEditor } from '@/components/ProfilePageEditor';
 import { PromoterOwnerWorkspace } from '@/components/PromoterOwnerWorkspace';
 import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
+import { PromoterPageBuilder } from '@/components/PromoterPageBuilder';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
-import { getSafeBackgroundImageStyle } from '@/lib/asset-safety';
+import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
+import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
-import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 import { detectRequestLocation } from '@/lib/request-location';
 
 const promoterSections = ['about', 'shows', 'events'] as const;
+const promoterEditModules = ['builder', 'workspace', 'recommendations'] as const;
 
 type PromoterSection = (typeof promoterSections)[number];
+type PromoterEditModule = (typeof promoterEditModules)[number];
 
 function getActiveSection(section: string | string[] | undefined): PromoterSection {
   if (section === 'upcoming' || section === 'previous') {
@@ -41,6 +43,14 @@ function getSectionLabel(section: PromoterSection) {
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
+function getActiveEditModule(module: string | string[] | undefined): PromoterEditModule | null {
+  if (typeof module === 'string' && promoterEditModules.includes(module as PromoterEditModule)) {
+    return module as PromoterEditModule;
+  }
+
+  return null;
+}
+
 function formatRequestStatus(value: 'PENDING' | 'BOOKED' | 'DISMISSED') {
   if (value === 'BOOKED') return 'Booked';
   if (value === 'DISMISSED') return 'Dismissed';
@@ -60,15 +70,17 @@ export default async function PromoterPage({
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ section?: string | string[] }>;
+  searchParams?: Promise<{ section?: string | string[]; edit?: string | string[] }>;
 }) {
   const session = await auth();
   const { slug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeSection = getActiveSection(resolvedSearchParams.section);
+  const activeEditModule = getActiveEditModule(resolvedSearchParams.edit);
 
   const profile = await db.profile.findUnique({ where: { slug } });
   if (!profile || profile.type !== 'DJ') return notFound();
+  const profileSlug = profile.slug;
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
   const [shows, sentRecommendations, artistProfiles, viewerLocation, venues] = await Promise.all([
@@ -148,11 +160,17 @@ export default async function PromoterPage({
       entries: buildArtistMediaCollection(artistProfile.mediaContent, artistProfile.mediaUploads).entries
     }))
     .filter((artistProfile) => artistProfile.entries.length > 0);
-  const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
-  const pageDesignStyle = getProfileDesignStyleVars(profile.themePreset, {
-    accentTone: profile.themeAccentTone,
-    backdropTone: profile.themeBackdropTone
+  const canViewCustomPage = isOwner || profile.fanShareEnabled;
+  const sharedThemePreset = canViewCustomPage ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET;
+  const bannerStyle = canViewCustomPage ? getSafeBackgroundImageStyle(profile.heroImage) : undefined;
+  const pageDesignStyle = getProfileDesignStyleVars(sharedThemePreset, {
+    accentTone: canViewCustomPage ? profile.themeAccentTone : undefined,
+    backdropTone: canViewCustomPage ? profile.themeBackdropTone : undefined,
+    fontPreset: canViewCustomPage ? profile.themeFontPreset : undefined
   });
+  const logoUrl = canViewCustomPage ? getSafeImageUrl(profile.logoImage || profile.avatarImage) : null;
+  const featureImageUrl = canViewCustomPage ? getSafeImageUrl(profile.galleryImage || profile.heroImage) : null;
+  const featureVideoUrl = canViewCustomPage ? getSafeVideoUrl(profile.featureVideoUrl) : null;
   const recommendations = await getAdvertisingRecommendations({
     profile: {
       type: 'DJ',
@@ -195,10 +213,20 @@ export default async function PromoterPage({
       timing: 'past' as const
     }));
 
+  function getPageHref(section: PromoterSection, editModule: PromoterEditModule | null) {
+    const params = new URLSearchParams();
+    params.set('section', section);
+    if (editModule) {
+      params.set('edit', editModule);
+    }
+    return `/promoters/${profileSlug}?${params.toString()}`;
+  }
+
   return (
     <main className="container section profile-design-shell" style={pageDesignStyle}>
       <header className="artist-banner panel" style={bannerStyle}>
         <div className="artist-banner-copy">
+          {logoUrl ? <img alt={`${profile.name} logo`} className="artist-logo-mark" src={logoUrl} /> : null}
           <div className="badge">PROMOTER</div>
           <h1 className="title" style={{ fontSize: '2.9rem' }}>{profile.name}</h1>
           <p className="artist-headline">{profile.headline || 'Set the tone for the nights, talent, and scenes you champion.'}</p>
@@ -212,75 +240,102 @@ export default async function PromoterPage({
       </header>
 
       {isOwner ? (
-        <ProfilePageEditor
-          description="Edit your promoter banner plus the About and Recommend sections."
-          enableDesignCustomizer
-          fields={[
-            { key: 'headline', label: 'Headline banner', placeholder: 'How do you want artists and venues to read this page?' },
-            { key: 'heroImage', label: 'Banner image URL', kind: 'url', placeholder: 'https://example.com/promoter.jpg' },
-            { key: 'contactInfo', label: 'Contact info', placeholder: 'bookings@promoter.com | +1 555 101 9090' },
-            { key: 'city', label: 'City', placeholder: 'Chicago' },
-            { key: 'stateRegion', label: 'State / province', placeholder: 'Illinois' },
-            { key: 'country', label: 'Country', placeholder: 'United States' },
-            { key: 'bio', label: 'Short intro', kind: 'textarea', rows: 3 },
-            { key: 'aboutContent', label: 'About', kind: 'textarea' },
-            { key: 'recommendContent', label: 'Recommend', kind: 'textarea' }
-          ]}
-          initialValues={{
-            headline: profile.headline ?? '',
-            bio: profile.bio ?? '',
-            heroImage: profile.heroImage ?? '',
-            aboutContent: profile.aboutContent ?? '',
-            journalContent: profile.journalContent ?? '',
-            mediaContent: profile.mediaContent ?? '',
-            tourContent: profile.tourContent ?? '',
-            merchContent: profile.merchContent ?? '',
-            requestContent: profile.requestContent ?? '',
-            recommendContent: profile.recommendContent ?? '',
-            topFiveContent: profile.topFiveContent ?? '',
-            contactInfo: profile.contactInfo ?? '',
-            city: profile.city ?? '',
-            stateRegion: profile.stateRegion ?? '',
-            country: profile.country ?? '',
-            themePreset: profile.themePreset,
-            themeAccentTone: profile.themeAccentTone ?? '',
-            themeBackdropTone: profile.themeBackdropTone ?? ''
-          }}
-          previewGenres={profile.genres}
-          previewRoleLabel="PROMOTER"
-          previewTabs={['About', 'Shows', 'Events']}
-          profileId={profile.id}
-          profileName={profile.name}
-          title="Customize your promoter page"
-        />
-      ) : null}
+        <section className="section owner-edit-shell">
+          <div className="panel owner-edit-panel">
+            <div className="owner-edit-header">
+              <div>
+                <span className="badge">Edit Profile</span>
+                <h2>Promoter tools</h2>
+                <p className="meta">Open one module at a time and keep the rest tucked away.</p>
+              </div>
+              {activeEditModule ? (
+                <Link className="button small secondary" href={getPageHref(activeSection, null)}>
+                  Hide tools
+                </Link>
+              ) : null}
+            </div>
 
-      {isOwner ? (
-        <PromoterOwnerWorkspace
-          artists={artistLibraries}
-          lifetimeStats={lifetimeStats}
-          promoter={{ profileId: profile.id, name: profile.name, slug: profile.slug }}
-          recentShows={recentShows.map((show) => ({
-            id: show.id,
-            title: show.title,
-            status: show.status,
-            startsAtLabel: formatShowDate(show.startsAt),
-            venueName: show.venueProfile?.name ?? null,
-            venuePostalCode: show.venueProfile?.postalCode ?? null,
-            ticketsSoldCount: show.ticketsSoldCount,
-            hypeCount: show.hypeCount,
-            showPath: `/shows/${show.slug}`
-          }))}
-          recommendations={recentRecommendations.map((request) => ({
-            id: request.id,
-            venueName: request.venueProfile.name,
-            artistName: request.artistProfile?.name ?? request.artistName,
-            status: formatRequestStatus(request.status)
-          }))}
-        />
-      ) : null}
+            <nav className="owner-edit-tabs" aria-label="Promoter edit modules">
+              <Link
+                className={activeEditModule === 'builder' ? 'owner-edit-tab active' : 'owner-edit-tab'}
+                href={getPageHref(activeSection, activeEditModule === 'builder' ? null : 'builder')}
+              >
+                Page Builder
+              </Link>
+              <Link
+                className={activeEditModule === 'workspace' ? 'owner-edit-tab active' : 'owner-edit-tab'}
+                href={getPageHref(activeSection, activeEditModule === 'workspace' ? null : 'workspace')}
+              >
+                Show Creator
+              </Link>
+              <Link
+                className={activeEditModule === 'recommendations' ? 'owner-edit-tab active' : 'owner-edit-tab'}
+                href={getPageHref(activeSection, activeEditModule === 'recommendations' ? null : 'recommendations')}
+              >
+                Recommendations
+              </Link>
+            </nav>
 
-      {isOwner ? <MarketRecommendationsPanel recommendations={recommendations} roleLabel="promoter" /> : null}
+            {activeEditModule === 'builder' ? (
+              <PromoterPageBuilder
+                hideToggle
+                initialValues={{
+                  headline: profile.headline ?? '',
+                  bio: profile.bio ?? '',
+                  heroImage: profile.heroImage ?? '',
+                  logoImage: profile.logoImage ?? profile.avatarImage ?? '',
+                  galleryImage: profile.galleryImage ?? '',
+                  featureVideoUrl: profile.featureVideoUrl ?? '',
+                  aboutContent: profile.aboutContent ?? '',
+                  recommendContent: profile.recommendContent ?? '',
+                  contactInfo: profile.contactInfo ?? '',
+                  city: profile.city ?? '',
+                  stateRegion: profile.stateRegion ?? '',
+                  country: profile.country ?? '',
+                  themePreset: profile.themePreset,
+                  themeFontPreset: profile.themeFontPreset,
+                  themeAccentTone: profile.themeAccentTone ?? '',
+                  themeBackdropTone: profile.themeBackdropTone ?? '',
+                  fanShareEnabled: profile.fanShareEnabled
+                }}
+                previewGenres={profile.genres}
+                profileId={profile.id}
+                profileName={profile.name}
+                startOpen
+              />
+            ) : null}
+
+            {activeEditModule === 'workspace' ? (
+              <PromoterOwnerWorkspace
+                artists={artistLibraries}
+                lifetimeStats={lifetimeStats}
+                promoter={{ profileId: profile.id, name: profile.name, slug: profile.slug }}
+                recentShows={recentShows.map((show) => ({
+                  id: show.id,
+                  title: show.title,
+                  status: show.status,
+                  startsAtLabel: formatShowDate(show.startsAt),
+                  venueName: show.venueProfile?.name ?? null,
+                  venuePostalCode: show.venueProfile?.postalCode ?? null,
+                  ticketsSoldCount: show.ticketsSoldCount,
+                  hypeCount: show.hypeCount,
+                  showPath: `/shows/${show.slug}`
+                }))}
+                recommendations={recentRecommendations.map((request) => ({
+                  id: request.id,
+                  venueName: request.venueProfile.name,
+                  artistName: request.artistProfile?.name ?? request.artistName,
+                  status: formatRequestStatus(request.status)
+                }))}
+              />
+            ) : null}
+
+            {activeEditModule === 'recommendations' ? (
+              <MarketRecommendationsPanel recommendations={recommendations} roleLabel="promoter" />
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <section className="section">
         <nav className="section-tabs" aria-label="Promoter page sections">
@@ -288,7 +343,7 @@ export default async function PromoterPage({
             <Link
               key={section}
               className={section === activeSection ? 'section-tab active' : 'section-tab'}
-              href={`/promoters/${profile.slug}?section=${section}`}
+              href={`/promoters/${profileSlug}?section=${section}`}
             >
               {getSectionLabel(section)}
             </Link>
@@ -326,6 +381,16 @@ export default async function PromoterPage({
             <>
               <h2>Events</h2>
               <div className="artist-copy">{profile.recommendContent || 'Use this section to explain the rooms, artists, and collaborations you like to champion.'}</div>
+              {featureImageUrl ? (
+                <div className="artist-media-visuals">
+                  <img alt={`${profile.name} featured visual`} className="artist-media-visual-image" src={featureImageUrl} />
+                </div>
+              ) : null}
+              {featureVideoUrl ? (
+                <div className="artist-media-visuals">
+                  <video className="artist-media-visual-video" controls preload="metadata" src={featureVideoUrl} />
+                </div>
+              ) : null}
 
               <NetworkEarthGlobe
                 description="Start from the visitor ZIP, highlight nearby venues, then zoom out to browse outside the current location and trace previous promoted shows."

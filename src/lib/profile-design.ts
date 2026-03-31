@@ -31,6 +31,15 @@ export const profileBackdropToneIds = [
 
 export type ProfileBackdropTone = (typeof profileBackdropToneIds)[number];
 
+export const profileFontPresetIds = [
+  'night-broadcast',
+  'poster-serif',
+  'club-mono',
+  'neon-script'
+] as const;
+
+export type ProfileFontPreset = (typeof profileFontPresetIds)[number];
+
 export const DEFAULT_PROFILE_DESIGN_PRESET: ProfileDesignPreset = 'midnight-neon';
 
 type ProfileDesignPresetDefinition = {
@@ -63,6 +72,14 @@ type ProfileBackdropToneDefinition = {
   panel?: string;
   hero?: string;
   border?: string;
+};
+
+type ProfileFontPresetDefinition = {
+  id: ProfileFontPreset;
+  label: string;
+  description: string;
+  displayFamily: string;
+  bodyFamily: string;
 };
 
 export const profileDesignPresets: ProfileDesignPresetDefinition[] = [
@@ -216,6 +233,37 @@ export const profileBackdropTones: ProfileBackdropToneDefinition[] = [
   }
 ];
 
+export const profileFontPresets: ProfileFontPresetDefinition[] = [
+  {
+    id: 'night-broadcast',
+    label: 'Night Broadcast',
+    description: 'Sharp modern broadcast typography with strong headings.',
+    displayFamily: '"Trebuchet MS", "Arial Black", sans-serif',
+    bodyFamily: '"Segoe UI", "Helvetica Neue", sans-serif'
+  },
+  {
+    id: 'poster-serif',
+    label: 'Poster Serif',
+    description: 'Big editorial serif headers with cleaner body copy.',
+    displayFamily: 'Georgia, "Times New Roman", serif',
+    bodyFamily: '"Helvetica Neue", Arial, sans-serif'
+  },
+  {
+    id: 'club-mono',
+    label: 'Club Mono',
+    description: 'Utility monospaced headings for a machine-room look.',
+    displayFamily: '"Courier New", "Lucida Console", monospace',
+    bodyFamily: '"Segoe UI", "Helvetica Neue", sans-serif'
+  },
+  {
+    id: 'neon-script',
+    label: 'Neon Script',
+    description: 'Soft display script vibe paired with sturdy sans body text.',
+    displayFamily: '"Brush Script MT", "Lucida Handwriting", cursive',
+    bodyFamily: '"Trebuchet MS", "Segoe UI", sans-serif'
+  }
+];
+
 export function normalizeProfileDesignPreset(value?: string | null): ProfileDesignPreset {
   if (value && profileDesignPresetIds.includes(value as ProfileDesignPreset)) {
     return value as ProfileDesignPreset;
@@ -240,6 +288,14 @@ export function normalizeProfileBackdropTone(value?: string | null): ProfileBack
   return 'preset';
 }
 
+export function normalizeProfileFontPreset(value?: string | null): ProfileFontPreset {
+  if (value && profileFontPresetIds.includes(value as ProfileFontPreset)) {
+    return value as ProfileFontPreset;
+  }
+
+  return 'night-broadcast';
+}
+
 export function getProfileDesignPreset(value?: string | null) {
   const presetId = normalizeProfileDesignPreset(value);
   return profileDesignPresets.find((preset) => preset.id === presetId) ?? profileDesignPresets[0];
@@ -255,16 +311,23 @@ export function getProfileBackdropTone(value?: string | null) {
   return profileBackdropTones.find((tone) => tone.id === backdropToneId) ?? profileBackdropTones[0];
 }
 
+export function getProfileFontPreset(value?: string | null) {
+  const fontPresetId = normalizeProfileFontPreset(value);
+  return profileFontPresets.find((preset) => preset.id === fontPresetId) ?? profileFontPresets[0];
+}
+
 export function getProfileDesignStyleVars(
   value?: string | null,
   overrides?: {
     accentTone?: string | null;
     backdropTone?: string | null;
+    fontPreset?: string | null;
   }
 ): CSSProperties {
   const preset = getProfileDesignPreset(value);
   const accentTone = getProfileAccentTone(overrides?.accentTone);
   const backdropTone = getProfileBackdropTone(overrides?.backdropTone);
+  const fontPreset = getProfileFontPreset(overrides?.fontPreset);
 
   return {
     '--profile-design-surface': backdropTone.surface ?? preset.surface,
@@ -274,6 +337,8 @@ export function getProfileDesignStyleVars(
     '--profile-design-accent-soft': accentTone.accentSoft ?? preset.accentSoft,
     '--profile-design-text': preset.text,
     '--profile-design-muted': preset.muted,
-    '--profile-design-border': backdropTone.border ?? preset.border
+    '--profile-design-border': backdropTone.border ?? preset.border,
+    '--profile-design-display-font': fontPreset.displayFamily,
+    '--profile-design-body-font': fontPreset.bodyFamily
   } as CSSProperties;
 }

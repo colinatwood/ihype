@@ -2,13 +2,37 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { isSafeImageInput, isSafeVideoInput } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
-import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
+import {
+  profileAccentToneIds,
+  profileBackdropToneIds,
+  profileDesignPresetIds,
+  profileFontPresetIds
+} from '@/lib/profile-design';
+
+const imageField = z
+  .string()
+  .trim()
+  .refine((value) => isSafeImageInput(value), 'Use a safe image URL or uploaded image asset.')
+  .optional()
+  .or(z.literal(''));
+
+const videoField = z
+  .string()
+  .trim()
+  .refine((value) => isSafeVideoInput(value), 'Use a safe video URL or uploaded video asset.')
+  .optional()
+  .or(z.literal(''));
 
 const schema = z.object({
   headline: z.string().trim().max(140).optional(),
   bio: z.string().trim().max(280).optional(),
-  heroImage: z.string().trim().url().optional().or(z.literal('')),
+  heroImage: imageField,
+  avatarImage: imageField,
+  logoImage: imageField,
+  galleryImage: imageField,
+  featureVideoUrl: videoField,
   aboutContent: z.string().trim().max(5000).optional(),
   journalContent: z.string().trim().max(5000).optional(),
   mediaContent: z.string().trim().max(5000).optional(),
@@ -31,6 +55,7 @@ const schema = z.object({
   previousShowHighlights: z.string().trim().max(5000).optional(),
   verificationNotes: z.string().trim().max(5000).optional(),
   themePreset: z.enum(profileDesignPresetIds).optional(),
+  themeFontPreset: z.enum(profileFontPresetIds).optional(),
   themeAccentTone: z.enum(profileAccentToneIds).optional(),
   themeBackdropTone: z.enum(profileBackdropToneIds).optional(),
   fanShareEnabled: z.boolean().optional()
@@ -68,6 +93,10 @@ export async function PATCH(
         headline: body.headline || null,
         bio: body.bio || null,
         heroImage: body.heroImage || null,
+        avatarImage: body.avatarImage || null,
+        logoImage: body.logoImage || null,
+        galleryImage: body.galleryImage || null,
+        featureVideoUrl: body.featureVideoUrl || null,
         aboutContent: body.aboutContent || null,
         journalContent: body.journalContent || null,
         mediaContent: body.mediaContent || null,
@@ -92,6 +121,7 @@ export async function PATCH(
         verificationStatus: body.verificationNotes ? 'PENDING' : undefined,
         verificationSubmittedAt: body.verificationNotes ? new Date() : undefined,
         themePreset: body.themePreset ?? undefined,
+        themeFontPreset: body.themeFontPreset ?? undefined,
         themeAccentTone: body.themeAccentTone ?? undefined,
         themeBackdropTone: body.themeBackdropTone ?? undefined,
         fanShareEnabled: body.fanShareEnabled ?? undefined

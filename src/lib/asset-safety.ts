@@ -1,4 +1,4 @@
-function isAllowedProtocol(value: string) {
+function isAllowedImageProtocol(value: string) {
   return (
     value.startsWith('/') ||
     value.startsWith('https://') ||
@@ -8,13 +8,47 @@ function isAllowedProtocol(value: string) {
   );
 }
 
+function isAllowedVideoProtocol(value: string) {
+  return (
+    value.startsWith('https://') ||
+    value.startsWith('http://') ||
+    value.startsWith('data:video/') ||
+    value.startsWith('blob:')
+  );
+}
+
+export function isSafeImageInput(value?: string | null) {
+  if (!value) {
+    return true;
+  }
+
+  return isAllowedImageProtocol(value.trim());
+}
+
+export function isSafeVideoInput(value?: string | null) {
+  if (!value) {
+    return true;
+  }
+
+  return isAllowedVideoProtocol(value.trim());
+}
+
 export function getSafeImageUrl(value?: string | null) {
   if (!value) {
     return null;
   }
 
   const trimmedValue = value.trim();
-  return isAllowedProtocol(trimmedValue) ? trimmedValue : null;
+  return isAllowedImageProtocol(trimmedValue) ? trimmedValue : null;
+}
+
+export function getSafeVideoUrl(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+  return isAllowedVideoProtocol(trimmedValue) ? trimmedValue : null;
 }
 
 export function getSafeBackgroundImageStyle(value?: string | null) {
