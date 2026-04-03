@@ -5,21 +5,15 @@ import { db } from '@/lib/db';
 import { buildArtistMediaCollection } from '@/lib/media';
 import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
-import { PromoterOwnerWorkspace } from '@/components/PromoterOwnerWorkspace';
-import { MarketRecommendationsPanel } from '@/components/MarketRecommendationsPanel';
-import { PromoterPageBuilder } from '@/components/PromoterPageBuilder';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
-import { getAdvertisingRecommendations } from '@/lib/market-recommendations';
 import { detectRequestLocation } from '@/lib/request-location';
 
 const promoterSections = ['about', 'shows', 'events'] as const;
-const promoterEditModules = ['builder', 'workspace', 'recommendations'] as const;
 
 type PromoterSection = (typeof promoterSections)[number];
-type PromoterEditModule = (typeof promoterEditModules)[number];
 
 function getActiveSection(section: string | string[] | undefined): PromoterSection {
   if (section === 'upcoming' || section === 'previous') {
@@ -43,14 +37,6 @@ function getSectionLabel(section: PromoterSection) {
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
-function getActiveEditModule(module: string | string[] | undefined): PromoterEditModule | null {
-  if (typeof module === 'string' && promoterEditModules.includes(module as PromoterEditModule)) {
-    return module as PromoterEditModule;
-  }
-
-  return null;
-}
-
 function formatRequestStatus(value: 'PENDING' | 'BOOKED' | 'DISMISSED') {
   if (value === 'BOOKED') return 'Booked';
   if (value === 'DISMISSED') return 'Dismissed';
@@ -70,20 +56,19 @@ export default async function PromoterPage({
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ section?: string | string[]; edit?: string | string[] }>;
+  searchParams?: Promise<{ section?: string | string[] }>;
 }) {
   const session = await auth();
   const { slug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeSection = getActiveSection(resolvedSearchParams.section);
-  const activeEditModule = getActiveEditModule(resolvedSearchParams.edit);
 
   const profile = await db.profile.findUnique({ where: { slug } });
   if (!profile || profile.type !== 'DJ') return notFound();
   const profileSlug = profile.slug;
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
-  const [shows, sentRecommendations, artistProfiles, viewerLocation, venues, fanHypeCount] = await Promise.all([
+  const [shows, sentRecommendations, viewerLocation, venues, fanHypeCount] = await Promise.all([
     db.show.findMany({
       where: { promoterProfileId: profile.id },
       include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
@@ -94,34 +79,6 @@ export default async function PromoterPage({
       include: { venueProfile: true, artistProfile: true },
       orderBy: { createdAt: 'desc' }
     }),
-    isOwner
-      ? db.profile.findMany({
-          where: {
-            type: 'ARTIST',
-            OR: [{ mediaContent: { not: null } }, { mediaUploads: { some: {} } }]
-          },
-          select: {
-            id: true,
-            slug: true,
-            name: true,
-            heroImage: true,
-            mediaContent: true,
-            mediaUploads: {
-              select: {
-                hexId: true,
-                title: true,
-                notes: true,
-                mimeType: true,
-                fileSizeBytes: true,
-                createdAt: true
-              },
-              orderBy: { createdAt: 'desc' }
-            }
-          },
-          orderBy: { name: 'asc' }
-        })
-      : Promise.resolve([])
-    ,
     detectRequestLocation(),
     db.profile.findMany({
       where: {
@@ -158,16 +115,6 @@ export default async function PromoterPage({
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
   const previousShows = shows.filter((show) => show.status === 'ENDED' || (show.startsAt < now && show.status !== 'LIVE'));
   const recentShows = [...shows].sort((left, right) => right.startsAt.getTime() - left.startsAt.getTime()).slice(0, 6);
-  const recentRecommendations = sentRecommendations.slice(0, 6);
-  const artistLibraries = artistProfiles
-    .map((artistProfile) => ({
-      profileId: artistProfile.id,
-      slug: artistProfile.slug,
-      name: artistProfile.name,
-      heroImage: artistProfile.heroImage,
-      entries: buildArtistMediaCollection(artistProfile.mediaContent, artistProfile.mediaUploads).entries
-    }))
-    .filter((artistProfile) => artistProfile.entries.length > 0);
   const canViewCustomPage = isOwner || profile.fanShareEnabled;
   const sharedThemePreset = canViewCustomPage ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET;
   const bannerStyle = canViewCustomPage ? getSafeBackgroundImageStyle(profile.heroImage) : undefined;
@@ -179,25 +126,6 @@ export default async function PromoterPage({
   const logoUrl = canViewCustomPage ? getSafeImageUrl(profile.logoImage || profile.avatarImage) : null;
   const featureImageUrl = canViewCustomPage ? getSafeImageUrl(profile.galleryImage || profile.heroImage) : null;
   const featureVideoUrl = canViewCustomPage ? getSafeVideoUrl(profile.featureVideoUrl) : null;
-  const recommendations = await getAdvertisingRecommendations({
-    profile: {
-      type: 'DJ',
-      city: profile.city,
-      country: profile.country
-    },
-    stats: {
-      pageHype: fanHypeCount,
-      upcomingCount: upcomingShows.length,
-      previousCount: previousShows.length,
-      recommendationsSent: sentRecommendations.length
-    }
-  });
-  const lifetimeStats = {
-    totalShows: shows.length,
-    totalHype: shows.reduce((sum, show) => sum + show.hypeCount, 0),
-    totalTicketsSold: shows.reduce((sum, show) => sum + show.ticketsSoldCount, 0),
-    totalFans: new Set(sentRecommendations.map((request) => request.requesterId)).size + fanHypeCount
-  };
   const globeRouteStops = previousShows
     .filter(
       (show) =>
@@ -221,130 +149,32 @@ export default async function PromoterPage({
       timing: 'past' as const
     }));
 
-  function getPageHref(section: PromoterSection, editModule: PromoterEditModule | null) {
-    const params = new URLSearchParams();
-    params.set('section', section);
-    if (editModule) {
-      params.set('edit', editModule);
-    }
-    return `/promoters/${profileSlug}?${params.toString()}`;
-  }
-
   return (
     <main className="container section profile-design-shell" style={pageDesignStyle}>
       <header className="artist-banner panel" style={bannerStyle}>
-        <div className="artist-banner-copy">
-          {logoUrl ? <img alt={`${profile.name} logo`} className="artist-logo-mark" src={logoUrl} /> : null}
-          <div className="badge">PROMOTER</div>
-          <h1 className="title" style={{ fontSize: '2.9rem' }}>{profile.name}</h1>
-          <p className="artist-headline">{profile.headline || 'Set the tone for the nights, talent, and scenes you champion.'}</p>
-          <p className="subtitle">{profile.bio}</p>
-          <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
-          {profile.contactInfo ? <p className="meta">{profile.contactInfo}</p> : null}
-          <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
-          <p className="meta">Fan hype: {fanHypeCount}</p>
-          <div className="tag-row">{profile.genres.map((genre) => <span key={genre} className="tag">{genre}</span>)}</div>
-          <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} entityLabel="promoter" />
+        <div className="profile-banner-row">
+          <div className="artist-banner-copy">
+            {logoUrl ? <img alt={`${profile.name} logo`} className="artist-logo-mark" src={logoUrl} /> : null}
+            <div className="badge">PROMOTER</div>
+            <h1 className="title" style={{ fontSize: '2.9rem' }}>{profile.name}</h1>
+            <p className="artist-headline">{profile.headline || 'Set the tone for the nights, talent, and scenes you champion.'}</p>
+            <p className="subtitle">{profile.bio}</p>
+            <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
+            {profile.contactInfo ? <p className="meta">{profile.contactInfo}</p> : null}
+            <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
+            <p className="meta">Fan hype: {fanHypeCount}</p>
+            <div className="tag-row">{profile.genres.map((genre) => <span key={genre} className="tag">{genre}</span>)}</div>
+            <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} entityLabel="promoter" />
+          </div>
+          {isOwner ? (
+            <div className="profile-banner-actions">
+              <Link className="button small secondary" href={`/dashboard?profile=${profile.id}`}>
+                Edit Page
+              </Link>
+            </div>
+          ) : null}
         </div>
       </header>
-
-      {isOwner ? (
-        <section className="section owner-edit-shell">
-          <div className="panel owner-edit-panel">
-            <div className="owner-edit-header">
-              <div>
-                <span className="badge">Edit Profile</span>
-                <h2>Promoter tools</h2>
-                <p className="meta">Open one module at a time and keep the rest tucked away.</p>
-              </div>
-              {activeEditModule ? (
-                <Link className="button small secondary" href={getPageHref(activeSection, null)}>
-                  Hide tools
-                </Link>
-              ) : null}
-            </div>
-
-            <nav className="owner-edit-tabs" aria-label="Promoter edit modules">
-              <Link
-                className={activeEditModule === 'builder' ? 'owner-edit-tab active' : 'owner-edit-tab'}
-                href={getPageHref(activeSection, activeEditModule === 'builder' ? null : 'builder')}
-              >
-                Page Builder
-              </Link>
-              <Link
-                className={activeEditModule === 'workspace' ? 'owner-edit-tab active' : 'owner-edit-tab'}
-                href={getPageHref(activeSection, activeEditModule === 'workspace' ? null : 'workspace')}
-              >
-                Show Creator
-              </Link>
-              <Link
-                className={activeEditModule === 'recommendations' ? 'owner-edit-tab active' : 'owner-edit-tab'}
-                href={getPageHref(activeSection, activeEditModule === 'recommendations' ? null : 'recommendations')}
-              >
-                Recommendations
-              </Link>
-            </nav>
-
-            {activeEditModule === 'builder' ? (
-              <PromoterPageBuilder
-                hideToggle
-                initialValues={{
-                  headline: profile.headline ?? '',
-                  bio: profile.bio ?? '',
-                  heroImage: profile.heroImage ?? '',
-                  logoImage: profile.logoImage ?? profile.avatarImage ?? '',
-                  galleryImage: profile.galleryImage ?? '',
-                  featureVideoUrl: profile.featureVideoUrl ?? '',
-                  aboutContent: profile.aboutContent ?? '',
-                  recommendContent: profile.recommendContent ?? '',
-                  contactInfo: profile.contactInfo ?? '',
-                  city: profile.city ?? '',
-                  stateRegion: profile.stateRegion ?? '',
-                  country: profile.country ?? '',
-                  themePreset: profile.themePreset,
-                  themeFontPreset: profile.themeFontPreset,
-                  themeAccentTone: profile.themeAccentTone ?? '',
-                  themeBackdropTone: profile.themeBackdropTone ?? '',
-                  fanShareEnabled: profile.fanShareEnabled
-                }}
-                previewGenres={profile.genres}
-                profileId={profile.id}
-                profileName={profile.name}
-                startOpen
-              />
-            ) : null}
-
-            {activeEditModule === 'workspace' ? (
-              <PromoterOwnerWorkspace
-                artists={artistLibraries}
-                lifetimeStats={lifetimeStats}
-                promoter={{ profileId: profile.id, name: profile.name, slug: profile.slug }}
-                recentShows={recentShows.map((show) => ({
-                  id: show.id,
-                  title: show.title,
-                  status: show.status,
-                  startsAtLabel: formatShowDate(show.startsAt),
-                  venueName: show.venueProfile?.name ?? null,
-                  venuePostalCode: show.venueProfile?.postalCode ?? null,
-                  ticketsSoldCount: show.ticketsSoldCount,
-                  hypeCount: show.hypeCount,
-                  showPath: `/shows/${show.slug}`
-                }))}
-                recommendations={recentRecommendations.map((request) => ({
-                  id: request.id,
-                  venueName: request.venueProfile.name,
-                  artistName: request.artistProfile?.name ?? request.artistName,
-                  status: formatRequestStatus(request.status)
-                }))}
-              />
-            ) : null}
-
-            {activeEditModule === 'recommendations' ? (
-              <MarketRecommendationsPanel recommendations={recommendations} roleLabel="promoter" />
-            ) : null}
-          </div>
-        </section>
-      ) : null}
 
       <section className="section">
         <nav className="section-tabs" aria-label="Promoter page sections">

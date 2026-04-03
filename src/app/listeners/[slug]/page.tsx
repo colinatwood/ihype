@@ -4,8 +4,6 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
-import { ProfilePageEditor } from '@/components/ProfilePageEditor';
-import { ListenerAvatarCreator } from '@/components/ListenerAvatarCreator';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { FanPageCompanion } from '@/components/FanPageCompanion';
 import { FanRecommendationsPanel } from '@/components/FanRecommendationsPanel';
@@ -235,16 +233,6 @@ export default async function ListenerPage({
     }))
     .sort((left, right) => right.sharedShowCount - left.sharedShowCount)
     .slice(0, 5);
-  const defaultAvatarPrompt = [
-    `Cartoon avatar for ${profile.name}.`,
-    profile.genres.length ? `Inspired by ${profile.genres.join(', ')}.` : '',
-    [profile.city, profile.country].filter(Boolean).join(', ')
-      ? `Set the mood around ${[profile.city, profile.country].filter(Boolean).join(', ')}.`
-      : '',
-    'Expressive, music-obsessed, colorful, friendly, and family-friendly.'
-  ]
-    .filter(Boolean)
-    .join(' ');
   const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
   const pageDesignStyle = getProfileDesignStyleVars(profile.themePreset, {
     accentTone: profile.themeAccentTone,
@@ -315,69 +303,6 @@ export default async function ListenerPage({
         </div>
       </header>
 
-      {isOwner ? (
-        <>
-          <div data-fan-companion-label="character lab">
-            <ListenerAvatarCreator
-              defaultPrompt={defaultAvatarPrompt}
-              initialAvatarImage={profile.avatarImage}
-              initialSpriteSheet={profile.companionSpriteSheet}
-              profileId={profile.id}
-              profileHexId={profile.hexId}
-              profileName={profile.name}
-            />
-          </div>
-          <div data-fan-companion-label="fan page customizer">
-            <ProfilePageEditor
-              description="Edit your fan banner plus the About and Top 5 sections."
-              enableDesignCustomizer
-              fields={[
-                { key: 'headline', label: 'Headline banner', placeholder: 'How should your page feel?' },
-                { key: 'heroImage', label: 'Banner image URL', kind: 'url', placeholder: 'https://example.com/fan.jpg' },
-                { key: 'bio', label: 'Short intro', kind: 'textarea', rows: 3 },
-                { key: 'aboutContent', label: 'About', kind: 'textarea' },
-                { key: 'topFiveContent', label: 'Top 5', kind: 'textarea', rows: 5 }
-              ]}
-              initialValues={{
-                headline: profile.headline ?? '',
-                bio: profile.bio ?? '',
-                heroImage: profile.heroImage ?? '',
-                aboutContent: profile.aboutContent ?? '',
-                journalContent: profile.journalContent ?? '',
-                mediaContent: profile.mediaContent ?? '',
-                tourContent: profile.tourContent ?? '',
-                merchContent: profile.merchContent ?? '',
-                requestContent: profile.requestContent ?? '',
-                recommendContent: profile.recommendContent ?? '',
-                topFiveContent: profile.topFiveContent ?? '',
-                themePreset: profile.themePreset,
-                themeAccentTone: profile.themeAccentTone ?? '',
-                themeBackdropTone: profile.themeBackdropTone ?? '',
-                fanShareEnabled: profile.fanShareEnabled
-              }}
-              previewGenres={profile.genres}
-              previewRoleLabel="FAN"
-              previewTabs={['About', 'Upcoming', 'Previous', 'Top 5', 'Stats']}
-              profileId={profile.id}
-              profileName={profile.name}
-              title="Customize your fan page"
-            />
-          </div>
-        </>
-      ) : null}
-
-      <div data-fan-companion-label="venue radar">
-        <NetworkEarthGlobe
-          description="Start at the detected ZIP from this request, highlight nearby venues, then zoom out to browse farther scenes and trace the shows this fan has already attended."
-          emptyRouteLabel="No previous attended shows are mapped yet."
-          routeLabel="Attended shows"
-          routeStops={globeRouteStops}
-          title="Earth globe for nearby venues and attended shows"
-          venues={venues}
-          viewerLocation={viewerLocation}
-        />
-      </div>
-
       <section className="section" data-fan-companion-label={`${getSectionLabel(activeSection)} section`}>
         <nav className="section-tabs" aria-label="Fan page sections" data-fan-companion-label="fan section tabs">
           {listenerSections.map((section) => (
@@ -400,12 +325,23 @@ export default async function ListenerPage({
           ) : null}
 
           {activeSection === 'recommend' ? (
-            <FanRecommendationsPanel
-              nearbyShows={nearbyShows}
-              promoterMatches={promoterMatches}
-              trendingShows={trendingShows}
-              zipLabel={viewerLocation?.postalCode ?? null}
-            />
+            <>
+              <NetworkEarthGlobe
+                description="Start at the detected ZIP from this request, highlight nearby venues, then zoom out to browse farther scenes and trace the shows this fan has already attended."
+                emptyRouteLabel="No previous attended shows are mapped yet."
+                routeLabel="Attended shows"
+                routeStops={globeRouteStops}
+                title="Earth globe for nearby venues and attended shows"
+                venues={venues}
+                viewerLocation={viewerLocation}
+              />
+              <FanRecommendationsPanel
+                nearbyShows={nearbyShows}
+                promoterMatches={promoterMatches}
+                trendingShows={trendingShows}
+                zipLabel={viewerLocation?.postalCode ?? null}
+              />
+            </>
           ) : null}
 
           {activeSection === 'upcoming' ? (
