@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import {
   DiscoverCreatorPanel,
   DiscoverRecommendationPanel,
@@ -13,10 +14,19 @@ import {
   resolveDiscoverModule
 } from '@/lib/discover-modules';
 import { getDirectoryProfiles } from '@/lib/public-data';
+import { detectRequestLocation } from '@/lib/request-location';
 import { getTransparencySnapshot } from '@/lib/transparency';
 import { ShowCard } from '@/components/ShowCard';
 
 export const dynamic = 'force-dynamic';
+
+function formatShowDate(value: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(value);
+}
 
 export default async function ArtistsIndexPage({
   searchParams
@@ -28,7 +38,7 @@ export default async function ArtistsIndexPage({
   const activeModule = resolveDiscoverModule('artists', resolvedSearchParams.module);
   const artists = await getDirectoryProfiles('ARTIST');
 
-  const [transparencySnapshot, artistShows, topVenues] = await Promise.all([
+  const [transparencySnapshot, artistShows, topVenues, viewerLocation, venues] = await Promise.all([
     getTransparencySnapshot(),
     db.show.findMany({
       where: {
@@ -57,12 +67,67 @@ export default async function ArtistsIndexPage({
         country: true,
         hypeCount: true
       }
+    }),
+    detectRequestLocation(),
+    db.profile.findMany({
+      where: {
+        type: 'VENUE',
+        latitude: { not: null },
+        longitude: { not: null }
+      },
+      orderBy: [{ verified: 'desc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        addressLine1: true,
+        hoursText: true,
+        city: true,
+        stateRegion: true,
+        country: true,
+        postalCode: true,
+        latitude: true,
+        longitude: true
+      }
     })
   ]);
 
   const upcomingArtistShows = artistShows.filter((show) => show.status === 'LIVE' || show.startsAt >= new Date()).slice(0, 4);
   const topMarkets = getTopMarketLabels(artists);
   const totalArtistHype = artists.reduce((sum, artist) => sum + artist.hypeCount, 0);
+  const globeRouteStops = artistShows
+    .filter((show) => show.venueProfile?.latitude != null && show.venueProfile.longitude != null)
+    .map((show) => ({
+      id: show.id,
+      title: show.title,
+      href: `/shows/${show.slug}`,
+      venueName: show.venueProfile?.name ?? 'Venue',
+      venueSlug: show.venueProfile?.slug ?? null,
+      city: show.venueProfile?.city ?? null,
+      stateRegion: show.venueProfile?.stateRegion ?? null,
+      country: show.venueProfile?.country ?? null,
+      postalCode: show.venueProfile?.postalCode ?? null,
+      latitude: show.venueProfile?.latitude ?? null,
+      longitude: show.venueProfile?.longitude ?? null,
+      startsAtLabel: formatShowDate(show.startsAt),
+      timing:
+        show.status === 'LIVE'
+          ? ('live' as const)
+          : show.startsAt >= new Date()
+            ? ('upcoming' as const)
+            : ('past' as const)
+    }));
+  const discoverPanel = (
+    <NetworkEarthGlobe
+      description="Start at the detected ZIP for this request, highlight nearby venues, then zoom out to browse artist routes and active rooms."
+      emptyRouteLabel="No artist routes are mapped yet."
+      routeLabel="Artist route"
+      routeStops={globeRouteStops}
+      title="Earth globe for nearby venues and artist routes"
+      venues={venues}
+      viewerLocation={viewerLocation}
+    />
+  );
 
   const modulePanel =
     activeModule === 'stats' ? (
@@ -145,6 +210,7 @@ export default async function ArtistsIndexPage({
       activeModule={activeModule}
       badge="ARTISTS"
       currentHref="/artists"
+      discoverPanel={discoverPanel}
       description="Artist discover is where artists read the shape of the scene, follow where attention is building, and line up their next route."
       modulePanel={modulePanel}
       moduleSubheader={<RoleModuleSubheader activeModule={activeModule} currentHref="/artists" role="artists" />}

@@ -8,6 +8,7 @@ import {
   DiscoverRecommendationPanel,
   DiscoverStatsPanel
 } from '@/components/DiscoverModulePanels';
+import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
 import { PromoterShowCreationTool } from '@/components/PromoterShowCreationTool';
 import { RoleModuleSubheader } from '@/components/RoleModuleSubheader';
@@ -16,9 +17,18 @@ import {
   resolveDiscoverModule
 } from '@/lib/discover-modules';
 import { getDirectoryProfiles } from '@/lib/public-data';
+import { detectRequestLocation } from '@/lib/request-location';
 import { ShowCard } from '@/components/ShowCard';
 
 export const dynamic = 'force-dynamic';
+
+function formatShowDate(value: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(value);
+}
 
 export default async function PromotersIndexPage({
   searchParams
@@ -30,23 +40,81 @@ export default async function PromotersIndexPage({
   const activeModule = resolveDiscoverModule('promoters', resolvedSearchParams.module);
   const promoters = await getDirectoryProfiles('DJ');
 
-  const promoterShows = await db.show.findMany({
-    where: {
-      status: { not: 'CANCELED' },
-      promoterProfileId: { not: null }
-    },
-    include: {
-      venueProfile: true,
-      headlinerProfile: true,
-      promoterProfile: true
-    },
-    orderBy: [{ startsAt: 'asc' }, { hypeCount: 'desc' }],
-    take: 18
-  });
+  const [promoterShows, viewerLocation, venues] = await Promise.all([
+    db.show.findMany({
+      where: {
+        status: { not: 'CANCELED' },
+        promoterProfileId: { not: null }
+      },
+      include: {
+        venueProfile: true,
+        headlinerProfile: true,
+        promoterProfile: true
+      },
+      orderBy: [{ startsAt: 'asc' }, { hypeCount: 'desc' }],
+      take: 18
+    }),
+    detectRequestLocation(),
+    db.profile.findMany({
+      where: {
+        type: 'VENUE',
+        latitude: { not: null },
+        longitude: { not: null }
+      },
+      orderBy: [{ verified: 'desc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        addressLine1: true,
+        hoursText: true,
+        city: true,
+        stateRegion: true,
+        country: true,
+        postalCode: true,
+        latitude: true,
+        longitude: true
+      }
+    })
+  ]);
 
   const totalPromoterHype = promoters.reduce((sum, promoter) => sum + promoter.hypeCount, 0);
   const totalTicketsSold = promoterShows.reduce((sum, show) => sum + show.ticketsSoldCount, 0);
   const topMarkets = getTopMarketLabels(promoters);
+  const now = new Date();
+  const globeRouteStops = promoterShows
+    .filter((show) => show.venueProfile?.latitude != null && show.venueProfile.longitude != null)
+    .map((show) => ({
+      id: show.id,
+      title: show.title,
+      href: `/shows/${show.slug}`,
+      venueName: show.venueProfile?.name ?? 'Venue',
+      venueSlug: show.venueProfile?.slug ?? null,
+      city: show.venueProfile?.city ?? null,
+      stateRegion: show.venueProfile?.stateRegion ?? null,
+      country: show.venueProfile?.country ?? null,
+      postalCode: show.venueProfile?.postalCode ?? null,
+      latitude: show.venueProfile?.latitude ?? null,
+      longitude: show.venueProfile?.longitude ?? null,
+      startsAtLabel: formatShowDate(show.startsAt),
+      timing:
+        show.status === 'LIVE'
+          ? ('live' as const)
+          : show.startsAt >= now
+            ? ('upcoming' as const)
+            : ('past' as const)
+    }));
+  const discoverPanel = (
+    <NetworkEarthGlobe
+      description="Start at the detected ZIP for this request, highlight nearby venues, then zoom out to browse promoted routes and active room clusters."
+      emptyRouteLabel="No promoter show routes are mapped yet."
+      routeLabel="Promoter route"
+      routeStops={globeRouteStops}
+      title="Earth globe for nearby venues and promoter routes"
+      venues={venues}
+      viewerLocation={viewerLocation}
+    />
+  );
 
   let modulePanel: ReactNode;
 
@@ -203,6 +271,7 @@ export default async function PromotersIndexPage({
       activeModule={activeModule}
       badge="PROMOTERS"
       currentHref="/promoters"
+      discoverPanel={discoverPanel}
       description="Promoter discover keeps the focus on show momentum, room pressure, and the tools that move concepts into booked nights."
       modulePanel={modulePanel}
       moduleSubheader={<RoleModuleSubheader activeModule={activeModule} currentHref="/promoters" role="promoters" />}

@@ -2882,6 +2882,7 @@ button, input, select, textarea { font: inherit; }
 .artist-banner-copy { max-width: 760px; }
 .profile-design-shell {
   --profile-design-surface: linear-gradient(160deg, rgba(8,12,24,0.98), rgba(18,26,46,0.98));
+  --profile-design-overlay: radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 18%);
   --profile-design-panel: rgba(12, 18, 34, 0.82);
   --profile-design-hero: linear-gradient(135deg, rgba(35,208,216,0.2), rgba(143,91,255,0.24));
   --profile-design-accent: #23d0d8;
@@ -2889,9 +2890,28 @@ button, input, select, textarea { font: inherit; }
   --profile-design-text: #ecf5ff;
   --profile-design-muted: #9cb1ce;
   --profile-design-border: rgba(255,255,255,0.1);
+  --profile-design-panel-radius: 28px;
+  --profile-design-panel-shadow: 0 24px 64px rgba(0, 0, 0, 0.34);
   --profile-design-display-font: "Trebuchet MS", "Arial Black", sans-serif;
   --profile-design-body-font: "Segoe UI", "Helvetica Neue", sans-serif;
+  position: relative;
+  isolation: isolate;
   font-family: var(--profile-design-body-font);
+}
+.profile-design-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background-image: var(--profile-design-overlay);
+  background-size: 48px 48px, auto;
+  opacity: 0.42;
+  pointer-events: none;
+}
+.profile-design-shell > * {
+  position: relative;
+  z-index: 1;
 }
 .profile-design-shell .artist-banner,
 .profile-design-shell .artist-section-panel,
@@ -2900,11 +2920,13 @@ button, input, select, textarea { font: inherit; }
 .profile-design-shell .ticketing-panel {
   position: relative;
   overflow: hidden;
+  border-radius: var(--profile-design-panel-radius);
   border-color: var(--profile-design-border);
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--profile-design-accent) 16%, transparent), transparent 34%),
     var(--profile-design-hero),
     var(--profile-design-panel);
+  box-shadow: var(--profile-design-panel-shadow);
 }
 .profile-design-shell .artist-banner::after,
 .profile-design-shell .artist-section-panel::after,
@@ -3945,9 +3967,10 @@ button, input, select, textarea { font: inherit; }
 }
 .profile-design-preview-shell {
   padding: 1rem;
-  border-radius: 24px;
+  border-radius: var(--profile-design-panel-radius);
   border: 1px solid var(--profile-design-border);
   background: var(--profile-design-surface);
+  box-shadow: var(--profile-design-panel-shadow);
 }
 .profile-design-preview-card {
   display: grid;
@@ -3958,7 +3981,7 @@ button, input, select, textarea { font: inherit; }
   display: grid;
   gap: 0.65rem;
   padding: 1.25rem;
-  border-radius: 24px;
+  border-radius: calc(var(--profile-design-panel-radius) - 6px);
   border: 1px solid var(--profile-design-border);
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--profile-design-accent) 18%, transparent), transparent 32%),
@@ -4027,7 +4050,7 @@ button, input, select, textarea { font: inherit; }
   display: grid;
   gap: 0.45rem;
   padding: 1rem;
-  border-radius: 20px;
+  border-radius: calc(var(--profile-design-panel-radius) - 10px);
   border: 1px solid var(--profile-design-border);
   background: color-mix(in srgb, var(--profile-design-panel) 92%, black 8%);
 }

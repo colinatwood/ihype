@@ -197,18 +197,20 @@ export default async function ListenersIndexPage({
     .sort((left, right) => right.ticketsSoldCount + right.hypeCount * 2 - (left.ticketsSoldCount + left.hypeCount * 2))
     .slice(0, 6);
 
+  const discoverPanel = (
+    <NetworkEarthGlobe
+      description="Start at the detected ZIP for this request, highlight nearby venues, then zoom out to browse active shows farther from home."
+      emptyRouteLabel="No live or upcoming show routes are mapped yet."
+      routeLabel="Event route"
+      routeStops={globeRouteStops}
+      title="Earth globe for nearby venues and active show routes"
+      venues={venues}
+      viewerLocation={viewerLocation}
+    />
+  );
+
   const modulePanel =
-    activeModule === 'globe-search' ? (
-      <NetworkEarthGlobe
-        description="Start at the detected ZIP for this request, highlight nearby venues, then zoom out to browse active shows farther from home."
-        emptyRouteLabel="No live or upcoming show routes are mapped yet."
-        routeLabel="Event route"
-        routeStops={globeRouteStops}
-        title="Earth globe for nearby venues and active show routes"
-        venues={venues}
-        viewerLocation={viewerLocation}
-      />
-    ) : activeModule === 'recommendation-engine' ? (
+    activeModule === 'recommendation-engine' ? (
       <FanRecommendationsPanel
         nearbyShows={nearbyShows}
         promoterMatches={promoterMatches}
@@ -224,6 +226,7 @@ export default async function ListenersIndexPage({
       activeModule={activeModule}
       badge="FANS"
       currentHref="/fans"
+      discoverPanel={discoverPanel}
       description="Fan discover keeps the focus on nearby rooms, the next events worth watching, and the signals that turn hype into action."
       modulePanel={modulePanel}
       moduleSubheader={

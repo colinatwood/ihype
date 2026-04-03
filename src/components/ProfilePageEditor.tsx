@@ -6,16 +6,20 @@ import {
   getProfileAccentTone,
   getProfileBackdropTone,
   getProfileDesignPreset,
+  getProfileFontPreset,
   getProfileDesignStyleVars,
   normalizeProfileAccentTone,
   normalizeProfileBackdropTone,
   normalizeProfileDesignPreset,
+  normalizeProfileFontPreset,
   profileAccentTones,
   profileBackdropTones,
   profileDesignPresets,
+  profileFontPresets,
   type ProfileAccentTone,
   type ProfileBackdropTone,
-  type ProfileDesignPreset
+  type ProfileDesignPreset,
+  type ProfileFontPreset
 } from '@/lib/profile-design';
 
 export type EditableFieldKey =
@@ -53,6 +57,7 @@ export type ProfilePageEditorField = {
 
 type ProfilePageInitialValues = Partial<Record<EditableFieldKey, string>> & {
   themePreset?: string;
+  themeFontPreset?: string;
   themeAccentTone?: string;
   themeBackdropTone?: string;
   fanShareEnabled?: boolean;
@@ -60,6 +65,7 @@ type ProfilePageInitialValues = Partial<Record<EditableFieldKey, string>> & {
 
 type ProfilePageFormValues = Record<EditableFieldKey, string> & {
   themePreset: ProfileDesignPreset;
+  themeFontPreset: ProfileFontPreset;
   themeAccentTone: ProfileAccentTone;
   themeBackdropTone: ProfileBackdropTone;
   fanShareEnabled: boolean;
@@ -134,6 +140,7 @@ export function ProfilePageEditor({
     ...defaultFormValues,
     ...initialValues,
     themePreset: normalizeProfileDesignPreset(initialValues.themePreset),
+    themeFontPreset: normalizeProfileFontPreset(initialValues.themeFontPreset),
     themeAccentTone: normalizeProfileAccentTone(initialValues.themeAccentTone),
     themeBackdropTone: normalizeProfileBackdropTone(initialValues.themeBackdropTone),
     fanShareEnabled: Boolean(initialValues.fanShareEnabled)
@@ -141,6 +148,7 @@ export function ProfilePageEditor({
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const selectedPreset = getProfileDesignPreset(formValues.themePreset);
+  const selectedFontPreset = getProfileFontPreset(formValues.themeFontPreset);
   const selectedAccentTone = getProfileAccentTone(formValues.themeAccentTone);
   const selectedBackdropTone = getProfileBackdropTone(formValues.themeBackdropTone);
   const aboutPreview = getPreviewSnippet(
@@ -190,6 +198,7 @@ export function ProfilePageEditor({
 
     if (enableDesignCustomizer) {
       payload.themePreset = formValues.themePreset;
+      payload.themeFontPreset = formValues.themeFontPreset;
       payload.themeAccentTone = formValues.themeAccentTone;
       payload.themeBackdropTone = formValues.themeBackdropTone;
       payload.fanShareEnabled = allowFanShareToggle ? formValues.fanShareEnabled : false;
@@ -259,11 +268,12 @@ export function ProfilePageEditor({
             <section className="profile-design-customizer">
               <div className="profile-design-customizer-header">
                 <div>
-                  <h3>Visual preset</h3>
-                  <p className="meta">Try a few looks and preview the page before you save it.</p>
+                  <h3>Page studio</h3>
+                  <p className="meta">Mix a preset, font, color mood, and backdrop until the page feels like your own.</p>
                 </div>
                 <div className="profile-design-customizer-badges">
                   <span className="badge">{selectedPreset.label}</span>
+                  <span className="profile-design-tone-pill">{selectedFontPreset.label}</span>
                   <span className="profile-design-tone-pill">{selectedAccentTone.label}</span>
                   <span className="profile-design-tone-pill">{selectedBackdropTone.label}</span>
                 </div>
@@ -288,6 +298,34 @@ export function ProfilePageEditor({
               </div>
 
               <div className="profile-design-tone-grid">
+                <div className="profile-design-tone-group">
+                  <div className="profile-design-tone-header">
+                    <strong>Font mood</strong>
+                    <span className="meta">Push the page toward bubble-pop, poster, mono, or script energy.</span>
+                  </div>
+                  <div className="profile-design-tone-chip-row">
+                    {profileFontPresets.map((preset) => (
+                      <button
+                        className={
+                          preset.id === formValues.themeFontPreset
+                            ? 'profile-design-tone-chip active'
+                            : 'profile-design-tone-chip'
+                        }
+                        key={preset.id}
+                        onClick={() =>
+                          setFormValues((current) => ({
+                            ...current,
+                            themeFontPreset: preset.id
+                          }))
+                        }
+                        type="button"
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="profile-design-tone-group">
                   <div className="profile-design-tone-header">
                     <strong>Accent color</strong>
@@ -365,7 +403,8 @@ export function ProfilePageEditor({
                 className="profile-design-preview-shell profile-design-shell"
                 style={getProfileDesignStyleVars(formValues.themePreset, {
                   accentTone: formValues.themeAccentTone,
-                  backdropTone: formValues.themeBackdropTone
+                  backdropTone: formValues.themeBackdropTone,
+                  fontPreset: formValues.themeFontPreset
                 })}
               >
                 <div className="profile-design-preview-card">

@@ -2,7 +2,6 @@ export type DiscoverRoleKey = 'fans' | 'artists' | 'promoters' | 'venues';
 
 export type DiscoverModuleId =
   | 'discover'
-  | 'globe-search'
   | 'recommendation-engine'
   | 'ticket-hub'
   | 'stats'
@@ -18,7 +17,6 @@ export type DiscoverModuleOption = {
 const discoverModuleOptions: Record<DiscoverRoleKey, DiscoverModuleOption[]> = {
   fans: [
     { id: 'discover', label: 'Discover' },
-    { id: 'globe-search', label: 'Globe Search' },
     { id: 'recommendation-engine', label: 'Recommendation Engine' },
     { id: 'ticket-hub', label: 'Ticket Hub' }
   ],

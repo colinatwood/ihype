@@ -236,7 +236,8 @@ export default async function ListenerPage({
   const bannerStyle = getSafeBackgroundImageStyle(profile.heroImage);
   const pageDesignStyle = getProfileDesignStyleVars(profile.themePreset, {
     accentTone: profile.themeAccentTone,
-    backdropTone: profile.themeBackdropTone
+    backdropTone: profile.themeBackdropTone,
+    fontPreset: profile.themeFontPreset
   });
   const avatarImage = getSafeImageUrl(profile.avatarImage);
   const fanLevel = calculateFanLevel(fullSongListenCount, fullShowListenCount);

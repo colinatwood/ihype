@@ -12,7 +12,8 @@ export function ProfileDirectoryPage({
   currentHref,
   activeModule,
   modulePanel,
-  moduleSubheader
+  moduleSubheader,
+  discoverPanel
 }: {
   badge: string;
   title: string;
@@ -22,6 +23,7 @@ export function ProfileDirectoryPage({
   activeModule: DiscoverModuleId;
   modulePanel?: ReactNode;
   moduleSubheader?: ReactNode;
+  discoverPanel?: ReactNode;
 }) {
   const isDiscoverModule = activeModule === 'discover';
   const topMarkets = getTopMarketLabels(profiles);
@@ -81,6 +83,8 @@ export function ProfileDirectoryPage({
 
               <ProfileDirectoryBrowser currentHref={currentHref} profiles={profiles} />
             </div>
+
+            {discoverPanel}
           </section>
         ) : (
           modulePanel

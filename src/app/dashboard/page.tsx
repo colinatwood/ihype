@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ProfileType } from '@prisma/client';
 import { redirect } from 'next/navigation';
-import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
+import { ArtistPageBuilder } from '@/components/ArtistPageBuilder';
 import { ListenerAvatarCreator } from '@/components/ListenerAvatarCreator';
 import { OwnershipVerificationPanel } from '@/components/OwnershipVerificationPanel';
+import { PromoterPageBuilder } from '@/components/PromoterPageBuilder';
 import { ProfilePageEditor, type ProfilePageEditorField } from '@/components/ProfilePageEditor';
-import { VenuePageWizard } from '@/components/VenuePageWizard';
+import { VenuePageBuilder } from '@/components/VenuePageBuilder';
 import { auth } from '@/lib/auth';
 import { getSafeImageUrl } from '@/lib/asset-safety';
 import { db } from '@/lib/db';
@@ -208,6 +209,7 @@ function getProfileInitialValues(profile: DashboardProfile) {
     upcomingContent: profile.upcomingContent ?? '',
     previousShowHighlights: profile.previousShowHighlights ?? '',
     themePreset: profile.themePreset,
+    themeFontPreset: profile.themeFontPreset ?? '',
     themeAccentTone: profile.themeAccentTone ?? '',
     themeBackdropTone: profile.themeBackdropTone ?? '',
     fanShareEnabled: profile.fanShareEnabled
@@ -230,6 +232,83 @@ function getProfileSummary(profile: DashboardProfile) {
   }
 
   return 'Use this venue workspace to style the room, update operations, and frame upcoming nights.';
+}
+
+function getArtistBuilderInitialValues(profile: DashboardProfile) {
+  return {
+    headline: profile.headline ?? '',
+    bio: profile.bio ?? '',
+    heroImage: profile.heroImage ?? '',
+    logoImage: profile.logoImage ?? '',
+    galleryImage: profile.galleryImage ?? '',
+    featureVideoUrl: profile.featureVideoUrl ?? '',
+    contactInfo: profile.contactInfo ?? '',
+    hometown: profile.hometown ?? '',
+    city: profile.city ?? '',
+    stateRegion: profile.stateRegion ?? '',
+    country: profile.country ?? '',
+    aboutContent: profile.aboutContent ?? '',
+    mediaContent: profile.mediaContent ?? '',
+    tourContent: profile.tourContent ?? '',
+    merchContent: profile.merchContent ?? '',
+    themePreset: profile.themePreset,
+    themeFontPreset: profile.themeFontPreset,
+    themeAccentTone: profile.themeAccentTone,
+    themeBackdropTone: profile.themeBackdropTone,
+    fanShareEnabled: profile.fanShareEnabled
+  };
+}
+
+function getPromoterBuilderInitialValues(profile: DashboardProfile) {
+  return {
+    headline: profile.headline ?? '',
+    bio: profile.bio ?? '',
+    heroImage: profile.heroImage ?? '',
+    logoImage: profile.logoImage ?? '',
+    galleryImage: profile.galleryImage ?? '',
+    featureVideoUrl: profile.featureVideoUrl ?? '',
+    contactInfo: profile.contactInfo ?? '',
+    city: profile.city ?? '',
+    stateRegion: profile.stateRegion ?? '',
+    country: profile.country ?? '',
+    aboutContent: profile.aboutContent ?? '',
+    recommendContent: profile.recommendContent ?? '',
+    themePreset: profile.themePreset,
+    themeFontPreset: profile.themeFontPreset,
+    themeAccentTone: profile.themeAccentTone,
+    themeBackdropTone: profile.themeBackdropTone,
+    fanShareEnabled: profile.fanShareEnabled
+  };
+}
+
+function getVenueBuilderInitialValues(profile: DashboardProfile) {
+  return {
+    headline: profile.headline ?? '',
+    bio: profile.bio ?? '',
+    heroImage: profile.heroImage ?? '',
+    logoImage: profile.logoImage ?? '',
+    galleryImage: profile.galleryImage ?? '',
+    featureVideoUrl: profile.featureVideoUrl ?? '',
+    addressLine1: profile.addressLine1 ?? '',
+    contactInfo: profile.contactInfo ?? '',
+    hoursText: profile.hoursText ?? '',
+    hometown: profile.hometown ?? '',
+    city: profile.city ?? '',
+    stateRegion: profile.stateRegion ?? '',
+    postalCode: profile.postalCode ?? '',
+    country: profile.country ?? '',
+    parkingDetails: profile.parkingDetails ?? '',
+    stayRecommendations: profile.stayRecommendations ?? '',
+    aboutContent: profile.aboutContent ?? '',
+    requestContent: profile.requestContent ?? '',
+    upcomingContent: profile.upcomingContent ?? '',
+    previousShowHighlights: profile.previousShowHighlights ?? '',
+    themePreset: profile.themePreset,
+    themeFontPreset: profile.themeFontPreset,
+    themeAccentTone: profile.themeAccentTone,
+    themeBackdropTone: profile.themeBackdropTone,
+    fanShareEnabled: profile.fanShareEnabled
+  };
 }
 
 function createEmptyVenueShowCollectionsMap(profiles: DashboardProfile[]) {
@@ -443,12 +522,8 @@ export default async function DashboardPage({
             const profile = activeProfile;
             const previewImage = getSafeImageUrl(profile.avatarImage || profile.heroImage);
             const locationLine = getProfileLocation(profile);
-            const editorConfig = profile.type === 'VENUE' ? null : getProfileEditorConfig(profile);
-            const venueShowCollections = venueShowsByProfile.get(profile.id) ?? {
-              upcoming: [],
-              previous: []
-            };
             const isFanProfile = profile.type === 'LISTENER';
+            const editorConfig = isFanProfile ? getProfileEditorConfig(profile) : null;
             const fanEventHistoryItems = fanEventHistory
               .map((entry) => entry.show)
               .filter((show) => show.status === 'ENDED' || show.startsAt < now)
@@ -653,36 +728,40 @@ export default async function DashboardPage({
                       />
                     ) : null}
 
-                    {profile.type === 'VENUE' ? (
-                      <VenuePageWizard
-                        initialValues={{
-                          headline: profile.headline ?? '',
-                          bio: profile.bio ?? '',
-                          heroImage: profile.heroImage ?? '',
-                          aboutContent: profile.aboutContent ?? '',
-                          requestContent: profile.requestContent ?? '',
-                          addressLine1: profile.addressLine1 ?? '',
-                          contactInfo: profile.contactInfo ?? '',
-                          hoursText: profile.hoursText ?? '',
-                          hometown: profile.hometown ?? '',
-                          city: profile.city ?? '',
-                          stateRegion: profile.stateRegion ?? '',
-                          postalCode: profile.postalCode ?? '',
-                          country: profile.country ?? '',
-                          parkingDetails: profile.parkingDetails ?? '',
-                          stayRecommendations: profile.stayRecommendations ?? '',
-                          upcomingContent: profile.upcomingContent ?? '',
-                          previousShowHighlights: profile.previousShowHighlights ?? '',
-                          themePreset: profile.themePreset,
-                          themeAccentTone: profile.themeAccentTone ?? '',
-                          themeBackdropTone: profile.themeBackdropTone ?? ''
-                        }}
-                        previousShows={venueShowCollections.previous}
+                    {profile.type === 'ARTIST' ? (
+                      <ArtistPageBuilder
+                        hideToggle
+                        initialValues={getArtistBuilderInitialValues(profile)}
+                        previewGenres={profile.genres}
                         profileId={profile.id}
                         profileName={profile.name}
-                        upcomingShows={venueShowCollections.upcoming}
+                        startOpen
                       />
-                    ) : editorConfig ? (
+                    ) : null}
+
+                    {profile.type === 'DJ' ? (
+                      <PromoterPageBuilder
+                        hideToggle
+                        initialValues={getPromoterBuilderInitialValues(profile)}
+                        previewGenres={profile.genres}
+                        profileId={profile.id}
+                        profileName={profile.name}
+                        startOpen
+                      />
+                    ) : null}
+
+                    {profile.type === 'VENUE' ? (
+                      <VenuePageBuilder
+                        hideToggle
+                        initialValues={getVenueBuilderInitialValues(profile)}
+                        previewGenres={profile.genres}
+                        profileId={profile.id}
+                        profileName={profile.name}
+                        startOpen
+                      />
+                    ) : null}
+
+                    {editorConfig ? (
                       <ProfilePageEditor
                         allowFanShareToggle={profile.type === 'ARTIST'}
                         description={editorConfig.description}
@@ -697,8 +776,6 @@ export default async function DashboardPage({
                         title={editorConfig.title}
                       />
                     ) : null}
-
-                    {profile.type === 'ARTIST' ? <ArtistMediaUploadManager profileId={profile.id} /> : null}
                   </div>
                 )}
               </section>

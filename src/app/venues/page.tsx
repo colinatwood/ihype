@@ -7,6 +7,7 @@ import {
   DiscoverStatsPanel,
   VenueBookingRecommendationEngine
 } from '@/components/DiscoverModulePanels';
+import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
 import { RoleModuleSubheader } from '@/components/RoleModuleSubheader';
 import { VenueEventScheduler } from '@/components/VenueEventScheduler';
@@ -15,6 +16,7 @@ import {
   resolveDiscoverModule
 } from '@/lib/discover-modules';
 import { getDirectoryProfiles } from '@/lib/public-data';
+import { detectRequestLocation } from '@/lib/request-location';
 import { ShowCard } from '@/components/ShowCard';
 import {
   buildVenueBookingRecommendations,
@@ -22,6 +24,14 @@ import {
 } from '@/lib/venue-booking';
 
 export const dynamic = 'force-dynamic';
+
+function formatShowDate(value: Date) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  }).format(value);
+}
 
 type VenueSchedulerAct = {
   id: string;
@@ -49,7 +59,7 @@ export default async function VenuesIndexPage({
     typeof resolvedSearchParams.artist === 'string' ? resolvedSearchParams.artist : undefined;
   const venues = await getDirectoryProfiles('VENUE');
 
-  const [venueShows, totalRequestCount] = await Promise.all([
+  const [venueShows, totalRequestCount, viewerLocation, mappedVenues] = await Promise.all([
     db.show.findMany({
       where: {
         status: { not: 'CANCELED' },
@@ -62,12 +72,68 @@ export default async function VenuesIndexPage({
       orderBy: [{ startsAt: 'asc' }, { hypeCount: 'desc' }],
       take: 18
     }),
-    db.venueConnectionRequest.count()
+    db.venueConnectionRequest.count(),
+    detectRequestLocation(),
+    db.profile.findMany({
+      where: {
+        type: 'VENUE',
+        latitude: { not: null },
+        longitude: { not: null }
+      },
+      orderBy: [{ verified: 'desc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        addressLine1: true,
+        hoursText: true,
+        city: true,
+        stateRegion: true,
+        country: true,
+        postalCode: true,
+        latitude: true,
+        longitude: true
+      }
+    })
   ]);
 
   const totalVenueHype = venues.reduce((sum, venue) => sum + venue.hypeCount, 0);
   const totalTicketsSold = venueShows.reduce((sum, show) => sum + show.ticketsSoldCount, 0);
   const topMarkets = getTopMarketLabels(venues);
+  const now = new Date();
+  const globeRouteStops = venueShows
+    .filter((show) => show.venueProfile?.latitude != null && show.venueProfile.longitude != null)
+    .map((show) => ({
+      id: show.id,
+      title: show.title,
+      href: `/shows/${show.slug}`,
+      venueName: show.venueProfile?.name ?? 'Venue',
+      venueSlug: show.venueProfile?.slug ?? null,
+      city: show.venueProfile?.city ?? null,
+      stateRegion: show.venueProfile?.stateRegion ?? null,
+      country: show.venueProfile?.country ?? null,
+      postalCode: show.venueProfile?.postalCode ?? null,
+      latitude: show.venueProfile?.latitude ?? null,
+      longitude: show.venueProfile?.longitude ?? null,
+      startsAtLabel: formatShowDate(show.startsAt),
+      timing:
+        show.status === 'LIVE'
+          ? ('live' as const)
+          : show.startsAt >= now
+            ? ('upcoming' as const)
+            : ('past' as const)
+    }));
+  const discoverPanel = (
+    <NetworkEarthGlobe
+      description="Start at the detected ZIP for this request, highlight nearby venues, then zoom out to browse venue nights and active event routes."
+      emptyRouteLabel="No venue event routes are mapped yet."
+      routeLabel="Venue route"
+      routeStops={globeRouteStops}
+      title="Earth globe for nearby venues and venue event routes"
+      venues={mappedVenues}
+      viewerLocation={viewerLocation}
+    />
+  );
 
   let modulePanel: ReactNode;
 
@@ -355,6 +421,7 @@ export default async function VenuesIndexPage({
       activeModule={activeModule}
       badge="VENUES"
       currentHref="/venues"
+      discoverPanel={discoverPanel}
       description="Venue discover keeps the focus on room performance, booking demand, and the nights that deserve a bigger push."
       modulePanel={modulePanel}
       moduleSubheader={<RoleModuleSubheader activeModule={activeModule} currentHref="/venues" role="venues" />}
