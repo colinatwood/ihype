@@ -23,6 +23,7 @@ export function ProfileDirectoryPage({
   modulePanel?: ReactNode;
   moduleSubheader?: ReactNode;
 }) {
+  const isDiscoverModule = activeModule === 'discover';
   const topMarkets = getTopMarketLabels(profiles);
 
   return (
@@ -30,30 +31,32 @@ export function ProfileDirectoryPage({
       {moduleSubheader}
 
       <main className="container section">
-        <section className="directory-hero panel">
-          <div className="directory-hero-copy">
-            <div className="badge">{badge}</div>
-            <h1 className="directory-title">{title}</h1>
-            <p className="subtitle">{description}</p>
-          </div>
+        {isDiscoverModule ? (
+          <section className="directory-hero panel">
+            <div className="directory-hero-copy">
+              <div className="badge">{badge}</div>
+              <h1 className="directory-title">{title}</h1>
+              <p className="subtitle">{description}</p>
+            </div>
 
-          <div className="directory-hero-stats">
-            <div className="directory-stat">
-              <span>Profiles</span>
-              <strong>{profiles.length}</strong>
+            <div className="directory-hero-stats">
+              <div className="directory-stat">
+                <span>Profiles</span>
+                <strong>{profiles.length}</strong>
+              </div>
+              <div className="directory-stat">
+                <span>Focus</span>
+                <strong>Find + hype</strong>
+              </div>
+              <div className="directory-stat">
+                <span>Top markets</span>
+                <strong>{topMarkets[0] ?? 'Building'}</strong>
+              </div>
             </div>
-            <div className="directory-stat">
-              <span>Focus</span>
-              <strong>Find + hype</strong>
-            </div>
-            <div className="directory-stat">
-              <span>Top markets</span>
-              <strong>{topMarkets[0] ?? 'Building'}</strong>
-            </div>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
-        {activeModule === 'discover' ? (
+        {isDiscoverModule ? (
           <section className="section">
             <div className="panel discover-module-panel">
               <div className="discover-module-header">
