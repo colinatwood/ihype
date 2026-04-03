@@ -13,8 +13,7 @@ export function ProfileDirectoryPage({
   activeModule,
   discoverPanel,
   modulePanel,
-  moduleSubheader,
-  discoverPanel
+  moduleSubheader
 }: {
   badge: string;
   title: string;
@@ -25,7 +24,6 @@ export function ProfileDirectoryPage({
   discoverPanel?: ReactNode;
   modulePanel?: ReactNode;
   moduleSubheader?: ReactNode;
-  discoverPanel?: ReactNode;
 }) {
   const isDiscoverModule = activeModule === 'discover';
   const topMarkets = getTopMarketLabels(profiles);
