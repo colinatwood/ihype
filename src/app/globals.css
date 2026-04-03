@@ -5930,10 +5930,76 @@ button, input, select, textarea { font: inherit; }
   display: grid;
   gap: 1rem;
 }
-.discover-spotlight-grid {
+.discover-explorer-surface {
+  gap: 1.1rem;
+}
+.discover-explorer-rail {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+}
+.discover-explorer-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+.discover-explorer-section {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(circle at top left, rgba(35,208,216,0.08), transparent 24%),
+    rgba(255,255,255,0.03);
+}
+.discover-explorer-section-head {
+  display: grid;
+  gap: 0.25rem;
+}
+.discover-explorer-browser {
+  min-height: 100%;
+  align-content: start;
+}
+.discover-explorer-browser .grid.grid-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.discover-explorer-globe-shell {
+  display: grid;
+  min-height: 100%;
+}
+.discover-explorer-globe-shell > .earth-globe-panel {
+  height: 100%;
+  padding: 1rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background:
+    radial-gradient(circle at top right, rgba(255,196,87,0.08), transparent 24%),
+    rgba(255,255,255,0.03);
+  box-shadow: none;
+}
+.discover-explorer-globe-shell > .earth-globe-panel .map-panel-header {
+  margin-bottom: 0.85rem;
+}
+.discover-explorer-globe-shell > .earth-globe-panel .map-layout {
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+}
+.discover-explorer-globe-shell > .earth-globe-panel .earth-globe-stage {
+  min-height: 440px;
+}
+.discover-explorer-globe-shell > .earth-globe-panel .earth-globe-detail {
+  padding: 0;
+  background: transparent;
+}
+.discover-explorer-globe-shell > .earth-globe-panel .earth-globe-detail-stack {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.discover-explorer-globe-shell > .earth-globe-panel .earth-globe-route-list {
+  max-height: 210px;
+  overflow: auto;
+  padding-right: 0.15rem;
 }
 .discover-spotlight-column,
 .discover-spotlight-list {
@@ -7247,8 +7313,17 @@ button, input, select, textarea { font: inherit; }
     display: none;
   }
   .fan-playlist-layout,
-  .discover-spotlight-grid {
+  .discover-explorer-rail,
+  .discover-explorer-main,
+  .discover-explorer-browser .grid.grid-3,
+  .discover-explorer-globe-shell > .earth-globe-panel .earth-globe-detail-stack {
     grid-template-columns: 1fr;
+  }
+  .discover-explorer-section {
+    padding: 0.9rem;
+  }
+  .discover-explorer-globe-shell > .earth-globe-panel .earth-globe-stage {
+    min-height: 400px;
   }
   .discover-song-result-card,
   .fan-playlist-item,

@@ -182,7 +182,7 @@ export function DiscoverExplorerPanel({
 }) {
   return (
     <section className="section discover-explorer-stack">
-      <div className="panel discover-module-panel">
+      <div className="panel discover-module-panel discover-explorer-surface">
         <div className="discover-module-header">
           <div>
             <div className="badge">Discover</div>
@@ -193,8 +193,8 @@ export function DiscoverExplorerPanel({
           </p>
         </div>
 
-        <div className="discover-spotlight-grid">
-          <section className="discover-spotlight-column">
+        <div className="discover-explorer-rail">
+          <section className="discover-explorer-section discover-spotlight-column">
             <div className="discover-spotlight-head">
               <strong>What&apos;s hyped near me</strong>
               <span className="meta">Trending artists with the strongest local and regional pull.</span>
@@ -216,7 +216,7 @@ export function DiscoverExplorerPanel({
             </div>
           </section>
 
-          <section className="discover-spotlight-column">
+          <section className="discover-explorer-section discover-spotlight-column">
             <div className="discover-spotlight-head">
               <strong>New artists</strong>
               <span className="meta">Fresh local artist profiles worth hearing early.</span>
@@ -238,7 +238,7 @@ export function DiscoverExplorerPanel({
             </div>
           </section>
 
-          <section className="discover-spotlight-column">
+          <section className="discover-explorer-section discover-spotlight-column">
             <div className="discover-spotlight-head">
               <strong>New promoters</strong>
               <span className="meta">Promoters opening new rooms and local/regional nights.</span>
@@ -260,22 +260,19 @@ export function DiscoverExplorerPanel({
             </div>
           </section>
         </div>
-      </div>
 
-      <div className="panel discover-module-panel">
-        <div className="discover-module-header">
-          <div>
-            <div className="badge">Search</div>
-            <h2>Search by song, artist, promoter, venue, or location</h2>
+        <div className="discover-explorer-main">
+          <div className="discover-explorer-section discover-explorer-browser">
+            <div className="discover-explorer-section-head">
+              <strong>Search everything in one place</strong>
+              <span className="meta">Browse pages, play song matches, and move through the live network without leaving discover.</span>
+            </div>
+            <ProfileDirectoryBrowser currentHref={currentHref} mediaEntries={mediaEntries} profiles={profiles} />
           </div>
-          <p className="meta">
-            Use the shared browser below to search music and pages, then jump straight into the profile or play songs in the dock.
-          </p>
-        </div>
-        <ProfileDirectoryBrowser currentHref={currentHref} mediaEntries={mediaEntries} profiles={profiles} />
-      </div>
 
-      {globePanel}
+          {globePanel ? <div className="discover-explorer-globe-shell">{globePanel}</div> : null}
+        </div>
+      </div>
     </section>
   );
 }
