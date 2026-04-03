@@ -79,7 +79,7 @@ export default async function VenuePage({
   const profileSlug = profile.slug;
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
-  const [shows, bookableProfiles, connectionRequests, myRequests, totalRequestCount] = await Promise.all([
+  const [shows, bookableProfiles, connectionRequests, myRequests, totalRequestCount, fanHypeCount] = await Promise.all([
     db.show.findMany({
       where: { venueProfileId: profile.id },
       include: { venueProfile: true, headlinerProfile: true },
@@ -110,6 +110,14 @@ export default async function VenuePage({
     db.venueConnectionRequest.count({
       where: { venueProfileId: profile.id }
     }),
+    db.profileHypeEvent.count({
+      where: {
+        profileId: profile.id,
+        user: {
+          role: 'FAN'
+        }
+      }
+    })
   ]);
 
   const now = new Date();
@@ -151,7 +159,7 @@ export default async function VenuePage({
       country: profile.country
     },
     stats: {
-      pageHype: profile.hypeCount,
+      pageHype: fanHypeCount,
       upcomingCount: upcomingShows.length,
       previousCount: previousShows.length,
       requestCount: totalRequestCount,
@@ -179,6 +187,7 @@ export default async function VenuePage({
           <p className="subtitle">{profile.bio}</p>
           <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
           <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
+          <p className="meta">Fan hype: {fanHypeCount}</p>
           {profile.addressLine1 ? <p className="meta">{[profile.addressLine1, profile.postalCode].filter(Boolean).join(', ')}</p> : null}
           {profile.contactInfo ? <p className="meta">{profile.contactInfo}</p> : null}
           {profile.hoursText ? <p className="meta">{profile.hoursText}</p> : null}

@@ -5,14 +5,21 @@ import {
   getDiscoverModulesForRole
 } from '@/lib/discover-modules';
 
+type RoleModuleSubheaderLink = {
+  label: string;
+  href: string;
+};
+
 export function RoleModuleSubheader({
   role,
   currentHref,
-  activeModule
+  activeModule,
+  extraLinks = []
 }: {
   role: DiscoverRoleKey;
   currentHref: string;
   activeModule: DiscoverModuleId;
+  extraLinks?: RoleModuleSubheaderLink[];
 }) {
   const modules = getDiscoverModulesForRole(role);
 
@@ -26,6 +33,14 @@ export function RoleModuleSubheader({
             key={module.id}
           >
             {module.label}
+          </Link>
+        ))}
+        {extraLinks.length ? (
+          <div className="site-subnav-divider" aria-hidden="true" />
+        ) : null}
+        {extraLinks.map((link) => (
+          <Link className="site-subnav-link site-subnav-link-utility" href={link.href} key={link.href}>
+            {link.label}
           </Link>
         ))}
       </nav>

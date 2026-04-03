@@ -2974,6 +2974,12 @@ button, input, select, textarea { font: inherit; }
   gap: 1.5rem;
   align-items: flex-end;
 }
+.profile-banner-actions {
+  margin-left: auto;
+  align-self: flex-start;
+  display: flex;
+  gap: 0.6rem;
+}
 .artist-headline {
   font-size: clamp(1.25rem, 2.3vw, 1.8rem);
   line-height: 1.25;
@@ -5138,6 +5144,15 @@ button, input, select, textarea { font: inherit; }
   border-color: rgba(35,208,216,0.22);
   background: rgba(35,208,216,0.1);
 }
+.site-subnav-divider {
+  width: 1px;
+  height: 1.8rem;
+  background: rgba(255,255,255,0.1);
+  flex: 0 0 auto;
+}
+.site-subnav-link-utility {
+  border-style: dashed;
+}
 .nav-loading-pill {
   display: inline-flex;
   width: 84px;
@@ -6648,6 +6663,10 @@ button, input, select, textarea { font: inherit; }
   .artist-media-card { flex-direction: column; align-items: flex-start; }
   .artist-media-actions { justify-content: flex-start; }
   .profile-banner-row { flex-direction: column; align-items: flex-start; }
+  .profile-banner-actions {
+    margin-left: 0;
+    align-self: stretch;
+  }
   .avatar-creator-lab,
   .avatar-preset-grid,
   .avatar-option-grid { grid-template-columns: 1fr; }

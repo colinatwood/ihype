@@ -29,7 +29,7 @@ export default async function ListenersIndexPage({
   const activeModule = resolveDiscoverModule('fans', resolvedSearchParams.module);
   const listeners = await getDirectoryProfiles('LISTENER');
 
-  const [viewerLocation, venues, activeShows, profileHypes] = await Promise.all([
+  const [viewerLocation, venues, activeShows, profileHypes, myFanProfile] = await Promise.all([
     detectRequestLocation(),
     db.profile.findMany({
       where: {
@@ -76,8 +76,27 @@ export default async function ListenersIndexPage({
             }
           }
         })
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    session?.user?.id
+      ? db.profile.findFirst({
+          where: {
+            ownerId: session.user.id,
+            type: 'LISTENER'
+          },
+          select: {
+            id: true,
+            slug: true
+          }
+        })
+      : Promise.resolve(null)
   ]);
+
+  const fanQuickLinks = myFanProfile
+    ? [
+        { label: 'My Page', href: `/fans/${myFanProfile.slug}` },
+        { label: 'My Stats', href: `/fans/${myFanProfile.slug}?section=stats` }
+      ]
+    : [];
 
   const likedArtistIds = new Set(
     profileHypes
@@ -207,7 +226,14 @@ export default async function ListenersIndexPage({
       currentHref="/fans"
       description="Fan discover keeps the focus on nearby rooms, the next events worth watching, and the signals that turn hype into action."
       modulePanel={modulePanel}
-      moduleSubheader={<RoleModuleSubheader activeModule={activeModule} currentHref="/fans" role="fans" />}
+      moduleSubheader={
+        <RoleModuleSubheader
+          activeModule={activeModule}
+          currentHref="/fans"
+          extraLinks={fanQuickLinks}
+          role="fans"
+        />
+      }
       profiles={listeners}
       title="Fan discover"
     />

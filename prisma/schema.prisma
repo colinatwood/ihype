@@ -74,6 +74,7 @@ model User {
   shows                   Show[]                   @relation("CreatedShows")
   hypeEvents              HypeEvent[]
   mediaListens            MediaListen[]
+  showListens             ShowListen[]
   profileHypeEvents       ProfileHypeEvent[]
   passwordResetCodes      PasswordResetCode[]
   venueConnectionRequests VenueConnectionRequest[]
@@ -81,9 +82,9 @@ model User {
 }
 
 model Profile {
-  id                            String                   @id @default(cuid())
-  slug                          String                   @unique
-  hexId                         String                   @unique
+  id                            String                      @id @default(cuid())
+  slug                          String                      @unique
+  hexId                         String                      @unique
   type                          ProfileType
   name                          String
   headline                      String?
@@ -112,35 +113,35 @@ model Profile {
   galleryImage                  String?
   featureVideoUrl               String?
   companionSpriteSheet          String?
-  themePreset                   String                   @default("midnight-neon")
+  themePreset                   String                      @default("midnight-neon")
   themeFontPreset               String?
   themeAccentTone               String?
   themeBackdropTone             String?
-  fanShareEnabled               Boolean                  @default(false)
+  fanShareEnabled               Boolean                     @default(false)
   genres                        String[]
-  songUploadCount               Int                      @default(0)
+  songUploadCount               Int                         @default(0)
   parkingDetails                String?
   stayRecommendations           String?
   upcomingContent               String?
   previousShowHighlights        String?
-  verified                      Boolean                  @default(false)
+  verified                      Boolean                     @default(false)
   verificationStatus            OwnershipVerificationStatus @default(UNVERIFIED)
   verificationSubmittedAt       DateTime?
   verificationReviewedAt        DateTime?
   verificationNotes             String?
-  hypeCount                     Int                      @default(0)
+  hypeCount                     Int                         @default(0)
   ownerId                       String
-  owner                         User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  createdAt                     DateTime                 @default(now())
-  updatedAt                     DateTime                 @updatedAt
-  hostedShows                   Show[]                   @relation("VenueShows")
-  headlinerShows                Show[]                   @relation("HeadlinerShows")
-  promotedShows                 Show[]                   @relation("PromotedShows")
+  owner                         User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt                     DateTime                    @default(now())
+  updatedAt                     DateTime                    @updatedAt
+  hostedShows                   Show[]                      @relation("VenueShows")
+  headlinerShows                Show[]                      @relation("HeadlinerShows")
+  promotedShows                 Show[]                      @relation("PromotedShows")
   mediaUploads                  ArtistMediaAsset[]
   profileHypes                  ProfileHypeEvent[]
-  venueConnectionRequests       VenueConnectionRequest[] @relation("VenueConnectionRequests")
-  recommendedConnectionRequests VenueConnectionRequest[] @relation("RecommendedProfileConnectionRequests")
-  issuedTickets                 Ticket[]                 @relation("VenueIssuedTickets")
+  venueConnectionRequests       VenueConnectionRequest[]    @relation("VenueConnectionRequests")
+  recommendedConnectionRequests VenueConnectionRequest[]    @relation("RecommendedProfileConnectionRequests")
+  issuedTickets                 Ticket[]                    @relation("VenueIssuedTickets")
 }
 
 model ArtistMediaAsset {
@@ -193,6 +194,7 @@ model Show {
   hypeCount             Int           @default(0)
   tags                  String[]
   hypes                 HypeEvent[]
+  showListens           ShowListen[]
   ticketOrders          TicketOrder[]
   tickets               Ticket[]
 }
@@ -215,39 +217,55 @@ model TicketOrder {
 }
 
 model Ticket {
-  id                String       @id @default(cuid())
-  serializedId      String       @unique
-  ticketOrderId     String
-  showId            String
-  venueProfileId    String?
-  holderName        String
-  holderEmail       String
-  status            TicketStatus @default(VALID)
-  scannedAt         DateTime?
-  scannedByUserId   String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  ticketOrder       TicketOrder  @relation(fields: [ticketOrderId], references: [id], onDelete: Cascade)
-  show              Show         @relation(fields: [showId], references: [id], onDelete: Cascade)
-  venueProfile      Profile?     @relation("VenueIssuedTickets", fields: [venueProfileId], references: [id], onDelete: SetNull)
-  scannedByUser     User?        @relation("TicketScans", fields: [scannedByUserId], references: [id], onDelete: SetNull)
+  id              String       @id @default(cuid())
+  serializedId    String       @unique
+  ticketOrderId   String
+  showId          String
+  venueProfileId  String?
+  holderName      String
+  holderEmail     String
+  status          TicketStatus @default(VALID)
+  scannedAt       DateTime?
+  scannedByUserId String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  ticketOrder     TicketOrder  @relation(fields: [ticketOrderId], references: [id], onDelete: Cascade)
+  show            Show         @relation(fields: [showId], references: [id], onDelete: Cascade)
+  venueProfile    Profile?     @relation("VenueIssuedTickets", fields: [venueProfileId], references: [id], onDelete: SetNull)
+  scannedByUser   User?        @relation("TicketScans", fields: [scannedByUserId], references: [id], onDelete: SetNull)
 
   @@index([showId, status])
   @@index([venueProfileId, status])
 }
 
 model MediaListen {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   userId            String
   mediaId           String
   title             String
   mediaUrl          String
   artistName        String
   artistProfileSlug String?
-  createdAt         DateTime @default(now())
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, mediaId])
+}
+
+model ShowListen {
+  id          String   @id @default(cuid())
+  userId      String
+  showId      String
+  title       String
+  showSlug    String
+  playbackUrl String
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  show        Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, showId])
 }
 
 model PasswordResetCode {

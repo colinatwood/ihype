@@ -13,6 +13,7 @@ import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety
 import { canManageOwnedResource } from '@/lib/permissions';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
+import { calculateFanLevel } from '@/lib/fan-level';
 
 const listenerSections = ['about', 'recommend', 'upcoming', 'previous', 'top5', 'stats'] as const;
 
@@ -63,7 +64,17 @@ export default async function ListenerPage({
   const profile = await db.profile.findUnique({ where: { slug } });
   if (!profile || profile.type !== 'LISTENER') return notFound();
 
-  const [hypedShows, sentRecommendations, viewerLocation, venues, activeShows, profileHypes, promoterShows] = await Promise.all([
+  const [
+    hypedShows,
+    sentRecommendations,
+    viewerLocation,
+    venues,
+    activeShows,
+    profileHypes,
+    promoterShows,
+    fullSongListenCount,
+    fullShowListenCount
+  ] = await Promise.all([
     db.hypeEvent.findMany({
       where: { userId: profile.ownerId },
       include: {
@@ -138,6 +149,17 @@ export default async function ListenerPage({
       },
       orderBy: [{ startsAt: 'desc' }, { hypeCount: 'desc' }],
       take: 24
+    }),
+    db.mediaListen.count({
+      where: {
+        userId: profile.ownerId,
+        completedAt: { not: null }
+      }
+    }),
+    db.showListen.count({
+      where: {
+        userId: profile.ownerId
+      }
     })
   ]);
 
@@ -229,6 +251,10 @@ export default async function ListenerPage({
     backdropTone: profile.themeBackdropTone
   });
   const avatarImage = getSafeImageUrl(profile.avatarImage);
+  const fanLevel = calculateFanLevel(fullSongListenCount, fullShowListenCount);
+  const hypePoints = hypedShows.length + profileHypes.length;
+  const pastEventCount = previousShows.length;
+  const upcomingEventCount = upcomingShows.length;
   const globeRouteStops = previousShows
     .filter(
       (show) =>
@@ -275,9 +301,17 @@ export default async function ListenerPage({
             <p className="subtitle">{profile.bio}</p>
             <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
             <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
+            <p className="meta">FAN Level {fanLevel} | {fullSongListenCount} full songs | {fullShowListenCount} full shows</p>
             <div className="tag-row">{profile.genres.map((genre) => <span key={genre} className="tag">{genre}</span>)}</div>
             <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} entityLabel="fan page" />
           </div>
+          {isOwner ? (
+            <div className="profile-banner-actions">
+              <Link className="button small secondary" href={`/dashboard?profile=${profile.id}&edit=menu`}>
+                Edit Page
+              </Link>
+            </div>
+          ) : null}
         </div>
       </header>
 
@@ -403,10 +437,12 @@ export default async function ListenerPage({
             <>
               <h2>Stats</h2>
               <div className="grid grid-3">
-                <div className="stat"><strong>{profile.hypeCount}</strong>Page hype</div>
-                <div className="stat"><strong>{upcomingShows.length}</strong>Upcoming saved shows</div>
-                <div className="stat"><strong>{previousShows.length}</strong>Previous saved shows</div>
-                <div className="stat"><strong>{sentRecommendations.length}</strong>Requests sent</div>
+                <div className="stat"><strong>{fanLevel}</strong>FAN level</div>
+                <div className="stat"><strong>{hypePoints}</strong>Hype points</div>
+                <div className="stat"><strong>{fullSongListenCount}</strong>Total songs listened</div>
+                <div className="stat"><strong>{fullShowListenCount}</strong>Total shows listened</div>
+                <div className="stat"><strong>{pastEventCount}</strong>Total events gone to</div>
+                <div className="stat"><strong>{upcomingEventCount}</strong>Upcoming events going to</div>
               </div>
             </>
           ) : null}

@@ -6,6 +6,7 @@ import { getShowVisibilitySignals } from '@/lib/integrity';
 import { parseShowProductionPlan } from '@/lib/show-composer';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import { formatShowTime } from '@/lib/utils';
+import { ShowPlaybackTracker } from '@/components/ShowPlaybackTracker';
 
 export default async function ShowDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -47,9 +48,14 @@ export default async function ShowDetailPage({ params }: { params: Promise<{ slu
         <section className="panel" style={{ padding: '1rem' }}>
           <div className="video-shell">
             {playbackUrl ? (
-              <video autoPlay={show.status === 'LIVE'} className="video-frame" controls muted={show.status === 'LIVE'} playsInline>
-                <source src={playbackUrl} type="application/x-mpegURL" />
-              </video>
+              <ShowPlaybackTracker
+                autoPlay={show.status === 'LIVE'}
+                isLive={show.status === 'LIVE'}
+                playbackUrl={playbackUrl}
+                showId={show.id}
+                showSlug={show.slug}
+                title={show.title}
+              />
             ) : (
               <div className="show-art" style={{ minHeight: 320 }}>
                 Connect your stream provider to go live

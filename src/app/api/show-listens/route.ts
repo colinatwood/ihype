@@ -4,11 +4,10 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 
 const schema = z.object({
-  mediaId: z.string().min(1).max(128),
+  showId: z.string().min(1).max(128),
   title: z.string().min(1).max(200),
-  mediaUrl: z.string().url().max(2048),
-  artistName: z.string().min(1).max(160),
-  artistProfileSlug: z.string().min(1).max(160).optional()
+  showSlug: z.string().min(1).max(160),
+  playbackUrl: z.string().url().max(2048)
 });
 
 export async function POST(request: Request) {
@@ -20,33 +19,31 @@ export async function POST(request: Request) {
   try {
     const payload = schema.parse(await request.json());
 
-    await db.mediaListen.upsert({
+    await db.showListen.upsert({
       where: {
-        userId_mediaId: {
+        userId_showId: {
           userId: session.user.id,
-          mediaId: payload.mediaId
+          showId: payload.showId
         }
       },
       update: {
         title: payload.title,
-        mediaUrl: payload.mediaUrl,
-        artistName: payload.artistName,
-        artistProfileSlug: payload.artistProfileSlug ?? null,
+        showSlug: payload.showSlug,
+        playbackUrl: payload.playbackUrl,
         completedAt: new Date()
       },
       create: {
         userId: session.user.id,
-        mediaId: payload.mediaId,
+        showId: payload.showId,
         title: payload.title,
-        mediaUrl: payload.mediaUrl,
-        artistName: payload.artistName,
-        artistProfileSlug: payload.artistProfileSlug ?? null,
+        showSlug: payload.showSlug,
+        playbackUrl: payload.playbackUrl,
         completedAt: new Date()
       }
     });
 
     return NextResponse.json({ recorded: true });
   } catch {
-    return NextResponse.json({ error: 'Invalid media listen payload' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid show listen payload' }, { status: 400 });
   }
 }

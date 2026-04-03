@@ -92,7 +92,7 @@ export default async function ArtistPage({
   const profileSlug = profile.slug;
   const media = buildArtistMediaCollection(profile.mediaContent, profile.mediaUploads);
 
-  const [shows, viewerLocation, venues] = await Promise.all([
+  const [shows, viewerLocation, venues, fanHypeCount] = await Promise.all([
     db.show.findMany({
       where: { headlinerProfileId: profile.id },
       include: { venueProfile: true, headlinerProfile: true },
@@ -119,6 +119,14 @@ export default async function ArtistPage({
         latitude: true,
         longitude: true
       }
+    }),
+    db.profileHypeEvent.count({
+      where: {
+        profileId: profile.id,
+        user: {
+          role: 'FAN'
+        }
+      }
     })
   ]);
 
@@ -132,7 +140,7 @@ export default async function ArtistPage({
       country: profile.country
     },
     stats: {
-      pageHype: profile.hypeCount,
+      pageHype: fanHypeCount,
       upcomingCount: upcomingShows.length,
       previousCount: previousShows.length,
       songUploads: profile.songUploadCount
@@ -200,6 +208,7 @@ export default async function ArtistPage({
           <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
           {profile.contactInfo ? <p className="meta">Contact: {profile.contactInfo}</p> : null}
           <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
+          <p className="meta">Fan hype: {fanHypeCount}</p>
           <div className="tag-row">{profile.genres.map((genre) => <span key={genre} className="tag">{genre}</span>)}</div>
           <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} entityLabel="artist" />
         </div>

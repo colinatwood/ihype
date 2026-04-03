@@ -83,7 +83,7 @@ export default async function PromoterPage({
   const profileSlug = profile.slug;
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
-  const [shows, sentRecommendations, artistProfiles, viewerLocation, venues] = await Promise.all([
+  const [shows, sentRecommendations, artistProfiles, viewerLocation, venues, fanHypeCount] = await Promise.all([
     db.show.findMany({
       where: { promoterProfileId: profile.id },
       include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
@@ -143,6 +143,14 @@ export default async function PromoterPage({
         latitude: true,
         longitude: true
       }
+    }),
+    db.profileHypeEvent.count({
+      where: {
+        profileId: profile.id,
+        user: {
+          role: 'FAN'
+        }
+      }
     })
   ]);
 
@@ -178,7 +186,7 @@ export default async function PromoterPage({
       country: profile.country
     },
     stats: {
-      pageHype: profile.hypeCount,
+      pageHype: fanHypeCount,
       upcomingCount: upcomingShows.length,
       previousCount: previousShows.length,
       recommendationsSent: sentRecommendations.length
@@ -188,7 +196,7 @@ export default async function PromoterPage({
     totalShows: shows.length,
     totalHype: shows.reduce((sum, show) => sum + show.hypeCount, 0),
     totalTicketsSold: shows.reduce((sum, show) => sum + show.ticketsSoldCount, 0),
-    totalFans: new Set(sentRecommendations.map((request) => request.requesterId)).size + profile.hypeCount
+    totalFans: new Set(sentRecommendations.map((request) => request.requesterId)).size + fanHypeCount
   };
   const globeRouteStops = previousShows
     .filter(
@@ -234,6 +242,7 @@ export default async function PromoterPage({
           <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
           {profile.contactInfo ? <p className="meta">{profile.contactInfo}</p> : null}
           <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
+          <p className="meta">Fan hype: {fanHypeCount}</p>
           <div className="tag-row">{profile.genres.map((genre) => <span key={genre} className="tag">{genre}</span>)}</div>
           <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} entityLabel="promoter" />
         </div>

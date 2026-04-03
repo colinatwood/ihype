@@ -62,6 +62,7 @@ function formatTime(seconds: number) {
 
 export function MediaPlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const completedMediaIdsRef = useRef<Set<string>>(new Set());
   const [queue, setQueue] = useState<MediaTrack[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [currentTrack, setCurrentTrack] = useState<MediaTrack | null>(null);
@@ -121,11 +122,23 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const syncTime = () => setCurrentTime(audio.currentTime);
+    const syncTime = () => {
+      setCurrentTime(audio.currentTime);
+
+      if (
+        currentTrack?.mediaId &&
+        Number.isFinite(audio.duration) &&
+        audio.duration > 0 &&
+        audio.currentTime / audio.duration >= 0.9
+      ) {
+        persistCompletedMediaListen(currentTrack);
+      }
+    };
     const syncDuration = () => setDuration(audio.duration || 0);
     const syncPlay = () => setIsPlaying(true);
     const syncPause = () => setIsPlaying(false);
     const onEnded = () => {
+      persistCompletedMediaListen(currentTrack);
       setCurrentTime(0);
       setIsPlaying(false);
       setCurrentIndex((index) => {
@@ -134,7 +147,6 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
           const nextTrack = queue[nextIndex] ?? null;
           setCurrentTrack(nextTrack);
           setIsPlaying(true);
-          persistMediaListen(nextTrack);
           return nextIndex;
         }
 
@@ -155,7 +167,7 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
       audio.removeEventListener('pause', syncPause);
       audio.removeEventListener('ended', onEnded);
     };
-  }, [queue]);
+  }, [currentTrack, queue]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -187,10 +199,16 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
     }
   }, [currentTrack, isPlaying]);
 
-  function persistMediaListen(track: MediaTrack | null) {
+  function persistCompletedMediaListen(track: MediaTrack | null) {
     if (!track?.mediaId) {
       return;
     }
+
+    if (completedMediaIdsRef.current.has(track.mediaId)) {
+      return;
+    }
+
+    completedMediaIdsRef.current.add(track.mediaId);
 
     void fetch('/api/media-listens', {
       method: 'POST',
@@ -214,7 +232,6 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
     setCurrentIndex(nextIndex);
     setCurrentTrack(track);
     setIsPlaying(true);
-    persistMediaListen(track);
   }
 
   function togglePlayback() {
@@ -239,7 +256,6 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
     const nextTrack = queue[nextIndex] ?? null;
     setCurrentTrack(nextTrack);
     setIsPlaying(true);
-    persistMediaListen(nextTrack);
   }
 
   function playPrevious() {
@@ -263,7 +279,6 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
     const previousTrack = queue[previousIndex] ?? null;
     setCurrentTrack(previousTrack);
     setIsPlaying(true);
-    persistMediaListen(previousTrack);
   }
 
   function seekTo(time: number) {
