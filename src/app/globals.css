@@ -4682,6 +4682,49 @@ button, input, select, textarea { font: inherit; }
   gap: 1rem;
   margin-top: 1rem;
 }
+.composer-utility-shell {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+.composer-tool-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+.composer-tool-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.58rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: var(--muted);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+.composer-tool-tab:hover {
+  color: var(--text);
+  border-color: rgba(255,255,255,0.18);
+  transform: translateY(-1px);
+}
+.composer-tool-tab.active {
+  color: #fff7ec;
+  border-color: rgba(35,208,216,0.28);
+  background: linear-gradient(135deg, rgba(35,208,216,0.16), rgba(143,91,255,0.16));
+}
+.composer-tool-tab span {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.composer-tool-tab strong {
+  font-size: 0.78rem;
+  opacity: 0.88;
+}
+.composer-tool-hint {
+  margin: 0 0 0.15rem;
+}
 .composer-utility-card {
   min-height: 0;
 }

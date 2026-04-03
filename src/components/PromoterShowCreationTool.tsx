@@ -66,6 +66,7 @@ type PadAssignment = ShowSamplePad & {
 };
 
 type ShowSaveIntent = 'preview' | 'broadcast';
+type CreatorUtilityPanel = 'library' | 'voice' | 'queue';
 
 const PAD_COLORS = ['#ff6b6b', '#f59e0b', '#f4d03f', '#22c55e', '#23d0d8', '#3b82f6', '#8f5bff', '#ec4899'];
 
@@ -185,6 +186,7 @@ export function PromoterShowCreationTool({
   const [isTakePreviewPlaying, setIsTakePreviewPlaying] = useState(false);
   const [previewMediaItem, setPreviewMediaItem] = useState<ShowMediaItem | null>(null);
   const [saveIntent, setSaveIntent] = useState<ShowSaveIntent>('preview');
+  const [activeUtilityPanel, setActiveUtilityPanel] = useState<CreatorUtilityPanel>('library');
   const [lastSavedShowHref, setLastSavedShowHref] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -812,6 +814,7 @@ export function PromoterShowCreationTool({
         label: buildPadLabel(slotNumber, assignment.title)
       }
     ]);
+    setActiveUtilityPanel('queue');
     setMessage(`${buildPadLabel(slotNumber, assignment.title)} added to the show flow.`);
   }
 
@@ -864,6 +867,7 @@ export function PromoterShowCreationTool({
             mimeType: recorder.mimeType || 'audio/webm'
           });
           setVoiceDuration(String(durationSeconds));
+          setActiveUtilityPanel('voice');
           setRecordingState('idle');
           setMessage('Voice-over take captured. Add it to the playlist when you are ready.');
         } catch {
@@ -973,6 +977,7 @@ export function PromoterShowCreationTool({
     setVoiceCueAfterMediaId('');
     resetTakePreviewPlayback();
     setRecordedVoiceTake(null);
+    setActiveUtilityPanel('queue');
     setMessage(`${voiceCue.title} added to the show flow.`);
   }
 
@@ -1086,6 +1091,7 @@ export function PromoterShowCreationTool({
       setVoiceCueAfterMediaId('');
       setRecordedVoiceTake(null);
       setPreviewMediaItem(null);
+      setActiveUtilityPanel('library');
       setLastSavedShowHref(nextShowHref);
       setPending(false);
       setMessage(
@@ -1106,6 +1112,32 @@ export function PromoterShowCreationTool({
     activePadAssignment && !activePadAssignment.localOnly ? activePadAssignment.sampleId : '';
   const selectedLocalSampleId =
     activePadAssignment && activePadAssignment.localOnly ? activePadAssignment.sampleId : '';
+  const utilityTabs: Array<{
+    id: CreatorUtilityPanel;
+    label: string;
+    count: number;
+    hint: string;
+  }> = [
+    {
+      id: 'library',
+      label: 'Library',
+      count: playableArtists.length,
+      hint: 'Add artist songs or videos, then drag or quick-load them into the playlist.'
+    },
+    {
+      id: 'voice',
+      label: 'Voice',
+      count: voiceOvers.length + recordedVoiceCount,
+      hint: 'Capture a take, convert it into a cue, and keep the voice work in one place.'
+    },
+    {
+      id: 'queue',
+      label: 'Queue',
+      count: cueSequence.length,
+      hint: 'Check the non-song flow before you save the draft or broadcast the show.'
+    }
+  ];
+  const activeUtilityTab = utilityTabs.find((tab) => tab.id === activeUtilityPanel) ?? utilityTabs[0];
 
   function renderDeckCard(deck: 'A' | 'B', track: ShowMediaItem | null, level: number) {
     return (
@@ -1543,6 +1575,20 @@ export function PromoterShowCreationTool({
                             <div className="composer-media-actions">
                               <button
                                 className="button small secondary"
+                                onClick={() => loadDeck('A', mediaItem)}
+                                type="button"
+                              >
+                                Deck A
+                              </button>
+                              <button
+                                className="button small secondary"
+                                onClick={() => loadDeck('B', mediaItem)}
+                                type="button"
+                              >
+                                Deck B
+                              </button>
+                              <button
+                                className="button small secondary"
                                 onClick={() => {
                                   if (!isVideoItem && isCurrentTrack) {
                                     togglePlayback();
@@ -1586,240 +1632,263 @@ export function PromoterShowCreationTool({
           </div>
         </div>
 
-        <div className="composer-utility-grid">
-          <div className="composer-card composer-utility-card">
-            <div className={workstationHeaderClassName}>
-              <div className={sectionBadgeClassName}>Library</div>
-              <span className="meta">{playableArtists.length} artists</span>
-            </div>
-            <div className="composer-utility-scroll composer-library-list">
-              {playableArtists.length ? (
-                playableArtists.map((artist) => (
-                  <div className="composer-library-group" key={artist.profileId}>
-                    <div className="composer-library-heading">
-                      <strong>{artist.name}</strong>
-                      <span className="meta">{artist.entries.length}</span>
-                    </div>
-                    {artist.entries.map((entry) => {
-                      const isCurrentTrack = currentTrack?.url === entry.url;
-                      const isVideoEntry = entry.mediaType === 'video';
-                      return (
-                        <article
-                          className="composer-media-card composer-media-card-draggable"
-                          draggable
-                          key={entry.hexId}
-                          onDragEnd={clearPlaylistDragState}
-                          onDragStart={() =>
-                            handleLibraryDragStart({
-                              mediaId: entry.hexId,
-                              title: entry.title,
-                              url: entry.url,
-                              artistProfileId: artist.profileId,
-                              artistName: artist.name,
-                              notes: entry.notes,
-                              mimeType: entry.mimeType,
-                              mediaType: entry.mediaType ?? (isVideoEntry ? 'video' : 'audio'),
-                              previewImageUrl: entry.previewImageUrl ?? artist.heroImage
-                            })
-                          }
-                        >
-                          <div>
-                            <div className="composer-media-code">{entry.hexId}</div>
-                            <strong>{entry.title}</strong>
-                            <p className="meta">{isVideoEntry ? 'Video' : 'Song'}</p>
-                            {entry.notes ? <p className="meta">{entry.notes}</p> : null}
-                          </div>
-                          <div className="composer-media-actions">
-                            <button
-                              className="button small secondary"
-                              onClick={() => copyToClipboard(entry.hexId, 'Media ID')}
-                              type="button"
-                            >
-                              Copy
-                            </button>
-                            <button
-                              className="button small secondary"
-                              onClick={() => {
-                                if (!isVideoEntry && isCurrentTrack) {
-                                  togglePlayback();
-                                } else {
-                                  if (isVideoEntry) {
-                                    setPreviewMediaItem({
-                                      mediaId: entry.hexId,
-                                      title: entry.title,
-                                      url: entry.url,
-                                      artistProfileId: artist.profileId,
-                                      artistName: artist.name,
-                                      notes: entry.notes,
-                                      mimeType: entry.mimeType,
-                                      mediaType: 'video',
-                                      previewImageUrl: entry.previewImageUrl ?? artist.heroImage
-                                    });
-                                  } else {
-                                    playTrack(
-                                      {
-                                        id: `${artist.slug}-${entry.hexId}`,
-                                        title: entry.title,
-                                        artistName: artist.name,
-                                        url: entry.url,
-                                        mediaId: entry.hexId,
-                                        artistProfileSlug: artist.slug,
-                                        notes: entry.notes,
-                                        artworkUrl: artist.heroImage
-                                      },
-                                      artist.entries
-                                        .filter((item) => item.mediaType !== 'video')
-                                        .map((item) => ({
-                                          id: `${artist.slug}-${item.hexId}`,
-                                          title: item.title,
-                                          artistName: artist.name,
-                                          url: item.url,
-                                          mediaId: item.hexId,
-                                          artistProfileSlug: artist.slug,
-                                          notes: item.notes,
-                                          artworkUrl: artist.heroImage
-                                        }))
-                                    );
-                                  }
-                                }
-                              }}
-                              type="button"
-                            >
-                              {isVideoEntry ? 'Preview' : isCurrentTrack && isPlaying ? 'Pause' : 'Prev'}
-                            </button>
-                            <button className="button small" onClick={() => addMedia(artist, entry)} type="button">
-                              Add
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                ))
-              ) : (
-                <div className="empty">No uploads yet.</div>
-              )}
-            </div>
+        <div className="composer-utility-shell">
+          <div className="composer-tool-nav" role="tablist" aria-label="Show creator tools">
+            {utilityTabs.map((tab) => (
+              <button
+                aria-selected={activeUtilityPanel === tab.id}
+                className={activeUtilityPanel === tab.id ? 'composer-tool-tab active' : 'composer-tool-tab'}
+                key={tab.id}
+                onClick={() => setActiveUtilityPanel(tab.id)}
+                role="tab"
+                type="button"
+              >
+                <span>{tab.label}</span>
+                <strong>{tab.count}</strong>
+              </button>
+            ))}
           </div>
+          <p className="meta composer-tool-hint">{activeUtilityTab.hint}</p>
 
-          <div className="composer-card composer-utility-card">
-            <div className={workstationHeaderClassName}>
-              <div className={sectionBadgeClassName}>Voice</div>
-              <span className="meta">
-                {voiceOvers.length} cues | {recordedVoiceCount} takes
-              </span>
-            </div>
-            <div className="composer-voice-drawer-body composer-voice-panel-body">
-              <div className="grid grid-2">
-                <label className="field">
-                  <span>Title</span>
-                  <input onChange={(event) => setVoiceTitle(event.target.value)} placeholder="Intro" value={voiceTitle} />
-                </label>
-                <label className="field">
-                  <span>Sec</span>
-                  <input min="0" onChange={(event) => setVoiceDuration(event.target.value)} step="0.1" type="number" value={voiceDuration} />
-                </label>
+          {activeUtilityPanel === 'library' ? (
+            <div className="composer-card composer-utility-card">
+              <div className={workstationHeaderClassName}>
+                <div className={sectionBadgeClassName}>Library</div>
+                <span className="meta">{playableArtists.length} artists</span>
               </div>
-              <label className="field">
-                <span>Notes</span>
-                <textarea
-                  onChange={(event) => setVoiceScript(event.target.value)}
-                  placeholder="Read or note"
-                  rows={3}
-                  value={voiceScript}
-                />
-              </label>
-              <label className="field">
-                <span>Overdub on</span>
-                <select onChange={(event) => setVoiceCueAfterMediaId(event.target.value)} value={voiceCueAfterMediaId}>
-                  <option value="">No cue</option>
-                  {selectedMedia.map((mediaItem) => (
-                    <option key={mediaItem.mediaId} value={mediaItem.mediaId}>
-                      {mediaItem.mediaId} - {mediaItem.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="composer-voice-actions">
-                <span className="meta">
-                  {recordedVoiceTake ? `${recordedVoiceTake.durationSeconds}s take queued from master recorder.` : 'Use the master recorder above for mic takes.'}
-                </span>
-                <button className="button small" onClick={addVoiceOver} type="button">
-                  Add cue
-                </button>
-              </div>
-
-              <div className="composer-utility-scroll composer-voice-list">
-                {voiceOvers.length ? (
-                  voiceOvers.map((voiceCue) => (
-                    <div className="composer-voice-card" key={voiceCue.id}>
-                      <div>
-                        <strong>{voiceCue.title}</strong>
-                        <p className="meta">
-                          {voiceCue.durationSeconds ? `${voiceCue.durationSeconds}s` : 'Open'}
-                          {voiceCue.cueAfterMediaId ? ` | ${voiceCue.cueAfterMediaId}` : ''}
-                        </p>
-                        {voiceCue.script ? <p>{voiceCue.script}</p> : null}
-                        {voiceCue.recordingDataUrl ? <audio className="composer-audio-preview" controls src={voiceCue.recordingDataUrl} /> : null}
+              <div className="composer-utility-scroll composer-library-list">
+                {playableArtists.length ? (
+                  playableArtists.map((artist) => (
+                    <div className="composer-library-group" key={artist.profileId}>
+                      <div className="composer-library-heading">
+                        <strong>{artist.name}</strong>
+                        <span className="meta">{artist.entries.length}</span>
                       </div>
+                      {artist.entries.map((entry) => {
+                        const isCurrentTrack = currentTrack?.url === entry.url;
+                        const isVideoEntry = entry.mediaType === 'video';
+                        return (
+                          <article
+                            className="composer-media-card composer-media-card-draggable"
+                            draggable
+                            key={entry.hexId}
+                            onDragEnd={clearPlaylistDragState}
+                            onDragStart={() =>
+                              handleLibraryDragStart({
+                                mediaId: entry.hexId,
+                                title: entry.title,
+                                url: entry.url,
+                                artistProfileId: artist.profileId,
+                                artistName: artist.name,
+                                notes: entry.notes,
+                                mimeType: entry.mimeType,
+                                mediaType: entry.mediaType ?? (isVideoEntry ? 'video' : 'audio'),
+                                previewImageUrl: entry.previewImageUrl ?? artist.heroImage
+                              })
+                            }
+                          >
+                            <div>
+                              <div className="composer-media-code">{entry.hexId}</div>
+                              <strong>{entry.title}</strong>
+                              <p className="meta">{isVideoEntry ? 'Video' : 'Song'}</p>
+                              {entry.notes ? <p className="meta">{entry.notes}</p> : null}
+                            </div>
+                            <div className="composer-media-actions">
+                              <button
+                                className="button small secondary"
+                                onClick={() => copyToClipboard(entry.hexId, 'Media ID')}
+                                type="button"
+                              >
+                                Copy
+                              </button>
+                              <button
+                                className="button small secondary"
+                                onClick={() => {
+                                  if (!isVideoEntry && isCurrentTrack) {
+                                    togglePlayback();
+                                  } else {
+                                    if (isVideoEntry) {
+                                      setPreviewMediaItem({
+                                        mediaId: entry.hexId,
+                                        title: entry.title,
+                                        url: entry.url,
+                                        artistProfileId: artist.profileId,
+                                        artistName: artist.name,
+                                        notes: entry.notes,
+                                        mimeType: entry.mimeType,
+                                        mediaType: 'video',
+                                        previewImageUrl: entry.previewImageUrl ?? artist.heroImage
+                                      });
+                                    } else {
+                                      playTrack(
+                                        {
+                                          id: `${artist.slug}-${entry.hexId}`,
+                                          title: entry.title,
+                                          artistName: artist.name,
+                                          url: entry.url,
+                                          mediaId: entry.hexId,
+                                          artistProfileSlug: artist.slug,
+                                          notes: entry.notes,
+                                          artworkUrl: artist.heroImage
+                                        },
+                                        artist.entries
+                                          .filter((item) => item.mediaType !== 'video')
+                                          .map((item) => ({
+                                            id: `${artist.slug}-${item.hexId}`,
+                                            title: item.title,
+                                            artistName: artist.name,
+                                            url: item.url,
+                                            mediaId: item.hexId,
+                                            artistProfileSlug: artist.slug,
+                                            notes: item.notes,
+                                            artworkUrl: artist.heroImage
+                                          }))
+                                      );
+                                    }
+                                  }
+                                }}
+                                type="button"
+                              >
+                                {isVideoEntry ? 'Preview' : isCurrentTrack && isPlaying ? 'Pause' : 'Prev'}
+                              </button>
+                              <button className="button small" onClick={() => addMedia(artist, entry)} type="button">
+                                Add
+                              </button>
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
                   ))
                 ) : (
-                  <div className="empty">No voice cues.</div>
+                  <div className="empty">No uploads yet.</div>
                 )}
               </div>
             </div>
-          </div>
+          ) : null}
 
-          <div className="composer-card composer-utility-card">
-            <div className={workstationHeaderClassName}>
-              <div className={sectionBadgeClassName}>Queue</div>
-              <span className="meta">{cueSequence.length} items</span>
-            </div>
-            <div className="composer-utility-scroll composer-cue-lane">
-              {cueSequence.length ? (
-                <div className="composer-sequence-list">
-                  {cueSequence.map((item, index) => (
-                    <div className="composer-sequence-card" key={item.id}>
-                      <div>
-                        <span className="composer-sequence-index">{String(index + 1).padStart(2, '0')}</span>
-                        <strong>{buildSequenceLabel(item.kind, item.label)}</strong>
-                      </div>
-                      <div className="composer-media-actions">
-                        <button
-                          className="button small secondary"
-                          disabled={index === 0}
-                          onClick={() => moveSequenceItem(item.id, -1)}
-                          type="button"
-                        >
-                          Up
-                        </button>
-                        <button
-                          className="button small secondary"
-                          disabled={index === cueSequence.length - 1}
-                          onClick={() => moveSequenceItem(item.id, 1)}
-                          type="button"
-                        >
-                          Down
-                        </button>
-                        <button className="button small secondary" onClick={() => removeSequenceItem(item)} type="button">
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+          {activeUtilityPanel === 'voice' ? (
+            <div className="composer-card composer-utility-card">
+              <div className={workstationHeaderClassName}>
+                <div className={sectionBadgeClassName}>Voice</div>
+                <span className="meta">
+                  {voiceOvers.length} cues | {recordedVoiceCount} takes
+                </span>
+              </div>
+              <div className="composer-voice-drawer-body composer-voice-panel-body">
+                <div className="grid grid-2">
+                  <label className="field">
+                    <span>Title</span>
+                    <input onChange={(event) => setVoiceTitle(event.target.value)} placeholder="Intro" value={voiceTitle} />
+                  </label>
+                  <label className="field">
+                    <span>Sec</span>
+                    <input min="0" onChange={(event) => setVoiceDuration(event.target.value)} step="0.1" type="number" value={voiceDuration} />
+                  </label>
                 </div>
-              ) : (
-                <div className="empty">No cues yet.</div>
-              )}
-              {selectedHeadliner ? (
-                <div className="empty composer-session-note">
-                  <strong>{selectedHeadliner.name}</strong> on <strong>{selectedPromoter?.name ?? 'your promoter profile'}</strong>.
+                <label className="field">
+                  <span>Notes</span>
+                  <textarea
+                    onChange={(event) => setVoiceScript(event.target.value)}
+                    placeholder="Read or note"
+                    rows={3}
+                    value={voiceScript}
+                  />
+                </label>
+                <label className="field">
+                  <span>Overdub on</span>
+                  <select onChange={(event) => setVoiceCueAfterMediaId(event.target.value)} value={voiceCueAfterMediaId}>
+                    <option value="">No cue</option>
+                    {selectedMedia.map((mediaItem) => (
+                      <option key={mediaItem.mediaId} value={mediaItem.mediaId}>
+                        {mediaItem.mediaId} - {mediaItem.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="composer-voice-actions">
+                  <span className="meta">
+                    {recordedVoiceTake ? `${recordedVoiceTake.durationSeconds}s take queued from master recorder.` : 'Use the master recorder above for mic takes.'}
+                  </span>
+                  <button className="button small" onClick={addVoiceOver} type="button">
+                    Add cue
+                  </button>
                 </div>
-              ) : null}
+
+                <div className="composer-utility-scroll composer-voice-list">
+                  {voiceOvers.length ? (
+                    voiceOvers.map((voiceCue) => (
+                      <div className="composer-voice-card" key={voiceCue.id}>
+                        <div>
+                          <strong>{voiceCue.title}</strong>
+                          <p className="meta">
+                            {voiceCue.durationSeconds ? `${voiceCue.durationSeconds}s` : 'Open'}
+                            {voiceCue.cueAfterMediaId ? ` | ${voiceCue.cueAfterMediaId}` : ''}
+                          </p>
+                          {voiceCue.script ? <p>{voiceCue.script}</p> : null}
+                          {voiceCue.recordingDataUrl ? <audio className="composer-audio-preview" controls src={voiceCue.recordingDataUrl} /> : null}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="empty">No voice cues.</div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {activeUtilityPanel === 'queue' ? (
+            <div className="composer-card composer-utility-card">
+              <div className={workstationHeaderClassName}>
+                <div className={sectionBadgeClassName}>Queue</div>
+                <span className="meta">{cueSequence.length} items</span>
+              </div>
+              <div className="composer-utility-scroll composer-cue-lane">
+                {cueSequence.length ? (
+                  <div className="composer-sequence-list">
+                    {cueSequence.map((item, index) => (
+                      <div className="composer-sequence-card" key={item.id}>
+                        <div>
+                          <span className="composer-sequence-index">{String(index + 1).padStart(2, '0')}</span>
+                          <strong>{buildSequenceLabel(item.kind, item.label)}</strong>
+                        </div>
+                        <div className="composer-media-actions">
+                          <button
+                            className="button small secondary"
+                            disabled={index === 0}
+                            onClick={() => moveSequenceItem(item.id, -1)}
+                            type="button"
+                          >
+                            Up
+                          </button>
+                          <button
+                            className="button small secondary"
+                            disabled={index === cueSequence.length - 1}
+                            onClick={() => moveSequenceItem(item.id, 1)}
+                            type="button"
+                          >
+                            Down
+                          </button>
+                          <button className="button small secondary" onClick={() => removeSequenceItem(item)} type="button">
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty">No cues yet.</div>
+                )}
+                {selectedHeadliner ? (
+                  <div className="empty composer-session-note">
+                    <strong>{selectedHeadliner.name}</strong> on <strong>{selectedPromoter?.name ?? 'your promoter profile'}</strong>.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="cta-row">
