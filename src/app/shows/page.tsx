@@ -5,7 +5,10 @@ import { sortShowsForFeed } from '@/lib/integrity';
 export const dynamic = 'force-dynamic';
 
 export default async function ShowsIndexPage() {
-  const shows = sortShowsForFeed(await getShowsDirectoryData());
+  const shows = sortShowsForFeed(await getShowsDirectoryData()).map((show) => ({
+    ...show,
+    startsAt: show.startsAt instanceof Date ? show.startsAt : new Date(show.startsAt)
+  }));
   const now = new Date();
   const liveShows = shows.filter((show) => show.status === 'LIVE');
   const upcomingShows = shows.filter((show) => show.status !== 'LIVE' && show.startsAt >= now);

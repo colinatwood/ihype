@@ -136,6 +136,9 @@ export function sortShowsForFeed<T extends ExplainableShow>(shows: T[], now = ne
       return rightSignals.totalScore - leftSignals.totalScore;
     }
 
-    return left.startsAt.getTime() - right.startsAt.getTime();
+    const leftStartsAt = left.startsAt instanceof Date ? left.startsAt : new Date(left.startsAt);
+    const rightStartsAt = right.startsAt instanceof Date ? right.startsAt : new Date(right.startsAt);
+
+    return leftStartsAt.getTime() - rightStartsAt.getTime();
   });
 }
