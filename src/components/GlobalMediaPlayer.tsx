@@ -396,22 +396,24 @@ export function HeaderMediaPlayer() {
           <span>{formatTime(duration)}</span>
         </div>
 
-        <label className="header-player-volume">
-          <span>Vol</span>
-          <input
-            aria-label="Playback volume"
-            className="media-player-range"
-            max={1}
-            min={0}
-            onChange={(event) => setVolume(Number(event.target.value))}
-            step={0.05}
-            type="range"
-            value={volume}
-          />
-        </label>
-      </div>
+        <div className="header-player-utility">
+          <label className="header-player-volume">
+            <span>Vol</span>
+            <input
+              aria-label="Playback volume"
+              className="media-player-range"
+              max={1}
+              min={0}
+              onChange={(event) => setVolume(Number(event.target.value))}
+              step={0.05}
+              type="range"
+              value={volume}
+            />
+          </label>
 
-      <FanPlaylistManager currentTrack={currentTrack} playTrack={playTrack} />
+          <FanPlaylistManager currentTrack={currentTrack} playTrack={playTrack} />
+        </div>
+      </div>
     </div>
   );
 }

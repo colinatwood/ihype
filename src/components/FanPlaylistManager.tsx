@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type MediaTrack = {
   id: string;
@@ -51,6 +51,7 @@ export function FanPlaylistManager({
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [message, setMessage] = useState<string | null>(null);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   async function loadPlaylists() {
     setLoading(true);
@@ -82,6 +83,32 @@ export function FanPlaylistManager({
     }
 
     void loadPlaylists();
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [open]);
 
   const activePlaylist = playlists.find((playlist) => playlist.id === activePlaylistId) ?? null;
@@ -274,20 +301,36 @@ export function FanPlaylistManager({
   }
 
   return (
-    <div className="fan-playlist-manager">
-      <div className="fan-playlist-head">
+    <div className={open ? 'fan-playlist-manager open' : 'fan-playlist-manager'} ref={containerRef}>
+      <div className="fan-playlist-launcher">
         <button
-          className={open ? 'button small secondary fan-playlist-toggle active' : 'button small secondary fan-playlist-toggle'}
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          className={open ? 'media-player-button fan-playlist-toggle active' : 'media-player-button fan-playlist-toggle'}
           onClick={() => setOpen((value) => !value)}
           type="button"
         >
-          {open ? 'Hide playlists' : 'My playlists'}
+          <span>My playlists</span>
+          {playlists.length ? <strong>{playlists.length}</strong> : null}
         </button>
-        {message ? <span className="meta">{message}</span> : null}
       </div>
 
       {open ? (
-        <div className="fan-playlist-panel">
+        <div className="fan-playlist-panel" role="dialog" aria-label="My playlists">
+          <div className="fan-playlist-panel-head">
+            <div>
+              <strong>My playlists</strong>
+              <p className="meta">
+                Save tracks you love, reorder them, and reopen this panel whenever you want to keep building.
+              </p>
+            </div>
+            <button className="media-player-button" onClick={() => setOpen(false)} type="button">
+              Close
+            </button>
+          </div>
+
+          {message ? <div className="fan-playlist-message meta">{message}</div> : null}
+
           <form className="fan-playlist-create" onSubmit={handleCreatePlaylist}>
             <input
               onChange={(event) => setNewPlaylistName(event.target.value)}
