@@ -6252,11 +6252,68 @@ button, input, select, textarea { font: inherit; }
 }
 .fan-recommendations-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
 }
 .fan-recommendation-section.wide {
   grid-column: 1 / -1;
+}
+.fan-recommendation-section .discover-spotlight-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+.fan-recommendation-section .discover-spotlight-card {
+  padding: 0.45rem;
+}
+.fan-recommendation-section .profile-card.compact {
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border-radius: 24px;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-head {
+  gap: 0.45rem;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-hype {
+  padding: 0.28rem 0.55rem;
+  font-size: 0.72rem;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-identity {
+  gap: 0.65rem;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-avatar-shell {
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-copy h3 {
+  font-size: 1.02rem;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-detail,
+.fan-recommendation-section .profile-card.compact .profile-card-summary {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-detail {
+  -webkit-line-clamp: 1;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-summary {
+  -webkit-line-clamp: 2;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-tags {
+  gap: 0.35rem;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-tags .tag {
+  font-size: 0.68rem;
+  padding: 0.28rem 0.48rem;
+}
+.fan-recommendation-section .profile-card.compact .profile-card-actions .button,
+.fan-recommendation-section .profile-card.compact .profile-card-cta-row .button {
+  min-height: 2rem;
+  padding: 0.42rem 0.6rem;
+  font-size: 0.74rem;
 }
 .fan-recommendation-context {
   margin: 0.2rem 0 0;
@@ -7923,6 +7980,9 @@ body {
   .discover-explorer-main,
   .discover-explorer-browser .grid.grid-3,
   .discover-explorer-globe-shell > .earth-globe-panel .earth-globe-detail-stack {
+    grid-template-columns: 1fr;
+  }
+  .fan-recommendation-section .discover-spotlight-list {
     grid-template-columns: 1fr;
   }
   .discover-explorer-section {

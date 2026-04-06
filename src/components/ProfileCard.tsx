@@ -34,18 +34,19 @@ function getProfileLabel(type: ProfileCardProfile['type']) {
   return type;
 }
 
-function getProfileSummary(bio: string | null) {
+function getProfileSummary(bio: string | null, maxLength = 160) {
   if (!bio) return null;
-  return bio.length > 160 ? `${bio.slice(0, 157).trimEnd()}...` : bio;
+  return bio.length > maxLength ? `${bio.slice(0, Math.max(maxLength - 3, 0)).trimEnd()}...` : bio;
 }
 
-export function ProfileCard({ profile }: { profile: ProfileCardProfile }) {
+export function ProfileCard({ profile, compact = false }: { profile: ProfileCardProfile; compact?: boolean }) {
   const basePath = getProfileBasePath(profile.type);
   const avatarImage = getSafeImageUrl(profile.avatarImage);
-  const summary = getProfileSummary(profile.bio);
+  const summary = getProfileSummary(profile.bio, compact ? 96 : 160);
+  const visibleGenres = compact ? profile.genres.slice(0, 2) : profile.genres;
 
   return (
-    <article className={`card profile-card profile-card-${basePath}`}>
+    <article className={`card profile-card profile-card-${basePath}${compact ? ' compact' : ''}`}>
       <div className="profile-card-head">
         <div className="badge">{getProfileLabel(profile.type)}</div>
         <span className="profile-card-hype">{profile.hypeCount} hype</span>
@@ -74,14 +75,14 @@ export function ProfileCard({ profile }: { profile: ProfileCardProfile }) {
       <p className="meta profile-card-detail">{shortenHexId(profile.hexId)}</p>
       {summary ? <p className="profile-card-summary">{summary}</p> : null}
       <div className="tag-row profile-card-tags">
-        {profile.genres.map((genre) => <span key={genre} className="tag">{genre}</span>)}
+        {visibleGenres.map((genre) => <span key={genre} className="tag">{genre}</span>)}
       </div>
       <div className="profile-card-actions">
         <HypeButton entityLabel={getProfileLabel(profile.type).toLowerCase()} initialCount={profile.hypeCount} targetId={profile.id} targetType="profile" />
       </div>
       <div className="cta-row profile-card-cta-row">
         <Link className="button small secondary" href={`/${basePath}/${profile.slug}`}>View page</Link>
-        <Link className="button small secondary" href={`/profiles/${profile.hexId}`}>Share</Link>
+        {!compact ? <Link className="button small secondary" href={`/profiles/${profile.hexId}`}>Share</Link> : null}
       </div>
     </article>
   );

@@ -83,7 +83,7 @@ export function FanRecommendationsPanel({
                       <span className="badge">{profile.scopeLabel}</span>
                       <span className="meta">{profile.hypeCount} hype</span>
                     </div>
-                    <ProfileCard profile={profile} />
+                    <ProfileCard compact profile={profile} />
                   </article>
                 ))}
               </div>
@@ -103,7 +103,7 @@ export function FanRecommendationsPanel({
                       <span className="badge">{profile.scopeLabel}</span>
                       <span className="meta">New since {profile.createdAtLabel}</span>
                     </div>
-                    <ProfileCard profile={profile} />
+                    <ProfileCard compact profile={profile} />
                   </article>
                 ))}
               </div>
@@ -123,7 +123,7 @@ export function FanRecommendationsPanel({
                       <span className="badge">{profile.scopeLabel}</span>
                       <span className="meta">{profile.hypeCount} hype</span>
                     </div>
-                    <ProfileCard profile={profile} />
+                    <ProfileCard compact profile={profile} />
                   </article>
                 ))}
               </div>
@@ -143,7 +143,7 @@ export function FanRecommendationsPanel({
                       <span className="badge">{profile.scopeLabel}</span>
                       <span className="meta">{profile.hypeCount} hype</span>
                     </div>
-                    <ProfileCard profile={profile} />
+                    <ProfileCard compact profile={profile} />
                   </article>
                 ))}
               </div>
@@ -164,7 +164,7 @@ export function FanRecommendationsPanel({
                       <span className="badge">{profile.scopeLabel}</span>
                       <span className="meta">{profile.relatedShowCount} related bookings</span>
                     </div>
-                    <ProfileCard profile={profile} />
+                    <ProfileCard compact profile={profile} />
                     <p className="meta fan-recommendation-context">
                       Genres in rotation: {profile.matchedGenres.join(', ')}
                       {profile.matchedArtistNames.length ? ` | Artists booked: ${profile.matchedArtistNames.join(', ')}` : ''}
