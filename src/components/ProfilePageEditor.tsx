@@ -309,28 +309,6 @@ export function ProfilePageEditor({
 
       {isOpen ? (
         <form className="form" onSubmit={handleSubmit}>
-          {fields.map((field) => (
-            <label className="field" key={field.key}>
-              <span>{field.label}</span>
-              {field.kind === 'textarea' ? (
-                <textarea
-                  onChange={(event) => setFormValues((current) => ({ ...current, [field.key]: event.target.value }))}
-                  placeholder={field.placeholder}
-                  rows={field.rows ?? 6}
-                  value={formValues[field.key]}
-                />
-              ) : (
-                <input
-                  maxLength={field.key === 'headline' ? 140 : undefined}
-                  onChange={(event) => setFormValues((current) => ({ ...current, [field.key]: event.target.value }))}
-                  placeholder={field.placeholder}
-                  type={field.kind === 'url' ? 'url' : 'text'}
-                  value={formValues[field.key]}
-                />
-              )}
-            </label>
-          ))}
-
           {enableDesignCustomizer ? (
             <section className="profile-design-customizer">
               <div className="profile-design-customizer-header">
@@ -346,229 +324,288 @@ export function ProfilePageEditor({
                 </div>
               </div>
 
-              {quickSetupPresets.length ? (
-                <div className="profile-design-quickstart">
-                  <div className="profile-design-tone-header">
-                    <strong>Starter looks</strong>
-                    <span className="meta">Apply a polished page direction in one click, then fine-tune below.</span>
-                  </div>
-                  <div className="profile-design-quickstart-grid">
-                    {quickSetupPresets.map((preset) => (
-                      <button
-                        className="profile-design-quickstart-card"
-                        key={preset.id}
-                        onClick={() => applyQuickPreset(preset.id)}
-                        type="button"
-                      >
-                        <strong>{preset.label}</strong>
-                        <span>{preset.description}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="profile-design-preset-grid">
-                {profileDesignPresets.map((preset) => (
-                  <button
-                    className={
-                      preset.id === formValues.themePreset
-                        ? 'profile-design-preset-card active'
-                        : 'profile-design-preset-card'
-                    }
-                    key={preset.id}
-                    onClick={() => setFormValues((current) => ({ ...current, themePreset: preset.id }))}
-                    type="button"
-                  >
-                    <span>{preset.label}</span>
-                    <small>{preset.description}</small>
-                  </button>
-                ))}
-              </div>
-
-              <div className="profile-design-tone-grid">
-                <div className="profile-design-tone-group">
-                  <div className="profile-design-tone-header">
-                    <strong>Font mood</strong>
-                    <span className="meta">Push the page toward bubble-pop, poster, mono, or script energy.</span>
-                  </div>
-                  <div className="profile-design-tone-chip-row">
-                    {profileFontPresets.map((preset) => (
-                      <button
-                        className={
-                          preset.id === formValues.themeFontPreset
-                            ? 'profile-design-tone-chip active'
-                            : 'profile-design-tone-chip'
-                        }
-                        key={preset.id}
-                        onClick={() =>
-                          setFormValues((current) => ({
-                            ...current,
-                            themeFontPreset: preset.id
-                          }))
-                        }
-                        type="button"
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="profile-design-tone-group">
-                  <div className="profile-design-tone-header">
-                    <strong>Accent color</strong>
-                    <span className="meta">Controls the glow color for highlights, chips, and tabs.</span>
-                  </div>
-                  <div className="profile-design-tone-chip-row">
-                    {profileAccentTones.map((tone) => (
-                      <button
-                        className={
-                          tone.id === formValues.themeAccentTone
-                            ? 'profile-design-tone-chip active'
-                            : 'profile-design-tone-chip'
-                        }
-                        key={tone.id}
-                        onClick={() =>
-                          setFormValues((current) => ({
-                            ...current,
-                            themeAccentTone: tone.id
-                          }))
-                        }
-                        type="button"
-                      >
-                        {tone.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="profile-design-tone-group">
-                  <div className="profile-design-tone-header">
-                    <strong>Backdrop mood</strong>
-                    <span className="meta">Changes the page atmosphere behind the content panels.</span>
-                  </div>
-                  <div className="profile-design-tone-chip-row">
-                    {profileBackdropTones.map((tone) => (
-                      <button
-                        className={
-                          tone.id === formValues.themeBackdropTone
-                            ? 'profile-design-tone-chip active'
-                            : 'profile-design-tone-chip'
-                        }
-                        key={tone.id}
-                        onClick={() =>
-                          setFormValues((current) => ({
-                            ...current,
-                            themeBackdropTone: tone.id
-                          }))
-                        }
-                        type="button"
-                      >
-                        {tone.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {supportsHeroImage ? (
-                <div className="profile-design-asset-row">
-                  <label className="field profile-design-asset-upload">
-                    <span>Background graphic upload</span>
-                    <input accept="image/*" onChange={handleGraphicUpload} type="file" />
-                  </label>
-                  {formValues.heroImage ? (
-                    <div className="profile-design-asset-status">
-                      <strong>Graphic loaded</strong>
-                      <span className="meta">This page will use your uploaded background unless you replace it.</span>
-                    </div>
-                  ) : (
-                    <div className="profile-design-asset-status">
-                      <strong>No graphic loaded yet</strong>
-                      <span className="meta">You can upload a banner graphic or keep the cleaner preset-only look.</span>
-                    </div>
-                  )}
-                </div>
-              ) : null}
-
-              {allowFanShareToggle ? (
-                <label className="profile-design-share-toggle">
-                  <input
-                    checked={formValues.fanShareEnabled}
-                    onChange={(event) =>
-                      setFormValues((current) => ({ ...current, fanShareEnabled: event.target.checked }))
-                    }
-                    type="checkbox"
-                  />
-                  <div>
-                    <strong>Share this customized look with fans</strong>
-                    <p className="meta">When this is on, fans see the saved preset on your public artist page.</p>
-                  </div>
-                </label>
-              ) : null}
-
-              <div
-                className="profile-design-preview-shell profile-design-shell"
-                style={getProfileDesignStyleVars(formValues.themePreset, {
-                  accentTone: formValues.themeAccentTone,
-                  backdropTone: formValues.themeBackdropTone,
-                  fontPreset: formValues.themeFontPreset
-                })}
-              >
-                <div className="profile-design-preview-card">
-                  <div className="profile-design-preview-hero" style={previewBannerStyle}>
-                    <div className="profile-design-preview-topline">
-                      <span className="badge">{previewRoleLabel}</span>
-                      {allowFanShareToggle && formValues.fanShareEnabled ? (
-                        <span className="profile-design-share-pill">Shared with fans</span>
-                      ) : null}
-                    </div>
-                    <strong>{profileName}</strong>
-                    <p className="profile-design-preview-headline">
-                      {formValues.headline || 'Headline preview goes here.'}
-                    </p>
-                    <p className="profile-design-preview-copy">
-                      {formValues.bio || 'This short intro updates live while you shape the final page mood.'}
-                    </p>
-                    {previewGenres.length ? (
-                      <div className="tag-row">
-                        {previewGenres.slice(0, 3).map((genre) => (
-                          <span className="tag" key={genre}>
-                            {genre}
-                          </span>
+              <div className="profile-design-studio-shell">
+                <div className="profile-design-studio-column">
+                  {quickSetupPresets.length ? (
+                    <div className="profile-design-quickstart">
+                      <div className="profile-design-tone-header">
+                        <strong>Starter looks</strong>
+                        <span className="meta">Apply a polished page direction in one click.</span>
+                      </div>
+                      <div className="profile-design-quickstart-grid">
+                        {quickSetupPresets.map((preset) => (
+                          <button
+                            className="profile-design-quickstart-card"
+                            key={preset.id}
+                            onClick={() => applyQuickPreset(preset.id)}
+                            type="button"
+                          >
+                            <strong>{preset.label}</strong>
+                            <span>{preset.description}</span>
+                          </button>
                         ))}
                       </div>
-                    ) : null}
-                  </div>
-
-                  {previewTabs.length ? (
-                    <div className="profile-design-preview-tabs">
-                      {previewTabs.map((tab, index) => (
-                        <span
-                          className={index === 0 ? 'profile-design-preview-tab active' : 'profile-design-preview-tab'}
-                          key={tab}
-                        >
-                          {tab}
-                        </span>
-                      ))}
                     </div>
                   ) : null}
 
-                  <div className="profile-design-preview-body">
-                    <article className="profile-design-preview-panel">
-                      <span className="profile-design-preview-label">About</span>
-                      <p>{aboutPreview}</p>
-                    </article>
-                    <article className="profile-design-preview-panel">
-                      <span className="profile-design-preview-label">Featured</span>
-                      <p>{featurePreview}</p>
-                    </article>
+                  <div className="profile-design-tone-group">
+                    <div className="profile-design-tone-header">
+                      <strong>Preset library</strong>
+                      <span className="meta">Choose the page direction that feels closest, then refine it.</span>
+                    </div>
+                    <div className="profile-design-preset-grid">
+                      {profileDesignPresets.map((preset) => (
+                        <button
+                          className={
+                            preset.id === formValues.themePreset
+                              ? 'profile-design-preset-card active'
+                              : 'profile-design-preset-card'
+                          }
+                          key={preset.id}
+                          onClick={() => setFormValues((current) => ({ ...current, themePreset: preset.id }))}
+                          type="button"
+                        >
+                          <span>{preset.label}</span>
+                          <small>{preset.description}</small>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
+
+                <div className="profile-design-studio-preview-column">
+                  <div className="profile-design-preview-frame">
+                    <div
+                      className="profile-design-preview-shell profile-design-shell"
+                      style={getProfileDesignStyleVars(formValues.themePreset, {
+                        accentTone: formValues.themeAccentTone,
+                        backdropTone: formValues.themeBackdropTone,
+                        fontPreset: formValues.themeFontPreset
+                      })}
+                    >
+                      <div className="profile-design-preview-card">
+                        <div className="profile-design-preview-hero" style={previewBannerStyle}>
+                          <div className="profile-design-preview-topline">
+                            <span className="badge">{previewRoleLabel}</span>
+                            {allowFanShareToggle && formValues.fanShareEnabled ? (
+                              <span className="profile-design-share-pill">Shared with fans</span>
+                            ) : null}
+                          </div>
+                          <strong>{profileName}</strong>
+                          <p className="profile-design-preview-headline">
+                            {formValues.headline || 'Headline preview goes here.'}
+                          </p>
+                          <p className="profile-design-preview-copy">
+                            {formValues.bio || 'This short intro updates live while you shape the final page mood.'}
+                          </p>
+                          {previewGenres.length ? (
+                            <div className="tag-row">
+                              {previewGenres.slice(0, 3).map((genre) => (
+                                <span className="tag" key={genre}>
+                                  {genre}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        {previewTabs.length ? (
+                          <div className="profile-design-preview-tabs">
+                            {previewTabs.map((tab, index) => (
+                              <span
+                                className={index === 0 ? 'profile-design-preview-tab active' : 'profile-design-preview-tab'}
+                                key={tab}
+                              >
+                                {tab}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        <div className="profile-design-preview-body">
+                          <article className="profile-design-preview-panel">
+                            <span className="profile-design-preview-label">About</span>
+                            <p>{aboutPreview}</p>
+                          </article>
+                          <article className="profile-design-preview-panel">
+                            <span className="profile-design-preview-label">Featured</span>
+                            <p>{featurePreview}</p>
+                          </article>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="profile-design-studio-column">
+                  <div className="profile-design-tone-grid profile-design-tone-grid-compact">
+                    <div className="profile-design-tone-group">
+                      <div className="profile-design-tone-header">
+                        <strong>Font mood</strong>
+                        <span className="meta">Set the page voice quickly.</span>
+                      </div>
+                      <div className="profile-design-tone-chip-row">
+                        {profileFontPresets.map((preset) => (
+                          <button
+                            className={
+                              preset.id === formValues.themeFontPreset
+                                ? 'profile-design-tone-chip active'
+                                : 'profile-design-tone-chip'
+                            }
+                            key={preset.id}
+                            onClick={() =>
+                              setFormValues((current) => ({
+                                ...current,
+                                themeFontPreset: preset.id
+                              }))
+                            }
+                            type="button"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="profile-design-tone-group">
+                      <div className="profile-design-tone-header">
+                        <strong>Accent color</strong>
+                        <span className="meta">Controls highlights and active UI.</span>
+                      </div>
+                      <div className="profile-design-tone-chip-row">
+                        {profileAccentTones.map((tone) => (
+                          <button
+                            className={
+                              tone.id === formValues.themeAccentTone
+                                ? 'profile-design-tone-chip active'
+                                : 'profile-design-tone-chip'
+                            }
+                            key={tone.id}
+                            onClick={() =>
+                              setFormValues((current) => ({
+                                ...current,
+                                themeAccentTone: tone.id
+                              }))
+                            }
+                            type="button"
+                          >
+                            {tone.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="profile-design-tone-group">
+                      <div className="profile-design-tone-header">
+                        <strong>Backdrop mood</strong>
+                        <span className="meta">Changes the page atmosphere.</span>
+                      </div>
+                      <div className="profile-design-tone-chip-row">
+                        {profileBackdropTones.map((tone) => (
+                          <button
+                            className={
+                              tone.id === formValues.themeBackdropTone
+                                ? 'profile-design-tone-chip active'
+                                : 'profile-design-tone-chip'
+                            }
+                            key={tone.id}
+                            onClick={() =>
+                              setFormValues((current) => ({
+                                ...current,
+                                themeBackdropTone: tone.id
+                              }))
+                            }
+                            type="button"
+                          >
+                            {tone.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {supportsHeroImage ? (
+                    <div className="profile-design-asset-row profile-design-asset-row-compact">
+                      <label className="field profile-design-asset-upload">
+                        <span>Background graphic upload</span>
+                        <input accept="image/*" onChange={handleGraphicUpload} type="file" />
+                      </label>
+                      <div className="profile-design-asset-status">
+                        <strong>{formValues.heroImage ? 'Graphic loaded' : 'No graphic loaded yet'}</strong>
+                        <span className="meta">
+                          {formValues.heroImage
+                            ? 'Your uploaded graphic is active in the preview.'
+                            : 'Keep the cleaner preset-only look or add one custom graphic.'}
+                        </span>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {allowFanShareToggle ? (
+                    <label className="profile-design-share-toggle">
+                      <input
+                        checked={formValues.fanShareEnabled}
+                        onChange={(event) =>
+                          setFormValues((current) => ({ ...current, fanShareEnabled: event.target.checked }))
+                        }
+                        type="checkbox"
+                      />
+                      <div>
+                        <strong>Share this customized look with fans</strong>
+                        <p className="meta">When this is on, fans see the saved preset on your public artist page.</p>
+                      </div>
+                    </label>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="profile-design-field-grid">
+                {fields.map((field) => (
+                  <label className="field" key={field.key}>
+                    <span>{field.label}</span>
+                    {field.kind === 'textarea' ? (
+                      <textarea
+                        onChange={(event) => setFormValues((current) => ({ ...current, [field.key]: event.target.value }))}
+                        placeholder={field.placeholder}
+                        rows={field.rows ?? 6}
+                        value={formValues[field.key]}
+                      />
+                    ) : (
+                      <input
+                        maxLength={field.key === 'headline' ? 140 : undefined}
+                        onChange={(event) => setFormValues((current) => ({ ...current, [field.key]: event.target.value }))}
+                        placeholder={field.placeholder}
+                        type={field.kind === 'url' ? 'url' : 'text'}
+                        value={formValues[field.key]}
+                      />
+                    )}
+                  </label>
+                ))}
               </div>
             </section>
-          ) : null}
+          ) : (
+            fields.map((field) => (
+              <label className="field" key={field.key}>
+                <span>{field.label}</span>
+                {field.kind === 'textarea' ? (
+                  <textarea
+                    onChange={(event) => setFormValues((current) => ({ ...current, [field.key]: event.target.value }))}
+                    placeholder={field.placeholder}
+                    rows={field.rows ?? 6}
+                    value={formValues[field.key]}
+                  />
+                ) : (
+                  <input
+                    maxLength={field.key === 'headline' ? 140 : undefined}
+                    onChange={(event) => setFormValues((current) => ({ ...current, [field.key]: event.target.value }))}
+                    placeholder={field.placeholder}
+                    type={field.kind === 'url' ? 'url' : 'text'}
+                    value={formValues[field.key]}
+                  />
+                )}
+              </label>
+            ))
+          )}
 
           <div className="cta-row">
             <button className="button" disabled={pending} type="submit">

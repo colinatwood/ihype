@@ -8124,3 +8124,139 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* 2026 condensed page studio */
+.profile-design-customizer {
+  gap: 1.1rem;
+  padding: 1.15rem;
+}
+
+.profile-design-studio-shell {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(300px, 1fr) minmax(220px, 0.9fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.profile-design-studio-column {
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+}
+
+.profile-design-studio-preview-column {
+  display: grid;
+  justify-items: center;
+}
+
+.profile-design-preview-frame {
+  width: min(100%, 360px);
+  padding: 0.85rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.02));
+}
+
+.profile-design-preview-shell {
+  padding: 0.75rem;
+}
+
+.profile-design-preview-card {
+  gap: 0.7rem;
+}
+
+.profile-design-preview-hero {
+  gap: 0.5rem;
+  padding: 0.9rem;
+}
+
+.profile-design-preview-hero strong {
+  font-size: 1.12rem;
+}
+
+.profile-design-preview-headline,
+.profile-design-preview-copy,
+.profile-design-preview-panel p {
+  font-size: 0.83rem;
+  line-height: 1.5;
+}
+
+.profile-design-preview-tabs {
+  gap: 0.4rem;
+}
+
+.profile-design-preview-tab {
+  padding: 0.36rem 0.68rem;
+  font-size: 0.74rem;
+}
+
+.profile-design-preview-body {
+  grid-template-columns: 1fr;
+  gap: 0.55rem;
+}
+
+.profile-design-preview-panel {
+  padding: 0.75rem;
+}
+
+.profile-design-quickstart-grid,
+.profile-design-preset-grid,
+.profile-design-tone-grid-compact {
+  grid-template-columns: 1fr;
+}
+
+.profile-design-tone-grid-compact {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.profile-design-tone-group {
+  padding: 0.85rem;
+}
+
+.profile-design-tone-chip-row {
+  gap: 0.45rem;
+}
+
+.profile-design-tone-chip {
+  padding: 0.42rem 0.68rem;
+  font-size: 0.73rem;
+}
+
+.profile-design-asset-row-compact {
+  grid-template-columns: 1fr;
+}
+
+.profile-design-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.profile-design-field-grid .field:has(textarea) {
+  grid-column: span 2;
+}
+
+@media (max-width: 1100px) {
+  .profile-design-studio-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-design-studio-preview-column {
+    order: -1;
+  }
+
+  .profile-design-preview-frame {
+    width: min(100%, 420px);
+  }
+}
+
+@media (max-width: 720px) {
+  .profile-design-field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-design-field-grid .field:has(textarea) {
+    grid-column: auto;
+  }
+}
