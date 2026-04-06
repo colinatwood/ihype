@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { ProfileType } from '@prisma/client';
 import { redirect } from 'next/navigation';
 import { ArtistPageBuilder } from '@/components/ArtistPageBuilder';
-import { ListenerAvatarCreator } from '@/components/ListenerAvatarCreator';
 import { OwnershipVerificationPanel } from '@/components/OwnershipVerificationPanel';
 import { PromoterPageBuilder } from '@/components/PromoterPageBuilder';
 import { ProfilePageEditor, type ProfilePageEditorField } from '@/components/ProfilePageEditor';
@@ -95,19 +94,6 @@ function getProfileFocusAreas(type: ProfileType) {
   }
 
   return ['headline banner', 'venue mood', 'hours', 'local guidance', 'show sections'];
-}
-
-function buildFanAvatarPrompt(profile: DashboardProfile) {
-  return [
-    `Cartoon avatar for ${profile.name}.`,
-    profile.genres.length ? `Inspired by ${profile.genres.join(', ')}.` : '',
-    [profile.city, profile.country].filter(Boolean).join(', ')
-      ? `Set the mood around ${[profile.city, profile.country].filter(Boolean).join(', ')}.`
-      : '',
-    'Expressive, music-obsessed, colorful, friendly, and family-friendly.'
-  ]
-    .filter(Boolean)
-    .join(' ');
 }
 
 function getProfileEditorConfig(profile: DashboardProfile) {
@@ -319,7 +305,7 @@ function createEmptyVenueShowCollectionsMap(profiles: DashboardProfile[]) {
   );
 }
 
-type FanDashboardEditState = 'menu' | 'character-lab' | 'my-scheme' | 'top-5' | 'event-history';
+type FanDashboardEditState = 'menu' | 'my-scheme' | 'top-5' | 'event-history';
 type ArtistDashboardSetupState = 'artist-quickstart';
 
 function getFanDashboardEditState(value?: string | string[]): FanDashboardEditState | null {
@@ -327,7 +313,6 @@ function getFanDashboardEditState(value?: string | string[]): FanDashboardEditSt
 
   if (
     value === 'menu' ||
-    value === 'character-lab' ||
     value === 'my-scheme' ||
     value === 'top-5' ||
     value === 'event-history'
@@ -630,12 +615,6 @@ export default async function DashboardPage({
                     {fanDashboardEditState ? (
                       <div className="dashboard-editor-tool-pills">
                         <Link
-                          className={fanDashboardEditState === 'character-lab' ? 'dashboard-editor-tool-pill active' : 'dashboard-editor-tool-pill'}
-                          href={fanEditHref('character-lab')}
-                        >
-                          Character Lab
-                        </Link>
-                        <Link
                           className={fanDashboardEditState === 'my-scheme' ? 'dashboard-editor-tool-pill active' : 'dashboard-editor-tool-pill'}
                           href={fanEditHref('my-scheme')}
                         >
@@ -653,21 +632,6 @@ export default async function DashboardPage({
                         >
                           Event History
                         </Link>
-                      </div>
-                    ) : null}
-
-                    {fanDashboardEditState === 'character-lab' ? (
-                      <div className="dashboard-editor-fan-panel">
-                        <ListenerAvatarCreator
-                          defaultOpen
-                          defaultPrompt={buildFanAvatarPrompt(profile)}
-                          hideToggle
-                          initialAvatarImage={profile.avatarImage}
-                          initialSpriteSheet={profile.companionSpriteSheet}
-                          profileHexId={profile.hexId}
-                          profileId={profile.id}
-                          profileName={profile.name}
-                        />
                       </div>
                     ) : null}
 

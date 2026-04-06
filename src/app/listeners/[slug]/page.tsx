@@ -5,7 +5,6 @@ import { db } from '@/lib/db';
 import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
-import { FanPageCompanion } from '@/components/FanPageCompanion';
 import { FanRecommendationsPanel } from '@/components/FanRecommendationsPanel';
 import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
@@ -268,15 +267,8 @@ export default async function ListenerPage({
     }));
 
   return (
-    <main className="container section profile-design-shell fan-page-shell" data-fan-companion-root style={pageDesignStyle}>
-      <FanPageCompanion
-        avatarImage={avatarImage}
-        fanName={profile.name}
-        initials={getInitials(profile.name)}
-        spriteSheetImage={getSafeImageUrl(profile.companionSpriteSheet)}
-      />
-
-      <header className="artist-banner panel" data-fan-companion-label="profile pulse" style={bannerStyle}>
+    <main className="container section profile-design-shell fan-page-shell" style={pageDesignStyle}>
+      <header className="artist-banner panel" style={bannerStyle}>
         <div className="profile-banner-row">
           {avatarImage ? (
             <img alt={`${profile.name} avatar`} className="profile-avatar profile-avatar-hero" src={avatarImage} />
@@ -304,8 +296,8 @@ export default async function ListenerPage({
         </div>
       </header>
 
-      <section className="section" data-fan-companion-label={`${getSectionLabel(activeSection)} section`}>
-        <nav className="section-tabs" aria-label="Fan page sections" data-fan-companion-label="fan section tabs">
+      <section className="section">
+        <nav className="section-tabs" aria-label="Fan page sections">
           {listenerSections.map((section) => (
             <Link
               key={section}
@@ -317,7 +309,7 @@ export default async function ListenerPage({
           ))}
         </nav>
 
-        <div className="panel artist-section-panel" data-fan-companion-label={`${getSectionLabel(activeSection)} highlights`}>
+        <div className="panel artist-section-panel">
           {activeSection === 'about' ? (
             <>
               <h2>About</h2>

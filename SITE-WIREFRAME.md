@@ -180,7 +180,7 @@ flowchart TD
 | profile banner / current page identity / quick actions                           |
 +----------------------------------------------------------------------------------+
 | role-specific editor module only                                                 |
-| fan: Character Lab | My Scheme | Top 5 | Event History                           |
+| fan: My Scheme | Top 5 | Event History                                           |
 | artist: quick start builder or full artist page builder                          |
 | promoter: promoter page builder                                                  |
 | venue: venue page builder                                                        |
@@ -254,7 +254,6 @@ flowchart TD
 /api/register
 /api/profile-pages/[id]
 /api/artist-media
-/api/listener-avatar
 /api/fan-playlists
 /api/fan-favorites
 /api/shows
