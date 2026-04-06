@@ -4,6 +4,7 @@ import { useMemo, useState, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import {
+  getProfileSetupPresets,
   getProfileDesignStyleVars,
   normalizeProfileAccentTone,
   normalizeProfileBackdropTone,
@@ -111,6 +112,7 @@ export function VenuePageBuilder({
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [submitIntent, setSubmitIntent] = useState<'save' | 'launch'>('save');
+  const quickSetupPresets = getProfileSetupPresets('venue');
   const [formValues, setFormValues] = useState<VenueBuilderValues>({
     ...initialValues,
     themePreset: normalizeProfileDesignPreset(initialValues.themePreset),
@@ -149,6 +151,23 @@ export function VenuePageBuilder({
     formValues.upcomingContent || formValues.previousShowHighlights,
     'Frame the calendar and tell visitors what kind of energy lives in the room on upcoming nights.'
   );
+
+  function applyQuickPreset(presetId: string) {
+    const preset = quickSetupPresets.find((entry) => entry.id === presetId);
+    if (!preset) return;
+
+    setFormValues((current) => ({
+      ...current,
+      themePreset: preset.themePreset,
+      themeFontPreset: preset.themeFontPreset,
+      themeAccentTone: preset.themeAccentTone,
+      themeBackdropTone: preset.themeBackdropTone,
+      headline: current.headline || preset.starterHeadline || current.headline,
+      bio: current.bio || preset.starterBio || current.bio,
+      aboutContent: current.aboutContent || preset.starterAbout || current.aboutContent
+    }));
+    setMessage(`${preset.label} applied to the preview.`);
+  }
 
   async function handleAssetSelection(
     event: ChangeEvent<HTMLInputElement>,
@@ -276,6 +295,25 @@ export function VenuePageBuilder({
       {isOpen ? (
         <form className="artist-page-builder-layout" onSubmit={handleSubmit}>
           <div className="artist-page-builder-fields">
+            <div className="artist-page-builder-section">
+              <div className="artist-page-builder-section-head">
+                <h3>Choose a starter look</h3>
+              </div>
+              <div className="artist-builder-preset-grid">
+                {quickSetupPresets.map((preset) => (
+                  <button
+                    className="artist-builder-preset-card"
+                    key={preset.id}
+                    onClick={() => applyQuickPreset(preset.id)}
+                    type="button"
+                  >
+                    <strong>{preset.label}</strong>
+                    <span>{preset.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="artist-page-builder-section">
               <div className="artist-page-builder-section-head">
                 <h3>Visuals</h3>

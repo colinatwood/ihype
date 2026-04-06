@@ -692,6 +692,7 @@ export default async function DashboardPage({
                           previewTabs={['About', 'Top 5']}
                           profileId={profile.id}
                           profileName={profile.name}
+                          quickPresetRole="fan"
                           startOpen
                           title="My Scheme"
                         />
@@ -846,6 +847,15 @@ export default async function DashboardPage({
                         previewTabs={editorConfig.previewTabs}
                         profileId={profile.id}
                         profileName={profile.name}
+                        quickPresetRole={
+                          profile.type === 'LISTENER'
+                            ? 'fan'
+                            : profile.type === 'ARTIST'
+                              ? 'artist'
+                              : profile.type === 'DJ'
+                                ? 'promoter'
+                                : 'venue'
+                        }
                         title={editorConfig.title}
                       />
                     ) : null}

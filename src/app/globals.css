@@ -7938,7 +7938,189 @@ body {
     padding-top: 0.45rem;
     padding-bottom: 0.55rem;
   }
-  .admin-perspective-shell + .nav + .site-subnav-shell {
-    top: 134px;
+.admin-perspective-shell + .nav + .site-subnav-shell {
+  top: 134px;
+}
+}
+
+/* 2026 fast preset setup + cleaner surfaces */
+:root {
+  --clean-surface-radius: 18px;
+  --clean-surface-radius-lg: 22px;
+  --clean-chip-radius: 12px;
+  --clean-input-radius: 14px;
+}
+
+.profile-design-quickstart {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.profile-design-quickstart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.profile-design-quickstart-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  text-align: left;
+  border-radius: var(--clean-surface-radius);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025));
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.profile-design-quickstart-card:hover,
+.profile-design-quickstart-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(113,217,255,0.22);
+  background: linear-gradient(180deg, rgba(113,217,255,0.08), rgba(255,255,255,0.03));
+}
+
+.profile-design-quickstart-card strong {
+  font-size: 0.95rem;
+}
+
+.profile-design-quickstart-card span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.profile-design-asset-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr);
+  gap: 0.85rem;
+  align-items: stretch;
+}
+
+.profile-design-asset-upload input[type='file'] {
+  padding: 0.85rem;
+}
+
+.profile-design-asset-status {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0.95rem 1rem;
+  border-radius: var(--clean-surface-radius);
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.profile-design-preview-hero {
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-card,
+.panel,
+.card,
+.header-player,
+.fan-playlist-panel,
+.profile-design-customizer,
+.profile-design-preview-card,
+.artist-page-builder-section,
+.artist-page-builder-preview-hero,
+.artist-page-builder-preview-panel,
+.profile-card,
+.directory-hero,
+.dashboard-editor-hero,
+.dashboard-editor-card-summary,
+.dashboard-editor-card-summary-fan,
+.dashboard-editor-fan-panel,
+.discover-banner,
+.discover-module,
+.discover-topfive-shell,
+.discover-ticket-shell,
+.video-shell {
+  border-radius: var(--clean-surface-radius-lg);
+}
+
+.button,
+.badge,
+.tag,
+.status-chip,
+.site-subnav-link,
+.directory-switcher-link,
+.nav-links-primary,
+.profile-design-tone-pill,
+.profile-design-tone-chip,
+.profile-design-preview-tab,
+.fan-playlist-toggle,
+.dashboard-editor-chip,
+.dashboard-editor-switcher-link,
+.discover-role-pill,
+.profile-card-pill,
+.hype-badge,
+.admin-perspective-select select {
+  border-radius: var(--clean-chip-radius);
+}
+
+.field input,
+.field select,
+.field textarea,
+.fan-playlist-create input,
+.fan-playlist-current,
+.fan-playlist-tab,
+.fan-playlist-item,
+.profile-design-preset-card,
+.artist-builder-preset-card,
+.discover-banner-link,
+.discover-recommendation-item {
+  border-radius: var(--clean-input-radius);
+}
+
+.hero-card,
+.panel,
+.card {
+  background: linear-gradient(180deg, rgba(15, 20, 32, 0.9), rgba(10, 14, 23, 0.94));
+  border-color: rgba(255,255,255,0.07);
+}
+
+.profile-design-customizer,
+.artist-page-builder-section,
+.artist-page-builder-preview-hero,
+.artist-page-builder-preview-panel,
+.fan-playlist-panel {
+  background: linear-gradient(180deg, rgba(17, 22, 34, 0.96), rgba(10, 14, 23, 0.98));
+}
+
+.nav-links-primary,
+.site-subnav-link,
+.directory-switcher-link,
+.button.secondary,
+.profile-design-tone-chip,
+.profile-design-tone-pill,
+.profile-design-preview-tab,
+.tag,
+.badge {
+  box-shadow: none;
+}
+
+.nav-links-primary,
+.site-subnav-link,
+.directory-switcher-link {
+  background: rgba(255,255,255,0.035);
+}
+
+.button {
+  letter-spacing: 0.01em;
+}
+
+.discover-banner,
+.directory-hero,
+.dashboard-editor-hero,
+.hero-card {
+  background: linear-gradient(180deg, rgba(17, 23, 34, 0.94), rgba(10, 15, 24, 0.96));
+}
+
+@media (max-width: 820px) {
+  .profile-design-quickstart-grid,
+  .profile-design-asset-row {
+    grid-template-columns: 1fr;
   }
 }

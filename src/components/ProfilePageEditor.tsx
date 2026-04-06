@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getSafeBackgroundImageStyle } from '@/lib/asset-safety';
 import {
   getProfileAccentTone,
   getProfileBackdropTone,
   getProfileDesignPreset,
+  getProfileSetupPresets,
   getProfileFontPreset,
   getProfileDesignStyleVars,
   normalizeProfileAccentTone,
@@ -19,7 +21,8 @@ import {
   type ProfileAccentTone,
   type ProfileBackdropTone,
   type ProfileDesignPreset,
-  type ProfileFontPreset
+  type ProfileFontPreset,
+  type ProfileSetupRole
 } from '@/lib/profile-design';
 
 export type EditableFieldKey =
@@ -85,6 +88,7 @@ type ProfilePageEditorProps = {
   previewRoleLabel?: string;
   startOpen?: boolean;
   hideToggle?: boolean;
+  quickPresetRole?: ProfileSetupRole;
 };
 
 const defaultFormValues: Record<EditableFieldKey, string> = {
@@ -119,6 +123,15 @@ function getPreviewSnippet(value: string, fallback: string) {
   return trimmed.length > 180 ? `${trimmed.slice(0, 177).trimEnd()}...` : trimmed;
 }
 
+async function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ''));
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function ProfilePageEditor({
   profileId,
   profileName,
@@ -132,7 +145,8 @@ export function ProfilePageEditor({
   previewGenres = [],
   previewRoleLabel = 'PROFILE',
   startOpen = false,
-  hideToggle = false
+  hideToggle = false,
+  quickPresetRole
 }: ProfilePageEditorProps) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(startOpen);
@@ -147,10 +161,16 @@ export function ProfilePageEditor({
   });
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const quickSetupPresets = useMemo(
+    () => (quickPresetRole ? getProfileSetupPresets(quickPresetRole) : []),
+    [quickPresetRole]
+  );
+  const supportsHeroImage = fields.some((field) => field.key === 'heroImage');
   const selectedPreset = getProfileDesignPreset(formValues.themePreset);
   const selectedFontPreset = getProfileFontPreset(formValues.themeFontPreset);
   const selectedAccentTone = getProfileAccentTone(formValues.themeAccentTone);
   const selectedBackdropTone = getProfileBackdropTone(formValues.themeBackdropTone);
+  const previewBannerStyle = getSafeBackgroundImageStyle(formValues.heroImage);
   const aboutPreview = getPreviewSnippet(
     formValues.aboutContent || formValues.bio,
     'Your page preview updates live as you switch presets and edit the copy.'
@@ -161,9 +181,56 @@ export function ProfilePageEditor({
       formValues.topFiveContent ||
       formValues.tourContent ||
       formValues.merchContent ||
-      formValues.recommendContent,
+      formValues.recommendContent ||
+      formValues.requestContent ||
+      formValues.upcomingContent ||
+      formValues.previousShowHighlights,
     'Use the preset picker to try a few different moods before you save.'
   );
+
+  function applyQuickPreset(presetId: string) {
+    const preset = quickSetupPresets.find((entry) => entry.id === presetId);
+    if (!preset) return;
+
+    setFormValues((current) => ({
+      ...current,
+      themePreset: preset.themePreset,
+      themeFontPreset: preset.themeFontPreset,
+      themeAccentTone: preset.themeAccentTone,
+      themeBackdropTone: preset.themeBackdropTone,
+      headline: current.headline || preset.starterHeadline || current.headline,
+      bio: current.bio || preset.starterBio || current.bio,
+      aboutContent: current.aboutContent || preset.starterAbout || current.aboutContent
+    }));
+    setMessage(`${preset.label} applied to the page preview.`);
+  }
+
+  async function handleGraphicUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setMessage('Choose an image file for the page background.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      setMessage('Background uploads are capped at 4MB.');
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setFormValues((current) => ({ ...current, heroImage: dataUrl }));
+      setMessage(`${file.name} loaded into the preview.`);
+    } catch {
+      setMessage(`Could not load ${file.name}.`);
+    } finally {
+      event.target.value = '';
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -279,6 +346,28 @@ export function ProfilePageEditor({
                 </div>
               </div>
 
+              {quickSetupPresets.length ? (
+                <div className="profile-design-quickstart">
+                  <div className="profile-design-tone-header">
+                    <strong>Starter looks</strong>
+                    <span className="meta">Apply a polished page direction in one click, then fine-tune below.</span>
+                  </div>
+                  <div className="profile-design-quickstart-grid">
+                    {quickSetupPresets.map((preset) => (
+                      <button
+                        className="profile-design-quickstart-card"
+                        key={preset.id}
+                        onClick={() => applyQuickPreset(preset.id)}
+                        type="button"
+                      >
+                        <strong>{preset.label}</strong>
+                        <span>{preset.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="profile-design-preset-grid">
                 {profileDesignPresets.map((preset) => (
                   <button
@@ -383,6 +472,26 @@ export function ProfilePageEditor({
                 </div>
               </div>
 
+              {supportsHeroImage ? (
+                <div className="profile-design-asset-row">
+                  <label className="field profile-design-asset-upload">
+                    <span>Background graphic upload</span>
+                    <input accept="image/*" onChange={handleGraphicUpload} type="file" />
+                  </label>
+                  {formValues.heroImage ? (
+                    <div className="profile-design-asset-status">
+                      <strong>Graphic loaded</strong>
+                      <span className="meta">This page will use your uploaded background unless you replace it.</span>
+                    </div>
+                  ) : (
+                    <div className="profile-design-asset-status">
+                      <strong>No graphic loaded yet</strong>
+                      <span className="meta">You can upload a banner graphic or keep the cleaner preset-only look.</span>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+
               {allowFanShareToggle ? (
                 <label className="profile-design-share-toggle">
                   <input
@@ -408,7 +517,7 @@ export function ProfilePageEditor({
                 })}
               >
                 <div className="profile-design-preview-card">
-                  <div className="profile-design-preview-hero">
+                  <div className="profile-design-preview-hero" style={previewBannerStyle}>
                     <div className="profile-design-preview-topline">
                       <span className="badge">{previewRoleLabel}</span>
                       {allowFanShareToggle && formValues.fanShareEnabled ? (
