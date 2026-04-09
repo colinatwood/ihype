@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { FanRecommendationsPanel } from '@/components/FanRecommendationsPanel';
@@ -13,7 +12,7 @@ import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation, type RequestLocation } from '@/lib/request-location';
 import { calculateFanLevel } from '@/lib/fan-level';
 
-const listenerSections = ['about', 'recommend', 'upcoming', 'previous', 'top5', 'stats'] as const;
+const listenerSections = ['about', 'recommend'] as const;
 
 type ListenerSection = (typeof listenerSections)[number];
 type LocationMatchShape = {
@@ -32,7 +31,6 @@ function getActiveSection(section: string | string[] | undefined): ListenerSecti
 }
 
 function getSectionLabel(section: ListenerSection) {
-  if (section === 'top5') return 'Top 5';
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
@@ -51,6 +49,18 @@ function formatShowDate(value: Date) {
     day: 'numeric',
     year: 'numeric'
   }).format(value);
+}
+
+function getTopFiveItems(content: string | null) {
+  if (!content) {
+    return [];
+  }
+
+  return content
+    .split(/\r?\n|,/)
+    .map((entry) => entry.replace(/^\s*[-*\d.]+\s*/, '').trim())
+    .filter(Boolean)
+    .slice(0, 5);
 }
 
 function getLocationSignalScore(
@@ -383,6 +393,9 @@ export default async function ListenerPage({
   const hypePoints = hypedShows.length + profileHypes.length;
   const pastEventCount = previousShows.length;
   const upcomingEventCount = upcomingShows.length;
+  const topFiveItems = getTopFiveItems(profile.topFiveContent);
+  const compactUpcomingShows = upcomingShows.slice(0, 3);
+  const compactPreviousShows = previousShows.slice(0, 3);
   const globeRouteStops = previousShows
     .filter(
       (show) =>
@@ -408,7 +421,7 @@ export default async function ListenerPage({
 
   return (
     <main className="container section profile-design-shell fan-page-shell" style={pageDesignStyle}>
-      <header className="artist-banner panel" style={bannerStyle}>
+      <header className="artist-banner panel fan-page-banner" style={bannerStyle}>
         <div className="profile-banner-row">
           {avatarImage ? (
             <img alt={`${profile.name} avatar`} className="profile-avatar profile-avatar-hero" src={avatarImage} />
@@ -417,7 +430,7 @@ export default async function ListenerPage({
           )}
           <div className="artist-banner-copy">
             <div className="badge">FAN</div>
-            <h1 className="title" style={{ fontSize: '2.9rem' }}>{profile.name}</h1>
+            <h1 className="title fan-page-title">{profile.name}</h1>
             <p className="artist-headline">{profile.headline || 'Capture the shows, artists, and moments you keep coming back to.'}</p>
             <p className="subtitle">{profile.bio}</p>
             <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
@@ -452,8 +465,88 @@ export default async function ListenerPage({
         <div className="panel artist-section-panel">
           {activeSection === 'about' ? (
             <>
-              <h2>About</h2>
-              <div className="artist-copy">{profile.aboutContent || profile.bio || 'This fan has not filled out the About section yet.'}</div>
+              <div className="fan-page-about-grid">
+                <section className="fan-page-about-card fan-page-about-copy-card">
+                  <div className="fan-page-section-head">
+                    <h2>About</h2>
+                    <span className="meta">A compact view of this fan profile.</span>
+                  </div>
+                  <div className="artist-copy fan-page-about-copy">
+                    {profile.aboutContent || profile.bio || 'This fan has not filled out the About section yet.'}
+                  </div>
+                </section>
+
+                <section className="fan-page-about-card fan-page-about-stats-card">
+                  <div className="fan-page-section-head">
+                    <h3>Stats</h3>
+                    <span className="meta">Live totals</span>
+                  </div>
+                  <div className="fan-page-stat-grid">
+                    <div className="fan-page-stat-pill"><span>Fan level</span><strong>{fanLevel}</strong></div>
+                    <div className="fan-page-stat-pill"><span>Hype points</span><strong>{hypePoints}</strong></div>
+                    <div className="fan-page-stat-pill"><span>Songs</span><strong>{fullSongListenCount}</strong></div>
+                    <div className="fan-page-stat-pill"><span>Shows</span><strong>{fullShowListenCount}</strong></div>
+                    <div className="fan-page-stat-pill"><span>Past events</span><strong>{pastEventCount}</strong></div>
+                    <div className="fan-page-stat-pill"><span>Upcoming</span><strong>{upcomingEventCount}</strong></div>
+                  </div>
+                </section>
+
+                <section className="fan-page-about-card fan-page-about-topfive-card">
+                  <div className="fan-page-section-head">
+                    <h3>Top 5</h3>
+                    <span className="meta">Current favorites</span>
+                  </div>
+                  {topFiveItems.length ? (
+                    <ol className="fan-page-topfive-list">
+                      {topFiveItems.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <div className="empty fan-page-empty-compact">No top 5 list yet.</div>
+                  )}
+                </section>
+
+                <section className="fan-page-about-card fan-page-about-events-card">
+                  <div className="fan-page-section-head">
+                    <h3>Events</h3>
+                    <span className="meta">Next and recent shows</span>
+                  </div>
+                  <div className="fan-page-event-columns">
+                    <div className="fan-page-event-column">
+                      <strong>Upcoming</strong>
+                      {compactUpcomingShows.length ? (
+                        <div className="fan-page-event-list">
+                          {compactUpcomingShows.map((show) => (
+                            <Link className="fan-page-event-row" href={`/shows/${show.slug}`} key={show.id}>
+                              <span>{show.title}</span>
+                              <small>{formatShowDate(show.startsAt)}</small>
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty fan-page-empty-compact">No upcoming saved shows yet.</div>
+                      )}
+                    </div>
+
+                    <div className="fan-page-event-column">
+                      <strong>Previous</strong>
+                      {compactPreviousShows.length ? (
+                        <div className="fan-page-event-list">
+                          {compactPreviousShows.map((show) => (
+                            <Link className="fan-page-event-row" href={`/shows/${show.slug}`} key={show.id}>
+                              <span>{show.title}</span>
+                              <small>{formatShowDate(show.startsAt)}</small>
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="empty fan-page-empty-compact">No previous saved shows yet.</div>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              </div>
             </>
           ) : null}
 
@@ -476,45 +569,6 @@ export default async function ListenerPage({
                 trendingArtists={trendingArtists}
                 zipLabel={viewerLocation?.postalCode ?? viewerLocation?.city ?? viewerLocation?.stateRegion ?? null}
               />
-            </>
-          ) : null}
-
-          {activeSection === 'upcoming' ? (
-            <>
-              <h2>Upcoming</h2>
-              <div className="grid grid-2">
-                {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming saved shows yet.</div>}
-              </div>
-            </>
-          ) : null}
-
-          {activeSection === 'previous' ? (
-            <>
-              <h2>Previous</h2>
-              <div className="grid grid-2">
-                {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous saved shows yet.</div>}
-              </div>
-            </>
-          ) : null}
-
-          {activeSection === 'top5' ? (
-            <>
-              <h2>Top 5</h2>
-              <div className="artist-copy">{profile.topFiveContent || 'No top 5 list yet.'}</div>
-            </>
-          ) : null}
-
-          {activeSection === 'stats' ? (
-            <>
-              <h2>Stats</h2>
-              <div className="grid grid-3">
-                <div className="stat"><strong>{fanLevel}</strong>FAN level</div>
-                <div className="stat"><strong>{hypePoints}</strong>Hype points</div>
-                <div className="stat"><strong>{fullSongListenCount}</strong>Total songs listened</div>
-                <div className="stat"><strong>{fullShowListenCount}</strong>Total shows listened</div>
-                <div className="stat"><strong>{pastEventCount}</strong>Total events gone to</div>
-                <div className="stat"><strong>{upcomingEventCount}</strong>Upcoming events going to</div>
-              </div>
             </>
           ) : null}
         </div>

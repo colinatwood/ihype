@@ -3121,6 +3121,171 @@ button, input, select, textarea { font: inherit; }
   align-items: end;
 }
 .artist-banner-copy { max-width: 760px; }
+.fan-page-banner {
+  min-height: 220px;
+  padding: 1.25rem;
+}
+.fan-page-banner .profile-banner-row {
+  gap: 1rem;
+  align-items: flex-start;
+}
+.fan-page-banner .profile-avatar-hero {
+  width: 112px;
+  height: 112px;
+  border-radius: 28px;
+}
+.fan-page-banner .artist-banner-copy {
+  max-width: 640px;
+}
+.fan-page-banner .artist-headline {
+  margin: 0.25rem 0 0;
+  font-size: 1rem;
+}
+.fan-page-banner .subtitle {
+  margin: 0.35rem 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.fan-page-banner .meta {
+  font-size: 0.82rem;
+}
+.fan-page-banner .tag-row {
+  gap: 0.35rem;
+}
+.fan-page-banner .tag {
+  font-size: 0.72rem;
+  padding: 0.24rem 0.55rem;
+}
+.fan-page-title {
+  margin: 0.1rem 0 0;
+  font-size: clamp(2rem, 4vw, 2.45rem);
+}
+.fan-page-shell .section-tabs {
+  gap: 0.45rem;
+}
+.fan-page-shell .section-tab {
+  min-height: 2.2rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.78rem;
+}
+.fan-page-shell .artist-section-panel {
+  padding: 1rem;
+}
+.fan-page-about-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  align-items: start;
+}
+.fan-page-about-card {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+}
+.fan-page-about-copy-card {
+  grid-row: span 2;
+  align-content: start;
+}
+.fan-page-about-events-card {
+  grid-column: 1 / -1;
+}
+.fan-page-section-head {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.fan-page-section-head h2,
+.fan-page-section-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.fan-page-about-copy {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.fan-page-stat-grid {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.fan-page-stat-pill {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.035);
+}
+.fan-page-stat-pill span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.fan-page-stat-pill strong {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.fan-page-topfive-list {
+  margin: 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.38rem;
+}
+.fan-page-topfive-list li {
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+.fan-page-event-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+.fan-page-event-column {
+  display: grid;
+  gap: 0.55rem;
+}
+.fan-page-event-column > strong {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.fan-page-event-list {
+  display: grid;
+  gap: 0.4rem;
+}
+.fan-page-event-row {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0.7rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+}
+.fan-page-event-row span {
+  min-width: 0;
+  font-size: 0.86rem;
+}
+.fan-page-event-row small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  white-space: nowrap;
+}
+.fan-page-empty-compact {
+  padding: 0.7rem 0.8rem;
+  border-radius: 16px;
+  font-size: 0.82rem;
+}
 .profile-design-shell {
   --profile-design-surface: linear-gradient(160deg, rgba(8,12,24,0.98), rgba(18,26,46,0.98));
   --profile-design-overlay: radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 18%);
@@ -7729,6 +7894,28 @@ body {
   .profile-banner-actions {
     margin-left: 0;
     align-self: stretch;
+  }
+  .fan-page-about-grid,
+  .fan-page-event-columns,
+  .fan-page-stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .fan-page-about-copy-card,
+  .fan-page-about-events-card {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .fan-page-banner {
+    min-height: 0;
+    padding: 1rem;
+  }
+  .fan-page-banner .profile-avatar-hero {
+    width: 92px;
+    height: 92px;
+    border-radius: 24px;
+  }
+  .fan-page-title {
+    font-size: clamp(1.7rem, 9vw, 2.15rem);
   }
   .avatar-creator-lab,
   .avatar-preset-grid,
