@@ -87,7 +87,6 @@ const nextConfig = {
       { source: '/discover',    destination: '/ihype-rec-engine.html' },
       { source: '/tickets',     destination: '/ihype-ticketing.html' },
       { source: '/promise',     destination: '/ihype-promise.html' },
-      { source: '/show-creator', destination: '/ihype-show-creator.html' },
       { source: '/customizer',  destination: '/ihype-page-customizer.html' }
     ];
   },
