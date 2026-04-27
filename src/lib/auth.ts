@@ -5,7 +5,6 @@ import bcrypt from 'bcryptjs';
 import { db } from '@/lib/db';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
-import { areDemoLoginsEnabled, isDemoIdentifier, isDemoUser } from '@/lib/runtime-flags';
 import { authConfig } from '@/lib/auth.config';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -14,50 +13,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        identifier: { label: 'Email or username', type: 'text' },
-        password: { label: 'Password', type: 'password' }
+        challengeId: { label: 'Challenge ID', type: 'text' },
+        otp: { label: 'Code', type: 'text' }
       },
       async authorize(credentials, request) {
-        if (!credentials?.identifier || !credentials?.password) {
-          return null;
-        }
+        if (!credentials?.challengeId || !credentials?.otp) return null;
 
         const clientAddress = readClientAddress(request);
-        const loginRateLimit = consumeRateLimit(`login:${clientAddress}`, {
-          limit: 12,
+        const rateLimit = consumeRateLimit(`otp-verify:${clientAddress}`, {
+          limit: 10,
           windowMs: 15 * 60 * 1000
         });
+        if (!rateLimit.allowed) return null;
 
-        if (!loginRateLimit.allowed) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          return null;
-        }
-
-        const identifier = String(credentials.identifier).trim().toLowerCase();
-
-        if (!areDemoLoginsEnabled() && isDemoIdentifier(identifier)) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
-          return null;
-        }
-
-        const user = await db.user.findFirst({
-          where: {
-            OR: [{ email: identifier }, { username: identifier }]
-          }
+        const challenge = await db.mfaChallenge.findUnique({
+          where: { token: String(credentials.challengeId) },
+          include: { user: true }
         });
 
-        if (!user?.passwordHash) return null;
-        if (!areDemoLoginsEnabled() && isDemoUser(user)) return null;
+        if (!challenge || !challenge.secretCiphertext) return null;
+        if (challenge.expiresAt < new Date()) {
+          await db.mfaChallenge.delete({ where: { id: challenge.id } });
+          return null;
+        }
 
-        const isValid = await bcrypt.compare(String(credentials.password), user.passwordHash);
+        const isValid = await bcrypt.compare(String(credentials.otp), challenge.secretCiphertext);
         if (!isValid) return null;
 
+        await db.mfaChallenge.delete({ where: { id: challenge.id } });
+
         return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role
+          id: challenge.user.id,
+          email: challenge.user.email,
+          name: challenge.user.name,
+          image: challenge.user.image,
+          role: challenge.user.role
         };
       }
     })

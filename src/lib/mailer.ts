@@ -39,6 +39,53 @@ function getTransporter() {
   return transporter;
 }
 
+type LoginOtpEmailInput = {
+  email: string;
+  name?: string | null;
+  otp: string;
+};
+
+export async function sendLoginOtpEmail({ email, name, otp }: LoginOtpEmailInput) {
+  const resolvedName = name?.trim() || 'there';
+
+  if (!isPasswordResetEmailConfigured()) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.info(`[login-otp] ${email} -> ${otp}`);
+      return { mode: 'log' as const };
+    }
+    throw new Error('SMTP is not configured for OTP email delivery.');
+  }
+
+  const transport = getTransporter();
+
+  await transport.sendMail({
+    from: env.SMTP_FROM,
+    to: email,
+    subject: 'Your iHYPE sign-in code',
+    text: [
+      `Hi ${resolvedName},`,
+      '',
+      `Your iHYPE sign-in code is ${otp}.`,
+      'It expires in 10 minutes. Do not share it.',
+      '',
+      'If you did not request this, you can safely ignore this email.'
+    ].join('\n'),
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#10182a;">
+        <p style="margin:0 0 16px;">Hi ${resolvedName},</p>
+        <p style="margin:0 0 16px;">Your iHYPE sign-in code is:</p>
+        <div style="margin:0 0 20px;padding:18px 20px;border-radius:16px;background:#10182a;color:#ffffff;font-size:32px;font-weight:700;letter-spacing:0.35em;text-align:center;">
+          ${otp}
+        </div>
+        <p style="margin:0 0 12px;">Expires in 10 minutes. Do not share this code.</p>
+        <p style="margin:0;color:#5b657a;">If you did not try to sign in to iHYPE, you can safely ignore this email.</p>
+      </div>
+    `
+  });
+
+  return { mode: 'smtp' as const };
+}
+
 type PasswordResetEmailInput = {
   email: string;
   code: string;

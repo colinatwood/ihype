@@ -154,7 +154,7 @@
   </section>
 
   <!-- SIGNUP / SIGNIN side-by-side -->
-  <section class="section">
+  <section class="section" id="auth-section">
     <div class="section-head">
       <div class="section-eyebrow">01 · Get in</div>
       <h2 class="t-h2">Sign up. <em>Or sign in.</em></h2>
@@ -162,78 +162,84 @@
 
     <div class="auth-grid">
       <!-- SIGN UP (left) -->
-      <div class="auth-side">
+      <div class="auth-side" id="signup-panel">
         <div class="tag tag-accent" style="align-self:flex-start">Sign up · 2 steps</div>
         <h2 class="t-h3">Welcome to iHYPE.</h2>
         <div class="sub">Free forever. No tiers. No upsell.</div>
 
-        <div class="toggle-pair" data-cols="2" role="radiogroup" data-radio>
-          <button class="active" type="button">Email</button>
-          <button type="button">Phone</button>
+        <div class="field">
+          <label class="field-label" for="su-email">Email</label>
+          <div class="field-input">
+            <input id="su-email" type="email" placeholder="you@something.com" autocomplete="email">
+          </div>
         </div>
 
         <div class="field">
-          <label class="field-label" for="email">Email or phone</label>
+          <label class="field-label" for="su-username">Username</label>
           <div class="field-input">
-            <input id="email" type="email" placeholder="you@something.com" value="maya@example.com">
+            <input id="su-username" type="text" placeholder="yourname" autocomplete="username">
           </div>
         </div>
 
-        <button class="btn btn-primary btn-block btn-lg">Send my code →</button>
+        <div class="field">
+          <label class="field-label" for="su-password">Password <span style="color:var(--ink-3);font-size:.75em">8+ chars, 1 letter, 1 number</span></label>
+          <div class="field-input">
+            <input id="su-password" type="password" placeholder="••••••••" autocomplete="new-password">
+          </div>
+        </div>
 
+        <div id="su-error" style="display:none;color:#f87171;font-size:.82rem;margin-bottom:.5rem"></div>
+        <button id="su-btn" class="btn btn-primary btn-block btn-lg" onclick="handleSignUp()">Create account → get code</button>
         <div class="field-help" style="text-align:center;margin-top:.5rem">By continuing, you agree to the <a href="/promise" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">charter</a> and <a href="/promise" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">privacy promise</a>. We never sell data.</div>
       </div>
 
-      <!-- VERIFY OR SIGN IN (right) -->
-      <div class="auth-side">
-        <div class="tag" style="align-self:flex-start">Returning · 1 step</div>
+      <!-- SIGN IN (right) -->
+      <div class="auth-side" id="signin-panel">
+        <div class="tag" style="align-self:flex-start">Returning · 2 steps</div>
         <h2 class="t-h3">Welcome back.</h2>
-        <div class="sub">Sign in with the method on your account.</div>
+        <div class="sub">Email or username + password. We'll send you a code.</div>
 
-        <div class="signin-list">
-          <div class="signin-opt">
-            <div class="signin-opt-icon">⌬</div>
-            <div><div class="n">Use a passkey</div><div class="s">Face / fingerprint · fastest</div></div>
-            <span class="arrow">→</span>
-          </div>
-          <div class="signin-opt">
-            <div class="signin-opt-icon">✉</div>
-            <div><div class="n">Email me a link</div><div class="s">Click and you're in</div></div>
-            <span class="arrow">→</span>
-          </div>
-          <div class="signin-opt">
-            <div class="signin-opt-icon">☎</div>
-            <div><div class="n">Text me a code</div><div class="s">SMS · 6 digits</div></div>
-            <span class="arrow">→</span>
-          </div>
-          <div class="signin-opt">
-            <div class="signin-opt-icon">⚷</div>
-            <div><div class="n">Hardware key</div><div class="s">YubiKey · WebAuthn</div></div>
-            <span class="arrow">→</span>
+        <div class="field">
+          <label class="field-label" for="si-identifier">Email or username</label>
+          <div class="field-input">
+            <input id="si-identifier" type="text" placeholder="you@something.com" autocomplete="username">
           </div>
         </div>
+
+        <div class="field">
+          <label class="field-label" for="si-password">Password</label>
+          <div class="field-input">
+            <input id="si-password" type="password" placeholder="••••••••" autocomplete="current-password">
+          </div>
+        </div>
+
+        <div id="si-error" style="display:none;color:#f87171;font-size:.82rem;margin-bottom:.5rem"></div>
+        <button id="si-btn" class="btn btn-primary btn-block btn-lg" onclick="handleSignIn()">Send my code →</button>
       </div>
     </div>
   </section>
 
-  <!-- VERIFY (after signup) -->
-  <section class="section">
+  <!-- OTP VERIFY (shown after code is sent) -->
+  <section class="section" id="otp-section" style="display:none">
     <div class="section-head">
       <div class="section-eyebrow">02 · Verify</div>
       <h2 class="t-h2">Check your inbox.</h2>
     </div>
     <div class="card" style="max-width:480px;margin:0 auto">
-      <div class="t-small" style="margin-bottom:1rem">We sent a 6-digit code to <strong style="color:var(--ink)">maya@example.com</strong>. Expires in 10 minutes.</div>
+      <div class="t-small" style="margin-bottom:1rem">We sent a 6-digit code to <strong id="otp-email-label" style="color:var(--ink)"></strong>. Expires in 10 minutes.</div>
       <div class="otp-grid">
-        <input class="otp-input filled" maxlength="1" value="2" inputmode="numeric"/>
-        <input class="otp-input filled" maxlength="1" value="9" inputmode="numeric"/>
-        <input class="otp-input filled" maxlength="1" value="4" inputmode="numeric"/>
-        <input class="otp-input filled" maxlength="1" value="0" inputmode="numeric"/>
-        <input class="otp-input" maxlength="1" inputmode="numeric"/>
-        <input class="otp-input" maxlength="1" inputmode="numeric"/>
+        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-0"/>
+        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-1"/>
+        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-2"/>
+        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-3"/>
+        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-4"/>
+        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-5"/>
       </div>
-      <button class="btn btn-primary btn-block btn-lg">Verify and continue →</button>
-      <div class="field-help" style="text-align:center;margin-top:.85rem">Didn't get it? <a style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">Resend in 0:23</a></div>
+      <div id="otp-error" style="display:none;color:#f87171;font-size:.82rem;margin-bottom:.5rem;text-align:center"></div>
+      <button id="otp-btn" class="btn btn-primary btn-block btn-lg" onclick="handleVerify()">Verify and continue →</button>
+      <div class="field-help" style="text-align:center;margin-top:.85rem">
+        Wrong inbox? <a href="#auth-section" onclick="resetToForms()" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">Go back</a>
+      </div>
     </div>
   </section>
 
@@ -501,22 +507,158 @@
 
 <script src="/ihype-shared.js"></script>
 <script>
-// Role demo selector — re-skin the demo content blocks
+// Role demo selector
 document.querySelectorAll('#roleDemoSelect button').forEach(b=>{
   b.addEventListener('click',()=>{
     document.querySelectorAll('#roleDemoSelect button').forEach(x=>x.classList.remove('active'));
     b.classList.add('active');
   });
 });
+
 // OTP focus advance
 document.querySelectorAll('.otp-input').forEach((inp,i,arr)=>{
   inp.addEventListener('input',()=>{
+    inp.value = inp.value.replace(/\D/g,'').slice(-1);
     if(inp.value.length>=1){inp.classList.add('filled');if(arr[i+1])arr[i+1].focus();}
   });
   inp.addEventListener('keydown',e=>{
-    if(e.key==='Backspace'&&!inp.value&&arr[i-1])arr[i-1].focus();
+    if(e.key==='Backspace'&&!inp.value&&arr[i-1]){arr[i-1].focus();arr[i-1].value='';arr[i-1].classList.remove('filled');}
+  });
+  inp.addEventListener('paste',e=>{
+    e.preventDefault();
+    const digits=(e.clipboardData.getData('text').replace(/\D/g,'')).slice(0,6);
+    digits.split('').forEach((d,j)=>{
+      const t=arr[i+j];if(t){t.value=d;t.classList.add('filled');}
+    });
+    const next=arr[Math.min(i+digits.length,arr.length-1)];if(next)next.focus();
   });
 });
+
+// State
+let _challengeId=null;
+let _pendingIdentifier=null;
+let _pendingPassword=null;
+
+function setBtn(id,text,disabled){
+  const b=document.getElementById(id);
+  b.textContent=text;b.disabled=disabled;
+}
+
+function showError(id,msg){
+  const el=document.getElementById(id);
+  el.textContent=msg;el.style.display=msg?'block':'none';
+}
+
+function showOtpStep(email){
+  document.getElementById('otp-section').style.display='';
+  document.getElementById('otp-email-label').textContent=email;
+  document.getElementById('auth-section').style.display='none';
+  document.getElementById('otp-section').scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('otp-0').focus();
+}
+
+function resetToForms(){
+  _challengeId=null;_pendingIdentifier=null;_pendingPassword=null;
+  document.getElementById('otp-section').style.display='none';
+  document.getElementById('auth-section').style.display='';
+  document.querySelectorAll('.otp-input').forEach(i=>{i.value='';i.classList.remove('filled');});
+  showError('otp-error','');
+}
+
+async function requestOtp(identifier,password){
+  const res=await fetch('/api/auth/otp/request',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({identifier,password})
+  });
+  const data=await res.json();
+  if(!res.ok) throw new Error(data.error||'Failed to send code.');
+  return data; // {challengeId, email}
+}
+
+async function handleSignUp(){
+  const email=document.getElementById('su-email').value.trim();
+  const username=document.getElementById('su-username').value.trim();
+  const password=document.getElementById('su-password').value;
+  showError('su-error','');
+  if(!email||!username||!password){showError('su-error','Please fill in all fields.');return;}
+  setBtn('su-btn','Creating account…',true);
+  try{
+    // Step 1: register
+    const regRes=await fetch('/api/register',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,username,password,role:'FAN',isThirteenOrOlder:true})
+    });
+    const regData=await regRes.json();
+    if(!regRes.ok) throw new Error(regData.error||'Registration failed.');
+
+    // Step 2: request OTP
+    const {challengeId,email:confirmedEmail}=await requestOtp(email,password);
+    _challengeId=challengeId;
+    _pendingIdentifier=email;
+    _pendingPassword=password;
+    showOtpStep(confirmedEmail);
+  }catch(err){
+    showError('su-error',err.message);
+  }finally{
+    setBtn('su-btn','Create account → get code',false);
+  }
+}
+
+async function handleSignIn(){
+  const identifier=document.getElementById('si-identifier').value.trim();
+  const password=document.getElementById('si-password').value;
+  showError('si-error','');
+  if(!identifier||!password){showError('si-error','Please fill in all fields.');return;}
+  setBtn('si-btn','Sending code…',true);
+  try{
+    const {challengeId,email}=await requestOtp(identifier,password);
+    _challengeId=challengeId;
+    _pendingIdentifier=identifier;
+    _pendingPassword=password;
+    showOtpStep(email);
+  }catch(err){
+    showError('si-error',err.message);
+  }finally{
+    setBtn('si-btn','Send my code →',false);
+  }
+}
+
+async function handleVerify(){
+  const otp=[0,1,2,3,4,5].map(i=>document.getElementById('otp-'+i).value).join('');
+  showError('otp-error','');
+  if(otp.length<6){showError('otp-error','Enter all 6 digits.');return;}
+  if(!_challengeId){showError('otp-error','Session expired. Please go back and try again.');return;}
+  setBtn('otp-btn','Verifying…',true);
+  try{
+    // Get CSRF token then POST to next-auth credentials callback
+    const {csrfToken}=await fetch('/api/auth/csrf').then(r=>r.json());
+    const params=new URLSearchParams({csrfToken,challengeId:_challengeId,otp,callbackUrl:'/dashboard',json:'true'});
+    const res=await fetch('/api/auth/callback/credentials',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:params.toString()
+    });
+    const data=await res.json().catch(()=>({}));
+    if(data.url){
+      window.location.href=data.url;
+    }else if(res.ok){
+      window.location.href='/dashboard';
+    }else{
+      showError('otp-error','Incorrect code or it has expired. Try again.');
+      setBtn('otp-btn','Verify and continue →',false);
+    }
+  }catch(err){
+    showError('otp-error','Something went wrong. Please try again.');
+    setBtn('otp-btn','Verify and continue →',false);
+  }
+}
+
+// Allow Enter key to submit forms
+document.getElementById('su-password').addEventListener('keydown',e=>{if(e.key==='Enter')handleSignUp();});
+document.getElementById('si-password').addEventListener('keydown',e=>{if(e.key==='Enter')handleSignIn();});
+document.getElementById('otp-5').addEventListener('keydown',e=>{if(e.key==='Enter')handleVerify();});
 </script>
 
 </div><!-- /site-shell -->
