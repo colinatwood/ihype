@@ -1,0 +1,380 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Show Creator · iHYPE.org</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ihype-shared.css">
+<style>
+.stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:2rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:.45rem}
+.stepper-item{display:flex;flex-direction:column;gap:.3rem;padding:.7rem .9rem;border-radius:var(--r-sm);transition:all .2s;cursor:pointer;border:1px solid transparent}
+.stepper-item:hover{background:var(--bg)}
+.stepper-item.active{background:var(--bg-2);border-color:var(--line-2)}
+.stepper-item.done{opacity:.65}
+.step-num{font-family:var(--f-m);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:600;display:flex;align-items:center;gap:.4rem}
+.stepper-item.active .step-num{color:var(--accent)}
+.stepper-item.done .step-num{color:var(--r-venue)}
+.step-num::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--ink-4)}
+.stepper-item.active .step-num::before{background:var(--accent)}
+.stepper-item.done .step-num::before{background:var(--r-venue)}
+.step-name{font-family:var(--f-d);font-weight:600;font-size:.95rem;color:var(--ink-2)}
+.stepper-item.active .step-name,.stepper-item.done .step-name{color:var(--ink)}
+
+.workspace{display:grid;grid-template-columns:280px 1fr 320px;gap:1px;background:var(--line);border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;min-height:560px}
+.ws-pane{background:var(--bg-2);padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:1rem;overflow:hidden}
+.ws-pane h3{font-family:var(--f-d);font-size:1.05rem;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.ws-pane h3 .meta{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);font-weight:400}
+
+.lib-search{padding:.6rem .85rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-md);font-size:.86rem;color:var(--ink-3)}
+.lib-tabs{display:flex;gap:.3rem;flex-wrap:wrap}
+.lib-tab{padding:.32rem .7rem;border-radius:99px;font-family:var(--f-m);font-size:.7rem;color:var(--ink-2);background:var(--bg-2);border:1px solid var(--line);font-weight:500}
+.lib-tab.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lib-list{display:flex;flex-direction:column;gap:.35rem;overflow-y:auto;flex:1}
+.lib-item{display:grid;grid-template-columns:32px 1fr auto;gap:.6rem;padding:.55rem .7rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-sm);align-items:center;cursor:grab;transition:all .15s}
+.lib-item:hover{background:var(--bg-2);border-color:var(--line-2);transform:translateX(2px)}
+.lib-thumb{width:32px;height:32px;border-radius:var(--r-sm)}
+.lib-thumb.warm{background:linear-gradient(135deg,#d83a16,#e89060)}
+.lib-thumb.cool{background:linear-gradient(135deg,var(--r-venue),#7fc4c0)}
+.lib-thumb.purple{background:linear-gradient(135deg,var(--r-fan),var(--r-promoter))}
+.lib-name{font-size:.84rem;font-weight:500;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lib-sub{font-family:var(--f-m);font-size:.66rem;color:var(--ink-3);margin-top:.1rem}
+.lib-len{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3)}
+
+.canvas{display:flex;flex-direction:column;gap:.85rem;flex:1}
+.canvas-head{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.canvas-head h3{font-family:var(--f-d);font-size:1.1rem;font-weight:600}
+.canvas-time{font-family:var(--f-m);font-size:.78rem;color:var(--ink-3)}
+.canvas-time strong{color:var(--ink);font-weight:600}
+.canvas-controls{display:flex;gap:.4rem}
+.canvas-btn{width:32px;height:32px;border-radius:var(--r-sm);background:var(--bg-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-2);font-family:var(--f-m);font-weight:600}
+.canvas-btn.play{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.timeline{flex:1;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);padding:.7rem;overflow-y:auto;display:flex;flex-direction:column;gap:.5rem}
+.lane{display:grid;grid-template-columns:80px 1fr;gap:.6rem;align-items:stretch;min-height:48px}
+.lane-label{font-family:var(--f-m);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600;padding:.6rem .65rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-sm);display:flex;align-items:center}
+.lane-track{position:relative;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-sm);min-height:48px;padding:4px}
+.clip{position:absolute;top:4px;bottom:4px;border-radius:4px;padding:.35rem .55rem;font-family:var(--f-m);font-size:.7rem;font-weight:500;color:#fff;display:flex;align-items:center;gap:.4rem;line-height:1.2;overflow:hidden;white-space:nowrap}
+.clip.media{background:linear-gradient(135deg,var(--r-venue),#7fc4c0)}
+.clip.voice{background:linear-gradient(135deg,var(--r-fan),#9d7bc8)}
+.clip.sample{background:linear-gradient(135deg,#c2a040,#e8c878);color:var(--ink)}
+.clip.ad{background:var(--accent)}
+.clip-time{font-size:.6rem;opacity:.7;margin-left:auto}
+
+.tool-tabs{display:flex;gap:.3rem;flex-wrap:wrap}
+.tool-tab{padding:.4rem .8rem;border-radius:99px;font-size:.78rem;font-weight:500;color:var(--ink-2);background:var(--bg-2);border:1px solid var(--line)}
+.tool-tab.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.pad{aspect-ratio:1;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;cursor:pointer;transition:all .15s}
+.pad:hover{background:var(--bg-2);border-color:var(--ink);transform:translateY(-2px)}
+.pad-key{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);font-weight:600}
+.pad-name{font-family:var(--f-d);font-size:.85rem;font-weight:600;color:var(--ink);text-align:center;line-height:1.15}
+.tool-section h4{font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.6rem}
+
+.canvas-foot{display:flex;align-items:center;justify-content:space-between;padding:.7rem .85rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);font-family:var(--f-m);font-size:.74rem;color:var(--ink-3);flex-wrap:wrap;gap:.5rem}
+.canvas-foot .saved{display:flex;align-items:center;gap:.4rem;color:var(--r-venue)}
+.canvas-foot .saved::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--r-venue)}
+
+.shortcut-bar{display:flex;gap:.4rem;flex-wrap:wrap;padding:.6rem .8rem;background:var(--bg-2);border:1px dashed var(--line-2);border-radius:var(--r-md);font-family:var(--f-m);font-size:.72rem;color:var(--ink-3)}
+.shortcut-bar .kb{padding:.15rem .45rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:3px;font-weight:600;color:var(--ink-2)}
+
+.review-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:1rem}
+.review-summary{display:flex;flex-direction:column;gap:.5rem}
+.review-row{display:flex;justify-content:space-between;align-items:baseline;padding:.6rem 0;border-bottom:1px solid var(--line)}
+.review-row .lbl{font-size:.86rem;color:var(--ink-2)}
+.review-row .val{font-family:var(--f-m);font-size:.86rem;color:var(--ink);font-weight:500;text-align:right}
+.review-row.total{font-family:var(--f-d);font-size:1.05rem;font-weight:600;border-top:1px solid var(--line);border-bottom:none;padding-top:.85rem;margin-top:.4rem}
+
+@media (max-width:1100px){
+  .workspace{grid-template-columns:1fr}
+  .ws-pane{min-height:300px}
+  .review-grid{grid-template-columns:1fr}
+}
+@media (max-width:880px){
+  .stepper{grid-template-columns:1fr 1fr}
+  .lane{grid-template-columns:60px 1fr}
+}
+</style>
+</head>
+<body>
+<!-- Animated background -->
+<div class="bg-canvas" aria-hidden="true">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-noise"></div>
+</div>
+<div class="site-shell">
+
+
+<nav class="nav">
+  <div class="nav-left">
+    <a href="/" style="text-decoration:none;color:inherit"><div class="brand">i<em>HYPE</em></div></a>
+    <div class="nav-links">
+      <a href="/discover" class="nav-link">Discover</a>
+      <a href="/show-creator" class="nav-link">My shows</a>
+      <a href="/show-creator" class="nav-link active">Create</a>
+      <a href="/promise" class="nav-link">The Promise</a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="a11y-btn" id="openA11y"><span aria-hidden="true">⊙</span><span>Accessibility</span></button>
+    <button class="role-pill promoter"><span class="av">D</span><span class="name">Disco Mortis</span><span class="ctx">Promoter ▾</span></button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <section class="hero" style="padding:3rem 0 2rem">
+    <div class="hero-eyebrow"><span class="dot"></span> Show creator · 4 steps · ~20 minutes</div>
+    <h1 class="t-h1">Build a show. <em>Ship it tonight.</em></h1>
+    <p class="hero-lede">Library on the left. Timeline in the middle. Tools on the right. Drag, drop, save. Autosaves every 10 seconds.</p>
+  </section>
+
+  <div class="stepper">
+    <div class="stepper-item done"><div class="step-num">Step 01 · Done</div><div class="step-name">Show details</div></div>
+    <div class="stepper-item active"><div class="step-num">Step 02 · Now</div><div class="step-name">Build the mix</div></div>
+    <div class="stepper-item"><div class="step-num">Step 03</div><div class="step-name">Tickets</div></div>
+    <div class="stepper-item"><div class="step-num">Step 04</div><div class="step-name">Review &amp; ship</div></div>
+  </div>
+
+  <div class="shortcut-bar">
+    <span><span class="kb">Space</span> play/pause</span>
+    <span><span class="kb">⌘ S</span> save</span>
+    <span><span class="kb">⌘ Z</span> undo</span>
+    <span><span class="kb">[ ]</span> trim</span>
+    <span><span class="kb">M</span> mute lane</span>
+    <span><span class="kb">?</span> all shortcuts</span>
+  </div>
+
+  <section class="section" style="margin-top:1.5rem">
+    <div class="workspace">
+
+      <div class="ws-pane">
+        <h3>Library <span class="meta">2,847 items</span></h3>
+        <div class="lib-search">🔍 Search songs, samples, voice…</div>
+        <div class="lib-tabs">
+          <button class="lib-tab active">Songs</button>
+          <button class="lib-tab">Samples</button>
+          <button class="lib-tab">Voice</button>
+          <button class="lib-tab">Ads</button>
+        </div>
+        <div class="lib-list">
+          <div class="lib-item"><div class="lib-thumb warm"></div><div><div class="lib-name">Static on the Mountain</div><div class="lib-sub">Phantom Ridge</div></div><span class="lib-len">3:42</span></div>
+          <div class="lib-item"><div class="lib-thumb cool"></div><div><div class="lib-name">Chrome Cathedral</div><div class="lib-sub">Silver Reverend</div></div><span class="lib-len">5:01</span></div>
+          <div class="lib-item"><div class="lib-thumb purple"></div><div><div class="lib-name">Fluorescent Heaven</div><div class="lib-sub">Disco Mortis</div></div><span class="lib-len">4:18</span></div>
+          <div class="lib-item"><div class="lib-thumb warm"></div><div><div class="lib-name">Cold Aurora</div><div class="lib-sub">Marble Sky</div></div><span class="lib-len">5:18</span></div>
+          <div class="lib-item"><div class="lib-thumb cool"></div><div><div class="lib-name">Provincetown Tape</div><div class="lib-sub">Sara Pell</div></div><span class="lib-len">3:54</span></div>
+          <div class="lib-item"><div class="lib-thumb purple"></div><div><div class="lib-name">Vento Frio</div><div class="lib-sub">Mara Noite · BR</div></div><span class="lib-len">4:01</span></div>
+          <div class="lib-item"><div class="lib-thumb warm"></div><div><div class="lib-name">Hellblau Rain</div><div class="lib-sub">Ines Vahl · DE</div></div><span class="lib-len">6:22</span></div>
+        </div>
+      </div>
+
+      <div class="ws-pane canvas">
+        <div class="canvas-head">
+          <h3>After Hours · Vol. 4</h3>
+          <span class="canvas-time"><strong>17:42</strong> / 90:00</span>
+          <div class="canvas-controls">
+            <button class="canvas-btn">◀</button>
+            <button class="canvas-btn play">▶</button>
+            <button class="canvas-btn">▶</button>
+          </div>
+        </div>
+
+        <div class="timeline">
+          <div class="lane">
+            <div class="lane-label">Media</div>
+            <div class="lane-track">
+              <div class="clip media" style="left:1%;width:18%">Static on the Mountain<span class="clip-time">3:42</span></div>
+              <div class="clip media" style="left:20%;width:24%">Fluorescent Heaven<span class="clip-time">4:18</span></div>
+              <div class="clip media" style="left:46%;width:28%">Chrome Cathedral<span class="clip-time">5:01</span></div>
+              <div class="clip media" style="left:76%;width:22%">Cold Aurora<span class="clip-time">5:18</span></div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">Voice</div>
+            <div class="lane-track">
+              <div class="clip voice" style="left:1%;width:8%">Intro<span class="clip-time">0:18</span></div>
+              <div class="clip voice" style="left:42%;width:6%">Bridge<span class="clip-time">0:14</span></div>
+              <div class="clip voice" style="left:74%;width:5%">Outro<span class="clip-time">0:12</span></div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">Samples</div>
+            <div class="lane-track">
+              <div class="clip sample" style="left:18%;width:5%">Crowd</div>
+              <div class="clip sample" style="left:44%;width:4%">FX</div>
+              <div class="clip sample" style="left:73%;width:5%">Vinyl</div>
+            </div>
+          </div>
+          <div class="lane">
+            <div class="lane-label">Ads</div>
+            <div class="lane-track">
+              <div class="clip ad" style="left:33%;width:4%">Ad · 0:15</div>
+              <div class="clip ad" style="left:67%;width:4%">Ad · 0:15</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-foot">
+          <div class="saved">All changes saved · 8s ago</div>
+          <div>4 lanes · 11 clips · 90:00 total</div>
+        </div>
+      </div>
+
+      <div class="ws-pane">
+        <h3>Tools</h3>
+        <div class="tool-tabs">
+          <button class="tool-tab active">Pads</button>
+          <button class="tool-tab">Voice</button>
+          <button class="tool-tab">Ads</button>
+        </div>
+
+        <div class="tool-section">
+          <h4>Pad bank · A</h4>
+          <div class="tool-grid">
+            <div class="pad"><span class="pad-key">Q</span><span class="pad-name">Crowd<br>cheer</span></div>
+            <div class="pad"><span class="pad-key">W</span><span class="pad-name">Vinyl<br>scratch</span></div>
+            <div class="pad"><span class="pad-key">E</span><span class="pad-name">Bass<br>drop</span></div>
+            <div class="pad"><span class="pad-key">R</span><span class="pad-name">Air<br>horn</span></div>
+            <div class="pad"><span class="pad-key">A</span><span class="pad-name">Reverse<br>swell</span></div>
+            <div class="pad"><span class="pad-key">S</span><span class="pad-name">FX<br>riser</span></div>
+            <div class="pad"><span class="pad-key">D</span><span class="pad-name">Tape<br>stop</span></div>
+            <div class="pad"><span class="pad-key">F</span><span class="pad-name">Custom<br>+</span></div>
+          </div>
+        </div>
+
+        <div class="tool-section">
+          <h4>Inspector</h4>
+          <div style="background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);padding:.85rem 1rem;font-size:.82rem;line-height:1.5;color:var(--ink-2)">
+            <div style="font-family:var(--f-d);font-size:.95rem;font-weight:600;color:var(--ink);margin-bottom:.3rem">Chrome Cathedral</div>
+            <div style="font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);margin-bottom:.6rem">5:01 · 96 BPM · A minor</div>
+            <div>In: <strong style="color:var(--ink);font-family:var(--f-m)">12:24</strong> · Out: <strong style="color:var(--ink);font-family:var(--f-m)">17:25</strong></div>
+            <div>Fade in: 0:08 · Fade out: 0:12</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">From step 01</div>
+      <h2 class="t-h2">Show details</h2>
+    </div>
+    <div class="card">
+      <div class="review-summary">
+        <div class="review-row"><span class="lbl">Title</span><span class="val">After Hours · Vol. 4</span></div>
+        <div class="review-row"><span class="lbl">Format</span><span class="val">Mixtape · 90 min · audio</span></div>
+        <div class="review-row"><span class="lbl">Genre</span><span class="val">Late-night · electronic · lo-fi</span></div>
+        <div class="review-row"><span class="lbl">Promoter</span><span class="val">Disco Mortis</span></div>
+        <div class="review-row"><span class="lbl">Drops</span><span class="val">Friday · 14 May · 8pm ET</span></div>
+        <div class="review-row"><span class="lbl">Cover art</span><span class="val">Uploaded · neon-pink-purple-gradient.png</span></div>
+        <div class="review-row total"><span>Step 01</span><span style="color:var(--r-venue)">Complete ✓</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">Step 03 · Tickets</div>
+      <h2 class="t-h2">Pricing &amp; tiers</h2>
+      <p class="lede">Set the price. Add tiers if you want. Splits are automatic — 45% to artist, 45% to venue, 10% to you. iHYPE takes nothing.</p>
+    </div>
+    <div class="three-up">
+      <div>
+        <div class="tu-num">$0</div>
+        <div class="tu-title">Free listen</div>
+        <div class="tu-desc">Anyone can stream. Earns +5 HYPE per finished show. Funded by music ads in playback.</div>
+      </div>
+      <div>
+        <div class="tu-num">$5</div>
+        <div class="tu-title">Tip the makers</div>
+        <div class="tu-desc">Optional supporter price. Same content, no ads. Goes 100% to the artist + your 10%.</div>
+      </div>
+      <div>
+        <div class="tu-num">$15</div>
+        <div class="tu-title">Patron tier</div>
+        <div class="tu-desc">Bonus track + early access to next mix. 45/45/10 split. Tastemaker bump.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">Step 04 · Review &amp; ship</div>
+      <h2 class="t-h2">Last look. <em>Then it's live.</em></h2>
+    </div>
+    <div class="review-grid">
+      <div class="card">
+        <div class="card-head">
+          <div><h3 style="font-family:var(--f-d);font-size:1.15rem;font-weight:600">Show summary</h3><p style="font-size:.86rem;color:var(--ink-3);margin-top:.2rem">Everything as configured</p></div>
+        </div>
+        <div class="review-summary">
+          <div class="review-row"><span class="lbl">Title</span><span class="val">After Hours · Vol. 4</span></div>
+          <div class="review-row"><span class="lbl">Length</span><span class="val">90:00</span></div>
+          <div class="review-row"><span class="lbl">Tracks</span><span class="val">8 songs · 3 voice · 3 samples · 2 ads</span></div>
+          <div class="review-row"><span class="lbl">Drops</span><span class="val">Fri 14 May · 8pm ET</span></div>
+          <div class="review-row"><span class="lbl">Default tier</span><span class="val">Free listen · $0</span></div>
+          <div class="review-row"><span class="lbl">Optional tier</span><span class="val">Patron · $15</span></div>
+          <div class="review-row"><span class="lbl">Estimated reach</span><span class="val">8,400 listeners (your last 4 shows avg)</span></div>
+          <div class="review-row total"><span>Ready to ship</span><span style="color:var(--r-venue)">All checks passed ✓</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bg-2)">
+        <div class="card-head">
+          <div><h3 style="font-family:var(--f-d);font-size:1.15rem;font-weight:600">Pre-flight</h3><p style="font-size:.86rem;color:var(--ink-3);margin-top:.2rem">All clear</p></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <div style="display:flex;gap:.7rem;align-items:start;font-size:.88rem;color:var(--ink-2)"><span style="color:var(--r-venue);font-weight:700">✓</span><span>All tracks have rights cleared</span></div>
+          <div style="display:flex;gap:.7rem;align-items:start;font-size:.88rem;color:var(--ink-2)"><span style="color:var(--r-venue);font-weight:700">✓</span><span>Cover art meets size requirements</span></div>
+          <div style="display:flex;gap:.7rem;align-items:start;font-size:.88rem;color:var(--ink-2)"><span style="color:var(--r-venue);font-weight:700">✓</span><span>Ad slots placed within music-ad rules</span></div>
+          <div style="display:flex;gap:.7rem;align-items:start;font-size:.88rem;color:var(--ink-2)"><span style="color:var(--r-venue);font-weight:700">✓</span><span>Featured artists notified for splits</span></div>
+          <div style="display:flex;gap:.7rem;align-items:start;font-size:.88rem;color:var(--ink-2)"><span style="color:var(--r-venue);font-weight:700">✓</span><span>Captions auto-generated &amp; reviewed</span></div>
+        </div>
+        <div style="margin-top:1.4rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-primary btn-block btn-lg">Schedule for 14 May →</button>
+          <button class="btn btn-ghost btn-block">Save as draft</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-left"><strong>iHYPE.org</strong> · 501(c)(3) · books open</div>
+    <div class="footer-links"><a href="/promise">The Promise</a><a href="/promise">Charter</a><a href="/promise">990</a><a href="/promise">Contact</a><a href="#">Accessibility</a></div>
+  </footer>
+</div>
+
+<div class="a11y-panel-overlay" id="a11yOverlay"></div>
+<aside class="a11y-panel" id="a11yPanel" role="dialog">
+  <div class="a11y-panel-head"><h3>Accessibility</h3><button class="a11y-panel-close" id="closeA11y">×</button></div>
+  <div class="a11y-section"><h4>Language</h4><div class="toggle-pair" data-cols="4" role="radiogroup"><button class="active" data-lang="en">EN</button><button data-lang="es">ES</button><button data-lang="pt">PT</button><button data-lang="fr">FR</button></div></div>
+  <div class="a11y-section"><h4>Vision</h4><div class="toggle-pair" data-cols="3" role="radiogroup"><button class="active" data-size="default">Default</button><button data-size="large">Large</button><button data-size="xlarge">XL</button></div></div>
+  <div class="a11y-section"><h4>Reading</h4><div class="a11y-row toggle"><div><div class="name">Dyslexia-friendly</div></div><button class="switch" data-toggle="dyslexia"></button></div><div class="a11y-row toggle"><div><div class="name">High contrast</div></div><button class="switch" data-toggle="contrast"></button></div></div>
+  <div class="a11y-section"><h4>Motion</h4><div class="a11y-row toggle"><div><div class="name">Reduced motion</div></div><button class="switch" data-toggle="motion"></button></div></div>
+</aside>
+
+<script src="/ihype-shared.js"></script>
+<script>
+document.querySelectorAll('.lib-tabs .lib-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.lib-tabs .lib-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+document.querySelectorAll('.tool-tabs .tool-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tool-tabs .tool-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+</script>
+
+</div><!-- /site-shell -->
+</body>
+</html>

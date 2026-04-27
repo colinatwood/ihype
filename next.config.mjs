@@ -65,6 +65,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/auth',
+        destination: '/login',
+        permanent: false
+      },
+      {
         source: '/listeners',
         destination: '/fans',
         permanent: true
@@ -74,6 +79,16 @@ const nextConfig = {
         destination: '/fans/:slug',
         permanent: true
       }
+    ];
+  },
+  async rewrites() {
+    return [
+      { source: '/hype',        destination: '/ihype-hype-engine.html' },
+      { source: '/discover',    destination: '/ihype-rec-engine.html' },
+      { source: '/tickets',     destination: '/ihype-ticketing.html' },
+      { source: '/promise',     destination: '/ihype-promise.html' },
+      { source: '/show-creator', destination: '/ihype-show-creator.html' },
+      { source: '/customizer',  destination: '/ihype-page-customizer.html' }
     ];
   },
   async headers() {

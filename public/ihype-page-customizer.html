@@ -1,0 +1,433 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page Customizer · iHYPE.org</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ihype-shared.css">
+<style>
+/* Role switcher (top of customizer) */
+.role-switcher{display:flex;gap:.4rem;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.3rem;width:fit-content;margin:0 auto 2rem;flex-wrap:wrap}
+.role-switcher button{padding:.45rem 1.1rem;border-radius:99px;font-size:.84rem;font-weight:500;color:var(--ink-2);transition:all .15s;display:flex;align-items:center;gap:.5rem}
+.role-switcher button .dot{width:8px;height:8px;border-radius:50%}
+.role-switcher button.fan .dot{background:var(--r-fan)}
+.role-switcher button.artist .dot{background:var(--r-artist)}
+.role-switcher button.venue .dot{background:var(--r-venue)}
+.role-switcher button.promoter .dot{background:var(--r-promoter)}
+.role-switcher button.active{background:var(--ink);color:var(--bg)}
+.role-switcher button.active .dot{background:#fff}
+
+/* Workspace · 2-column */
+.editor-grid{display:grid;grid-template-columns:340px 1fr;gap:1px;background:var(--line);border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;min-height:560px}
+.editor-pane{background:var(--bg-2);padding:1.5rem 1.6rem;display:flex;flex-direction:column;gap:1.4rem}
+
+/* Section tabs (within left pane) */
+.editor-tabs{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.25rem;gap:.15rem}
+.editor-tab{padding:.45rem .8rem;border-radius:99px;font-size:.78rem;font-weight:500;color:var(--ink-2);transition:all .15s;flex:1;text-align:center}
+.editor-tab.active{background:var(--ink);color:var(--bg)}
+
+/* Quick start templates */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+.quick-card{padding:1rem .9rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:.35rem;text-align:left}
+.quick-card:hover{background:var(--bg-2);border-color:var(--line-3);transform:translateY(-1px)}
+.quick-card.selected{border:1.5px solid var(--ink);background:var(--bg)}
+.quick-name{font-family:var(--f-d);font-size:.92rem;font-weight:600}
+.quick-desc{font-size:.74rem;color:var(--ink-3);line-height:1.4}
+
+/* Template gallery */
+.template-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem}
+.template-thumb{aspect-ratio:3/4;border-radius:var(--r-sm);background:var(--bg-2);border:1px solid var(--line);position:relative;overflow:hidden;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;justify-content:flex-end;padding:.5rem;color:#fff;font-family:var(--f-m);font-size:.62rem;letter-spacing:.04em;font-weight:500}
+.template-thumb:hover{transform:translateY(-2px)}
+.template-thumb.selected{outline:2px solid var(--ink);outline-offset:2px}
+.template-thumb .nm{font-family:var(--f-d);font-size:.8rem;font-weight:600;letter-spacing:-.005em}
+.template-thumb::before{content:'';position:absolute;inset:0;z-index:0}
+.template-thumb > *{position:relative;z-index:1}
+.tpl-1::before{background:linear-gradient(135deg,#d83a16,#e89060)}
+.tpl-2::before{background:linear-gradient(135deg,#1a1814,#5c5448);color:var(--bg)}
+.tpl-3::before{background:linear-gradient(180deg,var(--bg) 50%,var(--r-venue));color:var(--ink)}
+.tpl-4::before{background:linear-gradient(135deg,var(--r-fan),var(--r-promoter))}
+.tpl-5::before{background:linear-gradient(135deg,#ffd86e,#f3eee2);color:var(--ink)}
+.tpl-6::before{background:linear-gradient(135deg,var(--r-venue),#3a6f9a)}
+.tpl-7::before{background:linear-gradient(180deg,#fdebe6 0%,var(--bg) 50%,#1a1814);color:var(--ink)}
+.tpl-8::before{background:radial-gradient(circle at 30% 30%,var(--r-promoter),#1a1814)}
+.tpl-9::before{background:linear-gradient(180deg,var(--bg) 0%,#1a1814 100%);color:var(--ink)}
+
+/* Theme controls */
+.swatch-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.45rem}
+.swatch{aspect-ratio:1;border-radius:50%;border:2px solid var(--line);cursor:pointer;transition:all .15s}
+.swatch:hover{transform:scale(1.1)}
+.swatch.selected{outline:2px solid var(--ink);outline-offset:2px;border-color:var(--bg)}
+.font-grid{display:flex;flex-direction:column;gap:.4rem}
+.font-row{padding:.7rem .9rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;transition:all .15s;display:flex;justify-content:space-between;align-items:center}
+.font-row:hover{background:var(--bg-2);border-color:var(--line-3)}
+.font-row.selected{border:1.5px solid var(--ink);background:var(--bg)}
+.font-row .name{font-size:.92rem;font-weight:600}
+.font-row .preview{font-size:.92rem;color:var(--ink-2)}
+.font-row.serif .preview{font-family:'Syne',serif;font-style:italic}
+.font-row.mono .preview{font-family:'JetBrains Mono',monospace;font-size:.84rem}
+.font-row.sans .preview{font-family:'DM Sans',sans-serif}
+
+/* Preview pane (right) */
+.preview-pane{background:var(--bg-2);padding:1.5rem 1.6rem;display:flex;flex-direction:column;gap:1rem}
+.preview-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+.preview-head h3{font-family:var(--f-d);font-size:1.05rem;font-weight:600}
+.preview-toggle{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.2rem}
+.preview-toggle button{padding:.32rem .85rem;border-radius:99px;font-size:.74rem;font-weight:500;color:var(--ink-2);transition:all .15s}
+.preview-toggle button.active{background:var(--ink);color:var(--bg)}
+
+/* Preview frame */
+.preview-frame{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-md);padding:0;overflow:hidden;flex:1;min-height:480px;transition:all .25s;display:flex;flex-direction:column}
+.preview-frame.mobile{max-width:380px;margin:0 auto;border-radius:18px}
+
+/* Live preview content (the artist/venue page being edited) */
+.pp-cover{height:120px;background:linear-gradient(135deg,#d83a16,#e89060);position:relative}
+.pp-cover.t1{background:linear-gradient(135deg,#d83a16,#e89060)}
+.pp-cover.t2{background:linear-gradient(135deg,#1a1814,#5c5448)}
+.pp-cover.t3{background:linear-gradient(135deg,var(--r-venue),#7fc4c0)}
+.pp-cover.t4{background:linear-gradient(135deg,var(--r-fan),var(--r-promoter))}
+.pp-cover-actions{position:absolute;bottom:.85rem;right:.85rem;display:flex;gap:.4rem}
+.pp-cover-actions button{padding:.3rem .7rem;border-radius:99px;font-size:.68rem;background:rgba(0,0,0,.4);color:#fff;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);font-family:var(--f-m);font-weight:500}
+.pp-body{padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:1rem;flex:1}
+.pp-name{font-family:var(--f-d);font-size:1.5rem;font-weight:600;letter-spacing:-.01em;line-height:1.1}
+.pp-name.serif{font-family:'Syne',serif;font-style:italic}
+.pp-bio{font-size:.86rem;color:var(--ink-2);line-height:1.55}
+.pp-stats{display:flex;gap:1.2rem;padding:.85rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-family:var(--f-m);font-size:.78rem;color:var(--ink-2);flex-wrap:wrap}
+.pp-stats strong{color:var(--ink);font-family:var(--f-d);font-weight:600}
+.pp-shows{display:flex;flex-direction:column;gap:.4rem}
+.pp-show{display:grid;grid-template-columns:auto 1fr auto;gap:.7rem;padding:.55rem .65rem;background:var(--bg-2);border-radius:var(--r-sm);align-items:center;font-size:.78rem}
+.pp-show .date{font-family:var(--f-m);color:var(--ink-3)}
+.pp-show .venue{font-weight:500}
+.pp-show .city{color:var(--ink-3);font-family:var(--f-m);font-size:.72rem}
+
+/* Toggle row */
+.toggle-list{display:flex;flex-direction:column;gap:.4rem}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.65rem .85rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md)}
+.toggle-row .lbl{font-size:.86rem;font-weight:500}
+.toggle-row .desc{font-size:.7rem;color:var(--ink-3);margin-top:.1rem}
+
+@media (max-width:1100px){
+  .editor-grid{grid-template-columns:1fr}
+  .preview-frame{min-height:380px}
+}
+@media (max-width:880px){
+  .quick-grid{grid-template-columns:1fr}
+  .template-grid{grid-template-columns:1fr 1fr}
+  .swatch-grid{grid-template-columns:repeat(7,1fr)}
+}
+</style>
+</head>
+<body>
+<!-- Animated background -->
+<div class="bg-canvas" aria-hidden="true">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-noise"></div>
+</div>
+<div class="site-shell">
+
+
+<nav class="nav">
+  <div class="nav-left">
+    <a href="/" style="text-decoration:none;color:inherit"><div class="brand">i<em>HYPE</em></div></a>
+    <div class="nav-links">
+      <a href="/discover" class="nav-link">Discover</a>
+      <a href="/customizer" class="nav-link">My page</a>
+      <a href="/customizer" class="nav-link active">Customize</a>
+      <a href="/promise" class="nav-link">The Promise</a>
+    </div>
+  </div>
+  <div class="nav-right">
+    <button class="a11y-btn" id="openA11y"><span aria-hidden="true">⊙</span><span>Accessibility</span></button>
+    <button class="role-pill artist"><span class="av">P</span><span class="name">Phantom Ridge</span><span class="ctx">Artist ▾</span></button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <section class="hero" style="padding:3rem 0 2rem">
+    <div class="hero-eyebrow"><span class="dot"></span> Page customizer · all roles · live preview</div>
+    <h1 class="t-h1">Make your page <em>look like you.</em></h1>
+    <p class="hero-lede">One editor for artists, venues, promoters, and fans. Pick a template. Tweak the colors. Drag in your shows. Done.</p>
+  </section>
+
+  <!-- ROLE SWITCHER -->
+  <div class="role-switcher" id="roleSwitcher">
+    <button class="artist active" data-role="artist"><span class="dot"></span>Artist page</button>
+    <button class="venue" data-role="venue"><span class="dot"></span>Venue page</button>
+    <button class="promoter" data-role="promoter"><span class="dot"></span>Promoter page</button>
+    <button class="fan" data-role="fan"><span class="dot"></span>Fan profile</button>
+  </div>
+
+  <!-- WORKSPACE · 2-column -->
+  <section class="section" style="margin-top:0">
+    <div class="editor-grid">
+
+      <!-- LEFT: Editor -->
+      <div class="editor-pane">
+        <div class="editor-tabs">
+          <button class="editor-tab active" data-tab="template">Template</button>
+          <button class="editor-tab" data-tab="theme">Theme</button>
+          <button class="editor-tab" data-tab="content">Content</button>
+          <button class="editor-tab" data-tab="settings">Settings</button>
+        </div>
+
+        <!-- Quick start -->
+        <div class="editor-section">
+          <h4 style="font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.7rem">Quick start</h4>
+          <div class="quick-grid">
+            <div class="quick-card selected">
+              <div class="quick-name">Tour mode</div>
+              <div class="quick-desc">Big show calendar, ticket links, audience map. For active touring.</div>
+            </div>
+            <div class="quick-card">
+              <div class="quick-name">Album drop</div>
+              <div class="quick-desc">Big cover art, track grid, stream link. For releases.</div>
+            </div>
+            <div class="quick-card">
+              <div class="quick-name">Studio mode</div>
+              <div class="quick-desc">Audio-first. New tracks, demos, work-in-progress.</div>
+            </div>
+            <div class="quick-card">
+              <div class="quick-name">Minimal</div>
+              <div class="quick-desc">Bio + links. Quiet. For low-key artists.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Template gallery -->
+        <div class="editor-section">
+          <h4 style="font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.7rem">All templates · 9</h4>
+          <div class="template-grid">
+            <div class="template-thumb tpl-1 selected"><span class="nm">Campaign Glow</span></div>
+            <div class="template-thumb tpl-2"><span class="nm">Midnight Neon</span></div>
+            <div class="template-thumb tpl-3"><span class="nm">Sunset Paper</span></div>
+            <div class="template-thumb tpl-4"><span class="nm">Y2K Sparkle</span></div>
+            <div class="template-thumb tpl-5"><span class="nm">Editorial</span></div>
+            <div class="template-thumb tpl-6"><span class="nm">Gallery Index</span></div>
+            <div class="template-thumb tpl-7"><span class="nm">Split Showcase</span></div>
+            <div class="template-thumb tpl-8"><span class="nm">Poster Stack</span></div>
+            <div class="template-thumb tpl-9"><span class="nm">Minimal Index</span></div>
+          </div>
+        </div>
+
+        <!-- Theme: accents -->
+        <div class="editor-section">
+          <h4 style="font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.7rem">Accent · 7 tones</h4>
+          <div class="swatch-grid">
+            <div class="swatch selected" style="background:var(--accent)"></div>
+            <div class="swatch" style="background:var(--r-venue)"></div>
+            <div class="swatch" style="background:var(--r-promoter)"></div>
+            <div class="swatch" style="background:var(--r-fan)"></div>
+            <div class="swatch" style="background:#c2a040"></div>
+            <div class="swatch" style="background:#3a6f9a"></div>
+            <div class="swatch" style="background:#1a1814"></div>
+          </div>
+        </div>
+
+        <!-- Theme: fonts -->
+        <div class="editor-section">
+          <h4 style="font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.7rem">Display font</h4>
+          <div class="font-grid">
+            <div class="font-row serif selected">
+              <span class="name">Editorial serif</span>
+              <span class="preview">Phantom Ridge</span>
+            </div>
+            <div class="font-row sans">
+              <span class="name">Modern sans</span>
+              <span class="preview">Phantom Ridge</span>
+            </div>
+            <div class="font-row mono">
+              <span class="name">Mono</span>
+              <span class="preview">PHANTOM RIDGE</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT: Live preview -->
+      <div class="preview-pane">
+        <div class="preview-head">
+          <h3>Live preview</h3>
+          <div class="preview-toggle">
+            <button class="active">Desktop</button>
+            <button>Tablet</button>
+            <button>Mobile</button>
+          </div>
+        </div>
+
+        <div class="preview-frame">
+          <div class="pp-cover t1">
+            <div class="pp-cover-actions">
+              <button>Edit cover</button>
+              <button>Replace</button>
+            </div>
+          </div>
+          <div class="pp-body">
+            <div>
+              <div class="pp-name serif">Phantom Ridge</div>
+              <div class="t-mono" style="color:var(--ink-3);font-size:.78rem;margin-top:.1rem">Indie · Portland, ME · since 2021</div>
+            </div>
+            <div class="pp-bio">Four-piece indie band. Two records, one EP. Currently on the Wreckage tour with stops across the Northeast through August.</div>
+            <div class="pp-stats">
+              <span><strong>14.2k</strong> followers</span>
+              <span><strong>8,412</strong> active HYPE</span>
+              <span><strong>12</strong> upcoming shows</span>
+            </div>
+            <div>
+              <div class="t-mono" style="font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.5rem">Upcoming · Wreckage tour</div>
+              <div class="pp-shows">
+                <div class="pp-show"><span class="date">22 Jun</span><span class="venue">State Theatre <span class="city">· Portland, ME</span></span><span class="t-mono" style="color:var(--accent);font-weight:600;font-size:.74rem">62%</span></div>
+                <div class="pp-show"><span class="date">14 Jul</span><span class="venue">Crystal Ballroom <span class="city">· Boston, MA</span></span><span class="t-mono" style="color:var(--ink-3);font-size:.74rem">81%</span></div>
+                <div class="pp-show"><span class="date">19 Jul</span><span class="venue">Higher Ground <span class="city">· Burlington, VT</span></span><span class="t-mono" style="color:var(--ink-3);font-size:.74rem">38%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:.5rem;justify-content:space-between;align-items:center;flex-wrap:wrap">
+          <span class="t-mono" style="color:var(--ink-3);font-size:.74rem">Auto-saved 4s ago</span>
+          <div style="display:flex;gap:.4rem">
+            <button class="btn btn-ghost btn-sm">Discard</button>
+            <button class="btn btn-primary btn-sm">Publish changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT ADAPTS -->
+  <section class="section">
+    <div class="section-head">
+      <div class="section-eyebrow">Same editor, four roles</div>
+      <h2 class="t-h2">What changes per role</h2>
+      <p class="lede">Same templates, same theme controls. Content sections adapt to what each role actually publishes.</p>
+    </div>
+    <div class="three-up">
+      <div>
+        <div class="tu-num" style="color:var(--r-artist);font-size:1.6rem">Artist</div>
+        <div class="tu-title">Tour, releases, audience map</div>
+        <div class="tu-desc">Show calendar with capacity meters, album/track grid, audience heatmap, tip jar links.</div>
+      </div>
+      <div>
+        <div class="tu-num" style="color:var(--r-venue);font-size:1.6rem">Venue</div>
+        <div class="tu-title">Calendar, capacity, photos</div>
+        <div class="tu-desc">Booking calendar with hold/open dates, capacity layouts, sound system specs, gallery.</div>
+      </div>
+      <div>
+        <div class="tu-num" style="color:var(--r-promoter);font-size:1.6rem">Promoter</div>
+        <div class="tu-title">Mixtapes, shows, residencies</div>
+        <div class="tu-desc">Featured mixes, upcoming events, residency series, artist roster, affiliate dashboard.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-left"><strong>iHYPE.org</strong> · 501(c)(3) · books open</div>
+    <div class="footer-links"><a href="/promise">The Promise</a><a href="/promise">Charter</a><a href="/promise">990</a><a href="/promise">Contact</a><a href="#">Accessibility</a></div>
+  </footer>
+</div>
+
+<!-- A11y panel -->
+<div class="a11y-panel-overlay" id="a11yOverlay"></div>
+<aside class="a11y-panel" id="a11yPanel" role="dialog">
+  <div class="a11y-panel-head"><h3>Accessibility</h3><button class="a11y-panel-close" id="closeA11y">×</button></div>
+  <div class="a11y-section"><h4>Language</h4>
+    <div class="toggle-pair" data-cols="4" role="radiogroup">
+      <button class="active" data-lang="en">EN</button><button data-lang="es">ES</button><button data-lang="pt">PT</button><button data-lang="fr">FR</button>
+    </div>
+  </div>
+  <div class="a11y-section"><h4>Vision</h4>
+    <div class="toggle-pair" data-cols="3" role="radiogroup">
+      <button class="active" data-size="default">Default</button><button data-size="large">Large</button><button data-size="xlarge">XL</button>
+    </div>
+  </div>
+  <div class="a11y-section"><h4>Reading</h4>
+    <div class="a11y-row toggle"><div><div class="name">Dyslexia-friendly</div></div><button class="switch" data-toggle="dyslexia"></button></div>
+    <div class="a11y-row toggle"><div><div class="name">High contrast</div></div><button class="switch" data-toggle="contrast"></button></div>
+  </div>
+  <div class="a11y-section"><h4>Motion</h4>
+    <div class="a11y-row toggle"><div><div class="name">Reduced motion</div></div><button class="switch" data-toggle="motion"></button></div>
+  </div>
+</aside>
+
+<script src="/ihype-shared.js"></script>
+<script>
+// Role switcher
+document.querySelectorAll('#roleSwitcher button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('#roleSwitcher button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+  });
+});
+// Editor tabs
+document.querySelectorAll('.editor-tabs .editor-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.editor-tabs .editor-tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+  });
+});
+// Quick cards
+document.querySelectorAll('.quick-card').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('.quick-card').forEach(x=>x.classList.remove('selected'));
+    c.classList.add('selected');
+  });
+});
+// Templates
+document.querySelectorAll('.template-thumb').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.template-thumb').forEach(x=>x.classList.remove('selected'));
+    t.classList.add('selected');
+    // Update preview cover
+    const tpl=Array.from(document.querySelectorAll('.template-thumb')).indexOf(t);
+    const cover=document.querySelector('.pp-cover');
+    if(cover){
+      cover.classList.remove('t1','t2','t3','t4');
+      cover.classList.add('t'+((tpl%4)+1));
+    }
+  });
+});
+// Swatches
+document.querySelectorAll('.swatch').forEach(s=>{
+  s.addEventListener('click',()=>{
+    document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('selected'));
+    s.classList.add('selected');
+  });
+});
+// Font rows
+document.querySelectorAll('.font-row').forEach(f=>{
+  f.addEventListener('click',()=>{
+    document.querySelectorAll('.font-row').forEach(x=>x.classList.remove('selected'));
+    f.classList.add('selected');
+    // Update preview name
+    const name=document.querySelector('.pp-name');
+    if(name){
+      name.classList.remove('serif');
+      if(f.classList.contains('serif'))name.classList.add('serif');
+      if(f.classList.contains('mono'))name.style.fontFamily="'JetBrains Mono',monospace";
+      else if(f.classList.contains('sans'))name.style.fontFamily="'DM Sans',sans-serif";
+      else name.style.fontFamily='';
+    }
+  });
+});
+// Preview toggle (desktop/mobile)
+document.querySelectorAll('.preview-toggle button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.preview-toggle button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const frame=document.querySelector('.preview-frame');
+    frame.classList.toggle('mobile',b.textContent==='Mobile');
+  });
+});
+</script>
+
+</div><!-- /site-shell -->
+</body>
+</html>
