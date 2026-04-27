@@ -82,13 +82,19 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    return [
-      { source: '/hype',        destination: '/ihype-hype-engine.html' },
-      { source: '/discover',    destination: '/ihype-rec-engine.html' },
-      { source: '/tickets',     destination: '/ihype-ticketing.html' },
-      { source: '/promise',     destination: '/ihype-promise.html' },
-      { source: '/customizer',  destination: '/ihype-page-customizer.html' }
-    ];
+    return {
+      beforeFiles: [
+        { source: '/', destination: '/ihype-homepage.html' }
+      ],
+      afterFiles: [
+        { source: '/hype',        destination: '/ihype-hype-engine.html' },
+        { source: '/discover',    destination: '/ihype-rec-engine.html' },
+        { source: '/tickets',     destination: '/ihype-ticketing.html' },
+        { source: '/promise',     destination: '/ihype-promise.html' },
+        { source: '/customizer',  destination: '/ihype-page-customizer.html' }
+      ],
+      fallback: []
+    };
   },
   async headers() {
     return [
