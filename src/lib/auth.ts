@@ -6,83 +6,11 @@ import { db } from '@/lib/db';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 import { areDemoLoginsEnabled, isDemoIdentifier, isDemoUser } from '@/lib/runtime-flags';
-
-const useSecureCookies = process.env.NODE_ENV === 'production';
-const sessionMaxAgeSeconds = 12 * 60 * 60;
-const transientAuthCookieMaxAgeSeconds = 10 * 60;
+import { authConfig } from '@/lib/auth.config';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(db),
-  session: {
-    strategy: 'jwt',
-    maxAge: sessionMaxAgeSeconds,
-    updateAge: 60 * 60
-  },
-  pages: {
-    signIn: '/login'
-  },
-  useSecureCookies,
-  cookies: {
-    sessionToken: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: useSecureCookies,
-        maxAge: sessionMaxAgeSeconds
-      }
-    },
-    callbackUrl: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies,
-        maxAge: transientAuthCookieMaxAgeSeconds
-      }
-    },
-    csrfToken: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies,
-        maxAge: transientAuthCookieMaxAgeSeconds
-      }
-    },
-    pkceCodeVerifier: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies
-      }
-    },
-    state: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies
-      }
-    },
-    nonce: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies
-      }
-    },
-    webauthnChallenge: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies
-      }
-    }
-  },
   providers: [
     Credentials({
       credentials: {
@@ -133,20 +61,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         };
       }
     })
-  ],
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as { role?: string }).role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub ?? '';
-        session.user.role = typeof token.role === 'string' ? token.role : 'FAN';
-      }
-      return session;
-    }
-  }
+  ]
 });

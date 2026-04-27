@@ -1,5 +1,8 @@
+import NextAuth from 'next-auth';
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { authConfig } from '@/lib/auth.config';
+
+const { auth } = NextAuth(authConfig);
 
 function isLocalHost(hostname: string) {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost');
