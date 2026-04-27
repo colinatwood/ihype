@@ -135,14 +135,14 @@
   <div class="nav-left">
     <a href="/" style="text-decoration:none;color:inherit"><div class="brand">i<em>HYPE</em></div></a>
     <div class="nav-links">
-      <a href="/discover" class="nav-link">Discover</a>
+      <a href="/discover" class="nav-link" data-i18n="nav.discover">Discover</a>
       <a href="/customizer" class="nav-link">My page</a>
       <a href="/customizer" class="nav-link active">Customize</a>
-      <a href="/promise" class="nav-link">The Promise</a>
+      <a href="/promise" class="nav-link" data-i18n="nav.promise">The Promise</a>
     </div>
   </div>
   <div class="nav-right">
-    <button class="a11y-btn" id="openA11y"><span aria-hidden="true">⊙</span><span>Accessibility</span></button>
+    <button class="a11y-btn" id="openA11y"><span aria-hidden="true">⊙</span><span data-i18n="nav.a11y">Accessibility</span></button>
     <button class="role-pill artist"><span class="av">P</span><span class="name">Phantom Ridge</span><span class="ctx">Artist ▾</span></button>
   </div>
 </nav>
@@ -329,7 +329,7 @@
   </section>
 
   <footer class="footer">
-    <div class="footer-left"><strong>iHYPE.org</strong> · 501(c)(3) · books open</div>
+    <div class="footer-left"><strong>iHYPE.org</strong> · <span data-i18n="footer.legal">501(c)(3) · books open</span></div>
     <div class="footer-links"><a href="/promise">The Promise</a><a href="/promise">Charter</a><a href="/promise">990</a><a href="/promise">Contact</a><a href="#">Accessibility</a></div>
   </footer>
 </div>
@@ -337,23 +337,23 @@
 <!-- A11y panel -->
 <div class="a11y-panel-overlay" id="a11yOverlay"></div>
 <aside class="a11y-panel" id="a11yPanel" role="dialog">
-  <div class="a11y-panel-head"><h3>Accessibility</h3><button class="a11y-panel-close" id="closeA11y">×</button></div>
-  <div class="a11y-section"><h4>Language</h4>
+  <div class="a11y-panel-head"><h3 data-i18n="a11y.title">Accessibility</h3><button class="a11y-panel-close" id="closeA11y">×</button></div>
+  <div class="a11y-section"><h4 data-i18n="a11y.lang">Language</h4>
     <div class="toggle-pair" data-cols="4" role="radiogroup">
       <button class="active" data-lang="en">EN</button><button data-lang="es">ES</button><button data-lang="pt">PT</button><button data-lang="fr">FR</button>
     </div>
   </div>
-  <div class="a11y-section"><h4>Vision</h4>
+  <div class="a11y-section"><h4 data-i18n="a11y.vision">Vision</h4>
     <div class="toggle-pair" data-cols="3" role="radiogroup">
       <button class="active" data-size="default">Default</button><button data-size="large">Large</button><button data-size="xlarge">XL</button>
     </div>
   </div>
-  <div class="a11y-section"><h4>Reading</h4>
-    <div class="a11y-row toggle"><div><div class="name">Dyslexia-friendly</div></div><button class="switch" data-toggle="dyslexia"></button></div>
-    <div class="a11y-row toggle"><div><div class="name">High contrast</div></div><button class="switch" data-toggle="contrast"></button></div>
+  <div class="a11y-section"><h4 data-i18n="a11y.reading">Reading</h4>
+    <div class="a11y-row toggle"><div><div class="name" data-i18n="a11y.dyslexia">Dyslexia-friendly</div></div><button class="switch" data-toggle="dyslexia"></button></div>
+    <div class="a11y-row toggle"><div><div class="name" data-i18n="a11y.contrast">High contrast</div></div><button class="switch" data-toggle="contrast"></button></div>
   </div>
-  <div class="a11y-section"><h4>Motion</h4>
-    <div class="a11y-row toggle"><div><div class="name">Reduced motion</div></div><button class="switch" data-toggle="motion"></button></div>
+  <div class="a11y-section"><h4 data-i18n="a11y.motion">Motion</h4>
+    <div class="a11y-row toggle"><div><div class="name" data-i18n="a11y.reduced">Reduced motion</div></div><button class="switch" data-toggle="motion"></button></div>
   </div>
 </aside>
 

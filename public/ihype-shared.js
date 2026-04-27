@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════════════════════════════════
+﻿// ═══════════════════════════════════════════════════════════════════════
 // iHYPE · shared interactions + i18n
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -20,6 +20,11 @@
       'nav.signin':      'Sign in',
       'nav.join':        'Join free',
       'nav.a11y':        'Accessibility',
+      'nav.charts':      'Charts',
+      'nav.shows':       'Shows',
+      'nav.promise':     'The Promise',
+      'nav.myshows':     'My shows',
+      'nav.create':      'Create',
 
       // Hero
       'hero.eyebrow':    'Not-for-profit · free forever · built for the scene',
@@ -228,6 +233,11 @@
       'nav.signin':      'Iniciar sesión',
       'nav.join':        'Únete gratis',
       'nav.a11y':        'Accesibilidad',
+      'nav.charts':      'Clasificaciones',
+      'nav.shows':       'Shows',
+      'nav.promise':     'La Promesa',
+      'nav.myshows':     'Mis shows',
+      'nav.create':      'Crear',
       'hero.eyebrow':    'Sin fines de lucro · gratis para siempre · hecho para la escena',
       'hero.h1':         'Música independiente, <em>impulsada por quienes la aman.</em>',
       'hero.lede':       'iHYPE es una plataforma de música gratuita que no pertenece a nadie con ánimo de lucro. Los fans descubren y apoyan a los artistas. Los artistas cobran cuando su música vende entradas. La gente que hace la escena —no una corporación— decide qué sube.',
@@ -408,6 +418,11 @@
       'nav.signin':      'Entrar',
       'nav.join':        'Junte-se grátis',
       'nav.a11y':        'Acessibilidade',
+      'nav.charts':      'Paradas',
+      'nav.shows':       'Shows',
+      'nav.promise':     'A Promessa',
+      'nav.myshows':     'Meus shows',
+      'nav.create':      'Criar',
       'hero.eyebrow':    'Sem fins lucrativos · gratuito para sempre · feito para a cena',
       'hero.h1':         'Música independente, <em>com hype de quem a ama.</em>',
       'hero.lede':       'iHYPE é uma plataforma de música gratuita que não pertence a ninguém com fins lucrativos. Os fãs descobrem e apoiam artistas. Os artistas recebem quando a sua música vende ingressos. As pessoas que fazem a cena — não uma corporação — decidem o que sobe.',
@@ -588,6 +603,11 @@
       'nav.signin':      'Se connecter',
       'nav.join':        'Rejoindre gratuitement',
       'nav.a11y':        'Accessibilité',
+      'nav.charts':      'Classements',
+      'nav.shows':       'Concerts',
+      'nav.promise':     'La Promesse',
+      'nav.myshows':     'Mes concerts',
+      'nav.create':      'Créer',
       'hero.eyebrow':    'Sans but lucratif · gratuit pour toujours · fait pour la scène',
       'hero.h1':         'Musique indépendante, <em>portée par ceux qui l\'aiment.</em>',
       'hero.lede':       'iHYPE est une plateforme de musique gratuite qui n\'appartient à personne ayant des motifs lucratifs. Les fans découvrent et soutiennent les artistes. Les artistes sont payés lorsque leur musique vend des billets. Les gens qui font la scène — pas une entreprise — décident de ce qui monte.',
