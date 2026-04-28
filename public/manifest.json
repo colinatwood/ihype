@@ -2,7 +2,7 @@
   "name": "iHYPE.org",
   "short_name": "iHYPE",
   "description": "Independent music, hyped by the people who love it. A not-for-profit platform for fans, artists, venues, and promoters.",
-  "start_url": "/ihype-homepage.html",
+  "start_url": "/home",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -70,19 +70,19 @@
     {
       "name": "Discover",
       "short_name": "Discover",
-      "url": "/ihype-homepage.html",
+      "url": "/discover",
       "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "My Tickets",
       "short_name": "Tickets",
-      "url": "/ihype-ticketing.html",
+      "url": "/tickets",
       "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     },
     {
       "name": "The Promise",
       "short_name": "Promise",
-      "url": "/ihype-promise.html",
+      "url": "/promise",
       "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }]
     }
   ],

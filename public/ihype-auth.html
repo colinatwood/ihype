@@ -3,119 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sign in · iHYPE.org</title>
+<title>Sign in | iHYPE.org</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/ihype-shared.css">
 <style>
-.auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;max-width:880px;margin:0 auto}
-.auth-side{background:var(--bg-2);padding:2.4rem 2.2rem;display:flex;flex-direction:column;gap:1.1rem}
-.auth-side h2{margin-bottom:.3rem}
-.auth-side .sub{color:var(--ink-2);font-size:.95rem;line-height:1.55}
-
-/* OTP */
+.auth-wrap{min-height:calc(100vh - 120px);display:grid;place-items:center;padding:clamp(1.5rem,4vw,3.5rem) 0}
+.auth-shell{width:min(980px,100%);display:grid;gap:1.25rem}
+.auth-hero{display:grid;gap:.7rem;text-align:center;margin:0 auto;max-width:760px}
+.auth-hero .eyebrow{display:inline-flex;align-items:center;gap:.5rem;margin:0 auto;font-family:var(--f-m);font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.auth-hero .eyebrow:before{content:"";width:8px;height:8px;border-radius:999px;background:var(--accent)}
+.auth-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.08)}
+.auth-side{background:color-mix(in srgb,var(--bg-2) 94%,transparent);padding:clamp(1.4rem,3vw,2.4rem);display:flex;flex-direction:column;gap:1rem}
+.auth-side .sub{color:var(--ink-2);font-size:.94rem;line-height:1.55}
+.field-input select{width:100%;background:transparent;border:0;outline:0;color:var(--ink);font:inherit}
+.field-check{display:grid;grid-template-columns:auto 1fr;gap:.65rem;align-items:start;color:var(--ink-2);font-size:.82rem;line-height:1.45}
+.field-check input{margin-top:.2rem;accent-color:var(--accent)}
+.otp-card{max-width:520px;margin:0 auto;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:clamp(1.5rem,4vw,2.4rem);box-shadow:0 24px 80px rgba(0,0,0,.08)}
 .otp-grid{display:flex;gap:.5rem;justify-content:center;margin:1.2rem 0}
-.otp-input{width:48px;height:56px;background:var(--bg-2);border:1.5px solid var(--line-2);border-radius:var(--r-md);text-align:center;font-family:var(--f-d);font-size:1.5rem;font-weight:600;color:var(--ink);outline:none;transition:all .15s}
-.otp-input:focus,.otp-input.filled{border-color:var(--ink);background:var(--bg)}
-
-/* Sign-in options list */
-.signin-list{display:flex;flex-direction:column;gap:.5rem}
-.signin-opt{display:grid;grid-template-columns:38px 1fr auto;gap:.85rem;padding:.95rem 1rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);align-items:center;transition:all .15s;cursor:pointer}
-.signin-opt:hover{background:var(--bg-2);border-color:var(--line-3);transform:translateX(2px)}
-.signin-opt-icon{width:38px;height:38px;border-radius:var(--r-sm);background:var(--bg-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:var(--f-d);font-weight:700;color:var(--ink-2)}
-.signin-opt .n{font-size:.92rem;font-weight:500}
-.signin-opt .s{font-family:var(--f-m);font-size:.74rem;color:var(--ink-3);margin-top:.1rem}
-.signin-opt .arrow{color:var(--ink-3);font-family:var(--f-m)}
-
-/* Role switcher demonstration */
-.demo-nav{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.2rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:.7rem}
-.demo-nav .demo-brand{font-family:var(--f-d);font-weight:700;font-size:.95rem;letter-spacing:-.005em}
-.demo-nav .demo-brand em{font-style:normal;color:var(--accent)}
-.demo-content{padding:1.5rem 1.6rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg);transition:all .25s}
-.demo-content.fan{border-left:3px solid var(--r-fan);background:linear-gradient(135deg,var(--r-fan-soft) -20%,var(--bg) 30%)}
-.demo-content.artist{border-left:3px solid var(--r-artist);background:linear-gradient(135deg,var(--r-artist-soft) -20%,var(--bg) 30%)}
-.demo-content.venue{border-left:3px solid var(--r-venue);background:linear-gradient(135deg,var(--r-venue-soft) -20%,var(--bg) 30%)}
-.demo-content.promoter{border-left:3px solid var(--r-promoter);background:linear-gradient(135deg,var(--r-promoter-soft) -20%,var(--bg) 30%)}
-.demo-content-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.6rem}
-.demo-content h4{font-family:var(--f-d);font-size:1.05rem;font-weight:600;display:flex;align-items:center;gap:.6rem}
-.demo-content .ctx{font-family:var(--f-m);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:.2rem .55rem;border-radius:99px;color:#fff}
-.demo-content.fan .ctx{background:var(--r-fan)}
-.demo-content.artist .ctx{background:var(--r-artist)}
-.demo-content.venue .ctx{background:var(--r-venue)}
-.demo-content.promoter .ctx{background:var(--r-promoter)}
-.demo-content p{font-size:.9rem;color:var(--ink-2);line-height:1.55;margin-bottom:.85rem}
-.demo-actions{display:flex;gap:.4rem;flex-wrap:wrap}
-.demo-action{padding:.35rem .8rem;border-radius:99px;font-size:.74rem;color:var(--ink-2);border:1px solid var(--line-2);background:var(--bg-2);font-family:var(--f-m)}
-
-/* Role demo selector */
-.role-demo-select{display:flex;gap:.4rem;margin-bottom:.85rem;flex-wrap:wrap}
-.role-demo-select button{padding:.45rem 1rem;border-radius:99px;font-size:.78rem;color:var(--ink-2);background:var(--bg-2);border:1px solid var(--line);font-weight:500;display:flex;align-items:center;gap:.45rem;transition:all .15s}
-.role-demo-select button .dot{width:7px;height:7px;border-radius:50%}
-.role-demo-select button.fan .dot{background:var(--r-fan)}
-.role-demo-select button.artist .dot{background:var(--r-artist)}
-.role-demo-select button.venue .dot{background:var(--r-venue)}
-.role-demo-select button.promoter .dot{background:var(--r-promoter)}
-.role-demo-select button.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.role-demo-select button.active .dot{background:#fff}
-
-/* Defense list */
-.defense-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden}
-.defense-card{background:var(--bg-2);padding:1.6rem 1.7rem;display:flex;flex-direction:column;gap:.85rem}
-.defense-tag{font-family:var(--f-m);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600}
-.defense-card h3{font-family:var(--f-d);font-size:1.1rem;font-weight:600}
-.defense-list{display:flex;flex-direction:column;gap:.45rem;margin-top:.4rem}
-.defense-item{display:grid;grid-template-columns:auto 1fr;gap:.6rem;font-size:.86rem;color:var(--ink-2);line-height:1.55;align-items:start}
-.defense-item .check{color:var(--accent);font-weight:700;font-family:var(--f-d);font-size:.9rem;line-height:1.5}
-.defense-item strong{color:var(--ink);font-weight:600}
-
-/* Rate limit grid */
-.rate-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem}
-.rate-tile{padding:1.1rem 1.2rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md)}
-.rate-tile .lbl{font-family:var(--f-m);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.4rem}
-.rate-tile .num{font-family:var(--f-d);font-size:1.6rem;font-weight:600;color:var(--accent)}
-.rate-tile .win{font-family:var(--f-m);font-size:.74rem;color:var(--ink-3);margin-top:.15rem}
-
-/* Admin card */
-.admin-card{padding:2rem 2.2rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);border-left:3px solid var(--accent)}
-.admin-card .stamp{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .65rem;font-family:var(--f-m);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600;border:1px solid var(--accent);border-radius:99px;margin-bottom:.85rem}
-.admin-flow{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;margin-top:1rem}
-.admin-step{padding:1rem 1.1rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md)}
-.admin-step .num{font-family:var(--f-m);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:.3rem}
-.admin-step .name{font-family:var(--f-d);font-size:.95rem;font-weight:600;margin-bottom:.3rem}
-.admin-step p{font-size:.78rem;color:var(--ink-2);line-height:1.5}
-
-/* Role pill switcher panel */
-.role-pill-wrap{position:relative;display:inline-block}
-.role-switcher-panel{position:absolute;top:calc(100% + .5rem);right:0;width:320px;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:0 12px 40px rgba(0,0,0,.08);z-index:10;padding:.7rem}
-.role-switch-head{padding:.4rem .55rem .8rem;border-bottom:1px solid var(--line);margin-bottom:.4rem;display:flex;justify-content:space-between;align-items:center}
-.role-switch-head .lbl{font-family:var(--f-m);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
-.role-switch-head .acct{font-size:.74rem;color:var(--ink-3);font-family:var(--f-m)}
-.role-switch-item{display:grid;grid-template-columns:32px 1fr auto;gap:.7rem;padding:.65rem .55rem;border-radius:var(--r-md);cursor:pointer;align-items:center;transition:background .15s}
-.role-switch-item:hover{background:var(--bg-2)}
-.role-switch-item.current{background:var(--bg-2)}
-.role-switch-item-av{width:32px;height:32px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--f-d);font-weight:700;font-size:.78rem}
-.role-switch-item.fan .role-switch-item-av{background:var(--r-fan)}
-.role-switch-item.artist .role-switch-item-av{background:var(--r-artist)}
-.role-switch-item.venue .role-switch-item-av{background:var(--r-venue)}
-.role-switch-item.promoter .role-switch-item-av{background:var(--r-promoter)}
-.role-switch-item .n{font-size:.86rem;font-weight:500}
-.role-switch-item .s{font-family:var(--f-m);font-size:.66rem;color:var(--ink-3);margin-top:.1rem}
-.role-switch-item .active-tag{font-family:var(--f-m);font-size:.55rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;padding:.18rem .45rem;border-radius:99px;background:var(--ink);color:var(--bg)}
-.role-switch-add{display:flex;align-items:center;gap:.6rem;padding:.7rem .55rem;margin-top:.3rem;border-top:1px dashed var(--line);font-size:.82rem;color:var(--ink-2);cursor:pointer;border-radius:var(--r-md)}
-.role-switch-add:hover{background:var(--bg-2);color:var(--ink)}
-.role-switch-add .plus{color:var(--accent);font-family:var(--f-d);font-weight:700;font-size:1rem}
-.role-switch-foot{display:flex;justify-content:space-between;padding:.5rem .55rem 0;font-size:.74rem;color:var(--ink-3);margin-top:.4rem;border-top:1px solid var(--line);padding-top:.7rem}
-
-@media (max-width:880px){
-  .auth-grid,.defense-grid,.admin-flow{grid-template-columns:1fr}
-  .rate-grid{grid-template-columns:1fr 1fr}
-  .role-switcher-panel{width:280px;right:-1rem}
-}
+.otp-input{width:48px;height:56px;background:var(--bg);border:1.5px solid var(--line-2);border-radius:var(--r-md);text-align:center;font-family:var(--f-d);font-size:1.5rem;font-weight:600;color:var(--ink);outline:none;transition:all .15s}
+.otp-input:focus,.otp-input.filled{border-color:var(--ink);background:var(--bg-2)}
+.auth-error{display:none;color:#f87171;font-size:.82rem;margin-bottom:.25rem}
+.auth-note{text-align:center;color:var(--ink-3);font-size:.82rem;line-height:1.5}
+@media (max-width:880px){.auth-grid{grid-template-columns:1fr}.auth-wrap{place-items:start}.otp-input{width:42px;height:52px}}
 </style>
 </head>
 <body>
-<!-- Animated background -->
 <div class="bg-canvas" aria-hidden="true">
   <div class="bg-orb bg-orb-1"></div>
   <div class="bg-orb bg-orb-2"></div>
@@ -123,371 +37,129 @@
   <div class="bg-grid"></div>
   <div class="bg-noise"></div>
 </div>
+
 <div class="site-shell">
-
-
-<!-- Nav -->
-<nav class="nav">
-  <div class="nav-left">
-    <a href="/" style="text-decoration:none;color:inherit"><div class="brand">i<em>HYPE</em></div></a>
-    <div class="nav-links">
-      <a href="/discover" class="nav-link" data-i18n="nav.discover">Discover</a>
-      <a href="/hype" class="nav-link" data-i18n="nav.charts">Charts</a>
-      <a href="/tickets" class="nav-link" data-i18n="nav.shows">Shows</a>
-      <a href="/promise" class="nav-link" data-i18n="nav.promise">The Promise</a>
+  <nav class="nav">
+    <div class="nav-left">
+      <a href="/" style="text-decoration:none;color:inherit"><div class="brand">i<em>HYPE</em></div></a>
+      <div class="nav-links">
+        <a href="/promise" class="nav-link" data-i18n="nav.promise">The Promise</a>
+        <a href="/discover" class="nav-link" data-i18n="nav.discover">Discover</a>
+        <a href="/tickets" class="nav-link" data-i18n="nav.shows">Shows</a>
+      </div>
     </div>
-  </div>
-  <div class="nav-right">
-    <button class="a11y-btn" id="openA11y"><span aria-hidden="true">⊙</span><span data-i18n="nav.a11y">Accessibility</span></button>
-    <a href="/login" class="btn btn-ghost">Sign in</a>
-    <a href="/login" class="btn btn-primary">Join free</a>
-  </div>
-</nav>
-
-<div class="page">
-
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-eyebrow"><span class="dot"></span> Account · sign up · sign in · roles</div>
-    <h1 class="t-h1">Two fields. <em>One code. You're in.</em></h1>
-    <p class="hero-lede">Email or phone. A 6-digit verification code. That's it. No passwords, no demographics, no marketing opt-ins. Add roles when you're ready. Switch between them whenever.</p>
-  </section>
-
-  <!-- SIGNUP / SIGNIN side-by-side -->
-  <section class="section" id="auth-section">
-    <div class="section-head">
-      <div class="section-eyebrow">01 · Get in</div>
-      <h2 class="t-h2">Sign up. <em>Or sign in.</em></h2>
+    <div class="nav-right">
+      <button class="a11y-btn" id="openA11y"><span aria-hidden="true">+</span><span data-i18n="nav.a11y">Accessibility</span></button>
+      <a href="/login" class="btn btn-ghost">Sign in</a>
+      <a href="/register" class="btn btn-primary">Join free</a>
     </div>
+  </nav>
 
-    <div class="auth-grid">
-      <!-- SIGN UP (left) -->
-      <div class="auth-side" id="signup-panel">
-        <div class="tag tag-accent" style="align-self:flex-start">Sign up · 2 steps</div>
-        <h2 class="t-h3">Welcome to iHYPE.</h2>
-        <div class="sub">Free forever. No tiers. No upsell.</div>
+  <main class="auth-wrap">
+    <div class="auth-shell">
+      <section class="auth-hero">
+        <div class="eyebrow">Account access</div>
+        <h1 class="t-h1">Create your account. <em>Verify by email.</em></h1>
+        <p class="hero-lede">Choose fan, artist, promoter, or venue. iHYPE sends a single-use SMTP email code to finish sign-up or sign-in.</p>
+      </section>
 
-        <div class="field">
-          <label class="field-label" for="su-email">Email</label>
-          <div class="field-input">
-            <input id="su-email" type="email" placeholder="you@something.com" autocomplete="email">
+      <section id="auth-section" class="auth-grid" aria-label="Sign up or sign in">
+        <div class="auth-side" id="signup-panel">
+          <div class="tag tag-accent" style="align-self:flex-start">Sign up</div>
+          <h2 class="t-h3">Join iHYPE.</h2>
+          <div class="sub">Create the account type you need. Your role decides which dashboard opens after login.</div>
+
+          <div class="field">
+            <label class="field-label" for="su-email">Email</label>
+            <div class="field-input"><input id="su-email" type="email" placeholder="you@example.com" autocomplete="email"></div>
           </div>
-        </div>
 
-        <div class="field">
-          <label class="field-label" for="su-username">Username</label>
-          <div class="field-input">
-            <input id="su-username" type="text" placeholder="yourname" autocomplete="username">
+          <div class="field">
+            <label class="field-label" for="su-username">Username</label>
+            <div class="field-input"><input id="su-username" type="text" placeholder="yourname" autocomplete="username"></div>
           </div>
-        </div>
 
-        <div class="field">
-          <label class="field-label" for="su-password">Password <span style="color:var(--ink-3);font-size:.75em">8+ chars, 1 letter, 1 number</span></label>
-          <div class="field-input">
-            <input id="su-password" type="password" placeholder="••••••••" autocomplete="new-password">
+          <div class="field">
+            <label class="field-label" for="su-role">Account type</label>
+            <div class="field-input">
+              <select id="su-role" autocomplete="off">
+                <option value="">Choose account type</option>
+                <option value="FAN">Fan</option>
+                <option value="ARTIST">Artist</option>
+                <option value="DJ">Promoter</option>
+                <option value="VENUE">Venue</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div id="su-error" style="display:none;color:#f87171;font-size:.82rem;margin-bottom:.5rem"></div>
-        <button id="su-btn" class="btn btn-primary btn-block btn-lg" onclick="handleSignUp()">Create account → get code</button>
-        <div class="field-help" style="text-align:center;margin-top:.5rem">By continuing, you agree to the <a href="/promise" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">charter</a> and <a href="/promise" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">privacy promise</a>. We never sell data.</div>
-      </div>
-
-      <!-- SIGN IN (right) -->
-      <div class="auth-side" id="signin-panel">
-        <div class="tag" style="align-self:flex-start">Returning · 2 steps</div>
-        <h2 class="t-h3">Welcome back.</h2>
-        <div class="sub">Email or username + password. We'll send you a code.</div>
-
-        <div class="field">
-          <label class="field-label" for="si-identifier">Email or username</label>
-          <div class="field-input">
-            <input id="si-identifier" type="text" placeholder="you@something.com" autocomplete="username">
+          <div class="field">
+            <label class="field-label" for="su-password">Password <span style="color:var(--ink-3);font-size:.75em">8+ chars, 1 letter, 1 number</span></label>
+            <div class="field-input"><input id="su-password" type="password" placeholder="Password" autocomplete="new-password"></div>
           </div>
+
+          <label class="field-check" for="su-age-policy">
+            <input id="su-age-policy" type="checkbox">
+            <span>I attest that I am 13 years of age or older and I recognize that iHYPE is not responsible for any content within. Artists and promoters also confirm they have rights to uploaded media.</span>
+          </label>
+
+          <div id="su-error" class="auth-error"></div>
+          <button id="su-btn" class="btn btn-primary btn-block btn-lg" type="button">Create account and send code</button>
+          <div class="auth-note">By continuing, you agree to the <a href="/promise">charter</a> and privacy promise.</div>
         </div>
 
-        <div class="field">
-          <label class="field-label" for="si-password">Password</label>
-          <div class="field-input">
-            <input id="si-password" type="password" placeholder="••••••••" autocomplete="current-password">
+        <div class="auth-side" id="signin-panel">
+          <div class="tag" style="align-self:flex-start">Sign in</div>
+          <h2 class="t-h3">Welcome back.</h2>
+          <div class="sub">Enter your email or username and password. We will send a code to your account email.</div>
+
+          <div class="field">
+            <label class="field-label" for="si-identifier">Email or username</label>
+            <div class="field-input"><input id="si-identifier" type="text" placeholder="you@example.com" autocomplete="username"></div>
           </div>
-        </div>
 
-        <div id="si-error" style="display:none;color:#f87171;font-size:.82rem;margin-bottom:.5rem"></div>
-        <button id="si-btn" class="btn btn-primary btn-block btn-lg" onclick="handleSignIn()">Send my code →</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- OTP VERIFY (shown after code is sent) -->
-  <section class="section" id="otp-section" style="display:none">
-    <div class="section-head">
-      <div class="section-eyebrow">02 · Verify</div>
-      <h2 class="t-h2">Check your inbox.</h2>
-    </div>
-    <div class="card" style="max-width:480px;margin:0 auto">
-      <div class="t-small" style="margin-bottom:1rem">We sent a 6-digit code to <strong id="otp-email-label" style="color:var(--ink)"></strong>. Expires in 10 minutes.</div>
-      <div class="otp-grid">
-        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-0"/>
-        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-1"/>
-        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-2"/>
-        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-3"/>
-        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-4"/>
-        <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-5"/>
-      </div>
-      <div id="otp-error" style="display:none;color:#f87171;font-size:.82rem;margin-bottom:.5rem;text-align:center"></div>
-      <button id="otp-btn" class="btn btn-primary btn-block btn-lg" onclick="handleVerify()">Verify and continue →</button>
-      <div class="field-help" style="text-align:center;margin-top:.85rem">
-        Wrong inbox? <a href="#auth-section" onclick="resetToForms()" style="color:var(--ink);text-decoration:underline;text-underline-offset:3px">Go back</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ROLE SWITCHER -->
-  <section class="section">
-    <div class="section-head">
-      <div class="section-eyebrow">03 · Switch perspectives</div>
-      <h2 class="t-h2">One account. <em>Every lens.</em></h2>
-      <p class="lede">The role pill in the nav opens a switcher. Each role lights up the part of the platform that role uses — its own colors, its own tools, its own surfaces. Same account underneath.</p>
-    </div>
-
-    <!-- Demo nav with role pill open -->
-    <div class="demo-nav">
-      <div class="demo-brand">i<em>HYPE</em></div>
-      <div class="role-pill-wrap">
-        <div class="role-pill fan">
-          <span class="av">M</span>
-          <span class="name">Maya</span>
-          <span class="ctx">Fan ▾</span>
-        </div>
-        <div class="role-switcher-panel">
-          <div class="role-switch-head">
-            <span class="lbl">Switch perspective</span>
-            <span class="acct">maya@…</span>
+          <div class="field">
+            <label class="field-label" for="si-password">Password</label>
+            <div class="field-input"><input id="si-password" type="password" placeholder="Password" autocomplete="current-password"></div>
           </div>
-          <div class="role-switch-item fan current">
-            <div class="role-switch-item-av">F</div>
-            <div><div class="n">Fan</div><div class="s">Listening · attending · hyping</div></div>
-            <span class="active-tag">Active</span>
+
+          <div id="si-error" class="auth-error"></div>
+          <button id="si-btn" class="btn btn-primary btn-block btn-lg" type="button">Send my code</button>
+        </div>
+      </section>
+
+      <section id="otp-section" style="display:none" aria-label="Verify email code">
+        <div class="otp-card">
+          <div class="section-head" style="text-align:center;margin-bottom:1rem">
+            <div class="section-eyebrow">Verify email</div>
+            <h2 class="t-h2">Check your inbox.</h2>
           </div>
-          <div class="role-switch-item artist">
-            <div class="role-switch-item-av">A</div>
-            <div><div class="n">Artist · "Phantom Ridge"</div><div class="s">Tour · payouts · releases</div></div>
-            <span style="color:var(--ink-3);font-family:var(--f-m)">→</span>
+          <div class="t-small" style="margin-bottom:1rem;text-align:center">We sent a 6-digit code to <strong id="otp-email-label" style="color:var(--ink)"></strong>. It expires in 10 minutes.</div>
+          <div class="otp-grid">
+            <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-0" aria-label="Digit 1">
+            <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-1" aria-label="Digit 2">
+            <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-2" aria-label="Digit 3">
+            <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-3" aria-label="Digit 4">
+            <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-4" aria-label="Digit 5">
+            <input class="otp-input" maxlength="1" inputmode="numeric" id="otp-5" aria-label="Digit 6">
           </div>
-          <div class="role-switch-item promoter">
-            <div class="role-switch-item-av">P</div>
-            <div><div class="n">Promoter · "Slow Burn"</div><div class="s">Show curation · affiliate $</div></div>
-            <span style="color:var(--ink-3);font-family:var(--f-m)">→</span>
-          </div>
-          <div class="role-switch-add">
-            <span class="plus">+</span>
-            <span>Add another role · <strong style="color:var(--ink)">Venue</strong></span>
-          </div>
-          <div class="role-switch-foot">
-            <a href="/login" style="color:var(--ink-2)">Account settings</a>
-            <a href="/login" style="color:var(--ink-2)">Sign out</a>
-          </div>
+          <div id="otp-error" class="auth-error" style="text-align:center"></div>
+          <button id="otp-btn" class="btn btn-primary btn-block btn-lg" type="button">Verify and continue</button>
+          <div class="auth-note" style="margin-top:.85rem">Wrong inbox? <a id="otp-back" href="#auth-section">Go back</a></div>
         </div>
-      </div>
+      </section>
     </div>
-
-    <!-- Role demo selector -->
-    <div class="role-demo-select" id="roleDemoSelect">
-      <button class="fan active" data-role="fan"><span class="dot"></span>As Fan</button>
-      <button class="artist" data-role="artist"><span class="dot"></span>As Artist</button>
-      <button class="venue" data-role="venue"><span class="dot"></span>As Venue</button>
-      <button class="promoter" data-role="promoter"><span class="dot"></span>As Promoter</button>
-    </div>
-
-    <!-- Demo content (4 stacked) -->
-    <div class="demo-content fan">
-      <div class="demo-content-head">
-        <h4>Discovering for you <span class="ctx">Fan view</span></h4>
-        <span class="tag tag-fan">×1.0 local</span>
-      </div>
-      <p>Recommendations weighted to your county. 12 friends are active. 4 shows in your area this week. The HYPE wallet shows your balance, your given, and what's still inside its 90-day fade.</p>
-      <div class="demo-actions">
-        <span class="demo-action">Local recs</span>
-        <span class="demo-action">Friends pulse</span>
-        <span class="demo-action">Tickets</span>
-        <span class="demo-action">My HYPE</span>
-      </div>
-    </div>
-
-    <div class="demo-content artist" style="margin-top:.5rem">
-      <div class="demo-content-head">
-        <h4>Phantom Ridge · tour planner <span class="ctx">Artist view</span></h4>
-        <span class="tag tag-artist">12 hot cities</span>
-      </div>
-      <p>HYPE concentration heatmap, suggested 6-stop tour route, venue capacity matches with projected fill rates. Payout dashboard shows pending and cleared earnings on the 45% split.</p>
-      <div class="demo-actions">
-        <span class="demo-action">Tour planner</span>
-        <span class="demo-action">Releases</span>
-        <span class="demo-action">Payouts</span>
-        <span class="demo-action">Audience map</span>
-      </div>
-    </div>
-
-    <div class="demo-content venue" style="margin-top:.5rem">
-      <div class="demo-content-head">
-        <h4>State Theatre · booking radar <span class="ctx">Venue view</span></h4>
-        <span class="tag tag-venue">23 open dates</span>
-      </div>
-      <p>Local artists with HYPE momentum that haven't played here yet. Compatible promoters by audience overlap. Door-scan dashboard for live events. Format-trend signals (late-night DJ sets ↑84%).</p>
-      <div class="demo-actions">
-        <span class="demo-action">Booking radar</span>
-        <span class="demo-action">Door scanner</span>
-        <span class="demo-action">Calendar</span>
-        <span class="demo-action">Payouts</span>
-      </div>
-    </div>
-
-    <div class="demo-content promoter" style="margin-top:.5rem">
-      <div class="demo-content-head">
-        <h4>Slow Burn · show creator <span class="ctx">Promoter view</span></h4>
-        <span class="tag tag-promoter">8 trending matches</span>
-      </div>
-      <p>Trending artists scored against your past show content. Trending songs for your next mixtape, ranked by audience demo match. Affiliate dashboard shows the 10% you've earned on referred ticket sales.</p>
-      <div class="demo-actions">
-        <span class="demo-action">Show creator</span>
-        <span class="demo-action">Mixtape builder</span>
-        <span class="demo-action">Affiliate $</span>
-        <span class="demo-action">Audience</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- DEFENSE IN DEPTH -->
-  <section class="section">
-    <div class="section-head">
-      <div class="section-eyebrow">04 · Defense in depth</div>
-      <h2 class="t-h2">Built for the scene. <em>Hardened against abuse.</em></h2>
-      <p class="lede">Every dollar wasted on bot traffic is a dollar that didn't go to an artist. Here's the stack of defenses we run.</p>
-    </div>
-
-    <div class="defense-grid">
-      <div class="defense-card">
-        <div class="defense-tag">Layer 01 · Account creation</div>
-        <h3>Sign-up integrity</h3>
-        <div class="defense-list">
-          <div class="defense-item"><span class="check">✓</span><span><strong>MFA required.</strong> Every account verifies with a 6-digit code. Single-use, expires in 10 min, 3 attempts.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Disposable-email blocklist.</strong> Burner addresses rejected with a friendly nudge.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Phone reputation scoring.</strong> VOIP and known-spam ranges face stricter rate limits.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Behavioral challenge.</strong> Suspicious sessions get a CAPTCHA. Humans almost never see one.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Device fingerprint cap.</strong> Max 3 new accounts per device per week.</span></div>
-        </div>
-      </div>
-
-      <div class="defense-card">
-        <div class="defense-tag">Layer 02 · Session</div>
-        <h3>Sign-in &amp; session</h3>
-        <div class="defense-list">
-          <div class="defense-item"><span class="check">✓</span><span><strong>Passwordless by default.</strong> Passkeys, magic links, hardware keys. No password DB to leak.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>TLS 1.3 everywhere.</strong> Strict HSTS. Certificate pinning on mobile.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Session binding.</strong> Tokens scoped to device fingerprint. Stolen cookies useless elsewhere.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Anomaly alerts.</strong> New-country sign-ins ping the registered method.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>30-day idle expiry.</strong> Refresh tokens rotate every use.</span></div>
-        </div>
-      </div>
-
-      <div class="defense-card">
-        <div class="defense-tag">Layer 03 · HYPE integrity</div>
-        <h3>Engagement integrity</h3>
-        <div class="defense-list">
-          <div class="defense-item"><span class="check">✓</span><span><strong>Proof-of-listen.</strong> HYPE earned from songs requires verified player completion events.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Attendance = QR scan.</strong> +10 HYPE only fires on a real door scan.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>One tap per source per 30 days.</strong> The HYPE rate limit itself is the strongest defense.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Coordinated-inauthentic detection.</strong> Bot networks clustered and rolled back silently.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Charts use only verified HYPE.</strong> Accounts under review don't count.</span></div>
-        </div>
-      </div>
-
-      <div class="defense-card">
-        <div class="defense-tag">Layer 04 · Money</div>
-        <h3>Money &amp; payouts</h3>
-        <div class="defense-list">
-          <div class="defense-item"><span class="check">✓</span><span><strong>Stripe Radar.</strong> Card fraud scoring on every charge. High-risk holds for review.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Velocity caps.</strong> Per-card and per-account limits. Reseller bots can't hoard.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Payout KYC.</strong> Artists, venues, promoters verify identity before receiving money.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>Refund integrity.</strong> Refunds debit all parties proportionally.</span></div>
-          <div class="defense-item"><span class="check">✓</span><span><strong>System changes gated.</strong> Algorithm and payout-rule changes need board approval.</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- RATE LIMITS -->
-  <section class="section">
-    <div class="section-head">
-      <div class="section-eyebrow">05 · Public rate limits</div>
-      <h2 class="t-h2">We don't hide them. <em>They're on the docs.</em></h2>
-    </div>
-    <div class="rate-grid">
-      <div class="rate-tile"><div class="lbl">Sign-up attempts</div><div class="num">5</div><div class="win">per IP / hour</div></div>
-      <div class="rate-tile"><div class="lbl">OTP requests</div><div class="num">3</div><div class="win">per address / 10min</div></div>
-      <div class="rate-tile"><div class="lbl">Sign-in attempts</div><div class="num">10</div><div class="win">per IP / hour</div></div>
-      <div class="rate-tile"><div class="lbl">Ticket purchases</div><div class="num">8</div><div class="win">per account / event</div></div>
-    </div>
-  </section>
-
-  <!-- ADMIN ACCESS -->
-  <section class="section">
-    <div class="section-head">
-      <div class="section-eyebrow">06 · Admin access</div>
-      <h2 class="t-h2">Even admins can't <em>browse you.</em></h2>
-      <p class="lede">Just-in-time access — not standing access. Hardware-key auth, scoped permissions, time-limited tokens, public audit logs.</p>
-    </div>
-
-    <div class="admin-card">
-      <span class="stamp">Admin · break-glass</span>
-      <h3 class="t-h3" style="margin-bottom:.4rem">Just-in-time access · how it works</h3>
-      <p class="t-small" style="line-height:1.6">Staff don't have always-on access to user data. Every operation requires hardware-key auth, scoped permission, time-limited tokens, and a public audit entry. No admin code is shared. No one has standing read access.</p>
-
-      <div class="admin-flow">
-        <div class="admin-step">
-          <div class="num">Step 01 · Authenticate</div>
-          <div class="name">Username + hardware key</div>
-          <p>No SMS fallback for admin accounts. Hardware key (WebAuthn) only. Failed attempts trip an alarm channel.</p>
-        </div>
-        <div class="admin-step">
-          <div class="num">Step 02 · Request scope</div>
-          <div class="name">What you need, for how long</div>
-          <p>e.g. "moderation queue read · 2 hours" or "single-account view for fraud appeal #4291 · 30 min." No "all users" scope exists.</p>
-        </div>
-        <div class="admin-step">
-          <div class="num">Step 03 · Approval</div>
-          <div class="name">Auto-grant or peer review</div>
-          <p>Routine scopes auto-grant. High-risk scopes (financial data, identity exports) require a second admin's approval.</p>
-        </div>
-        <div class="admin-step">
-          <div class="num">Step 04 · Public log</div>
-          <div class="name">Anonymized · in the dashboard</div>
-          <p>Every grant publishes to The Glass Wall feed: "scope X, duration Y." Pattern of abuse visible from outside.</p>
-        </div>
-      </div>
-
-      <div class="t-small" style="margin-top:1.2rem;padding-top:1rem;border-top:1px dashed var(--line-2);line-height:1.6"><strong style="color:var(--ink)">What no admin can do without governance approval:</strong> change the recommendation algorithm, the 45/45/10 split, the HYPE rules, rate limits, mass-delete accounts, modify the charter. Those are board-vote decisions with public changelogs.</div>
-    </div>
-  </section>
-
-
-  <footer class="footer">
-    <div class="footer-left"><strong>iHYPE.org</strong> · <span data-i18n="footer.legal">501(c)(3) · books open</span></div>
-    <div class="footer-links"><a href="/promise">The Promise</a><a href="/promise">Charter</a><a href="/promise">990</a><a href="/promise">Contact</a><a href="#">Accessibility</a></div>
-  </footer>
+  </main>
 </div>
 
-<!-- A11y panel -->
 <div class="a11y-panel-overlay" id="a11yOverlay"></div>
-<aside class="a11y-panel" id="a11yPanel" role="dialog">
-  <div class="a11y-panel-head"><h3 data-i18n="a11y.title">Accessibility</h3><button class="a11y-panel-close" id="closeA11y">×</button></div>
+<aside class="a11y-panel" id="a11yPanel" role="dialog" aria-label="Accessibility settings">
+  <div class="a11y-panel-head"><h3 data-i18n="a11y.title">Accessibility</h3><button class="a11y-panel-close" id="closeA11y">x</button></div>
   <div class="a11y-section"><h4 data-i18n="a11y.lang">Language</h4>
     <div class="toggle-pair" data-cols="4" role="radiogroup">
       <button class="active" data-lang="en">EN</button><button data-lang="es">ES</button><button data-lang="pt">PT</button><button data-lang="fr">FR</button>
     </div>
   </div>
-  <div class="a11y-section"><h4>Vision · text size</h4>
+  <div class="a11y-section"><h4>Vision - text size</h4>
     <div class="toggle-pair" data-cols="3" role="radiogroup">
       <button class="active" data-size="default">Default</button><button data-size="large">Large</button><button data-size="xlarge">XL</button>
     </div>
@@ -507,167 +179,6 @@
 </aside>
 
 <script src="/ihype-shared.js"></script>
-<script>
-// Role demo selector
-document.querySelectorAll('#roleDemoSelect button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    document.querySelectorAll('#roleDemoSelect button').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-  });
-});
-
-// OTP focus advance
-document.querySelectorAll('.otp-input').forEach((inp,i,arr)=>{
-  inp.addEventListener('input',()=>{
-    inp.value = inp.value.replace(/\D/g,'').slice(-1);
-    if(inp.value.length>=1){inp.classList.add('filled');if(arr[i+1])arr[i+1].focus();}
-  });
-  inp.addEventListener('keydown',e=>{
-    if(e.key==='Backspace'&&!inp.value&&arr[i-1]){arr[i-1].focus();arr[i-1].value='';arr[i-1].classList.remove('filled');}
-  });
-  inp.addEventListener('paste',e=>{
-    e.preventDefault();
-    const digits=(e.clipboardData.getData('text').replace(/\D/g,'')).slice(0,6);
-    digits.split('').forEach((d,j)=>{
-      const t=arr[i+j];if(t){t.value=d;t.classList.add('filled');}
-    });
-    const next=arr[Math.min(i+digits.length,arr.length-1)];if(next)next.focus();
-  });
-});
-
-// State
-let _challengeId=null;
-let _pendingIdentifier=null;
-let _pendingPassword=null;
-
-function setBtn(id,text,disabled){
-  const b=document.getElementById(id);
-  b.textContent=text;b.disabled=disabled;
-}
-
-function showError(id,msg){
-  const el=document.getElementById(id);
-  el.textContent=msg;el.style.display=msg?'block':'none';
-}
-
-function showOtpStep(email){
-  document.getElementById('otp-section').style.display='';
-  document.getElementById('otp-email-label').textContent=email;
-  document.getElementById('auth-section').style.display='none';
-  document.getElementById('otp-section').scrollIntoView({behavior:'smooth',block:'start'});
-  document.getElementById('otp-0').focus();
-}
-
-function resetToForms(){
-  _challengeId=null;_pendingIdentifier=null;_pendingPassword=null;
-  document.getElementById('otp-section').style.display='none';
-  document.getElementById('auth-section').style.display='';
-  document.querySelectorAll('.otp-input').forEach(i=>{i.value='';i.classList.remove('filled');});
-  showError('otp-error','');
-}
-
-async function requestOtp(identifier,password){
-  const res=await fetch('/api/auth/otp/request',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({identifier,password})
-  });
-  const data=await res.json();
-  if(!res.ok) throw new Error(data.error||'Failed to send code.');
-  return data; // {challengeId, email}
-}
-
-async function handleSignUp(){
-  const email=document.getElementById('su-email').value.trim();
-  const username=document.getElementById('su-username').value.trim();
-  const password=document.getElementById('su-password').value;
-  showError('su-error','');
-  if(!email||!username||!password){showError('su-error','Please fill in all fields.');return;}
-  setBtn('su-btn','Creating account…',true);
-  try{
-    // Step 1: register
-    const regRes=await fetch('/api/register',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email,username,password,role:'FAN',isThirteenOrOlder:true})
-    });
-    const regData=await regRes.json();
-    if(!regRes.ok) throw new Error(regData.error||'Registration failed.');
-
-    // Step 2: request OTP
-    const {challengeId,email:confirmedEmail}=await requestOtp(email,password);
-    _challengeId=challengeId;
-    _pendingIdentifier=email;
-    _pendingPassword=password;
-    showOtpStep(confirmedEmail);
-  }catch(err){
-    showError('su-error',err.message);
-  }finally{
-    setBtn('su-btn','Create account → get code',false);
-  }
-}
-
-async function handleSignIn(){
-  const identifier=document.getElementById('si-identifier').value.trim();
-  const password=document.getElementById('si-password').value;
-  showError('si-error','');
-  if(!identifier||!password){showError('si-error','Please fill in all fields.');return;}
-  setBtn('si-btn','Sending code…',true);
-  try{
-    const {challengeId,email}=await requestOtp(identifier,password);
-    _challengeId=challengeId;
-    _pendingIdentifier=identifier;
-    _pendingPassword=password;
-    showOtpStep(email);
-  }catch(err){
-    showError('si-error',err.message);
-  }finally{
-    setBtn('si-btn','Send my code →',false);
-  }
-}
-
-async function handleVerify(){
-  const otp=[0,1,2,3,4,5].map(i=>document.getElementById('otp-'+i).value).join('');
-  showError('otp-error','');
-  if(otp.length<6){showError('otp-error','Enter all 6 digits.');return;}
-  if(!_challengeId){showError('otp-error','Session expired. Please go back and try again.');return;}
-  setBtn('otp-btn','Verifying…',true);
-  try{
-    const res=await fetch('/api/auth/otp/signin',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({challengeId:_challengeId,otp})
-    });
-    const data=await res.json();
-    if(!res.ok){
-      showError('otp-error',data.error||'Something went wrong. Please try again.');
-      setBtn('otp-btn','Verify and continue →',false);
-      return;
-    }
-    window.location.href=data.redirect||'/auth/landing';
-  }catch(err){
-    showError('otp-error','Something went wrong. Please try again.');
-    setBtn('otp-btn','Verify and continue →',false);
-  }
-}
-
-// Detect next-auth redirect errors on page load
-(function(){
-  const params = new URLSearchParams(window.location.search);
-  const err = params.get('error');
-  if (err === 'CredentialsSignin') {
-    showError('si-error', 'Incorrect code or it expired. Enter your password again to get a new code.');
-  } else if (err) {
-    showError('si-error', 'Sign-in error: ' + err + '. Please try again.');
-  }
-})();
-
-// Allow Enter key to submit forms
-document.getElementById('su-password').addEventListener('keydown',e=>{if(e.key==='Enter')handleSignUp();});
-document.getElementById('si-password').addEventListener('keydown',e=>{if(e.key==='Enter')handleSignIn();});
-document.getElementById('otp-5').addEventListener('keydown',e=>{if(e.key==='Enter')handleVerify();});
-</script>
-
-</div><!-- /site-shell -->
+<script src="/ihype-auth.js"></script>
 </body>
 </html>

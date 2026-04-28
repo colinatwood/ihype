@@ -12,13 +12,13 @@ function parseSmtpSecureFlag(value: string | undefined) {
   return normalized === 'true' || normalized === '1' || normalized === 'yes';
 }
 
-export function isPasswordResetEmailConfigured() {
+export function isSmtpEmailConfigured() {
   return Boolean(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_FROM);
 }
 
 function getTransporter() {
-  if (!isPasswordResetEmailConfigured()) {
-    throw new Error('SMTP is not configured for password reset email delivery.');
+  if (!isSmtpEmailConfigured()) {
+    throw new Error('SMTP is not configured for email delivery.');
   }
 
   if (!transporter) {
@@ -48,7 +48,7 @@ type LoginOtpEmailInput = {
 export async function sendLoginOtpEmail({ email, name, otp }: LoginOtpEmailInput) {
   const resolvedName = name?.trim() || 'there';
 
-  if (!isPasswordResetEmailConfigured()) {
+  if (!isSmtpEmailConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(`[login-otp] ${email} -> ${otp}`);
       return { mode: 'log' as const };
@@ -114,7 +114,7 @@ export async function sendPasswordResetPasscodeEmail({
   name,
   expiresInMinutes
 }: PasswordResetEmailInput) {
-  if (!isPasswordResetEmailConfigured()) {
+  if (!isSmtpEmailConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(`[password-reset] ${email} -> ${code} (valid ${expiresInMinutes} minutes)`);
       return { mode: 'log' as const };
@@ -163,7 +163,7 @@ export async function sendIssuedTicketEmail({
   totalChargeLabel,
   tickets
 }: IssuedTicketEmailInput) {
-  if (!isPasswordResetEmailConfigured()) {
+  if (!isSmtpEmailConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(
         `[ticket-email] ${email} -> ${showTitle} (${tickets.length} ticket${tickets.length === 1 ? '' : 's'})`

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { encode } from '@auth/core/jwt';
+import { encode } from 'next-auth/jwt';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { db } from '@/lib/db';

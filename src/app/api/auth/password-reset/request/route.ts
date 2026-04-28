@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db, withDbRetry } from '@/lib/db';
-import { isPasswordResetEmailConfigured, sendPasswordResetPasscodeEmail } from '@/lib/mailer';
+import { isSmtpEmailConfigured, sendPasswordResetPasscodeEmail } from '@/lib/mailer';
 import {
   createPasswordResetCode,
   createPasswordResetExpiry,
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
     }
 
-    if (process.env.NODE_ENV === 'production' && !isPasswordResetEmailConfigured()) {
+    if (process.env.NODE_ENV === 'production' && !isSmtpEmailConfigured()) {
       return NextResponse.json(
         { error: 'Password reset email delivery is not configured yet.' },
         { status: 503 }
