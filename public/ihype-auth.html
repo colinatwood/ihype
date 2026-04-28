@@ -471,13 +471,6 @@
     </div>
   </section>
 
-  <!-- Hidden form for next-auth credentials submission -->
-  <form id="auth-form" method="POST" action="/api/auth/callback/credentials" style="display:none">
-    <input type="hidden" name="csrfToken" id="auth-csrf">
-    <input type="hidden" name="challengeId" id="auth-challenge">
-    <input type="hidden" name="otp" id="auth-otp">
-    <input type="hidden" name="callbackUrl" value="/auth/landing">
-  </form>
 
   <footer class="footer">
     <div class="footer-left"><strong>iHYPE.org</strong> · <span data-i18n="footer.legal">501(c)(3) · books open</span></div>
@@ -640,17 +633,18 @@ async function handleVerify(){
   if(!_challengeId){showError('otp-error','Session expired. Please go back and try again.');return;}
   setBtn('otp-btn','Verifying…',true);
   try{
-    // Fetch CSRF token — next-auth requires it for credentials POST
-    const csrfRes=await fetch('/api/auth/csrf');
-    const csrfText=await csrfRes.text();
-    let csrfToken='';
-    try{csrfToken=JSON.parse(csrfText).csrfToken||'';}catch{}
-
-    // Submit hidden form — browser follows the redirect natively, no JSON parsing needed
-    document.getElementById('auth-csrf').value=csrfToken;
-    document.getElementById('auth-challenge').value=_challengeId;
-    document.getElementById('auth-otp').value=otp;
-    document.getElementById('auth-form').submit();
+    const res=await fetch('/api/auth/otp/signin',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({challengeId:_challengeId,otp})
+    });
+    const data=await res.json();
+    if(!res.ok){
+      showError('otp-error',data.error||'Something went wrong. Please try again.');
+      setBtn('otp-btn','Verify and continue →',false);
+      return;
+    }
+    window.location.href=data.redirect||'/auth/landing';
   }catch(err){
     showError('otp-error','Something went wrong. Please try again.');
     setBtn('otp-btn','Verify and continue →',false);
