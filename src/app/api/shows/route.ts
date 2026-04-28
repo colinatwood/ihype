@@ -8,11 +8,21 @@ import { showProductionPlanSchema } from '@/lib/show-composer';
 import { DEFAULT_PROMOTER_AFFILIATE_PERCENT, validateTicketSplit } from '@/lib/ticketing';
 import { slugify } from '@/lib/utils';
 
+const radioTrackSchema = z.object({
+  hexId: z.string(),
+  title: z.string(),
+  artistName: z.string(),
+  artistProfileSlug: z.string().optional(),
+  position: z.number().int().nonnegative()
+});
+
 const schema = z.object({
   title: z.string().min(3),
   description: z.string().optional(),
+  // isRadioShow=true → curated stream show; no venue/tickets required; startsAt defaults to now
+  isRadioShow: z.boolean().default(false),
   status: z.enum(['DRAFT', 'SCHEDULED', 'LIVE']).default('SCHEDULED'),
-  startsAt: z.string().datetime(),
+  startsAt: z.string().datetime().optional(),
   endsAt: z.string().datetime().optional(),
   venueProfileId: z.string().cuid().optional(),
   headlinerProfileId: z.string().cuid().optional(),
@@ -26,6 +36,8 @@ const schema = z.object({
   artistPayoutPercent: z.coerce.number().int().min(0).max(95).optional(),
   promoterPayoutPercent: z.coerce.number().int().min(0).max(10).optional(),
   tags: z.array(z.string()).default([]),
+  // For radio shows: tracks stored here; for live shows: production plan
+  radioTracks: z.array(radioTrackSchema).optional(),
   productionPlan: showProductionPlanSchema.optional()
 });
 
@@ -46,6 +58,62 @@ export async function POST(request: Request) {
 
   try {
     const body = schema.parse(await request.json());
+
+    // ── Radio show: validate track list, skip venue/ticket checks ─
+    if (body.isRadioShow) {
+      const tracks = body.radioTracks ?? [];
+      if (tracks.length === 0) {
+        return NextResponse.json({ error: 'A radio show needs at least one track.' }, { status: 400 });
+      }
+      if (tracks.length > 50) {
+        return NextResponse.json({ error: 'A radio show can have at most 50 tracks.' }, { status: 400 });
+      }
+
+      // Verify all referenced tracks exist and have freeUseEnabled
+      const hexIds = tracks.map(t => t.hexId);
+      const assets = await db.artistMediaAsset.findMany({
+        where: { hexId: { in: hexIds }, freeUseEnabled: true },
+        select: { hexId: true }
+      });
+      const validHexIds = new Set(assets.map(a => a.hexId));
+      const invalid = hexIds.filter(h => !validHexIds.has(h));
+      if (invalid.length > 0) {
+        return NextResponse.json(
+          { error: `${invalid.length} track(s) are not in the free-use catalogue.` },
+          { status: 400 }
+        );
+      }
+
+      const sortedTracks = [...tracks].sort((a, b) => a.position - b.position);
+      const baseSlug = slugify(body.title);
+      const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`;
+
+      const show = await db.show.create({
+        data: {
+          slug,
+          title: body.title,
+          description: body.description,
+          isRadioShow: true,
+          startsAt: new Date(),
+          creatorId: session.user.id,
+          promoterProfileId: body.promoterProfileId ?? null,
+          tags: [...body.tags, 'radio-show'],
+          productionPlan: {
+            kind: 'radio',
+            tracks: sortedTracks
+          },
+          status: body.status === 'LIVE' ? 'LIVE' : body.status === 'DRAFT' ? 'DRAFT' : 'LIVE'
+        }
+      });
+
+      return NextResponse.json(show, { status: 201 });
+    }
+
+    // ── Live event: existing validation path ──────────────────────
+    if (!body.startsAt) {
+      return NextResponse.json({ error: 'A start date/time is required for live events.' }, { status: 400 });
+    }
+
     const [venueProfile, headlinerProfile, promoterProfile] = await Promise.all([
       body.venueProfileId
         ? db.profile.findUnique({
@@ -132,7 +200,7 @@ export async function POST(request: Request) {
         slug,
         title: body.title,
         description: body.description,
-        startsAt: new Date(body.startsAt),
+        startsAt: new Date(body.startsAt!),
         endsAt: body.endsAt ? new Date(body.endsAt) : undefined,
         creatorId: session.user.id,
         venueProfileId: body.venueProfileId,

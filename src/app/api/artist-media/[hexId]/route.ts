@@ -3,6 +3,55 @@ import { auth } from '@/lib/auth';
 import { db, withDbRetry } from '@/lib/db';
 import { canManageOwnedResource } from '@/lib/permissions';
 
+/**
+ * PATCH /api/artist-media/[hexId]
+ * Toggle freeUseEnabled on a track (artist-owner only).
+ * Body: { freeUseEnabled: boolean }
+ */
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ hexId: string }> }
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Login required' }, { status: 401 });
+  }
+
+  try {
+    const { hexId } = await params;
+    const body = await request.json().catch(() => ({}));
+    const freeUseEnabled = Boolean(body.freeUseEnabled);
+
+    const asset = await withDbRetry(() =>
+      db.artistMediaAsset.findUnique({
+        where: { hexId },
+        select: { id: true, profile: { select: { ownerId: true } } }
+      })
+    );
+
+    if (!asset) {
+      return NextResponse.json({ error: 'Track not found.' }, { status: 404 });
+    }
+
+    if (!canManageOwnedResource(session, asset.profile.ownerId)) {
+      return NextResponse.json({ error: 'Only the artist who owns this track can change its free-use status.' }, { status: 403 });
+    }
+
+    const updated = await withDbRetry(() =>
+      db.artistMediaAsset.update({
+        where: { id: asset.id },
+        data: { freeUseEnabled },
+        select: { hexId: true, freeUseEnabled: true }
+      })
+    );
+
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('Artist media patch failed', error);
+    return NextResponse.json({ error: 'Could not update track.' }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ hexId: string }> }

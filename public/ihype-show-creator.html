@@ -9,21 +9,36 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/ihype-shared.css">
 <style>
-.creator-shell{max-width:780px;margin:0 auto}
-.stepper{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:2rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:.45rem}
-.stepper-step{padding:.7rem .9rem;border-radius:var(--r-sm);border:1px solid transparent;background:transparent;cursor:default;opacity:.5;transition:all .15s;text-align:left}
+/* ── Mode selector ────────────────────────────────────────── */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:680px;margin:0 auto}
+.mode-card{background:var(--bg-2);border:1.5px solid var(--line-2);border-radius:var(--r-lg);padding:2rem 2rem;cursor:pointer;transition:border-color .2s,transform .15s,background .2s;display:flex;flex-direction:column;gap:.85rem}
+.mode-card:hover{border-color:var(--line-3);transform:translateY(-2px)}
+.mode-card.selected{border-color:var(--accent);background:rgba(255,80,41,.05)}
+.mode-icon{width:48px;height:48px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+.mode-card.radio .mode-icon{background:rgba(122,79,181,.15)}
+.mode-card.live .mode-icon{background:rgba(31,135,130,.15)}
+.mode-title{font-family:var(--f-d);font-size:1.15rem;font-weight:700}
+.mode-desc{font-size:.84rem;color:var(--ink-2);line-height:1.6}
+.mode-tags{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.25rem}
+.mode-tag{font-family:var(--f-m);font-size:.68rem;padding:.2rem .55rem;border-radius:99px;background:var(--bg-2);border:1px solid var(--line);color:var(--ink-3)}
+
+/* ── Creator shell ────────────────────────────────────────── */
+.creator-shell{max-width:860px;margin:0 auto}
+.stepper{display:flex;gap:.4rem;margin-bottom:1.8rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:.4rem}
+.stepper-step{flex:1;padding:.65rem .8rem;border-radius:var(--r-sm);border:1px solid transparent;cursor:default;opacity:.45;transition:all .15s;text-align:left}
 .stepper-step.active{background:var(--bg);border-color:var(--line-2);opacity:1}
 .stepper-step.done{cursor:pointer;opacity:1}
-.stepper-step .lbl{font-family:var(--f-m);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:.3rem}
+.stepper-step .lbl{font-family:var(--f-m);font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:.25rem}
 .stepper-step.active .lbl{color:var(--accent)}
 .stepper-step.done .lbl{color:var(--r-venue)}
-.stepper-step .ttl{font-family:var(--f-d);font-weight:600;font-size:.95rem;color:var(--ink)}
+.stepper-step .ttl{font-family:var(--f-d);font-weight:600;font-size:.88rem;color:var(--ink)}
 
+/* ── Form card ────────────────────────────────────────────── */
 .form-card{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:2rem 2.2rem;display:flex;flex-direction:column;gap:1.2rem}
 .field{display:flex;flex-direction:column;gap:.4rem}
 .field-label{font-family:var(--f-m);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
 .field-help{font-size:.78rem;color:var(--ink-3);line-height:1.5}
-.field input,.field textarea,.field select{padding:.7rem .85rem;background:var(--bg-2);border:1.5px solid var(--line-2);border-radius:var(--r-md);font-family:var(--f-s);font-size:.92rem;color:var(--ink);outline:none;transition:border-color .15s}
+.field input,.field textarea,.field select{padding:.7rem .85rem;background:var(--bg-2);border:1.5px solid var(--line-2);border-radius:var(--r-md);font-family:var(--f-s);font-size:.92rem;color:var(--ink);outline:none;transition:border-color .15s;width:100%;box-sizing:border-box}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--ink)}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 
@@ -36,31 +51,105 @@
 .toggle-switch.on::after{left:23px}
 
 .split-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);padding:.85rem;align-items:end}
-.split-grid .field{gap:.25rem}
 .split-summary{font-family:var(--f-m);font-size:.78rem;color:var(--ink-2);text-align:center;padding:.6rem;border-top:1px solid var(--line);margin-top:.6rem}
 .split-summary.warn{color:#f87171}
 
 .review-list{display:flex;flex-direction:column;gap:.7rem}
-.review-row{display:grid;grid-template-columns:160px 1fr;gap:1rem;padding:.7rem 0;border-bottom:1px solid var(--line);font-size:.9rem;line-height:1.4}
+.review-row{display:grid;grid-template-columns:150px 1fr;gap:1rem;padding:.7rem 0;border-bottom:1px solid var(--line);font-size:.9rem;line-height:1.4}
 .review-row:last-child{border-bottom:none}
 .review-row .lbl{font-family:var(--f-m);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:600;padding-top:.15rem}
 .review-row .val{color:var(--ink)}
 .review-row .val.muted{color:var(--ink-3)}
 
 .action-bar{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:.5rem;padding-top:1.2rem;border-top:1px solid var(--line)}
-.action-bar .btn-secondary{background:transparent;color:var(--ink-2);border:1px solid var(--line-2);padding:.7rem 1.3rem;border-radius:var(--r-md);font-weight:500;font-size:.88rem;cursor:pointer;transition:all .15s}
-.action-bar .btn-secondary:hover{border-color:var(--line-3);color:var(--ink)}
-.action-bar .btn-primary{background:var(--ink);color:var(--bg);border:none;padding:.7rem 1.5rem;border-radius:var(--r-md);font-weight:500;font-size:.88rem;cursor:pointer;transition:all .15s}
-.action-bar .btn-primary:hover{background:var(--accent)}
-.action-bar .btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-back{background:transparent;color:var(--ink-2);border:1px solid var(--line-2);padding:.7rem 1.3rem;border-radius:var(--r-md);font-weight:500;font-size:.88rem;cursor:pointer;transition:all .15s}
+.btn-back:hover{border-color:var(--line-3);color:var(--ink)}
+.btn-next{background:var(--ink);color:var(--bg);border:none;padding:.7rem 1.5rem;border-radius:var(--r-md);font-weight:500;font-size:.88rem;cursor:pointer;transition:all .15s}
+.btn-next:hover{background:var(--accent)}
+.btn-next:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:transparent;color:var(--ink-2);border:1px solid var(--line-2);padding:.65rem 1.1rem;border-radius:var(--r-md);font-weight:500;font-size:.85rem;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{border-color:var(--line-3);color:var(--ink)}
 
 .form-error{padding:.85rem 1rem;background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.3);border-radius:var(--r-md);color:#f87171;font-size:.85rem}
-
 .step-view{display:none}
 .step-view.active{display:flex;flex-direction:column;gap:1.2rem}
+
+/* ── Track builder ────────────────────────────────────────── */
+.track-builder{display:grid;grid-template-columns:1fr 1fr;gap:1rem;min-height:480px}
+.track-panel{display:flex;flex-direction:column;gap:.7rem;overflow:hidden}
+.track-panel-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;flex-wrap:wrap}
+.track-panel-head h4{font-family:var(--f-d);font-size:1rem;font-weight:600}
+.track-panel-head .sub{font-family:var(--f-m);font-size:.74rem;color:var(--ink-3)}
+.track-search{position:relative}
+.track-search input{padding:.55rem .75rem .55rem 2rem;border-radius:var(--r-md);font-size:.85rem;width:100%;box-sizing:border-box}
+.track-search::before{content:'⌕';position:absolute;left:.65rem;top:50%;transform:translateY(-50%);color:var(--ink-3);font-size:1rem;pointer-events:none}
+.track-scroll{overflow-y:auto;max-height:360px;display:flex;flex-direction:column;gap:.3rem;padding-right:.2rem}
+.track-scroll::-webkit-scrollbar{width:4px}
+.track-scroll::-webkit-scrollbar-track{background:transparent}
+.track-scroll::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:2px}
+
+.track-item{display:grid;grid-template-columns:32px 1fr auto auto;gap:.6rem;padding:.6rem .75rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-sm);align-items:center;transition:border-color .15s}
+.track-item:hover{border-color:var(--line-2)}
+.track-item.added{opacity:.5}
+.track-av{width:32px;height:32px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-family:var(--f-d);font-weight:700;font-size:.78rem;color:#fff;flex-shrink:0}
+.track-info{min-width:0}
+.track-title{font-family:var(--f-d);font-size:.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track-artist{font-family:var(--f-m);font-size:.72rem;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track-prev-btn{width:28px;height:28px;border-radius:50%;background:var(--bg-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.72rem;color:var(--ink-2);transition:all .15s;flex-shrink:0}
+.track-prev-btn:hover,.track-prev-btn.playing{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.track-add-btn{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;line-height:1;transition:all .15s;flex-shrink:0}
+.track-add-btn:hover{background:var(--r-venue)}
+.track-add-btn:disabled{opacity:.4;cursor:not-allowed;background:var(--line-2)}
+
+.tracklist-scroll{overflow-y:auto;max-height:360px;display:flex;flex-direction:column;gap:.3rem;padding-right:.2rem}
+.tracklist-scroll::-webkit-scrollbar{width:4px}
+.tracklist-scroll::-webkit-scrollbar-track{background:transparent}
+.tracklist-scroll::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:2px}
+
+.tl-item{display:grid;grid-template-columns:24px 1fr auto auto auto auto;gap:.5rem;padding:.55rem .7rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-sm);align-items:center;transition:border-color .15s}
+.tl-num{font-family:var(--f-m);font-size:.68rem;color:var(--ink-3);text-align:center;font-weight:600}
+.tl-info{min-width:0}
+.tl-title{font-family:var(--f-d);font-size:.84rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-artist{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-btn{width:24px;height:24px;border-radius:var(--r-sm);background:transparent;border:1px solid var(--line);cursor:pointer;font-size:.72rem;color:var(--ink-3);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.tl-btn:hover{background:var(--bg-2);border-color:var(--line-2);color:var(--ink)}
+.tl-btn.remove:hover{background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.3);color:#f87171}
+
+.tracklist-empty{text-align:center;padding:2.5rem 1rem;color:var(--ink-3);font-family:var(--f-m);font-size:.84rem;border:1.5px dashed var(--line);border-radius:var(--r-md);display:flex;flex-direction:column;gap:.5rem}
+.tracklist-empty .icon{font-size:1.6rem;opacity:.5}
+
+.policy-notice{display:flex;gap:.75rem;padding:1rem 1.1rem;background:rgba(122,79,181,.06);border:1px solid rgba(122,79,181,.2);border-radius:var(--r-md);font-size:.82rem;color:var(--ink-2);line-height:1.55;align-items:flex-start}
+.policy-notice .icon{font-size:1rem;flex-shrink:0;margin-top:.1rem}
+.policy-notice strong{color:var(--ink)}
+
+.track-empty{text-align:center;padding:2rem 1rem;color:var(--ink-3);font-family:var(--f-m);font-size:.84rem}
+
+/* ── Review tracklist ─────────────────────────────────────── */
+.review-tracks{display:flex;flex-direction:column;gap:.35rem;max-height:240px;overflow-y:auto;border:1px solid var(--line);border-radius:var(--r-md);padding:.5rem}
+.review-track{display:grid;grid-template-columns:24px 1fr;gap:.5rem;padding:.4rem .5rem;font-size:.82rem;align-items:center;border-radius:var(--r-sm)}
+.review-track:nth-child(odd){background:rgba(255,255,255,.02)}
+.review-track .pos{font-family:var(--f-m);font-size:.66rem;color:var(--ink-3);text-align:center;font-weight:600}
+.review-track .info{display:flex;flex-direction:column;gap:.05rem}
+.review-track .t{font-family:var(--f-d);font-size:.84rem;font-weight:600;color:var(--ink)}
+.review-track .a{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3)}
+
+@media(max-width:760px){
+  .mode-grid{grid-template-columns:1fr}
+  .track-builder{grid-template-columns:1fr}
+  .track-panel:first-child{max-height:320px}
+  .track-scroll{max-height:240px}
+  .field-row{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
+<div class="bg-canvas" aria-hidden="true">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <div class="bg-grid"></div>
+  <div class="bg-noise"></div>
+</div>
 <div class="site-shell">
 
 <nav class="nav">
@@ -83,315 +172,695 @@
 <div class="page">
 
   <section class="hero" style="padding-bottom:1.5rem">
-    <div class="hero-eyebrow"><span class="dot"></span> <span id="step-eyebrow">Show creator · 1 of 3</span></div>
-    <h1 class="t-h1" id="step-title">Show <em>details.</em></h1>
-    <p class="hero-lede">A few minutes. Optional ticketing. Editable later. Your show goes live the moment you ship it.</p>
+    <div class="hero-eyebrow"><span class="dot"></span> <span id="step-eyebrow">Show creator · choose a format</span></div>
+    <h1 class="t-h1" id="step-title">What kind of <em>show?</em></h1>
+    <p class="hero-lede" id="step-lede">Two formats. Same mission — get great music to the right ears with full transparency on who gets paid.</p>
   </section>
 
   <div class="creator-shell">
 
-    <div class="stepper">
-      <div class="stepper-step active" data-step="1">
-        <div class="lbl">Step 01 · Now</div>
-        <div class="ttl">Show details</div>
-      </div>
-      <div class="stepper-step" data-step="2">
-        <div class="lbl">Step 02</div>
-        <div class="ttl">Tickets &amp; splits</div>
-      </div>
-      <div class="stepper-step" data-step="3">
-        <div class="lbl">Step 03</div>
-        <div class="ttl">Review &amp; ship</div>
+    <!-- ── MODE SELECTOR ────────────────────────────────────── -->
+    <div id="mode-selector">
+      <div class="mode-grid">
+
+        <div class="mode-card radio" data-mode="radio" tabindex="0" role="button" aria-pressed="false">
+          <div class="mode-icon">🎙️</div>
+          <div>
+            <div class="mode-title">Radio Show</div>
+            <div class="mode-desc">Curate a playlist from songs artists have released under the iHYPE Free Use Policy. Stream-only, no downloads. Think DJ radio set or music podcast episode.</div>
+          </div>
+          <div class="mode-tags">
+            <span class="mode-tag">Free to create</span>
+            <span class="mode-tag">Stream-only</span>
+            <span class="mode-tag">Curated tracklist</span>
+            <span class="mode-tag">Promoters &amp; DJs</span>
+          </div>
+        </div>
+
+        <div class="mode-card live" data-mode="live" tabindex="0" role="button" aria-pressed="false">
+          <div class="mode-icon">🎪</div>
+          <div>
+            <div class="mode-title">Live Event</div>
+            <div class="mode-desc">A ticketed or free venue show with the iHYPE 45/45/10 split. Set a date, attach a venue, configure pricing, and let the transparent payout engine handle the rest.</div>
+          </div>
+          <div class="mode-tags">
+            <span class="mode-tag">Optional ticketing</span>
+            <span class="mode-tag">45/45/10 split</span>
+            <span class="mode-tag">$0 platform fee</span>
+            <span class="mode-tag">All roles</span>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <div class="form-card">
+    <!-- ── RADIO SHOW FLOW ──────────────────────────────────── -->
+    <div id="radio-flow" style="display:none">
 
-      <!-- STEP 1 · DETAILS -->
-      <div class="step-view active" data-step="1">
-        <div class="field">
-          <label class="field-label" for="f-title">Show title *</label>
-          <input id="f-title" type="text" maxlength="120" placeholder="e.g. After Hours · Vol. 4" autofocus>
-          <div class="field-help">At least 3 characters. This is what people see on the chart.</div>
+      <div class="stepper" id="radio-stepper">
+        <div class="stepper-step active" data-step="1">
+          <div class="lbl">Step 01 · Now</div>
+          <div class="ttl">Show info</div>
         </div>
-        <div class="field">
-          <label class="field-label" for="f-description">Description</label>
-          <textarea id="f-description" rows="3" placeholder="What's this show about? Lineup, vibe, anything fans should know."></textarea>
+        <div class="stepper-step" data-step="2">
+          <div class="lbl">Step 02</div>
+          <div class="ttl">Build tracklist</div>
         </div>
-        <div class="field-row">
-          <div class="field">
-            <label class="field-label" for="f-startsAt">Starts *</label>
-            <input id="f-startsAt" type="datetime-local">
-          </div>
-          <div class="field">
-            <label class="field-label" for="f-endsAt">Ends</label>
-            <input id="f-endsAt" type="datetime-local">
-          </div>
-        </div>
-        <div class="field">
-          <label class="field-label" for="f-tags">Tags</label>
-          <input id="f-tags" type="text" placeholder="comma, separated, tags">
-          <div class="field-help">Optional. Helps the recommendation engine place your show.</div>
-        </div>
-        <div class="action-bar">
-          <a href="/discover" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center">Cancel</a>
-          <button class="btn-primary" id="btn-next-1">Next: Tickets →</button>
+        <div class="stepper-step" data-step="3">
+          <div class="lbl">Step 03</div>
+          <div class="ttl">Review &amp; publish</div>
         </div>
       </div>
 
-      <!-- STEP 2 · TICKETS -->
-      <div class="step-view" data-step="2">
-        <div class="toggle-row">
-          <div>
-            <div class="t-name">Sell tickets for this show</div>
-            <div class="t-sub">Keep off for free / RSVP-only events. You can edit this later.</div>
+      <div class="form-card">
+
+        <!-- RADIO STEP 1 · INFO -->
+        <div class="step-view active" data-step="r1">
+          <div class="policy-notice">
+            <span class="icon">🛡️</span>
+            <div><strong>iHYPE Free Use Policy</strong> — Radio shows may only use tracks artists have explicitly opted into. Fans and promoters can stream these tracks through iHYPE. Downloading is never permitted. Artists retain full ownership and can revoke free-use status at any time.</div>
           </div>
-          <div class="toggle-switch" id="t-isTicketed" role="switch" aria-checked="false" tabindex="0"></div>
+          <div class="field">
+            <label class="field-label" for="r-title">Show title *</label>
+            <input id="r-title" type="text" maxlength="120" placeholder="e.g. Late Night Frequencies · Vol. 3" autofocus>
+            <div class="field-help">At least 3 characters. This is how fans find and share your show.</div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="r-description">Description</label>
+            <textarea id="r-description" rows="3" placeholder="What's this episode about? Mood, genre, vibe — give fans a reason to tune in."></textarea>
+          </div>
+          <div class="field">
+            <label class="field-label" for="r-tags">Tags</label>
+            <input id="r-tags" type="text" placeholder="ambient, late-night, indie, jazz, bass">
+            <div class="field-help">Comma-separated. Helps the recommendation engine surface your show.</div>
+          </div>
+          <div class="action-bar">
+            <button class="btn-back" id="r-back-1" onclick="document.getElementById('radio-flow').style.display='none';document.getElementById('mode-selector').style.display='';document.getElementById('step-eyebrow').textContent='Show creator · choose a format';document.getElementById('step-title').innerHTML='What kind of <em>show?</em>';document.getElementById('step-lede').style.display=''">← Change format</button>
+            <button class="btn-next" id="r-next-1">Next: Build tracklist →</button>
+          </div>
         </div>
 
-        <div id="ticket-fields" style="display:none;flex-direction:column;gap:1.2rem">
+        <!-- RADIO STEP 2 · TRACKLIST BUILDER -->
+        <div class="step-view" data-step="r2">
+          <div class="track-builder">
+
+            <!-- Left: free-use catalogue browser -->
+            <div class="track-panel">
+              <div class="track-panel-head">
+                <h4>Free-use catalogue</h4>
+                <span class="sub" id="catalogue-count">Loading…</span>
+              </div>
+              <div class="track-search">
+                <input id="track-search" type="text" placeholder="Search songs or artists…">
+              </div>
+              <div class="track-scroll" id="catalogue-list">
+                <div class="track-empty">Loading tracks…</div>
+              </div>
+            </div>
+
+            <!-- Right: current tracklist -->
+            <div class="track-panel">
+              <div class="track-panel-head">
+                <h4>Your tracklist</h4>
+                <span class="sub" id="tracklist-count">0 tracks</span>
+              </div>
+              <div class="tracklist-scroll" id="tracklist-container">
+                <div class="tracklist-empty">
+                  <div class="icon">🎵</div>
+                  <div>Hit + on any track to add it here. Up to 50 tracks per show.</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="action-bar">
+            <button class="btn-back" id="r-back-2">← Back</button>
+            <button class="btn-next" id="r-next-2">Next: Review →</button>
+          </div>
+        </div>
+
+        <!-- RADIO STEP 3 · REVIEW -->
+        <div class="step-view" data-step="r3">
+          <div class="review-list" id="radio-review-list"></div>
+          <div id="radio-error" class="form-error" style="display:none"></div>
+          <div class="action-bar">
+            <button class="btn-back" id="r-back-3">← Back</button>
+            <div style="display:flex;gap:.6rem">
+              <button class="btn-secondary" id="r-btn-draft">Save draft</button>
+              <button class="btn-next" id="r-btn-publish">Publish show →</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── LIVE EVENT FLOW ──────────────────────────────────── -->
+    <div id="live-flow" style="display:none">
+
+      <div class="stepper" id="live-stepper">
+        <div class="stepper-step active" data-step="1">
+          <div class="lbl">Step 01 · Now</div>
+          <div class="ttl">Event details</div>
+        </div>
+        <div class="stepper-step" data-step="2">
+          <div class="lbl">Step 02</div>
+          <div class="ttl">Tickets &amp; splits</div>
+        </div>
+        <div class="stepper-step" data-step="3">
+          <div class="lbl">Step 03</div>
+          <div class="ttl">Review &amp; ship</div>
+        </div>
+      </div>
+
+      <div class="form-card">
+
+        <!-- LIVE STEP 1 · DETAILS -->
+        <div class="step-view active" data-step="l1">
+          <div class="field">
+            <label class="field-label" for="l-title">Show title *</label>
+            <input id="l-title" type="text" maxlength="120" placeholder="e.g. After Hours · Vol. 4" autofocus>
+            <div class="field-help">At least 3 characters. This is what people see on the chart.</div>
+          </div>
+          <div class="field">
+            <label class="field-label" for="l-description">Description</label>
+            <textarea id="l-description" rows="3" placeholder="What's this show about? Lineup, vibe, anything fans should know."></textarea>
+          </div>
           <div class="field-row">
             <div class="field">
-              <label class="field-label" for="f-price">Price (USD)</label>
-              <input id="f-price" type="number" min="0" step="0.50" placeholder="20.00">
+              <label class="field-label" for="l-startsAt">Starts *</label>
+              <input id="l-startsAt" type="datetime-local">
             </div>
             <div class="field">
-              <label class="field-label" for="f-capacity">Capacity</label>
-              <input id="f-capacity" type="number" min="1" placeholder="200">
+              <label class="field-label" for="l-endsAt">Ends</label>
+              <input id="l-endsAt" type="datetime-local">
             </div>
           </div>
+          <div class="field">
+            <label class="field-label" for="l-tags">Tags</label>
+            <input id="l-tags" type="text" placeholder="indie, live, portland, all-ages">
+            <div class="field-help">Optional. Helps the recommendation engine place your show.</div>
+          </div>
+          <div class="action-bar">
+            <button class="btn-back" onclick="document.getElementById('live-flow').style.display='none';document.getElementById('mode-selector').style.display='';document.getElementById('step-eyebrow').textContent='Show creator · choose a format';document.getElementById('step-title').innerHTML='What kind of <em>show?</em>';document.getElementById('step-lede').style.display=''">← Change format</button>
+            <button class="btn-next" id="l-next-1">Next: Tickets →</button>
+          </div>
+        </div>
 
-          <div>
-            <div class="field-label" style="margin-bottom:.5rem">Payout split</div>
-            <div class="split-grid">
+        <!-- LIVE STEP 2 · TICKETS -->
+        <div class="step-view" data-step="l2">
+          <div class="toggle-row">
+            <div>
+              <div class="t-name">Sell tickets for this show</div>
+              <div class="t-sub">Keep off for free / RSVP-only events. You can edit this later.</div>
+            </div>
+            <div class="toggle-switch" id="l-isTicketed" role="switch" aria-checked="false" tabindex="0"></div>
+          </div>
+
+          <div id="l-ticket-fields" style="display:none;flex-direction:column;gap:1.2rem">
+            <div class="field-row">
               <div class="field">
-                <label class="field-help" for="f-venue-pct">Venue %</label>
-                <input id="f-venue-pct" type="number" min="0" max="95" value="45">
+                <label class="field-label" for="l-price">Price (USD)</label>
+                <input id="l-price" type="number" min="0" step="0.50" placeholder="20.00">
               </div>
               <div class="field">
-                <label class="field-help" for="f-artist-pct">Artist %</label>
-                <input id="f-artist-pct" type="number" min="0" max="95" value="45">
-              </div>
-              <div class="field">
-                <label class="field-help" for="f-promoter-pct">Promoter %</label>
-                <input id="f-promoter-pct" type="number" min="0" max="10" value="5">
+                <label class="field-label" for="l-capacity">Capacity</label>
+                <input id="l-capacity" type="number" min="1" placeholder="200">
               </div>
             </div>
-            <div class="split-summary" id="split-summary">Venue 45% + Artist 45% + Promoter 5% = 95% (5% platform)</div>
+            <div>
+              <div class="field-label" style="margin-bottom:.5rem">Payout split</div>
+              <div class="split-grid">
+                <div class="field">
+                  <label class="field-help" for="l-venue-pct">Venue %</label>
+                  <input id="l-venue-pct" type="number" min="0" max="95" value="45">
+                </div>
+                <div class="field">
+                  <label class="field-help" for="l-artist-pct">Artist %</label>
+                  <input id="l-artist-pct" type="number" min="0" max="95" value="45">
+                </div>
+                <div class="field">
+                  <label class="field-help" for="l-promoter-pct">Promoter %</label>
+                  <input id="l-promoter-pct" type="number" min="0" max="10" value="5">
+                </div>
+              </div>
+              <div class="split-summary" id="l-split-summary">Venue 45% + Artist 45% + Promoter 5% = 95% (5% platform)</div>
+            </div>
+            <div class="field-help">The platform retains 5% to keep the lights on. Splits must total ≤ 95%.</div>
           </div>
-          <div class="field-help">The platform retains 5% to keep the lights on. Splits must total ≤ 95%.</div>
-        </div>
 
-        <div class="action-bar">
-          <button class="btn-secondary" id="btn-back-2">← Back</button>
-          <button class="btn-primary" id="btn-next-2">Next: Review →</button>
-        </div>
-      </div>
-
-      <!-- STEP 3 · REVIEW -->
-      <div class="step-view" data-step="3">
-        <div class="review-list" id="review-list"></div>
-        <div id="form-error" class="form-error" style="display:none"></div>
-        <div class="action-bar">
-          <button class="btn-secondary" id="btn-back-3">← Back</button>
-          <div style="display:flex;gap:.6rem">
-            <button class="btn-secondary" id="btn-draft">Save draft</button>
-            <button class="btn-primary" id="btn-ship">Ship it →</button>
+          <div class="action-bar">
+            <button class="btn-back" id="l-back-2">← Back</button>
+            <button class="btn-next" id="l-next-2">Next: Review →</button>
           </div>
         </div>
-      </div>
 
+        <!-- LIVE STEP 3 · REVIEW -->
+        <div class="step-view" data-step="l3">
+          <div class="review-list" id="live-review-list"></div>
+          <div id="live-error" class="form-error" style="display:none"></div>
+          <div class="action-bar">
+            <button class="btn-back" id="l-back-3">← Back</button>
+            <div style="display:flex;gap:.6rem">
+              <button class="btn-secondary" id="l-btn-draft">Save draft</button>
+              <button class="btn-next" id="l-btn-ship">Ship it →</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
+
   </div>
 </div>
 
 </div><!-- /site-shell -->
 
+<!-- Hidden audio element for previews -->
+<audio id="preview-audio" preload="none"></audio>
+
 <script src="/ihype-user-menu.js" defer></script>
 <script>
 (function(){
-  const steps = [1,2,3];
-  let currentStep = 1;
-  const state = {
-    isTicketed:false
+
+/* ═══════════════════════════════════════════════════════════
+   SHARED UTILITIES
+═══════════════════════════════════════════════════════════ */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(s){ try{ return new Date(s).toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'}); }catch(e){ return s||'—'; } }
+
+const AVATAR_COLORS = ['#d83a16','#1f8782','#7a4fb5','#c2a040','#3a60d8','#d83a7a','#16a34a'];
+function avatarColor(str){ let h=0; for(let i=0;i<str.length;i++) h=(h*31+str.charCodeAt(i))&0xffffffff; return AVATAR_COLORS[Math.abs(h)%AVATAR_COLORS.length]; }
+function initial(str){ return (str||'?').charAt(0).toUpperCase(); }
+
+/* ═══════════════════════════════════════════════════════════
+   MODE SELECTOR
+═══════════════════════════════════════════════════════════ */
+document.querySelectorAll('.mode-card').forEach(card => {
+  function choose(){
+    const mode = card.dataset.mode;
+    $('mode-selector').style.display = 'none';
+    $('step-lede').style.display = 'none';
+    if(mode === 'radio'){
+      $('radio-flow').style.display = '';
+      $('step-eyebrow').textContent = 'Radio show · Step 1 of 3';
+      $('step-title').innerHTML = 'Show <em>info.</em>';
+      loadCatalogue();
+    } else {
+      $('live-flow').style.display = '';
+      $('step-eyebrow').textContent = 'Live event · Step 1 of 3';
+      $('step-title').innerHTML = 'Event <em>details.</em>';
+    }
+  }
+  card.addEventListener('click', choose);
+  card.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); choose(); } });
+});
+
+/* ═══════════════════════════════════════════════════════════
+   RADIO SHOW FLOW
+═══════════════════════════════════════════════════════════ */
+let tracklist = []; // [{hexId, title, artistName, artistProfileSlug, position}]
+let catalogue = []; // from API
+let previewingHexId = null;
+const audio = $('preview-audio');
+
+/* ── Step navigation ── */
+let rStep = 1;
+function rSetStep(n){
+  if(n===2 && !rValidate1()) return;
+  if(n===3 && !rValidate2()) return;
+  rStep = n;
+  document.querySelectorAll('#radio-flow .step-view').forEach(el => {
+    el.classList.toggle('active', el.dataset.step === 'r'+n);
+  });
+  document.querySelectorAll('#radio-stepper .stepper-step').forEach(el => {
+    const m = Number(el.dataset.step);
+    el.classList.toggle('active', m === n);
+    el.classList.toggle('done', m < n);
+    el.querySelector('.lbl').textContent = 'Step 0'+m+(m===n?' · Now':m<n?' · Done':'');
+  });
+  const labels = {
+    1:['Radio show · Step 1 of 3','Show <em>info.</em>'],
+    2:['Radio show · Step 2 of 3','Build your <em>tracklist.</em>'],
+    3:['Radio show · Step 3 of 3','Review &amp; <em>publish.</em>']
+  };
+  $('step-eyebrow').textContent = labels[n][0];
+  $('step-title').innerHTML = labels[n][1];
+  if(n===3) renderRadioReview();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function rValidate1(){
+  const t = $('r-title').value.trim();
+  if(t.length < 3){ $('r-title').focus(); $('r-title').style.borderColor='#f87171'; return false; }
+  $('r-title').style.borderColor='';
+  return true;
+}
+function rValidate2(){
+  if(tracklist.length === 0){
+    alert('Add at least one track to continue.');
+    return false;
+  }
+  return true;
+}
+
+$('r-next-1').addEventListener('click', () => rSetStep(2));
+$('r-back-2').addEventListener('click', () => rSetStep(1));
+$('r-next-2').addEventListener('click', () => rSetStep(3));
+$('r-back-3').addEventListener('click', () => rSetStep(2));
+$('r-btn-publish').addEventListener('click', () => rSubmit('LIVE'));
+$('r-btn-draft').addEventListener('click', () => rSubmit('DRAFT'));
+
+document.querySelectorAll('#radio-stepper .stepper-step').forEach(el => {
+  el.addEventListener('click', () => { if(el.classList.contains('done')) rSetStep(Number(el.dataset.step)); });
+});
+
+/* ── Catalogue loading ── */
+let searchTimer = null;
+async function loadCatalogue(q){
+  const list = $('catalogue-list');
+  list.innerHTML = '<div class="track-empty">Loading free-use catalogue…</div>';
+  try{
+    const url = '/api/artist-media/free-use?limit=100' + (q ? '&q='+encodeURIComponent(q) : '');
+    const res = await fetch(url, {credentials:'same-origin'});
+    const data = res.ok ? await res.json() : {tracks:[], total:0};
+    catalogue = data.tracks || [];
+    $('catalogue-count').textContent = data.total + ' tracks available';
+    renderCatalogue();
+  }catch(e){
+    list.innerHTML = '<div class="track-empty">Could not load catalogue. Try refreshing.</div>';
+    $('catalogue-count').textContent = '';
+  }
+}
+
+$('track-search').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadCatalogue(e.target.value.trim()), 320);
+});
+
+function isInTracklist(hexId){ return tracklist.some(t => t.hexId === hexId); }
+
+function renderCatalogue(){
+  const list = $('catalogue-list');
+  if(!catalogue.length){
+    list.innerHTML = '<div class="track-empty">No free-use tracks found.<br>Artists enable free-use from their profile settings.</div>';
+    return;
+  }
+  list.innerHTML = catalogue.map(t => {
+    const inList = isInTracklist(t.hexId);
+    const color = avatarColor(t.artist.name);
+    return '<div class="track-item'+(inList?' added':'')+'" data-hexid="'+esc(t.hexId)+'">' +
+      '<div class="track-av" style="background:'+color+'">'+esc(initial(t.artist.name))+'</div>' +
+      '<div class="track-info"><div class="track-title">'+esc(t.title)+'</div><div class="track-artist">'+esc(t.artist.name)+'</div></div>' +
+      '<button class="track-prev-btn'+(previewingHexId===t.hexId?' playing':'')+'" data-hexid="'+esc(t.hexId)+'" data-url="'+esc(t.streamUrl)+'" title="Preview">'+( previewingHexId===t.hexId?'■':'▶')+'</button>' +
+      '<button class="track-add-btn" data-hexid="'+esc(t.hexId)+'" title="Add to tracklist"'+(inList?' disabled':'')+'>+</button>' +
+    '</div>';
+  }).join('');
+
+  list.querySelectorAll('.track-prev-btn').forEach(btn => {
+    btn.addEventListener('click', () => togglePreview(btn.dataset.hexid, btn.dataset.url));
+  });
+  list.querySelectorAll('.track-add-btn').forEach(btn => {
+    btn.addEventListener('click', () => { if(!btn.disabled) addTrack(btn.dataset.hexid); });
+  });
+}
+
+/* ── Audio preview ── */
+function togglePreview(hexId, url){
+  if(previewingHexId === hexId){
+    audio.pause();
+    previewingHexId = null;
+  } else {
+    audio.src = url;
+    audio.play().catch(()=>{});
+    previewingHexId = hexId;
+  }
+  renderCatalogue();
+}
+audio.addEventListener('ended', () => { previewingHexId = null; renderCatalogue(); });
+
+/* ── Tracklist management ── */
+function addTrack(hexId){
+  if(tracklist.length >= 50) return;
+  const t = catalogue.find(c => c.hexId === hexId);
+  if(!t || isInTracklist(hexId)) return;
+  tracklist.push({
+    hexId: t.hexId,
+    title: t.title,
+    artistName: t.artist.name,
+    artistProfileSlug: t.artist.slug,
+    position: tracklist.length
+  });
+  renderTracklist();
+  renderCatalogue(); // update added state
+}
+
+function removeTrack(hexId){
+  tracklist = tracklist.filter(t => t.hexId !== hexId);
+  tracklist.forEach((t,i) => t.position = i);
+  renderTracklist();
+  renderCatalogue();
+}
+
+function moveTrack(hexId, dir){
+  const idx = tracklist.findIndex(t => t.hexId === hexId);
+  const target = idx + dir;
+  if(target < 0 || target >= tracklist.length) return;
+  [tracklist[idx], tracklist[target]] = [tracklist[target], tracklist[idx]];
+  tracklist.forEach((t,i) => t.position = i);
+  renderTracklist();
+}
+
+function renderTracklist(){
+  const el = $('tracklist-container');
+  $('tracklist-count').textContent = tracklist.length + ' track' + (tracklist.length !== 1 ? 's' : '');
+  if(!tracklist.length){
+    el.innerHTML = '<div class="tracklist-empty"><div class="icon">🎵</div><div>Hit + on any track to add it here. Up to 50 tracks per show.</div></div>';
+    return;
+  }
+  el.innerHTML = tracklist.map((t,i) => {
+    return '<div class="tl-item" data-hexid="'+esc(t.hexId)+'">' +
+      '<div class="tl-num">'+(i+1)+'</div>' +
+      '<div class="tl-info"><div class="tl-title">'+esc(t.title)+'</div><div class="tl-artist">'+esc(t.artistName)+'</div></div>' +
+      '<button class="tl-btn" data-action="up" data-hexid="'+esc(t.hexId)+'" title="Move up"'+(i===0?' disabled':'')+'>↑</button>' +
+      '<button class="tl-btn" data-action="dn" data-hexid="'+esc(t.hexId)+'" title="Move down"'+(i===tracklist.length-1?' disabled':'')+'>↓</button>' +
+      '<button class="tl-btn remove" data-action="rm" data-hexid="'+esc(t.hexId)+'" title="Remove">×</button>' +
+    '</div>';
+  }).join('');
+
+  el.querySelectorAll('.tl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const hexId = btn.dataset.hexid;
+      if(btn.dataset.action === 'up') moveTrack(hexId, -1);
+      else if(btn.dataset.action === 'dn') moveTrack(hexId, 1);
+      else removeTrack(hexId);
+    });
+  });
+}
+
+/* ── Review & publish ── */
+function renderRadioReview(){
+  const el = $('radio-review-list');
+  const title = $('r-title').value.trim();
+  const desc = $('r-description').value.trim();
+  const tags = $('r-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  let html = '';
+  function row(lbl,val,muted){ html += '<div class="review-row"><div class="lbl">'+lbl+'</div><div class="val'+(muted?' muted':'')+'">'+val+'</div></div>'; }
+  row('Format','🎙️ Radio show');
+  row('Title', esc(title));
+  row('Description', desc ? esc(desc) : '<span class="val muted">—</span>', !desc);
+  row('Tags', tags.length ? tags.map(esc).join(', ') : '<span class="val muted">—</span>', !tags.length);
+  row('Tracks', tracklist.length + ' tracks · stream-only, no download');
+  el.innerHTML = html;
+
+  // Append track list preview
+  const trackHtml = '<div class="review-tracks">'+
+    tracklist.map((t,i)=>'<div class="review-track"><div class="pos">'+(i+1)+'</div><div class="info"><div class="t">'+esc(t.title)+'</div><div class="a">'+esc(t.artistName)+'</div></div></div>').join('')+
+  '</div>';
+  el.insertAdjacentHTML('beforeend', '<div class="review-row"><div class="lbl">Tracklist</div><div class="val">'+trackHtml+'</div></div>');
+}
+
+async function rSubmit(status){
+  const errEl = $('radio-error');
+  errEl.style.display = 'none';
+  const btnPub = $('r-btn-publish');
+  const btnDraft = $('r-btn-draft');
+  btnPub.disabled = true; btnDraft.disabled = true;
+
+  const body = {
+    isRadioShow: true,
+    title: $('r-title').value.trim(),
+    description: $('r-description').value.trim() || undefined,
+    tags: $('r-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    radioTracks: tracklist.map((t,i)=>({hexId:t.hexId, title:t.title, artistName:t.artistName, artistProfileSlug:t.artistProfileSlug||'', position:i})),
+    status
   };
 
-  function $(id){ return document.getElementById(id); }
-  function setStep(n){
-    if(n < 1 || n > 3) return;
-    if(n === 2 && !validateStep1()) return;
-    if(n === 3 && !validateStep2()) return;
-    currentStep = n;
-    document.querySelectorAll('.step-view').forEach(el => el.classList.toggle('active', Number(el.dataset.step) === n));
-    document.querySelectorAll('.stepper-step').forEach(el => {
-      const m = Number(el.dataset.step);
-      el.classList.toggle('active', m === n);
-      el.classList.toggle('done', m < n);
-      el.querySelector('.lbl').textContent = 'Step 0' + m + (m === n ? ' · Now' : m < n ? ' · Done' : '');
-    });
-    const titles = {1:['Show creator · 1 of 3','Show <em>details.</em>'],2:['Show creator · 2 of 3','Tickets &amp; <em>splits.</em>'],3:['Show creator · 3 of 3','Review &amp; <em>ship.</em>']};
-    $('step-eyebrow').textContent = titles[n][0];
-    $('step-title').innerHTML = titles[n][1];
-    if(n === 3) renderReview();
-    window.scrollTo({top:0,behavior:'smooth'});
-  }
-
-  function validateStep1(){
-    const title = $('f-title').value.trim();
-    const startsAt = $('f-startsAt').value;
-    if(title.length < 3){ $('f-title').focus(); return false; }
-    if(!startsAt){ $('f-startsAt').focus(); return false; }
-    return true;
-  }
-
-  function validateStep2(){
-    if(!state.isTicketed) return true;
-    const price = parseFloat($('f-price').value);
-    const cap = parseInt($('f-capacity').value, 10);
-    const venue = parseInt($('f-venue-pct').value, 10) || 0;
-    const artist = parseInt($('f-artist-pct').value, 10) || 0;
-    const promoter = parseInt($('f-promoter-pct').value, 10) || 0;
-    if(!(price >= 0)){ $('f-price').focus(); return false; }
-    if(!(cap > 0)){ $('f-capacity').focus(); return false; }
-    if(venue + artist + promoter > 95){ $('f-venue-pct').focus(); return false; }
-    return true;
-  }
-
-  function fmtDate(s){
-    if(!s) return '—';
-    try{
-      return new Date(s).toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short'});
-    } catch(e){ return s; }
-  }
-
-  function renderReview(){
-    const title = $('f-title').value.trim();
-    const description = $('f-description').value.trim();
-    const startsAt = $('f-startsAt').value;
-    const endsAt = $('f-endsAt').value;
-    const tags = $('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
-
-    let html = '';
-    function row(label, val, muted){
-      html += '<div class="review-row"><div class="lbl">' + label + '</div><div class="val' + (muted ? ' muted' : '') + '">' + (val || '—') + '</div></div>';
+  try{
+    const res = await fetch('/api/shows',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)});
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok){
+      if(res.status===401){ window.location.href='/login'; return; }
+      throw new Error(data.error||('Failed ('+res.status+')'));
     }
-    row('Title', escapeHtml(title));
-    row('Description', escapeHtml(description) || '<span class="val muted">—</span>', !description);
-    row('Starts', fmtDate(startsAt));
-    row('Ends', fmtDate(endsAt) || '<span class="val muted">—</span>', !endsAt);
-    row('Tags', tags.length ? tags.map(escapeHtml).join(', ') : '<span class="val muted">—</span>', !tags.length);
-    if(state.isTicketed){
-      const price = parseFloat($('f-price').value) || 0;
-      const cap = parseInt($('f-capacity').value, 10) || 0;
-      const v = parseInt($('f-venue-pct').value, 10) || 0;
-      const a = parseInt($('f-artist-pct').value, 10) || 0;
-      const p = parseInt($('f-promoter-pct').value, 10) || 0;
-      row('Ticketing', 'On · $' + price.toFixed(2) + ' × ' + cap.toLocaleString() + ' seats');
-      row('Split', 'Venue ' + v + '% · Artist ' + a + '% · Promoter ' + p + '% (Platform ' + (100 - v - a - p) + '%)');
-    } else {
-      row('Ticketing', 'Off (free / RSVP)');
-    }
-    $('review-list').innerHTML = html;
+    window.location.href = '/shows/'+data.slug;
+  }catch(e){
+    errEl.textContent = e.message||'Something went wrong.';
+    errEl.style.display = 'block';
+    btnPub.disabled = false; btnDraft.disabled = false;
   }
+}
 
-  function escapeHtml(s){
-    return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
+/* ═══════════════════════════════════════════════════════════
+   LIVE EVENT FLOW
+═══════════════════════════════════════════════════════════ */
+let lState = { isTicketed: false };
+let lStep = 1;
 
-  function updateSplitSummary(){
-    const v = parseInt($('f-venue-pct').value, 10) || 0;
-    const a = parseInt($('f-artist-pct').value, 10) || 0;
-    const p = parseInt($('f-promoter-pct').value, 10) || 0;
-    const total = v + a + p;
-    const platform = 100 - total;
-    const el = $('split-summary');
-    el.textContent = 'Venue ' + v + '% + Artist ' + a + '% + Promoter ' + p + '% = ' + total + '% (' + platform + '% platform)';
-    el.classList.toggle('warn', total > 95 || platform < 5);
-  }
-
-  function setTicketed(on){
-    state.isTicketed = on;
-    const sw = $('t-isTicketed');
-    sw.classList.toggle('on', on);
-    sw.setAttribute('aria-checked', on ? 'true' : 'false');
-    $('ticket-fields').style.display = on ? 'flex' : 'none';
-  }
-
-  async function submit(status){
-    const err = $('form-error');
-    err.style.display = 'none';
-    const btnShip = $('btn-ship');
-    const btnDraft = $('btn-draft');
-    btnShip.disabled = true; btnDraft.disabled = true;
-
-    const body = {
-      title: $('f-title').value.trim(),
-      description: $('f-description').value.trim() || undefined,
-      startsAt: new Date($('f-startsAt').value).toISOString(),
-      endsAt: $('f-endsAt').value ? new Date($('f-endsAt').value).toISOString() : undefined,
-      tags: $('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-      isTicketed: state.isTicketed,
-      status: status
-    };
-    if(state.isTicketed){
-      body.ticketPriceCents = Math.round((parseFloat($('f-price').value) || 0) * 100);
-      body.ticketCapacity = parseInt($('f-capacity').value, 10);
-      body.venuePayoutPercent = parseInt($('f-venue-pct').value, 10);
-      body.artistPayoutPercent = parseInt($('f-artist-pct').value, 10);
-      body.promoterPayoutPercent = parseInt($('f-promoter-pct').value, 10);
-    }
-
-    try{
-      const res = await fetch('/api/shows', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        credentials:'same-origin',
-        body: JSON.stringify(body)
-      });
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok){
-        if(res.status === 401){
-          window.location.href = '/login';
-          return;
-        }
-        throw new Error(data.error || ('Failed (' + res.status + ')'));
-      }
-      window.location.href = '/shows/' + data.slug;
-    }catch(e){
-      err.textContent = e.message || 'Something went wrong.';
-      err.style.display = 'block';
-      btnShip.disabled = false; btnDraft.disabled = false;
-    }
-  }
-
-  // Wire events
-  $('btn-next-1').addEventListener('click', () => setStep(2));
-  $('btn-back-2').addEventListener('click', () => setStep(1));
-  $('btn-next-2').addEventListener('click', () => setStep(3));
-  $('btn-back-3').addEventListener('click', () => setStep(2));
-  $('btn-ship').addEventListener('click', () => submit('SCHEDULED'));
-  $('btn-draft').addEventListener('click', () => submit('DRAFT'));
-
-  $('t-isTicketed').addEventListener('click', () => setTicketed(!state.isTicketed));
-  $('t-isTicketed').addEventListener('keydown', (e) => {
-    if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); setTicketed(!state.isTicketed); }
+function lSetStep(n){
+  if(n===2 && !lValidate1()) return;
+  if(n===3 && !lValidate2()) return;
+  lStep = n;
+  document.querySelectorAll('#live-flow .step-view').forEach(el => {
+    el.classList.toggle('active', el.dataset.step === 'l'+n);
   });
-  ['f-venue-pct','f-artist-pct','f-promoter-pct'].forEach(id => $(id).addEventListener('input', updateSplitSummary));
-
-  document.querySelectorAll('.stepper-step').forEach(el => {
-    el.addEventListener('click', () => {
-      if(el.classList.contains('done')) setStep(Number(el.dataset.step));
-    });
+  document.querySelectorAll('#live-stepper .stepper-step').forEach(el => {
+    const m = Number(el.dataset.step);
+    el.classList.toggle('active', m === n);
+    el.classList.toggle('done', m < n);
+    el.querySelector('.lbl').textContent = 'Step 0'+m+(m===n?' · Now':m<n?' · Done':'');
   });
+  const labels = {
+    1:['Live event · Step 1 of 3','Event <em>details.</em>'],
+    2:['Live event · Step 2 of 3','Tickets &amp; <em>splits.</em>'],
+    3:['Live event · Step 3 of 3','Review &amp; <em>ship.</em>']
+  };
+  $('step-eyebrow').textContent = labels[n][0];
+  $('step-title').innerHTML = labels[n][1];
+  if(n===3) renderLiveReview();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 
-  // Default startsAt: tomorrow 8pm local
-  const t = new Date();
-  t.setDate(t.getDate() + 1);
-  t.setHours(20, 0, 0, 0);
-  const pad = n => String(n).padStart(2,'0');
-  $('f-startsAt').value = t.getFullYear() + '-' + pad(t.getMonth()+1) + '-' + pad(t.getDate()) + 'T' + pad(t.getHours()) + ':' + pad(t.getMinutes());
+function lValidate1(){
+  const t = $('l-title').value.trim();
+  const s = $('l-startsAt').value;
+  if(t.length < 3){ $('l-title').focus(); return false; }
+  if(!s){ $('l-startsAt').focus(); return false; }
+  return true;
+}
+function lValidate2(){
+  if(!lState.isTicketed) return true;
+  const price = parseFloat($('l-price').value);
+  const cap = parseInt($('l-capacity').value, 10);
+  const v = parseInt($('l-venue-pct').value,10)||0;
+  const a = parseInt($('l-artist-pct').value,10)||0;
+  const p = parseInt($('l-promoter-pct').value,10)||0;
+  if(!(price >= 0)){ $('l-price').focus(); return false; }
+  if(!(cap > 0)){ $('l-capacity').focus(); return false; }
+  if(v+a+p > 95){ $('l-venue-pct').focus(); return false; }
+  return true;
+}
 
-  updateSplitSummary();
+$('l-next-1').addEventListener('click', () => lSetStep(2));
+$('l-back-2').addEventListener('click', () => lSetStep(1));
+$('l-next-2').addEventListener('click', () => lSetStep(3));
+$('l-back-3').addEventListener('click', () => lSetStep(2));
+$('l-btn-ship').addEventListener('click', () => lSubmit('SCHEDULED'));
+$('l-btn-draft').addEventListener('click', () => lSubmit('DRAFT'));
+
+document.querySelectorAll('#live-stepper .stepper-step').forEach(el => {
+  el.addEventListener('click', () => { if(el.classList.contains('done')) lSetStep(Number(el.dataset.step)); });
+});
+
+function setTicketed(on){
+  lState.isTicketed = on;
+  const sw = $('l-isTicketed');
+  sw.classList.toggle('on', on);
+  sw.setAttribute('aria-checked', on ? 'true' : 'false');
+  $('l-ticket-fields').style.display = on ? 'flex' : 'none';
+}
+$('l-isTicketed').addEventListener('click', () => setTicketed(!lState.isTicketed));
+$('l-isTicketed').addEventListener('keydown', e => { if(e.key===' '||e.key==='Enter'){ e.preventDefault(); setTicketed(!lState.isTicketed); } });
+
+function updateSplitSummary(){
+  const v=parseInt($('l-venue-pct').value,10)||0, a=parseInt($('l-artist-pct').value,10)||0, p=parseInt($('l-promoter-pct').value,10)||0;
+  const total=v+a+p, platform=100-total;
+  const el=$('l-split-summary');
+  el.textContent='Venue '+v+'% + Artist '+a+'% + Promoter '+p+'% = '+total+'% ('+platform+'% platform)';
+  el.classList.toggle('warn', total>95||platform<5);
+}
+['l-venue-pct','l-artist-pct','l-promoter-pct'].forEach(id => $(id).addEventListener('input', updateSplitSummary));
+
+function renderLiveReview(){
+  const el = $('live-review-list');
+  const title=$('l-title').value.trim(), desc=$('l-description').value.trim();
+  const startsAt=$('l-startsAt').value, endsAt=$('l-endsAt').value;
+  const tags=$('l-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  let html='';
+  function row(lbl,val,muted){ html+='<div class="review-row"><div class="lbl">'+lbl+'</div><div class="val'+(muted?' muted':'')+'">'+val+'</div></div>'; }
+  row('Format','🎪 Live event');
+  row('Title',esc(title));
+  row('Description',desc?esc(desc):'<span class="val muted">—</span>',!desc);
+  row('Starts',fmtDate(startsAt));
+  row('Ends',endsAt?fmtDate(endsAt):'<span class="val muted">—</span>',!endsAt);
+  row('Tags',tags.length?tags.map(esc).join(', '):'<span class="val muted">—</span>',!tags.length);
+  if(lState.isTicketed){
+    const price=parseFloat($('l-price').value)||0, cap=parseInt($('l-capacity').value,10)||0;
+    const v=parseInt($('l-venue-pct').value,10)||0, a=parseInt($('l-artist-pct').value,10)||0, pr=parseInt($('l-promoter-pct').value,10)||0;
+    row('Ticketing','On · $'+price.toFixed(2)+' × '+cap.toLocaleString()+' seats');
+    row('Split','Venue '+v+'% · Artist '+a+'% · Promoter '+pr+'% (Platform '+(100-v-a-pr)+'%)');
+  } else {
+    row('Ticketing','Off (free / RSVP)');
+  }
+  el.innerHTML = html;
+}
+
+async function lSubmit(status){
+  const errEl=$('live-error');
+  errEl.style.display='none';
+  const btnShip=$('l-btn-ship'), btnDraft=$('l-btn-draft');
+  btnShip.disabled=true; btnDraft.disabled=true;
+
+  const body={
+    title:$('l-title').value.trim(),
+    description:$('l-description').value.trim()||undefined,
+    startsAt:new Date($('l-startsAt').value).toISOString(),
+    endsAt:$('l-endsAt').value?new Date($('l-endsAt').value).toISOString():undefined,
+    tags:$('l-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    isTicketed:lState.isTicketed,
+    status
+  };
+  if(lState.isTicketed){
+    body.ticketPriceCents=Math.round((parseFloat($('l-price').value)||0)*100);
+    body.ticketCapacity=parseInt($('l-capacity').value,10);
+    body.venuePayoutPercent=parseInt($('l-venue-pct').value,10);
+    body.artistPayoutPercent=parseInt($('l-artist-pct').value,10);
+    body.promoterPayoutPercent=parseInt($('l-promoter-pct').value,10);
+  }
+
+  try{
+    const res=await fetch('/api/shows',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(body)});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){
+      if(res.status===401){ window.location.href='/login'; return; }
+      throw new Error(data.error||('Failed ('+res.status+')'));
+    }
+    window.location.href='/shows/'+data.slug;
+  }catch(e){
+    errEl.textContent=e.message||'Something went wrong.';
+    errEl.style.display='block';
+    btnShip.disabled=false; btnDraft.disabled=false;
+  }
+}
+
+/* ── Default live event start time: tomorrow 8pm ── */
+const t=new Date();
+t.setDate(t.getDate()+1); t.setHours(20,0,0,0);
+const pad=n=>String(n).padStart(2,'0');
+$('l-startsAt').value=t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())+'T'+pad(t.getHours())+':'+pad(t.getMinutes());
+updateSplitSummary();
+
 })();
 </script>
 </body>

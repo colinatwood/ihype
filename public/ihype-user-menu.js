@@ -39,6 +39,8 @@
     const cls = roleClass(user.role);
     const labelRole = roleLabel(user.role);
     const display = user.name || (user.email ? user.email.split('@')[0] : 'You');
+    const isCreator = ['ARTIST','DJ','VENUE'].includes((user.role||'').toUpperCase());
+    const isAdmin = (user.role||'').toUpperCase() === 'ADMIN';
 
     pill.className = 'role-pill ' + cls;
     pill.innerHTML =
@@ -49,20 +51,45 @@
     pill.querySelector('.ctx').textContent = labelRole + ' ▾';
     wrap.appendChild(pill);
 
+    // Build dropdown items
+    const allEngines = [
+      { label: 'Stats Engine', href: '/home', icon: '📊', always: true },
+      { label: 'Recommendation Engine', href: '/discover', icon: '📡', always: true },
+      { label: 'Ticketing Engine', href: '/tickets', icon: '🎟️', always: true },
+    ];
+    const creatorEngines = [
+      { label: 'Show Creation Engine', href: '/show-creator', icon: '🎙️' },
+      { label: 'Customization Engine', href: '/customizer', icon: '🎨' },
+    ];
+    const adminEngines = [
+      { label: 'Admin Dashboard', href: '/dashboard', icon: '⚙️' },
+    ];
+
+    const visibleEngines = [...allEngines];
+    if(isCreator || isAdmin) visibleEngines.push(...creatorEngines);
+    if(isAdmin) visibleEngines.push(...adminEngines);
+
+    const engineLinks = visibleEngines.map(e =>
+      '<a href="' + e.href + '" class="user-menu-item engine-item">' +
+        '<span class="engine-item-icon">' + e.icon + '</span>' +
+        '<span>' + e.label + '</span>' +
+      '</a>'
+    ).join('');
+
     const dd = document.createElement('div');
     dd.className = 'user-menu-dropdown';
     dd.innerHTML =
       '<div class="user-menu-header">' +
         '<div class="um-name"></div>' +
+        '<div class="um-role"></div>' +
         '<div class="um-email"></div>' +
       '</div>' +
-      '<a href="/home" class="user-menu-item">Home</a>' +
-      '<a href="/show-creator" class="user-menu-item">Create a show</a>' +
-      '<a href="/customizer" class="user-menu-item">Customize my page</a>' +
-      '<a href="/dashboard" class="user-menu-item">Account</a>' +
+      engineLinks +
       '<div class="user-menu-divider"></div>' +
       '<button type="button" class="user-menu-item danger" data-action="signout">Sign out</button>';
+
     dd.querySelector('.um-name').textContent = display;
+    dd.querySelector('.um-role').textContent = labelRole;
     dd.querySelector('.um-email').textContent = user.email || '';
     wrap.appendChild(dd);
 

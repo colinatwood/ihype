@@ -82,6 +82,33 @@
 .scan-row.success .scan-status{color:var(--r-venue)}
 .scan-row.duplicate .scan-status{color:var(--accent)}
 
+/* ── Shows browser ─────────────────────────────────────────── */
+.filter-btn{padding:.42rem .95rem;border-radius:99px;font-family:var(--f-m);font-size:.8rem;font-weight:500;color:var(--ink-2);background:var(--bg-2);border:1px solid var(--line);cursor:pointer;transition:all .15s}
+.filter-btn:hover{color:var(--ink);border-color:var(--line-2)}
+.filter-btn.active{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.shows-browser{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+
+.show-skel{height:190px;border-radius:var(--r-lg);background:var(--bg-2)}
+
+.show-card{background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-lg);padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:.7rem;cursor:pointer;transition:border-color .2s,transform .15s}
+.show-card:hover{border-color:var(--line-2);transform:translateY(-1px)}
+.show-card-badges{display:flex;gap:.4rem;flex-wrap:wrap}
+.show-card-title{font-family:var(--f-d);font-size:1.05rem;font-weight:600;line-height:1.3;color:var(--ink)}
+.show-card-meta{font-family:var(--f-m);font-size:.8rem;color:var(--ink-3);display:flex;flex-direction:column;gap:.2rem;flex:1}
+.show-card-foot{display:flex;align-items:center;justify-content:space-between;padding-top:.75rem;border-top:1px solid var(--line);margin-top:auto}
+.show-card-price{font-family:var(--f-d);font-size:1.05rem;font-weight:600;color:var(--ink)}
+.show-card-price.free{color:var(--r-venue)}
+.show-card-link{font-family:var(--f-m);font-size:.8rem;font-weight:500;color:var(--accent-ink);text-decoration:none;white-space:nowrap}
+.show-card-link:hover{text-decoration:underline}
+.show-card-cap{font-family:var(--f-m);font-size:.74rem;color:var(--ink-3)}
+
+.shows-empty{grid-column:1/-1;text-align:center;padding:3rem 1rem;color:var(--ink-3);font-family:var(--f-m);font-size:.92rem}
+
+@media (max-width:880px){
+  .shows-browser{grid-template-columns:1fr}
+}
+
 @media (max-width:880px){
   .tiers{grid-template-columns:1fr}
   .checkout-grid{grid-template-columns:1fr}
@@ -131,44 +158,22 @@
 
   <section class="section">
     <div class="section-head">
-      <div class="section-eyebrow" data-i18n="tick.s1.eyebrow">01 · Pick your ticket</div>
-      <h2 class="t-h2">Wreckage Tour · <em>Phantom Ridge</em></h2>
-      <p class="lede">State Theatre · Portland, ME · 22 Jun · doors 8pm</p>
+      <div class="section-eyebrow">01 · Upcoming shows</div>
+      <h2 class="t-h2">Find a show. <em>Buy direct.</em></h2>
+      <p class="lede">Every ticket goes straight to the people who made the show. No platform fee. Transparent split on every purchase.</p>
     </div>
 
-    <div class="tiers" id="tierPicker">
-      <div class="tier" data-tier="ga">
-        <div class="tier-name" data-i18n="tick.tier.ga">General admission</div>
-        <div class="tier-price"><span class="currency">$</span>35</div>
-        <div class="tier-perks">
-          <div><span class="check">✓</span><span>Floor / standing</span></div>
-          <div><span class="check">✓</span><span>Doors at 8pm</span></div>
-          <div><span class="check">✓</span><span>+10 HYPE on attendance</span></div>
-        </div>
-        <div class="tier-foot">820 / 1,200 sold</div>
-      </div>
-      <div class="tier selected" data-tier="reserved">
-        <div class="tier-name" data-i18n="tick.tier.reserved">Reserved seat</div>
-        <div class="tier-price"><span class="currency">$</span>45</div>
-        <div class="tier-perks">
-          <div><span class="check">✓</span><span>Mezzanine + balcony</span></div>
-          <div><span class="check">✓</span><span>Early entry, 7:30pm</span></div>
-          <div><span class="check">✓</span><span>+10 HYPE on attendance</span></div>
-          <div><span class="check">✓</span><span>Exclusive merch link</span></div>
-        </div>
-        <div class="tier-foot">340 / 600 sold</div>
-      </div>
-      <div class="tier" data-tier="vip">
-        <div class="tier-name" data-i18n="tick.tier.vip">VIP · meet the band</div>
-        <div class="tier-price"><span class="currency">$</span>95</div>
-        <div class="tier-perks">
-          <div><span class="check">✓</span><span>Soundcheck access · 6pm</span></div>
-          <div><span class="check">✓</span><span>Signed setlist</span></div>
-          <div><span class="check">✓</span><span>+15 HYPE on attendance</span></div>
-          <div><span class="check">✓</span><span>Curator-tier presale next time</span></div>
-        </div>
-        <div class="tier-foot">38 / 50 sold</div>
-      </div>
+    <div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1.2rem" id="shows-filters">
+      <button class="filter-btn active" data-filter="all">All shows</button>
+      <button class="filter-btn" data-filter="live">Live now</button>
+      <button class="filter-btn" data-filter="ticketed">Ticketed</button>
+      <button class="filter-btn" data-filter="free">Free</button>
+    </div>
+
+    <div id="shows-grid" class="shows-browser">
+      <div class="show-skel skeleton"></div>
+      <div class="show-skel skeleton" style="opacity:.75"></div>
+      <div class="show-skel skeleton" style="opacity:.5"></div>
     </div>
   </section>
 
@@ -368,12 +373,101 @@
 
 <script src="/ihype-shared.js"></script>
 <script>
-document.querySelectorAll('#tierPicker .tier').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('#tierPicker .tier').forEach(x=>x.classList.remove('selected'));
-    t.classList.add('selected');
+/* ── Shows browser ───────────────────────────────────────────── */
+(function(){
+  const grid = document.getElementById('shows-grid');
+  const filterBtns = document.querySelectorAll('#shows-filters .filter-btn');
+  let allShows = [];
+
+  function fmtDate(iso){
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+  }
+  function fmtPrice(cents){
+    if(!cents) return 'Free';
+    return '$'+(cents/100).toFixed(2);
+  }
+  function capBar(sold, cap){
+    if(!cap) return '';
+    const pct = Math.min(100, Math.round(sold/cap*100));
+    return '<div style="margin-top:.35rem"><div style="height:3px;border-radius:2px;background:var(--line);overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:2px"></div></div></div>';
+  }
+
+  function renderCard(show){
+    const card = document.createElement('div');
+    card.className = 'show-card';
+    card.dataset.status = show.status;
+    card.dataset.ticketed = show.isTicketed ? 'true' : 'false';
+
+    const isLive = show.status === 'LIVE';
+    const venue = show.venueProfile?.name || '';
+    const headliner = show.headlinerProfile?.name || '';
+    const where = [headliner, venue].filter(Boolean).join(' · ');
+    const price = fmtPrice(show.ticketPriceCents);
+    const sold = show.ticketsSoldCount ?? 0;
+    const cap = show.ticketCapacity ?? 0;
+
+    card.innerHTML =
+      '<div class="show-card-badges">' +
+        (isLive ? '<span class="tag tag-accent" style="animation:pulse 2s infinite">● Live</span>' : '') +
+        (show.isTicketed
+          ? '<span class="tag">Ticketed</span>'
+          : '<span class="tag" style="color:var(--r-venue)">Free</span>') +
+      '</div>' +
+      '<div class="show-card-title">' + escHtml(show.title) + '</div>' +
+      '<div class="show-card-meta">' +
+        (where ? '<span>' + escHtml(where) + '</span>' : '') +
+        '<span>' + fmtDate(show.startsAt) + '</span>' +
+        (cap ? '<span class="show-card-cap">' + sold + ' / ' + cap + ' tickets sold</span>' + capBar(sold, cap) : '') +
+      '</div>' +
+      '<div class="show-card-foot">' +
+        '<span class="show-card-price' + (price==='Free'?' free':'') + '">' + price + '</span>' +
+        '<a class="show-card-link" href="/shows/' + escHtml(show.slug) + '">' +
+          (show.isTicketed ? 'Get tickets →' : 'View show →') +
+        '</a>' +
+      '</div>';
+
+    return card;
+  }
+
+  function escHtml(str){
+    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function applyFilter(filter){
+    filterBtns.forEach(b=>b.classList.toggle('active', b.dataset.filter===filter));
+    let filtered = allShows;
+    if(filter==='live') filtered = allShows.filter(s=>s.status==='LIVE');
+    else if(filter==='ticketed') filtered = allShows.filter(s=>s.isTicketed);
+    else if(filter==='free') filtered = allShows.filter(s=>!s.isTicketed);
+
+    grid.innerHTML = '';
+    if(!filtered.length){
+      grid.innerHTML = '<div class="shows-empty">No shows found for this filter.</div>';
+    } else {
+      filtered.forEach(s=>grid.appendChild(renderCard(s)));
+    }
+  }
+
+  filterBtns.forEach(b=>{
+    b.addEventListener('click',()=>applyFilter(b.dataset.filter));
   });
-});
+
+  async function loadShows(){
+    try{
+      const res = await fetch('/api/shows',{credentials:'same-origin'});
+      if(!res.ok) throw new Error('non-ok');
+      allShows = await res.json();
+      applyFilter('all');
+    }catch(e){
+      grid.innerHTML = '<div class="shows-empty">Unable to load shows. Try refreshing.</div>';
+    }
+  }
+
+  loadShows();
+})();
+
+/* ── Dashboard tabs ──────────────────────────────────────────── */
 document.querySelectorAll('#dashTabs button').forEach(b=>{
   b.addEventListener('click',()=>{
     document.querySelectorAll('#dashTabs button').forEach(x=>x.classList.remove('active'));

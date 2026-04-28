@@ -209,7 +209,11 @@ img,svg{display:block;max-width:100%}
 .user-menu.open .user-menu-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
 .user-menu-header{padding:.7rem .85rem .55rem;border-bottom:1px solid var(--line);margin-bottom:.3rem}
 .user-menu-header .um-name{font-size:.92rem;font-weight:600;color:var(--ink);font-family:var(--f-d);line-height:1.2}
-.user-menu-header .um-email{font-family:var(--f-m);font-size:.72rem;color:var(--ink-3);margin-top:.2rem;word-break:break-all}
+.user-menu-header .um-role{font-family:var(--f-m);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-top:.15rem}
+.user-menu-header .um-email{font-family:var(--f-m);font-size:.72rem;color:var(--ink-3);margin-top:.15rem;word-break:break-all}
+.user-menu-dropdown{min-width:240px}
+.engine-item{display:flex!important;align-items:center;gap:.65rem;font-family:var(--f-m)!important;font-size:.82rem!important}
+.engine-item-icon{font-size:.95rem;flex-shrink:0;opacity:.85}
 .user-menu-item{display:block;width:100%;text-align:left;padding:.55rem .85rem;border-radius:var(--r-sm);font-size:.86rem;font-weight:500;color:var(--ink);background:transparent;border:none;cursor:pointer;text-decoration:none;transition:background .12s}
 .user-menu-item:hover{background:var(--surface-2)}
 .user-menu-item.danger{color:#f87171}

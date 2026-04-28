@@ -233,12 +233,14 @@ model ArtistMediaAsset {
   mimeType         String
   fileSizeBytes    Int
   fileDataBase64   String
+  freeUseEnabled   Boolean  @default(false)
   profileId        String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@index([profileId, createdAt])
+  @@index([freeUseEnabled, createdAt])
 }
 
 model Show {
@@ -247,6 +249,7 @@ model Show {
   title                  String
   description            String?
   productionPlan         Json?
+  isRadioShow            Boolean                @default(false)
   status                 ShowStatus             @default(DRAFT)
   startsAt               DateTime
   endsAt                 DateTime?

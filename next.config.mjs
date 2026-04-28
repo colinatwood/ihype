@@ -78,6 +78,11 @@ const nextConfig = {
         source: '/listeners/:slug',
         destination: '/fans/:slug',
         permanent: true
+      },
+      {
+        source: '/promise',
+        destination: '/',
+        permanent: false
       }
     ];
   },
@@ -90,7 +95,6 @@ const nextConfig = {
         { source: '/hype',       destination: '/ihype-hype-engine.html' },
         { source: '/discover',   destination: '/ihype-rec-engine.html' },
         { source: '/tickets',    destination: '/ihype-ticketing.html' },
-        { source: '/promise',    destination: '/ihype-promise.html' },
         { source: '/customizer',    destination: '/ihype-page-customizer.html' },
         { source: '/show-creator', destination: '/ihype-show-creator.html' },
         { source: '/home',         destination: '/ihype-home.html' }

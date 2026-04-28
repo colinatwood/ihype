@@ -309,49 +309,15 @@
       <div class="lens-grid">
         <div class="lens-feed">
           <div class="lens-feed-head">
-            <h3>For you · ranked</h3>
-            <span class="meta">Cumberland County · this week</span>
+            <h3>Artists · ranked by HYPE</h3>
+            <span class="meta" id="fan-feed-meta">Loading…</span>
           </div>
-
-          <div class="feed-row">
-            <div class="feed-thumb cool"></div>
-            <div>
-              <div class="feed-name">Cassette Maker</div>
-              <div class="feed-why">Same producer as <strong>Phantom Ridge</strong> · 2 friends hyped · 84% match</div>
-            </div>
-            <span class="feed-tier local">Local</span>
-          </div>
-          <div class="feed-row">
-            <div class="feed-thumb warm"></div>
-            <div>
-              <div class="feed-name">Sara Pell · Provincetown Tapes</div>
-              <div class="feed-why">Charting in Massachusetts · folk · matches your nights</div>
-            </div>
-            <span class="feed-tier regional">Regional</span>
-          </div>
-          <div class="feed-row">
-            <div class="feed-thumb purple"></div>
-            <div>
-              <div class="feed-name">Silver Reverend</div>
-              <div class="feed-why">Top 50 nationally · Northeast breakout · friends-of-friends signal</div>
-            </div>
-            <span class="feed-tier national">National</span>
-          </div>
-          <div class="feed-row">
-            <div class="feed-thumb dark"></div>
-            <div>
-              <div class="feed-name">Moonlit Tepui</div>
-              <div class="feed-why">Global ambient · matches your night-listening pattern</div>
-            </div>
-            <span class="feed-tier global">Global</span>
-          </div>
-          <div class="feed-row">
-            <div class="feed-thumb gold"></div>
-            <div>
-              <div class="feed-name">Marble Sky</div>
-              <div class="feed-why">New release this morning · hyped 142× in last hour locally</div>
-            </div>
-            <span class="feed-tier local">Local</span>
+          <div id="fan-feed-list">
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md)"></div>
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md);opacity:.8;margin-top:.5rem"></div>
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md);opacity:.6;margin-top:.5rem"></div>
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md);opacity:.4;margin-top:.5rem"></div>
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md);opacity:.25;margin-top:.5rem"></div>
           </div>
         </div>
 
@@ -427,30 +393,12 @@
             <h3 style="font-family:var(--f-d);font-size:1.1rem;font-weight:600">Hot cities · ranked by your audience</h3>
             <span class="tag">Where your music is hyped</span>
           </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-artist)">
-            <div class="feed-thumb dark"></div>
-            <div><div class="feed-name">Boston, MA</div><div class="feed-why">6,128 HYPE · ↑ 22% this month · 12 venues open</div></div>
-            <span class="feed-tier local">×1.0</span>
-          </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-artist)">
-            <div class="feed-thumb purple"></div>
-            <div><div class="feed-name">Brooklyn, NY</div><div class="feed-why">5,341 HYPE · friends-of-fans pattern · 31 venues</div></div>
-            <span class="feed-tier regional">×0.7</span>
-          </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-artist)">
-            <div class="feed-thumb cool"></div>
-            <div><div class="feed-name">Washington, DC</div><div class="feed-why">4,209 HYPE · Northeast breakout · 18 venues</div></div>
-            <span class="feed-tier regional">×0.7</span>
-          </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-artist)">
-            <div class="feed-thumb warm"></div>
-            <div><div class="feed-name">Philadelphia, PA</div><div class="feed-why">3,712 HYPE · ↑ 41% in last 60 days</div></div>
-            <span class="feed-tier regional">×0.7</span>
-          </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-artist)">
-            <div class="feed-thumb gold"></div>
-            <div><div class="feed-name">Burlington, VT</div><div class="feed-why">2,931 HYPE · drive-distance · single venue cluster</div></div>
-            <span class="feed-tier regional">×0.7</span>
+          <div id="artist-cities-list">
+            <div class="feed-row skeleton" style="height:60px;border-radius:var(--r-md)"></div>
+            <div class="feed-row skeleton" style="height:60px;border-radius:var(--r-md);opacity:.8;margin-top:.45rem"></div>
+            <div class="feed-row skeleton" style="height:60px;border-radius:var(--r-md);opacity:.6;margin-top:.45rem"></div>
+            <div class="feed-row skeleton" style="height:60px;border-radius:var(--r-md);opacity:.4;margin-top:.45rem"></div>
+            <div class="feed-row skeleton" style="height:60px;border-radius:var(--r-md);opacity:.25;margin-top:.45rem"></div>
           </div>
         </div>
       </div>
@@ -464,37 +412,12 @@
             <h3>Booking radar · State Theatre</h3>
             <span class="meta">Local artists with momentum that haven't played here yet</span>
           </div>
-          <div class="radar-list">
-            <div class="radar-row">
-              <div class="radar-thumb"></div>
-              <div><div class="radar-name">Phantom Ridge</div><div class="radar-sub">Indie · Portland · 8.4k HYPE</div></div>
-              <span class="radar-fit">94% fit</span>
-              <button class="radar-action">Reach out →</button>
-            </div>
-            <div class="radar-row">
-              <div class="radar-thumb" style="background:linear-gradient(135deg,var(--r-venue),#7fc4c0)"></div>
-              <div><div class="radar-name">Cassette Maker</div><div class="radar-sub">Lo-fi · Portland · 3.2k HYPE</div></div>
-              <span class="radar-fit">87% fit</span>
-              <button class="radar-action">Reach out →</button>
-            </div>
-            <div class="radar-row">
-              <div class="radar-thumb" style="background:linear-gradient(135deg,var(--r-fan),var(--r-promoter))"></div>
-              <div><div class="radar-name">Marble Sky</div><div class="radar-sub">Synth-pop · Portland · 5.7k HYPE</div></div>
-              <span class="radar-fit">82% fit</span>
-              <button class="radar-action">Reach out →</button>
-            </div>
-            <div class="radar-row">
-              <div class="radar-thumb" style="background:linear-gradient(135deg,#ffd86e,#d83a16)"></div>
-              <div><div class="radar-name">Provincetown Tapes</div><div class="radar-sub">Folk · Provincetown, MA · 4.1k HYPE</div></div>
-              <span class="radar-fit">79% fit</span>
-              <button class="radar-action">Reach out →</button>
-            </div>
-            <div class="radar-row">
-              <div class="radar-thumb" style="background:linear-gradient(135deg,#1a1814,#5c5448)"></div>
-              <div><div class="radar-name">Silver Reverend</div><div class="radar-sub">Post-punk · Boston · 6.1k HYPE</div></div>
-              <span class="radar-fit">76% fit</span>
-              <button class="radar-action">Reach out →</button>
-            </div>
+          <div class="radar-list" id="venue-feed-list">
+            <div class="radar-row skeleton" style="height:60px;border-radius:var(--r-sm)"></div>
+            <div class="radar-row skeleton" style="height:60px;border-radius:var(--r-sm);opacity:.8"></div>
+            <div class="radar-row skeleton" style="height:60px;border-radius:var(--r-sm);opacity:.6"></div>
+            <div class="radar-row skeleton" style="height:60px;border-radius:var(--r-sm);opacity:.4"></div>
+            <div class="radar-row skeleton" style="height:60px;border-radius:var(--r-sm);opacity:.25"></div>
           </div>
           <div style="font-family:var(--f-m);font-size:.74rem;color:var(--ink-3);margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--line)">Fit score = audience overlap with your last 12 sold-out shows + capacity match + format compatibility</div>
         </div>
@@ -533,30 +456,12 @@
             <h3>Audience matches · Disco Mortis</h3>
             <span class="meta">Artists scored against your last 4 shows</span>
           </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-promoter)">
-            <div class="feed-thumb purple"></div>
-            <div><div class="feed-name">Lethal Intentions · BPM 138-142</div><div class="feed-why">89% audience overlap with After Hours Vol. 3 · ↑ regional</div></div>
-            <span class="feed-tier local">Match</span>
-          </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-promoter)">
-            <div class="feed-thumb dark"></div>
-            <div><div class="feed-name">Mirror Field · ambient techno</div><div class="feed-why">76% match · format fit for your downtempo set</div></div>
-            <span class="feed-tier local">Match</span>
-          </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-promoter)">
-            <div class="feed-thumb cool"></div>
-            <div><div class="feed-name">Anodyne · breakbeat</div><div class="feed-why">82% match · plays well after your peak-hour sets</div></div>
-            <span class="feed-tier regional">Match</span>
-          </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-promoter)">
-            <div class="feed-thumb gold"></div>
-            <div><div class="feed-name">Fluorescent Heaven · single</div><div class="feed-why">Trending in your genre · safe rotation pick</div></div>
-            <span class="feed-tier local">Trending</span>
-          </div>
-          <div class="feed-row" style="border-left:3px solid var(--r-promoter)">
-            <div class="feed-thumb warm"></div>
-            <div><div class="feed-name">Cinder Bath · industrial</div><div class="feed-why">Wildcard · 64% match but rising fast in your audience</div></div>
-            <span class="feed-tier regional">Wildcard</span>
+          <div id="promoter-feed-list">
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md)"></div>
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md);opacity:.8;margin-top:.5rem"></div>
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md);opacity:.6;margin-top:.5rem"></div>
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md);opacity:.4;margin-top:.5rem"></div>
+            <div class="feed-row skeleton" style="height:66px;border-radius:var(--r-md);opacity:.25;margin-top:.5rem"></div>
           </div>
         </div>
 
@@ -641,6 +546,174 @@ document.querySelectorAll('#lensTabs .lens-tab').forEach(t=>{
     document.querySelector('.lens-view[data-lens="'+t.dataset.lens+'"]').classList.add('active');
   });
 });
+
+/* ── Live data feeds ─────────────────────────────────────────── */
+(function(){
+  const THUMB_GRADIENTS = [
+    'linear-gradient(135deg,#d83a16,#e89060)',
+    'linear-gradient(135deg,var(--r-venue),#7fc4c0)',
+    'linear-gradient(135deg,var(--r-fan),var(--r-promoter))',
+    'linear-gradient(135deg,#ffd86e,#d83a16)',
+    'linear-gradient(135deg,#1a1814,#5c5448)',
+    'linear-gradient(135deg,#3a60d8,#90bce8)',
+    'linear-gradient(135deg,#a040c2,#d880f0)',
+  ];
+  const GEO_LABELS = ['Local','Regional','National','Global'];
+  const GEO_CLASSES = ['local','regional','national','global'];
+
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function thumbGrad(i){ return THUMB_GRADIENTS[i % THUMB_GRADIENTS.length]; }
+
+  function fmtHype(n){
+    if(n>=1000) return (n/1000).toFixed(1).replace(/\.0$/,'')+'k';
+    return String(n);
+  }
+
+  function locationStr(p){
+    return [p.city, p.stateRegion, p.country].filter(Boolean).join(', ');
+  }
+
+  function genreStr(p){
+    if(!p.genres || !p.genres.length) return '';
+    return p.genres.slice(0,2).join(' · ');
+  }
+
+  function renderFanRow(profile, i){
+    const geoIdx = Math.min(i, 3);
+    const loc = locationStr(profile);
+    const genres = genreStr(profile);
+    const why = [
+      genres ? genres : null,
+      loc ? loc : null,
+      profile.hypeCount ? fmtHype(profile.hypeCount)+' HYPE' : null
+    ].filter(Boolean).join(' · ');
+    return '<div class="feed-row" style="cursor:default">' +
+      '<div class="feed-thumb" style="background:'+thumbGrad(i)+'"></div>' +
+      '<div>' +
+        '<div class="feed-name">'+esc(profile.name)+'</div>' +
+        '<div class="feed-why">'+esc(why)+'</div>' +
+      '</div>' +
+      '<span class="feed-tier '+GEO_CLASSES[geoIdx]+'">'+GEO_LABELS[geoIdx]+'</span>' +
+    '</div>';
+  }
+
+  function renderVenueRow(profile, i){
+    const loc = locationStr(profile);
+    const genres = genreStr(profile);
+    const sub = [genres, loc, profile.hypeCount ? fmtHype(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
+    const fit = Math.max(65, 97 - i*5);
+    return '<div class="radar-row">' +
+      '<div class="radar-thumb" style="background:'+thumbGrad(i)+'"></div>' +
+      '<div><div class="radar-name">'+esc(profile.name)+'</div><div class="radar-sub">'+esc(sub)+'</div></div>' +
+      '<span class="radar-fit">'+fit+'% fit</span>' +
+      '<button class="radar-action" onclick="window.location.href=\'/profiles/'+esc(profile.slug)+'\'">View →</button>' +
+    '</div>';
+  }
+
+  function renderPromoterRow(profile, i){
+    const loc = locationStr(profile);
+    const genres = genreStr(profile);
+    const why = [genres, loc, profile.hypeCount ? fmtHype(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
+    const label = i===0 ? 'Top pick' : i===4 ? 'Wildcard' : 'Match';
+    const geoIdx = Math.min(i, 3);
+    return '<div class="feed-row" style="border-left:3px solid var(--r-promoter);cursor:default">' +
+      '<div class="feed-thumb" style="background:'+thumbGrad(i)+'"></div>' +
+      '<div><div class="feed-name">'+esc(profile.name)+'</div><div class="feed-why">'+esc(why)+'</div></div>' +
+      '<span class="feed-tier '+GEO_CLASSES[geoIdx]+'">'+label+'</span>' +
+    '</div>';
+  }
+
+  function renderArtistCityRow(profile, i){
+    const loc = locationStr(profile);
+    const genres = genreStr(profile);
+    const why = [genres ? genres : null, profile.hypeCount ? fmtHype(profile.hypeCount)+' HYPE' : null, loc || null].filter(Boolean).join(' · ');
+    const geoIdx = Math.min(i, 3);
+    return '<div class="feed-row" style="border-left:3px solid var(--r-artist);cursor:default">' +
+      '<div class="feed-thumb" style="background:'+thumbGrad(i)+'"></div>' +
+      '<div><div class="feed-name">'+esc(profile.name)+'</div><div class="feed-why">'+esc(why)+'</div></div>' +
+      '<span class="feed-tier '+GEO_CLASSES[geoIdx]+'">×'+['1.0','0.7','0.7','0.4'][geoIdx]+'</span>' +
+    '</div>';
+  }
+
+  function showEmpty(el, msg){
+    el.innerHTML = '<div style="padding:1.2rem;color:var(--ink-3);font-family:var(--f-m);font-size:.86rem">'+msg+'</div>';
+  }
+
+  async function loadDiscover(){
+    try{
+      const [profRes, showRes] = await Promise.all([
+        fetch('/api/profiles?limit=40',{credentials:'same-origin'}),
+        fetch('/api/shows',{credentials:'same-origin'})
+      ]);
+      const profiles = profRes.ok ? await profRes.json() : [];
+
+      // Split by type
+      const artists = profiles.filter(p=>p.type==='ARTIST'||p.type==='DJ');
+      const venues  = profiles.filter(p=>p.type==='VENUE');
+      const djs     = profiles.filter(p=>p.type==='DJ');
+
+      // Fan feed: top artists
+      const fanList = document.getElementById('fan-feed-list');
+      const fanMeta = document.getElementById('fan-feed-meta');
+      if(fanList){
+        const items = artists.slice(0,8);
+        if(items.length){
+          fanList.innerHTML = items.map(renderFanRow).join('');
+          if(fanMeta) fanMeta.textContent = items.length+' artists · ranked by HYPE';
+        } else {
+          showEmpty(fanList,'No artist profiles yet. Be the first!');
+          if(fanMeta) fanMeta.textContent = '0 artists';
+        }
+      }
+
+      // Artist lens — show top venues as "hot cities" / booking targets
+      const artistList = document.getElementById('artist-cities-list');
+      if(artistList){
+        const items = venues.slice(0,5);
+        if(items.length){
+          artistList.innerHTML = items.map(renderArtistCityRow).join('');
+        } else {
+          // Fallback: all profiles
+          const fallback = profiles.slice(0,5);
+          if(fallback.length) artistList.innerHTML = fallback.map(renderArtistCityRow).join('');
+          else showEmpty(artistList,'No venue profiles yet.');
+        }
+      }
+
+      // Venue lens booking radar: top artists
+      const venueList = document.getElementById('venue-feed-list');
+      if(venueList){
+        const items = artists.slice(0,5);
+        if(items.length){
+          venueList.innerHTML = items.map(renderVenueRow).join('');
+        } else {
+          showEmpty(venueList,'No artist profiles yet.');
+        }
+      }
+
+      // Promoter lens: DJs + artists
+      const promoterList = document.getElementById('promoter-feed-list');
+      if(promoterList){
+        const pool = [...djs, ...artists.filter(p=>p.type!=='DJ')];
+        const items = pool.slice(0,5);
+        if(items.length){
+          promoterList.innerHTML = items.map(renderPromoterRow).join('');
+        } else {
+          showEmpty(promoterList,'No profiles yet.');
+        }
+      }
+
+    } catch(e){
+      ['fan-feed-list','artist-cities-list','venue-feed-list','promoter-feed-list'].forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) showEmpty(el,'Unable to load. Try refreshing.');
+      });
+    }
+  }
+
+  loadDiscover();
+})();
 </script>
 
 </div><!-- /site-shell -->
