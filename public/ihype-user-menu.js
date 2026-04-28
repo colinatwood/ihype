@@ -56,6 +56,7 @@
         '<div class="um-name"></div>' +
         '<div class="um-email"></div>' +
       '</div>' +
+      '<a href="/show-creator" class="user-menu-item">Create a show</a>' +
       '<a href="/customizer" class="user-menu-item">Customize my page</a>' +
       '<a href="/dashboard" class="user-menu-item">Account</a>' +
       '<div class="user-menu-divider"></div>' +
