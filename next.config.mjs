@@ -103,6 +103,10 @@ const nextConfig = {
       {
         source: '/:path*',
         headers: securityHeaders
+      },
+      {
+        source: '/:path*.html',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       }
     ];
   }
