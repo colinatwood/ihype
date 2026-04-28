@@ -90,8 +90,8 @@ const nextConfig = {
     return {
       beforeFiles: [
         { source: '/',           destination: '/ihype-homepage.html' },
-        { source: '/login',      destination: '/ihype-auth.html' },
-        { source: '/register',   destination: '/ihype-auth.html' },
+        { source: '/login',      destination: '/ihype-login.html' },
+        { source: '/register',   destination: '/ihype-register.html' },
         { source: '/hype',       destination: '/ihype-hype-engine.html' },
         { source: '/discover',   destination: '/ihype-rec-engine.html' },
         { source: '/tickets',    destination: '/ihype-ticketing.html' },
@@ -119,6 +119,14 @@ const nextConfig = {
       },
       {
         source: '/home',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/login',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/register',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       }
     ];
