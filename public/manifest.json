@@ -2,7 +2,7 @@
   "name": "iHYPE.org",
   "short_name": "iHYPE",
   "description": "Independent music, hyped by the people who love it. A not-for-profit platform for fans, artists, venues, and promoters.",
-  "start_url": "/home",
+  "start_url": "/promise",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
