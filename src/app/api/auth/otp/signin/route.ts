@@ -61,6 +61,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Server misconfiguration.' }, { status: 500 });
     }
 
+    // next-auth v5 uses __Secure- prefix for session token (not __Host-)
+    // salt must match options.cookies.sessionToken.name used by the middleware/auth()
+    const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token';
+
     const now = Math.floor(Date.now() / 1000);
     const token = await encode({
       token: {
@@ -74,23 +78,21 @@ export async function POST(request: Request) {
         jti: crypto.randomUUID()
       },
       secret,
-      salt: isProduction ? '__Host-authjs.session-token' : 'authjs.session-token'
+      salt: cookieName
     });
 
-    const cookieName = isProduction ? '__Host-authjs.session-token' : 'authjs.session-token';
-    const cookieAttributes = [
-      `${cookieName}=${token}`,
-      'Path=/',
-      'HttpOnly',
-      'SameSite=Lax',
-      `Max-Age=${SESSION_MAX_AGE}`,
-      ...(isProduction ? ['Secure'] : [])
-    ].join('; ');
+    const response = NextResponse.json({ redirect: '/auth/landing' });
+    response.cookies.set({
+      name: cookieName,
+      value: token,
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      secure: isProduction,
+      maxAge: SESSION_MAX_AGE
+    });
 
-    return NextResponse.json(
-      { redirect: '/auth/landing' },
-      { headers: { 'Set-Cookie': cookieAttributes } }
-    );
+    return response;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[otp/signin]', msg);
