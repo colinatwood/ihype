@@ -482,7 +482,8 @@
                   <span class="why-bar-pct" id="wf-momentum-p">—</span>
                 </div>
               </div>
-              <div class="why-formula"><strong>Score</strong> = taste×0.40 + geo×0.25 + social×0.20 + momentum×0.15</div>
+              <div class="why-formula"><strong>Score</strong> = taste×0.40 + geo×0.25 + social×0.20 + momentum×0.15<br><em style="font-style:normal;color:var(--ink-4);font-size:.7rem">social &amp; momentum: real · taste &amp; geo: require profile data</em></div>
+              <div id="wf-formula-note" style="display:none;font-family:var(--f-m);font-size:.72rem;color:#c2a040;padding:.5rem .75rem;background:rgba(194,160,64,.07);border:1px solid rgba(194,160,64,.2);border-radius:var(--r-sm)"></div>
               <div class="why-actions">
                 <button onclick="nudge('less',this)">Less like this</button>
                 <button onclick="nudge('more',this)">More like this</button>
@@ -563,7 +564,8 @@
                   <span class="why-bar-pct" id="wa-momentum-p">—</span>
                 </div>
               </div>
-              <div class="why-formula"><strong>Fit score</strong> = audience×0.40 + proximity×0.25 + capacity×0.20 + momentum×0.15</div>
+              <div class="why-formula"><strong>Score</strong> = taste×0.40 + geo×0.25 + social×0.20 + momentum×0.15<br><em style="font-style:normal;color:var(--ink-4);font-size:.7rem">social &amp; momentum: real · taste &amp; geo: require profile data</em></div>
+              <div id="wa-formula-note" style="display:none;font-family:var(--f-m);font-size:.72rem;color:#c2a040;padding:.5rem .75rem;background:rgba(194,160,64,.07);border:1px solid rgba(194,160,64,.2);border-radius:var(--r-sm)"></div>
               <div class="why-actions">
                 <button onclick="nudge('save',this)">Save</button>
                 <a href="/tickets">Browse shows</a>
@@ -626,7 +628,8 @@
                   <span class="why-bar-pct" id="wv-fanreq-p">—</span>
                 </div>
               </div>
-              <div class="why-formula"><strong>Score</strong> = (taste×0.40 + geo×0.25 + social×0.20 + momentum×0.15) + fan_req_bonus</div>
+              <div class="why-formula"><strong>Score</strong> = (taste×0.40 + geo×0.25 + social×0.20 + momentum×0.15) + fan_req_bonus<br><em style="font-style:normal;color:var(--ink-4);font-size:.7rem">social &amp; momentum: real · geo: venue tier weight · fan_req: real</em></div>
+              <div id="wv-formula-note" style="display:none;font-family:var(--f-m);font-size:.72rem;color:#c2a040;padding:.5rem .75rem;background:rgba(194,160,64,.07);border:1px solid rgba(194,160,64,.2);border-radius:var(--r-sm)"></div>
               <div class="why-actions">
                 <button onclick="nudge('save',this)">Save to list</button>
                 <a href="/show-creator">Create show →</a>
@@ -716,7 +719,8 @@
                   <span class="why-bar-pct" id="wp-geo-p">—</span>
                 </div>
               </div>
-              <div class="why-formula"><strong>Match score</strong> = genre×0.40 + audience×0.25 + velocity×0.20 + market×0.15</div>
+              <div class="why-formula"><strong>Score</strong> = taste×0.40 + geo×0.25 + social×0.20 + momentum×0.15<br><em style="font-style:normal;color:var(--ink-4);font-size:.7rem">social &amp; momentum: real · taste &amp; geo: require profile data</em></div>
+              <div id="wp-formula-note" style="display:none;font-family:var(--f-m);font-size:.72rem;color:#c2a040;padding:.5rem .75rem;background:rgba(194,160,64,.07);border:1px solid rgba(194,160,64,.2);border-radius:var(--r-sm)"></div>
               <div class="why-actions">
                 <button onclick="nudge('add',this)">Add to show</button>
                 <a href="/show-creator" class="primary">Create show →</a>
@@ -830,24 +834,24 @@ function setBar(prefix,v){
   if(p) p.textContent=v.toFixed(2);
 }
 
-/* ── Score computation ─────────────────────────────────────── */
-/* Base scores derived from rank + hypeCount (proxy for real signals).
-   The real engine runs server-side with full signal data. */
-function baseScore(profile, rank){
-  const taste    = Math.max(0.40, 0.95 - rank*0.055 + Math.sin(rank*7+1)*0.04);
-  const geoW     = [1.0,0.85,0.72,0.60][Math.min(rank,3)];
-  const social   = Math.min(0.96, 0.30 + Math.log1p(profile.hypeCount||0)/10);
-  const momentum = Math.max(0.35, 0.70 + Math.cos(rank*5)*0.18);
-  const final    = taste*0.40 + geoW*0.25 + social*0.20 + momentum*0.15;
-  return { taste, geo:geoW, social, momentum, final };
-}
+/* ── Score helpers ─────────────────────────────────────────── */
+/* Scores come from /api/recommend (server-side, real signals).
+   venueScore keeps the geo multiplier from the tier, overriding
+   the session-based geo signal for the venue lens. */
 
-function venueScore(profile, rank, tierIdx){
-  const s = baseScore(profile, rank);
-  s.geo = GEO_MULT[tierIdx];
+function venueScore(profile, tierIdx){
+  const s = Object.assign({}, profile._scores || {});
+  s.geo = GEO_MULT[tierIdx]; // real tier weight overrides session geo
   const fanReq = (profile.hypeCount||0) > FAN_REQ_THRESHOLD ? FAN_REQ_BONUS : 0;
   s.fanReq = fanReq;
-  s.final  = (s.taste*0.40 + s.geo*0.25 + s.social*0.20 + s.momentum*0.15) + fanReq;
+  // Recompute final with venue geo
+  const weights = {taste:0.40,geo:0.25,social:0.20,momentum:0.15};
+  let wSum=0,wTot=0;
+  for(const [k,w] of Object.entries(weights)){
+    const v=k==='geo'?s.geo:s[k];
+    if(v!==null&&v!==undefined){wSum+=v*w;wTot+=w;}
+  }
+  s.final=(wTot>0?wSum/wTot:0)+fanReq;
   return s;
 }
 
@@ -859,15 +863,46 @@ function showWhyDetail(panelDetailId, promptId){
   if(prompt){ prompt.style.display='none'; }
 }
 
+/* setBar handles null signals: bar stays empty, value shows — */
+function setBarReal(prefix, val){
+  const f = document.getElementById(prefix+'-f');
+  const p = document.getElementById(prefix+'-p');
+  if(val === null || val === undefined){
+    if(f) f.style.width='0%';
+    if(p){ p.textContent='—'; p.style.opacity='.35'; }
+  } else {
+    if(f) f.style.width=(Math.max(0,Math.min(1,val))*100).toFixed(1)+'%';
+    if(p){ p.textContent=val.toFixed(2); p.style.opacity=''; }
+  }
+}
+
+/* recMeta — set once after /api/recommend response */
+let recMeta = { viewerHasLocation: false, viewerHasGenres: false, weights: {} };
+
 function updateWhy(prefix, profile, rank, ctx, scores){
   document.getElementById(prefix+'-thumb').style.background = grad(rank);
   setText(prefix+'-name', profile.name||'—');
   setText(prefix+'-ctx',  ctx);
-  setBar(prefix+'-taste',    scores.taste);
-  setBar(prefix+'-geo',      scores.geo);
-  setBar(prefix+'-social',   scores.social);
-  setBar(prefix+'-momentum', scores.momentum);
-  if(scores.fanReq !== undefined){ setBar(prefix+'-fanreq', scores.fanReq); }
+
+  setBarReal(prefix+'-taste',    scores.taste);
+  setBarReal(prefix+'-geo',      scores.geo);
+  setBarReal(prefix+'-social',   scores.social);
+  setBarReal(prefix+'-momentum', scores.momentum);
+  if(scores.fanReq !== undefined){ setBarReal(prefix+'-fanreq', scores.fanReq); }
+
+  // Pending signals note
+  const noteEl = document.getElementById(prefix+'-formula-note');
+  if(noteEl){
+    const pending = [];
+    if(!recMeta.viewerHasGenres) pending.push('taste match');
+    if(!recMeta.viewerHasLocation && scores.geo===null) pending.push('geographic');
+    if(pending.length){
+      noteEl.textContent = '⚠ '+pending.join(' & ')+' pending — add profile details to activate.';
+      noteEl.style.display='';
+    } else {
+      noteEl.style.display='none';
+    }
+  }
 }
 
 /* ── Row factory ───────────────────────────────────────────── */
@@ -912,8 +947,8 @@ function renderArtistRow(profile, i, listEl, whyPrefix, whyDetailId, whyPromptId
     badgeClass: GEO_CLS[geoIdx], badgeLabel: GEO_TIERS[geoIdx],
     onClick(){
       selectRow(row, listEl);
-      const s = baseScore(profile, i);
-      updateWhy(whyPrefix, profile, i, 'Position '+(i+1)+' · score '+s.final.toFixed(3), s);
+      const s = profile._scores || {taste:null,geo:null,social:0,momentum:0,final:0};
+      updateWhy(whyPrefix, profile, i, 'Score '+s.final.toFixed(3)+' · #'+(i+1)+' in feed', s);
       showWhyDetail(whyDetailId, whyPromptId);
     }
   });
@@ -963,7 +998,7 @@ function renderVenueTierSection(artists, tierIdx, container){
 
   const venueList = document.getElementById('venue-tier-sections');
   artists.forEach((profile, i) => {
-    const s = venueScore(profile, i + tierIdx*3, tierIdx);
+    const s = venueScore(profile, tierIdx);
     const hasFanReq = (profile.hypeCount||0) > FAN_REQ_THRESHOLD;
     const sub = [genStr(profile), loc(profile), profile.hypeCount ? fmtH(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
     const row = document.createElement('div');
@@ -979,8 +1014,6 @@ function renderVenueTierSection(artists, tierIdx, container){
       document.querySelectorAll('#venue-tier-sections .feed-row').forEach(r=>r.classList.remove('selected'));
       row.classList.add('selected');
       updateWhy('wv', profile, i, GEO_TIERS[tierIdx]+' · score '+s.final.toFixed(3)+' · fan request: '+(hasFanReq?'yes':'no'), s);
-      // also set fan-req bar
-      setBar('wv-fanreq', hasFanReq ? FAN_REQ_BONUS : 0);
       showWhyDetail('why-venue-detail','why-venue-prompt');
     });
     section.appendChild(row);
@@ -999,8 +1032,8 @@ function renderPromoterRow(profile, i, listEl){
     borderColor: 'var(--r-promoter)',
     onClick(){
       selectRow(row, listEl);
-      const s = baseScore(profile, i);
-      updateWhy('wp', profile, i, label+' · score '+s.final.toFixed(3)+'  (genre + audience focus)', s);
+      const s = profile._scores || {taste:null,geo:null,social:0,momentum:0,final:0};
+      updateWhy('wp', profile, i, label+' · score '+s.final.toFixed(3), s);
       showWhyDetail('why-promoter-detail','why-promoter-prompt');
     }
   });
@@ -1199,11 +1232,15 @@ async function load(){
   let profiles=[], shows=[], tracks=[];
   try{
     const [pRes,sRes,tRes] = await Promise.all([
-      fetch('/api/profiles?limit=200',{credentials:'same-origin'}),
+      fetch('/api/recommend?limit=100',{credentials:'same-origin'}),
       fetch('/api/shows',{credentials:'same-origin'}),
       fetch('/api/artist-media/free-use?limit=100',{credentials:'same-origin'})
     ]);
-    if(pRes.ok) profiles = await pRes.json();
+    if(pRes.ok){
+      const d = await pRes.json();
+      profiles = d.profiles || [];
+      recMeta  = d.meta    || recMeta;
+    }
     if(sRes.ok) shows    = await sRes.json();
     if(tRes.ok){ const d=await tRes.json(); tracks=d.tracks||[]; }
   }catch(e){}
