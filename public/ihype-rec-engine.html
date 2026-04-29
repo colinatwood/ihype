@@ -9,48 +9,56 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/ihype-shared.css">
 <style>
-/* ── Architecture card ─────────────────────────────────────── */
-.arch-card{padding:2rem 2.2rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg)}
-.arch-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:1rem;align-items:center;margin-bottom:2rem}
-.arch-node{padding:1.4rem 1.2rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);text-align:center}
-.arch-node.inputs{border-color:rgba(31,135,130,.3);background:linear-gradient(135deg,rgba(31,135,130,.05),var(--bg-2) 60%)}
-.arch-node.engine{border-color:var(--accent);background:linear-gradient(135deg,rgba(216,58,22,.08),var(--bg-2) 60%);transform:scale(1.04)}
-.arch-node.outputs{border-color:rgba(122,79,181,.3);background:linear-gradient(135deg,rgba(122,79,181,.05),var(--bg-2) 60%)}
-.arch-node h4{font-family:var(--f-d);font-size:1rem;font-weight:600;margin-bottom:.4rem}
-.arch-node .lbl{font-family:var(--f-m);font-size:.62rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:.6rem;display:block}
-.arch-node ul{list-style:none;font-size:.78rem;color:var(--ink-2);line-height:1.55;text-align:left;display:flex;flex-direction:column;gap:.2rem;margin-top:.5rem}
-.arch-node ul li{display:flex;gap:.4rem;align-items:start}
-.arch-node ul li::before{content:'·';color:var(--ink-4);font-weight:700;flex-shrink:0}
-.arch-arrow{color:var(--ink-3);font-size:1.4rem;text-align:center}
-.arch-principles{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;padding-top:1.6rem;border-top:1px solid var(--line)}
-.arch-principle{padding:1rem 1.1rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md)}
-.arch-principle h5{font-family:var(--f-d);font-size:.92rem;font-weight:600;margin-bottom:.3rem}
-.arch-principle p{font-size:.8rem;color:var(--ink-2);line-height:1.5;margin:0}
+/* ── Search ────────────────────────────────────────────────── */
+.search-block{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:1.4rem 1.6rem;display:flex;flex-direction:column;gap:.85rem;margin-bottom:2rem}
+.search-row{display:flex;align-items:center;gap:.7rem;background:var(--bg);border:1.5px solid var(--line-2);border-radius:var(--r-md);padding:.6rem 1rem;transition:border-color .15s}
+.search-row:focus-within{border-color:var(--accent)}
+.search-icon{font-size:1.1rem;color:var(--ink-3);flex-shrink:0}
+.search-input{flex:1;border:none;background:none;outline:none;font:inherit;font-size:1rem;color:var(--ink)}
+.search-input::placeholder{color:var(--ink-3)}
+.search-clear{background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:1rem;padding:.1rem .3rem;border-radius:var(--r-sm);transition:color .14s}
+.search-clear:hover{color:var(--ink)}
+.search-cats{display:flex;gap:.4rem;flex-wrap:wrap}
+.search-cat{padding:.3rem .75rem;border-radius:99px;font-size:.8rem;font-weight:500;font-family:var(--f-d);background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink-2);cursor:pointer;transition:all .14s}
+.search-cat.active{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.search-cat:hover:not(.active){border-color:var(--ink-3);color:var(--ink)}
 
-/* ── Geo cascade ───────────────────────────────────────────── */
-.cascade-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:1.5rem}
-.cascade-tier{padding:1.4rem 1.5rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);position:relative;overflow:hidden}
-.cascade-tier::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
-.cascade-tier.t1::before{background:var(--accent)}
-.cascade-tier.t2::before{background:#c2a040}
-.cascade-tier.t3::before{background:var(--r-fan)}
-.cascade-tier.t4::before{background:var(--r-venue)}
-.cascade-weight{font-family:var(--f-d);font-size:2.2rem;font-weight:600;line-height:1;letter-spacing:-.025em;margin-bottom:.4rem}
-.cascade-tier.t1 .cascade-weight{color:var(--accent)}
-.cascade-tier.t2 .cascade-weight{color:#c2a040}
-.cascade-tier.t3 .cascade-weight{color:var(--r-fan)}
-.cascade-tier.t4 .cascade-weight{color:var(--r-venue)}
-.cascade-name{font-family:var(--f-d);font-size:1.05rem;font-weight:600;margin-bottom:.25rem}
-.cascade-radius{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);margin-bottom:.85rem;padding-bottom:.85rem;border-bottom:1px solid var(--line);font-weight:500;letter-spacing:.04em}
-.cascade-desc{font-size:.82rem;color:var(--ink-2);line-height:1.55}
-.formula-card{padding:1.4rem 1.8rem;background:var(--bg-2);border:1px dashed var(--line-3);border-radius:var(--r-lg);font-family:var(--f-m);font-size:.86rem;color:var(--ink-2);line-height:1.7;text-align:center}
-.formula-card strong{color:var(--ink);font-weight:600}
-.formula-card em{font-style:normal;color:var(--accent);font-weight:600}
+/* ── Search results ────────────────────────────────────────── */
+#searchResults{margin-bottom:1.5rem}
+.sr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem}
+.sr-header h3{font-family:var(--f-d);font-size:.95rem;font-weight:600;color:var(--ink-2)}
+.sr-count{font-family:var(--f-m);font-size:.76rem;color:var(--ink-3)}
+.sr-list{display:flex;flex-direction:column;gap:.35rem}
+.sr-row{display:grid;grid-template-columns:32px 1fr auto;gap:.65rem;padding:.65rem .85rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);align-items:center;cursor:pointer;transition:all .13s;text-decoration:none;color:inherit}
+.sr-row:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 4%,var(--bg-2))}
+.sr-thumb{width:32px;height:32px;border-radius:var(--r-sm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+.sr-thumb.artist{background:linear-gradient(135deg,#d83a16,#e89060)}
+.sr-thumb.promoter{background:linear-gradient(135deg,#7a4fb5,#c08fe8)}
+.sr-thumb.venue{background:linear-gradient(135deg,#1f8782,#7fc4c0)}
+.sr-thumb.song{background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink-3)}
+.sr-thumb.show{background:linear-gradient(135deg,#3a60d8,#90bce8)}
+.sr-thumb.genre{background:var(--bg-2);border:1px solid var(--accent);color:var(--accent);font-size:.75rem;font-family:var(--f-m);font-weight:700;text-align:center;line-height:1}
+.sr-name{font-family:var(--f-d);font-size:.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-sub{font-size:.76rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-badge{font-family:var(--f-m);font-size:.63rem;letter-spacing:.04em;padding:.18rem .48rem;border-radius:99px;border:1px solid;flex-shrink:0;font-weight:500;text-transform:uppercase;white-space:nowrap}
+.sr-badge.artist{color:var(--r-artist);border-color:rgba(216,58,22,.3)}
+.sr-badge.promoter{color:var(--r-promoter);border-color:rgba(122,79,181,.3)}
+.sr-badge.venue{color:var(--r-venue);border-color:rgba(31,135,130,.3)}
+.sr-badge.song{color:var(--ink-2);border-color:var(--line-2)}
+.sr-badge.show{color:#3a60d8;border-color:rgba(58,96,216,.3)}
+.sr-badge.genre{color:var(--accent);border-color:rgba(216,58,22,.3)}
+.sr-empty{padding:2rem;text-align:center;color:var(--ink-3);font-size:.88rem}
+
+/* ── Genre cloud ───────────────────────────────────────────── */
+.genre-cloud{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.5rem}
+.genre-pill{padding:.28rem .7rem;border-radius:99px;font-family:var(--f-m);font-size:.77rem;font-weight:500;background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink-2);cursor:pointer;transition:all .13s}
+.genre-pill:hover{border-color:var(--ink-3);color:var(--ink)}
+.genre-pill.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* ── Lens tabs ─────────────────────────────────────────────── */
-.lens-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap}
-.lens-tabs{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.3rem;gap:.15rem;flex-wrap:wrap}
-.lens-tab{padding:.46rem 1.1rem;border-radius:99px;font-size:.85rem;font-weight:500;color:var(--ink-2);transition:all .15s;display:flex;align-items:center;gap:.45rem;border:none;background:none;cursor:pointer}
+.lens-bar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.4rem;flex-wrap:wrap}
+.lens-tabs{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.28rem;gap:.15rem}
+.lens-tab{padding:.44rem 1.05rem;border-radius:99px;font-size:.84rem;font-weight:500;color:var(--ink-2);display:flex;align-items:center;gap:.4rem;border:none;background:none;cursor:pointer;transition:all .14s}
 .lens-tab .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .lens-tab.fan .dot{background:var(--r-fan)}
 .lens-tab.artist .dot{background:var(--r-artist)}
@@ -58,94 +66,139 @@
 .lens-tab.promoter .dot{background:var(--r-promoter)}
 .lens-tab.active{background:var(--ink);color:var(--bg)}
 .lens-tab.active .dot{background:#fff}
-.lens-search{display:flex;align-items:center;gap:.5rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:99px;padding:.38rem .9rem;font-size:.86rem;flex-shrink:0}
-.lens-search input{background:none;border:none;outline:none;color:var(--ink);font:inherit;width:160px}
-.lens-search input::placeholder{color:var(--ink-3)}
-
 .lens-view{display:none}
 .lens-view.active{display:block}
 
-/* ── Sub-tabs (fan: Artists | Shows) ──────────────────────── */
-.sub-tabs{display:flex;gap:0;margin-bottom:1.2rem;border-bottom:1px solid var(--line)}
-.sub-tab{padding:.45rem 1rem;font-size:.84rem;font-weight:500;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer}
+/* ── Sub-tabs ──────────────────────────────────────────────── */
+.sub-tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:1.2rem;gap:0}
+.sub-tab{padding:.44rem 1rem;font-size:.83rem;font-weight:500;color:var(--ink-3);border:none;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;cursor:pointer;transition:all .14s}
 .sub-tab.active{color:var(--ink);border-bottom-color:var(--accent)}
 .sub-view{display:none}
 .sub-view.active{display:block}
 
-/* ── Feed layout ───────────────────────────────────────────── */
+/* ── Two-column lens layout ────────────────────────────────── */
 .lens-grid{display:grid;grid-template-columns:1.45fr 1fr;gap:1rem;align-items:start}
-.lens-feed{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:1.5rem 1.6rem}
-.feed-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.1rem;flex-wrap:wrap;gap:.5rem}
+.lens-feed{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:1.4rem 1.5rem}
+.feed-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.4rem}
 .feed-head h3{font-family:var(--f-d);font-size:1rem;font-weight:600;margin:0}
-.feed-count{font-family:var(--f-m);font-size:.74rem;color:var(--ink-3)}
-.feed-list{display:flex;flex-direction:column;gap:.45rem}
+.feed-count{font-family:var(--f-m);font-size:.73rem;color:var(--ink-3)}
+.feed-list{display:flex;flex-direction:column;gap:.4rem}
 
-.feed-row{display:grid;grid-template-columns:40px 1fr auto;gap:.75rem;padding:.75rem .85rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);align-items:center;cursor:pointer;transition:all .14s;user-select:none}
+/* ── Feed rows ─────────────────────────────────────────────── */
+.feed-row{display:grid;grid-template-columns:38px 1fr auto;gap:.7rem;padding:.7rem .85rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);align-items:center;cursor:pointer;transition:all .13s;user-select:none}
 .feed-row:hover,.feed-row.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 4%,var(--bg-2))}
-.feed-row.selected{border-color:var(--accent)}
-.feed-thumb{width:40px;height:40px;border-radius:var(--r-sm);flex-shrink:0}
-.feed-name{font-family:var(--f-d);font-size:.93rem;font-weight:600;margin-bottom:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.feed-sub{font-size:.77rem;color:var(--ink-2);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.feed-badge{font-family:var(--f-m);font-size:.64rem;letter-spacing:.03em;padding:.2rem .5rem;border-radius:99px;border:1px solid;flex-shrink:0;font-weight:500}
+.feed-thumb{width:38px;height:38px;border-radius:var(--r-sm);flex-shrink:0}
+.feed-name{font-family:var(--f-d);font-size:.91rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed-sub{font-size:.76rem;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed-badge{font-family:var(--f-m);font-size:.63rem;padding:.2rem .5rem;border-radius:99px;border:1px solid;flex-shrink:0;font-weight:500;white-space:nowrap}
 .feed-badge.local{color:var(--accent);border-color:rgba(216,58,22,.3)}
 .feed-badge.regional{color:#a08020;border-color:rgba(192,160,64,.3)}
 .feed-badge.national{color:var(--r-fan);border-color:rgba(122,79,181,.3)}
 .feed-badge.global{color:var(--r-venue);border-color:rgba(31,135,130,.3)}
+.feed-badge.live{color:#22c55e;border-color:rgba(34,197,94,.3)}
+.feed-badge.radio{color:#3a60d8;border-color:rgba(58,96,216,.3)}
 
-.feed-empty{padding:2rem 1rem;text-align:center;color:var(--ink-3);font-size:.86rem;line-height:1.55}
-.feed-empty strong{display:block;color:var(--ink-2);margin-bottom:.3rem;font-family:var(--f-d)}
+/* Venue geo tier sections */
+.tier-section{margin-bottom:1.4rem}
+.tier-header{display:flex;align-items:center;gap:.7rem;margin-bottom:.6rem;padding-bottom:.5rem;border-bottom:1px solid var(--line)}
+.tier-weight{font-family:var(--f-d);font-size:1.1rem;font-weight:700;line-height:1}
+.tier-weight.t1{color:var(--accent)}
+.tier-weight.t2{color:#c2a040}
+.tier-weight.t3{color:var(--r-fan)}
+.tier-weight.t4{color:var(--r-venue)}
+.tier-label{font-family:var(--f-d);font-size:.88rem;font-weight:600}
+.tier-radius{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);margin-left:auto}
+.fan-req-badge{font-family:var(--f-m);font-size:.63rem;padding:.15rem .45rem;border-radius:99px;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid rgba(216,58,22,.25);color:var(--accent);font-weight:600;flex-shrink:0;white-space:nowrap}
 
-/* ── Why-this panel ────────────────────────────────────────── */
-.why-panel{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:1.5rem 1.6rem;position:sticky;top:5rem;display:flex;flex-direction:column;gap:1rem}
+/* ── Why panel ─────────────────────────────────────────────── */
+.why-panel{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:1.4rem 1.5rem;position:sticky;top:5rem;display:flex;flex-direction:column;gap:.9rem}
 .why-header{display:flex;align-items:center;justify-content:space-between}
 .why-header h3{font-family:var(--f-d);font-size:1rem;font-weight:600;margin:0}
 .why-label{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);letter-spacing:.04em}
-.why-prompt{padding:2rem 1rem;text-align:center;color:var(--ink-3);font-size:.84rem;line-height:1.6}
-.why-prompt .icon{font-size:1.6rem;margin-bottom:.5rem}
-.why-subject{padding:.85rem 1rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);display:flex;align-items:center;gap:.75rem}
-.why-subject-thumb{width:38px;height:38px;border-radius:var(--r-sm);flex-shrink:0}
-.why-subject-name{font-family:var(--f-d);font-size:.95rem;font-weight:600}
-.why-subject-ctx{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);margin-top:.1rem}
-.why-bars{display:flex;flex-direction:column;gap:.55rem}
-.why-bar-row{display:grid;grid-template-columns:115px 1fr 44px;gap:.65rem;align-items:center;font-size:.81rem}
-.why-bar-lbl{color:var(--ink-2);display:flex;align-items:center;gap:.4rem}
-.why-bar-lbl .swatch{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.why-prompt{padding:2.4rem 1rem;text-align:center;color:var(--ink-3);font-size:.83rem;line-height:1.6}
+.why-prompt .prompt-icon{font-size:1.5rem;margin-bottom:.45rem}
+.why-subject{padding:.8rem 1rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);display:flex;align-items:center;gap:.7rem}
+.why-subject-thumb{width:36px;height:36px;border-radius:var(--r-sm);flex-shrink:0}
+.why-subject-name{font-family:var(--f-d);font-size:.93rem;font-weight:600}
+.why-subject-ctx{font-family:var(--f-m);font-size:.69rem;color:var(--ink-3);margin-top:.1rem}
+.why-bars{display:flex;flex-direction:column;gap:.5rem}
+.why-bar-row{display:grid;grid-template-columns:110px 1fr 44px;gap:.6rem;align-items:center;font-size:.8rem}
+.why-bar-lbl{color:var(--ink-2);display:flex;align-items:center;gap:.35rem}
+.why-bar-lbl .sw{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .why-bar-track{height:7px;background:var(--line);border-radius:99px;overflow:hidden}
-.why-bar-fill{height:100%;border-radius:99px;transition:width .3s ease}
-.why-bar-pct{font-family:var(--f-m);font-size:.76rem;color:var(--ink);font-weight:600;text-align:right}
-
-.why-bar-row.sig-taste .swatch,.why-bar-row.sig-taste .why-bar-fill{background:var(--accent)}
-.why-bar-row.sig-geo .swatch,.why-bar-row.sig-geo .why-bar-fill{background:#c2a040}
-.why-bar-row.sig-social .swatch,.why-bar-row.sig-social .why-bar-fill{background:var(--r-fan)}
-.why-bar-row.sig-momentum .swatch,.why-bar-row.sig-momentum .why-bar-fill{background:var(--r-venue)}
-
-.why-formula{padding:.75rem 1rem;background:var(--bg-2);border:1px dashed var(--line-2);border-radius:var(--r-md);font-family:var(--f-m);font-size:.76rem;color:var(--ink-3);line-height:1.55}
+.why-bar-fill{height:100%;border-radius:99px;transition:width .32s ease}
+.why-bar-pct{font-family:var(--f-m);font-size:.75rem;color:var(--ink);font-weight:600;text-align:right}
+.sig-taste .sw,.sig-taste .why-bar-fill{background:var(--accent)}
+.sig-geo .sw,.sig-geo .why-bar-fill{background:#c2a040}
+.sig-social .sw,.sig-social .why-bar-fill{background:var(--r-fan)}
+.sig-momentum .sw,.sig-momentum .why-bar-fill{background:var(--r-venue)}
+.sig-fanreq .sw,.sig-fanreq .why-bar-fill{background:var(--accent)}
+.why-formula{padding:.65rem .9rem;background:var(--bg-2);border:1px dashed var(--line-2);border-radius:var(--r-md);font-family:var(--f-m);font-size:.75rem;color:var(--ink-3);line-height:1.6}
 .why-formula strong{color:var(--ink-2)}
-.why-actions{display:flex;gap:.4rem;padding-top:.85rem;border-top:1px solid var(--line)}
-.why-actions button{flex:1;padding:.5rem;border-radius:var(--r-sm);font-size:.77rem;font-weight:500;background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink-2);cursor:pointer;transition:all .14s;font-family:var(--f-d)}
-.why-actions button:hover{border-color:var(--ink-3);color:var(--ink)}
+.why-actions{display:flex;gap:.35rem;padding-top:.8rem;border-top:1px solid var(--line)}
+.why-actions button,.why-actions a{flex:1;padding:.48rem;border-radius:var(--r-sm);font-size:.77rem;font-weight:500;background:var(--bg-2);border:1px solid var(--line-2);color:var(--ink-2);cursor:pointer;transition:all .13s;font-family:var(--f-d);text-align:center;text-decoration:none;display:block}
+.why-actions button:hover,.why-actions a:hover{border-color:var(--ink-3);color:var(--ink)}
+.why-actions a.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.why-actions a.primary:hover{opacity:.9}
 
-/* ── Booking radar ─────────────────────────────────────────── */
-.radar-list{display:flex;flex-direction:column;gap:.45rem}
-.radar-row{display:grid;grid-template-columns:36px 1fr auto auto;gap:.7rem;padding:.65rem .85rem;background:var(--bg-2);border:1px solid var(--line);border-left:3px solid var(--r-venue);border-radius:var(--r-sm);align-items:center;cursor:pointer;transition:border-color .14s}
-.radar-row:hover,.radar-row.selected{border-left-color:var(--accent);border-color:var(--accent)}
-.radar-thumb{width:34px;height:34px;border-radius:var(--r-sm)}
-.radar-name{font-size:.9rem;font-weight:500;font-family:var(--f-d)}
-.radar-sub{font-family:var(--f-m);font-size:.7rem;color:var(--ink-3);margin-top:.1rem}
-.radar-fit{font-family:var(--f-m);font-size:.74rem;font-weight:600;color:var(--r-venue)}
+/* Promoter Show Creator CTA */
+.show-creator-cta{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.1rem 1.4rem;background:color-mix(in srgb,var(--accent) 8%,var(--bg-2));border:1px solid rgba(216,58,22,.25);border-radius:var(--r-lg);margin-bottom:1.2rem;flex-wrap:wrap}
+.show-creator-cta .cta-text{font-family:var(--f-d);font-size:.95rem;font-weight:600}
+.show-creator-cta .cta-sub{font-size:.8rem;color:var(--ink-2);margin-top:.15rem}
+.show-creator-cta a{flex-shrink:0}
 
-/* ── Note strip ────────────────────────────────────────────── */
-.note-strip{font-family:var(--f-m);font-size:.74rem;color:var(--ink-3);margin-top:1rem;padding-top:1rem;border-top:1px dashed var(--line);line-height:1.55}
+/* Note strip */
+.note-strip{font-family:var(--f-m);font-size:.73rem;color:var(--ink-3);margin-top:.85rem;padding-top:.85rem;border-top:1px dashed var(--line);line-height:1.55}
+.note-strip strong{color:var(--ink-2)}
 
-/* ── Three-up (transparency) ───────────────────────────────── */
-.three-up{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
-.tu-num{font-family:var(--f-d);font-size:2.8rem;font-weight:800;letter-spacing:-.04em;color:var(--accent);line-height:1;margin-bottom:.4rem}
-.tu-title{font-family:var(--f-d);font-size:1rem;font-weight:600;margin-bottom:.4rem}
-.tu-desc{font-size:.84rem;color:var(--ink-2);line-height:1.55}
+/* ── Architecture card ─────────────────────────────────────── */
+.arch-card{padding:1.8rem 2rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg)}
+.arch-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:1rem;align-items:center;margin-bottom:1.8rem}
+.arch-node{padding:1.3rem 1.1rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);text-align:center}
+.arch-node.inputs{border-color:rgba(31,135,130,.3);background:linear-gradient(135deg,rgba(31,135,130,.05),var(--bg-2) 60%)}
+.arch-node.engine{border-color:var(--accent);background:linear-gradient(135deg,rgba(216,58,22,.07),var(--bg-2) 60%);transform:scale(1.03)}
+.arch-node.outputs{border-color:rgba(122,79,181,.3);background:linear-gradient(135deg,rgba(122,79,181,.05),var(--bg-2) 60%)}
+.arch-node .anlbl{font-family:var(--f-m);font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:.5rem;display:block}
+.arch-node h4{font-family:var(--f-d);font-size:.95rem;font-weight:600;margin-bottom:.4rem}
+.arch-node ul{list-style:none;font-size:.77rem;color:var(--ink-2);line-height:1.55;text-align:left;display:flex;flex-direction:column;gap:.2rem;margin-top:.45rem}
+.arch-node ul li::before{content:'· ';color:var(--ink-4)}
+.arch-arrow{color:var(--ink-3);font-size:1.3rem;text-align:center}
+.arch-principles{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;padding-top:1.4rem;border-top:1px solid var(--line)}
+.arch-principle{padding:.9rem 1rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md)}
+.arch-principle h5{font-family:var(--f-d);font-size:.88rem;font-weight:600;margin-bottom:.25rem}
+.arch-principle p{font-size:.79rem;color:var(--ink-2);line-height:1.5;margin:0}
 
-/* ── Responsive ────────────────────────────────────────────── */
+/* ── Geo cascade ───────────────────────────────────────────── */
+.cascade-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:1.3rem}
+.cascade-tier{padding:1.3rem 1.4rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg);position:relative;overflow:hidden}
+.cascade-tier::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.cascade-tier.t1::before{background:var(--accent)}
+.cascade-tier.t2::before{background:#c2a040}
+.cascade-tier.t3::before{background:var(--r-fan)}
+.cascade-tier.t4::before{background:var(--r-venue)}
+.cascade-weight{font-family:var(--f-d);font-size:2rem;font-weight:600;line-height:1;letter-spacing:-.025em;margin-bottom:.35rem}
+.cascade-tier.t1 .cascade-weight{color:var(--accent)}
+.cascade-tier.t2 .cascade-weight{color:#c2a040}
+.cascade-tier.t3 .cascade-weight{color:var(--r-fan)}
+.cascade-tier.t4 .cascade-weight{color:var(--r-venue)}
+.cascade-name{font-family:var(--f-d);font-size:1rem;font-weight:600;margin-bottom:.2rem}
+.cascade-radius{font-family:var(--f-m);font-size:.68rem;color:var(--ink-3);margin-bottom:.75rem;padding-bottom:.75rem;border-bottom:1px solid var(--line);font-weight:500}
+.cascade-desc{font-size:.8rem;color:var(--ink-2);line-height:1.5}
+.formula-card{padding:1.2rem 1.6rem;background:var(--bg-2);border:1px dashed var(--line-3);border-radius:var(--r-lg);font-family:var(--f-m);font-size:.84rem;color:var(--ink-2);line-height:1.7;text-align:center}
+.formula-card strong{color:var(--ink)}
+.formula-card em{font-style:normal;color:var(--accent);font-weight:600}
+
+/* ── Three-up ──────────────────────────────────────────────── */
+.three-up{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem}
+.tu-num{font-family:var(--f-d);font-size:2.6rem;font-weight:800;letter-spacing:-.04em;color:var(--accent);line-height:1;margin-bottom:.35rem}
+.tu-title{font-family:var(--f-d);font-size:.95rem;font-weight:600;margin-bottom:.35rem}
+.tu-desc{font-size:.82rem;color:var(--ink-2);line-height:1.55}
+
+.feed-empty{padding:1.6rem 1rem;text-align:center;color:var(--ink-3);font-size:.84rem;line-height:1.55}
+.feed-empty strong{display:block;color:var(--ink-2);margin-bottom:.3rem;font-family:var(--f-d)}
+
 @media(max-width:1100px){
-  .arch-flow{grid-template-columns:1fr;gap:.7rem}
+  .arch-flow{grid-template-columns:1fr;gap:.65rem}
   .arch-arrow{transform:rotate(90deg)}
   .arch-principles{grid-template-columns:1fr 1fr}
   .cascade-grid{grid-template-columns:1fr 1fr}
@@ -154,22 +207,16 @@
   .three-up{grid-template-columns:1fr 1fr}
 }
 @media(max-width:680px){
-  .cascade-grid{grid-template-columns:1fr}
-  .arch-principles{grid-template-columns:1fr}
-  .three-up{grid-template-columns:1fr}
+  .cascade-grid,.arch-principles,.three-up{grid-template-columns:1fr}
   .lens-bar{flex-direction:column;align-items:stretch}
-  .lens-search input{width:100%}
-  .why-bar-row{grid-template-columns:100px 1fr 40px}
+  .why-bar-row{grid-template-columns:95px 1fr 40px}
 }
 </style>
 </head>
 <body>
 <div class="bg-canvas" aria-hidden="true">
-  <div class="bg-orb bg-orb-1"></div>
-  <div class="bg-orb bg-orb-2"></div>
-  <div class="bg-orb bg-orb-3"></div>
-  <div class="bg-grid"></div>
-  <div class="bg-noise"></div>
+  <div class="bg-orb bg-orb-1"></div><div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div><div class="bg-grid"></div><div class="bg-noise"></div>
 </div>
 
 <div class="site-shell">
@@ -189,66 +236,65 @@
   <section class="hero">
     <div class="hero-eyebrow"><span class="dot"></span>Recommendation Engine · transparent by design</div>
     <h1 class="t-h1">Discovery <em>by place and momentum.</em></h1>
-    <p class="hero-lede">Three signals: what's hyped near you, what's gaining momentum, and what matches your taste. Every recommendation shows its math. Nothing pays for placement.</p>
+    <p class="hero-lede">Artists, songs, shows, genres — all searchable, all ranked by transparent signals. Local first. No paid placement. Every score auditable.</p>
   </section>
 
   <!-- 01 · HOW IT WORKS -->
   <section class="section">
     <div class="section-head">
       <div class="section-eyebrow">01 · How it works</div>
-      <h2 class="t-h2">Three inputs. <em>One engine.</em> Every output explainable.</h2>
-      <p class="lede">A weighted blend you can audit at any time. Geographic relevance, social proof, and HYPE momentum — that's the whole formula. No black box. No paid boost.</p>
+      <h2 class="t-h2">One engine. <em>Four inputs. Zero black box.</em></h2>
+      <p class="lede">A weighted blend you can audit anytime. Geographic proximity, HYPE momentum, social proof, and taste — those are the only signals. Nothing pays for placement.</p>
     </div>
-
     <div class="arch-card">
       <div class="arch-flow">
         <div class="arch-node inputs">
-          <span class="lbl">Inputs</span>
+          <span class="anlbl">Inputs</span>
           <h4>What we read</h4>
           <ul>
             <li>Your county &amp; region</li>
             <li>Content you've finished</li>
             <li>HYPE on artists &amp; shows</li>
+            <li>Fan requests (venue lens)</li>
             <li>Momentum velocity (7-day)</li>
           </ul>
         </div>
         <div class="arch-arrow">→</div>
         <div class="arch-node engine">
-          <span class="lbl">The blend</span>
-          <h4>Weights (public)</h4>
+          <span class="anlbl">The blend (public)</span>
+          <h4>Signal weights</h4>
           <ul>
             <li>40% taste match</li>
             <li>25% geographic weight</li>
-            <li>20% social proof</li>
-            <li>15% momentum</li>
+            <li>20% social proof / HYPE</li>
+            <li>15% momentum velocity</li>
             <li style="color:var(--accent);font-weight:600">0% paid placement</li>
           </ul>
         </div>
         <div class="arch-arrow">→</div>
         <div class="arch-node outputs">
-          <span class="lbl">Outputs</span>
+          <span class="anlbl">Outputs per role</span>
           <h4>What you see</h4>
           <ul>
-            <li>Ranked artist feed (fans)</li>
-            <li>Show recommendations</li>
-            <li>Booking targets (venues)</li>
-            <li>Artist matches (promoters)</li>
+            <li>Artists + songs + shows (fans)</li>
+            <li>Venue booking targets (artists)</li>
+            <li>Trending artists by tier (venues)</li>
+            <li>Artist &amp; event matches (promoters)</li>
           </ul>
         </div>
       </div>
-
       <div class="arch-principles">
         <div class="arch-principle">
           <h5>Auditable</h5>
-          <p>Click "Why this?" on any recommendation and see the four signal scores that produced that ranking.</p>
+          <p>Click "Why this?" on any row. See the four signal scores that produced the rank. No hidden inputs.</p>
         </div>
         <div class="arch-principle">
-          <h5>Anti-monoculture</h5>
-          <p>Geographic weighting prevents global hits from crowding out your local scene. The closer the act, the heavier the weight.</p>
+          <h5>Local-first</h5>
+          <p>Geographic weighting keeps local scenes visible. County artists are scored before national ones, always.</p>
         </div>
         <div class="arch-principle">
-          <h5>No paid placement</h5>
-          <p>Sponsored slots appear after organic results and are always labelled. No artist or label can buy a higher rank.</p>
+          <h5>No paid boost</h5>
+          <p>Sponsored content is labelled and appears after organic results. Money doesn't move rankings.</p>
         </div>
       </div>
     </div>
@@ -259,15 +305,14 @@
     <div class="section-head">
       <div class="section-eyebrow">02 · Geographic cascade</div>
       <h2 class="t-h2">Local first. <em>Global last.</em></h2>
-      <p class="lede">Every recommendation is weighted by proximity. The closer the source, the stronger the signal. This is what keeps your feed from becoming national algorithm soup.</p>
+      <p class="lede">Every recommendation is weighted by proximity. The cascade applies to all four lenses — venues get an extra fan-request multiplier on top of it.</p>
     </div>
-
     <div class="cascade-grid">
       <div class="cascade-tier t1">
         <div class="cascade-weight">×1.0</div>
         <div class="cascade-name">Local</div>
         <div class="cascade-radius">Your county · ~30 mi</div>
-        <div class="cascade-desc">HYPE from your county counts at full weight. The strongest signal for small, local artists.</div>
+        <div class="cascade-desc">Full weight. The strongest signal — smallest, closest artists surface first.</div>
       </div>
       <div class="cascade-tier t2">
         <div class="cascade-weight">×0.7</div>
@@ -285,345 +330,403 @@
         <div class="cascade-weight">×0.2</div>
         <div class="cascade-name">Global</div>
         <div class="cascade-radius">Anywhere</div>
-        <div class="cascade-desc">International discoveries. Always available — never the dominant signal.</div>
+        <div class="cascade-desc">International discoveries. Always reachable — never the dominant signal.</div>
       </div>
     </div>
-
     <div class="formula-card">
-      Adjusted HYPE = <strong>raw HYPE</strong> × <em>geographic weight</em> × <strong>recency factor</strong>
-      <div style="font-size:.78rem;margin-top:.65rem;color:var(--ink-3)">
-        Geographic weight is determined by the distance tier shown above.<br>
-        Recency factor decays linearly over 90 days — fresh HYPE counts more.
+      Adjusted score = <strong>base signal</strong> × <em>geographic weight</em> × <strong>recency factor</strong>
+      <div style="font-size:.77rem;margin-top:.55rem;color:var(--ink-3)">
+        Recency decays linearly over 90 days. Fan requests add +5% to the venue lens only.
       </div>
     </div>
   </section>
 
-  <!-- 03 · ROLE LENSES -->
+  <!-- 03 · DISCOVER -->
   <section class="section">
     <div class="section-head">
-      <div class="section-eyebrow">03 · Your lens</div>
-      <h2 class="t-h2">Same engine. <em>Different question.</em></h2>
-      <p class="lede">Fans ask "what should I listen to?" Artists ask "where should I play?" Venues ask "who should I book?" Promoters ask "who fits my show?" Select your lens below.</p>
+      <div class="section-eyebrow">03 · Discover</div>
+      <h2 class="t-h2">Search everything. <em>See the math.</em></h2>
+      <p class="lede">Search artists, songs, shows, and genres — or browse the feed through your role lens. Click any result to see its score breakdown.</p>
     </div>
 
-    <div class="lens-bar">
-      <div class="lens-tabs" id="lensTabs" role="tablist">
-        <button class="lens-tab fan active" data-lens="fan" role="tab" aria-selected="true">
-          <span class="dot"></span>Fan
-        </button>
-        <button class="lens-tab artist" data-lens="artist" role="tab" aria-selected="false">
-          <span class="dot"></span>Artist
-        </button>
-        <button class="lens-tab venue" data-lens="venue" role="tab" aria-selected="false">
-          <span class="dot"></span>Venue
-        </button>
-        <button class="lens-tab promoter" data-lens="promoter" role="tab" aria-selected="false">
-          <span class="dot"></span>Promoter
-        </button>
+    <!-- Global search -->
+    <div class="search-block">
+      <div class="search-row">
+        <span class="search-icon">⌕</span>
+        <input id="globalSearch" class="search-input" type="search"
+               placeholder="Search artists, songs, shows, genres…" autocomplete="off" spellcheck="false">
+        <button class="search-clear" id="searchClear" style="display:none" aria-label="Clear search">×</button>
       </div>
-      <div class="lens-search" aria-label="Filter results">
-        <span style="color:var(--ink-3);font-size:.9rem">⌕</span>
-        <input id="lensFilter" type="search" placeholder="Filter by name…" autocomplete="off">
+      <div class="search-cats" role="group" aria-label="Filter by type">
+        <button class="search-cat active" data-cat="all">All</button>
+        <button class="search-cat" data-cat="artist">Artists</button>
+        <button class="search-cat" data-cat="song">Songs</button>
+        <button class="search-cat" data-cat="show">Shows</button>
+        <button class="search-cat" data-cat="genre">Genres</button>
       </div>
     </div>
 
-    <!-- ─── FAN LENS ─────────────────────────────────────────── -->
-    <div class="lens-view active" id="lens-fan" role="tabpanel">
-      <div class="sub-tabs">
-        <button class="sub-tab active" data-sub="artists">Artists</button>
-        <button class="sub-tab" data-sub="shows">Shows</button>
+    <!-- Genre cloud (populated from profiles) -->
+    <div class="genre-cloud" id="genreCloud" style="display:none"></div>
+
+    <!-- Search results -->
+    <div id="searchResults" style="display:none">
+      <div class="sr-header">
+        <h3 id="srTitle">Results</h3>
+        <span class="sr-count" id="srCount"></span>
       </div>
-
-      <div class="lens-grid">
-        <div>
-          <!-- Artists sub-view -->
-          <div class="sub-view active" id="fan-artists">
-            <div class="lens-feed">
-              <div class="feed-head">
-                <h3>Artists · ranked by HYPE</h3>
-                <span class="feed-count" id="fan-artist-count">Loading…</span>
-              </div>
-              <div class="feed-list" id="fan-feed-list">
-                <div class="feed-row skeleton" style="height:62px"></div>
-                <div class="feed-row skeleton" style="height:62px;opacity:.8"></div>
-                <div class="feed-row skeleton" style="height:62px;opacity:.6"></div>
-                <div class="feed-row skeleton" style="height:62px;opacity:.4"></div>
-                <div class="feed-row skeleton" style="height:62px;opacity:.25"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Shows sub-view -->
-          <div class="sub-view" id="fan-shows">
-            <div class="lens-feed">
-              <div class="feed-head">
-                <h3>Shows · upcoming &amp; live</h3>
-                <span class="feed-count" id="fan-show-count">Loading…</span>
-              </div>
-              <div class="feed-list" id="fan-show-list">
-                <div class="feed-row skeleton" style="height:62px"></div>
-                <div class="feed-row skeleton" style="height:62px;opacity:.8"></div>
-                <div class="feed-row skeleton" style="height:62px;opacity:.6"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Why panel -->
-        <div class="why-panel" id="why-fan">
-          <div class="why-header">
-            <h3>Why this?</h3>
-            <span class="why-label">Auditable score</span>
-          </div>
-          <div class="why-prompt" id="why-fan-prompt">
-            <div class="icon">↖</div>
-            Select any row to see why it was recommended and the score breakdown.
-          </div>
-          <div id="why-fan-detail" style="display:none;flex-direction:column;gap:.9rem">
-            <div class="why-subject">
-              <div class="why-subject-thumb" id="wf-thumb"></div>
-              <div>
-                <div class="why-subject-name" id="wf-name"></div>
-                <div class="why-subject-ctx" id="wf-ctx"></div>
-              </div>
-            </div>
-            <div class="why-bars">
-              <div class="why-bar-row sig-taste">
-                <span class="why-bar-lbl"><span class="swatch"></span>Taste match</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wf-taste-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wf-taste-pct">—</span>
-              </div>
-              <div class="why-bar-row sig-geo">
-                <span class="why-bar-lbl"><span class="swatch"></span>Geographic</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wf-geo-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wf-geo-pct">—</span>
-              </div>
-              <div class="why-bar-row sig-social">
-                <span class="why-bar-lbl"><span class="swatch"></span>Social proof</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wf-social-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wf-social-pct">—</span>
-              </div>
-              <div class="why-bar-row sig-momentum">
-                <span class="why-bar-lbl"><span class="swatch"></span>Momentum</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wf-momentum-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wf-momentum-pct">—</span>
-              </div>
-            </div>
-            <div class="why-formula">
-              <strong>Final score</strong> = (taste × 0.40) + (geo × 0.25) + (social × 0.20) + (momentum × 0.15)
-            </div>
-            <div class="why-actions">
-              <button onclick="nudge('less')">Less like this</button>
-              <button onclick="nudge('more')">More like this</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div class="sr-list" id="srList"></div>
     </div>
 
-    <!-- ─── ARTIST LENS ──────────────────────────────────────── -->
-    <div class="lens-view" id="lens-artist" role="tabpanel">
-      <div class="lens-grid">
-        <div class="lens-feed">
-          <div class="feed-head">
-            <h3>Venue targets · booking opportunities</h3>
-            <span class="feed-count" id="artist-venue-count">Loading…</span>
-          </div>
-          <div class="feed-list" id="artist-feed-list">
-            <div class="feed-row skeleton" style="height:62px"></div>
-            <div class="feed-row skeleton" style="height:62px;opacity:.8"></div>
-            <div class="feed-row skeleton" style="height:62px;opacity:.6"></div>
-            <div class="feed-row skeleton" style="height:62px;opacity:.4"></div>
-          </div>
-          <div class="note-strip">Venues ranked by audience overlap with your listeners + capacity fit + geographic proximity.</div>
+    <!-- Lens tabs + feed (hidden while searching) -->
+    <div id="lensSection">
+      <div class="lens-bar">
+        <div class="lens-tabs" id="lensTabs" role="tablist">
+          <button class="lens-tab fan active" data-lens="fan" role="tab">
+            <span class="dot"></span>Fan
+          </button>
+          <button class="lens-tab artist" data-lens="artist" role="tab">
+            <span class="dot"></span>Artist
+          </button>
+          <button class="lens-tab venue" data-lens="venue" role="tab">
+            <span class="dot"></span>Venue
+          </button>
+          <button class="lens-tab promoter" data-lens="promoter" role="tab">
+            <span class="dot"></span>Promoter
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── FAN LENS ──────────────────────────────────────── -->
+      <div class="lens-view active" id="lens-fan">
+        <div class="sub-tabs">
+          <button class="sub-tab active" data-sub="fan-artists">Artists</button>
+          <button class="sub-tab" data-sub="fan-songs">Songs</button>
+          <button class="sub-tab" data-sub="fan-shows">Shows</button>
         </div>
 
-        <div class="why-panel" id="why-artist">
-          <div class="why-header">
-            <h3>Why this venue?</h3>
-            <span class="why-label">Booking fit score</span>
+        <div class="lens-grid">
+          <div>
+            <div class="sub-view active" id="fan-artists">
+              <div class="lens-feed">
+                <div class="feed-head">
+                  <h3>Artists · ranked by HYPE</h3>
+                  <span class="feed-count" id="fan-artist-count">—</span>
+                </div>
+                <div class="feed-list" id="fan-artist-list">
+                  <div class="feed-row skeleton" style="height:60px"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.8"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.6"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.4"></div>
+                </div>
+              </div>
+            </div>
+            <div class="sub-view" id="fan-songs">
+              <div class="lens-feed">
+                <div class="feed-head">
+                  <h3>Songs · free use catalogue</h3>
+                  <span class="feed-count" id="fan-song-count">—</span>
+                </div>
+                <div class="feed-list" id="fan-song-list">
+                  <div class="feed-row skeleton" style="height:60px"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.8"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.6"></div>
+                </div>
+              </div>
+            </div>
+            <div class="sub-view" id="fan-shows">
+              <div class="lens-feed">
+                <div class="feed-head">
+                  <h3>Shows · upcoming &amp; live</h3>
+                  <span class="feed-count" id="fan-show-count">—</span>
+                </div>
+                <div class="feed-list" id="fan-show-list">
+                  <div class="feed-row skeleton" style="height:60px"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.8"></div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="why-prompt" id="why-artist-prompt">
-            <div class="icon">↖</div>
-            Select a venue to see the fit score breakdown.
-          </div>
-          <div id="why-artist-detail" style="display:none;flex-direction:column;gap:.9rem">
-            <div class="why-subject">
-              <div class="why-subject-thumb" id="wa-thumb"></div>
-              <div>
-                <div class="why-subject-name" id="wa-name"></div>
-                <div class="why-subject-ctx" id="wa-ctx"></div>
-              </div>
+
+          <!-- Why panel — fan -->
+          <div class="why-panel">
+            <div class="why-header"><h3>Why this?</h3><span class="why-label">Auditable score</span></div>
+            <div class="why-prompt" id="why-fan-prompt">
+              <div class="prompt-icon">↖</div>
+              Select any row to see its score breakdown.
             </div>
-            <div class="why-bars">
-              <div class="why-bar-row sig-taste">
-                <span class="why-bar-lbl"><span class="swatch"></span>Audience overlap</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wa-taste-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wa-taste-pct">—</span>
+            <div id="why-fan-detail" style="display:none;flex-direction:column;gap:.85rem">
+              <div class="why-subject">
+                <div class="why-subject-thumb" id="wf-thumb"></div>
+                <div><div class="why-subject-name" id="wf-name"></div><div class="why-subject-ctx" id="wf-ctx"></div></div>
               </div>
-              <div class="why-bar-row sig-geo">
-                <span class="why-bar-lbl"><span class="swatch"></span>Proximity</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wa-geo-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wa-geo-pct">—</span>
+              <div class="why-bars" id="wf-bars">
+                <div class="why-bar-row sig-taste">
+                  <span class="why-bar-lbl"><span class="sw"></span>Taste match</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wf-taste-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wf-taste-p">—</span>
+                </div>
+                <div class="why-bar-row sig-geo">
+                  <span class="why-bar-lbl"><span class="sw"></span>Geographic</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wf-geo-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wf-geo-p">—</span>
+                </div>
+                <div class="why-bar-row sig-social">
+                  <span class="why-bar-lbl"><span class="sw"></span>Social / HYPE</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wf-social-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wf-social-p">—</span>
+                </div>
+                <div class="why-bar-row sig-momentum">
+                  <span class="why-bar-lbl"><span class="sw"></span>Momentum</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wf-momentum-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wf-momentum-p">—</span>
+                </div>
               </div>
-              <div class="why-bar-row sig-social">
-                <span class="why-bar-lbl"><span class="swatch"></span>Capacity fit</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wa-social-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wa-social-pct">—</span>
+              <div class="why-formula"><strong>Score</strong> = taste×0.40 + geo×0.25 + social×0.20 + momentum×0.15</div>
+              <div class="why-actions">
+                <button onclick="nudge('less',this)">Less like this</button>
+                <button onclick="nudge('more',this)">More like this</button>
               </div>
-              <div class="why-bar-row sig-momentum">
-                <span class="why-bar-lbl"><span class="swatch"></span>Booking momentum</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wa-momentum-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wa-momentum-pct">—</span>
-              </div>
-            </div>
-            <div class="why-formula">
-              <strong>Fit score</strong> = (audience × 0.40) + (proximity × 0.25) + (capacity × 0.20) + (momentum × 0.15)
-            </div>
-            <div class="why-actions">
-              <button onclick="nudge('save')">Save venue</button>
-              <button onclick="window.location.href='/tickets'">Browse shows</button>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ─── VENUE LENS ──────────────────────────────────────── -->
-    <div class="lens-view" id="lens-venue" role="tabpanel">
-      <div class="lens-grid">
-        <div class="lens-feed">
-          <div class="feed-head">
-            <h3>Booking radar · artists to consider</h3>
-            <span class="feed-count" id="venue-artist-count">Loading…</span>
-          </div>
-          <div class="radar-list" id="venue-feed-list">
-            <div class="radar-row skeleton" style="height:58px"></div>
-            <div class="radar-row skeleton" style="height:58px;opacity:.8"></div>
-            <div class="radar-row skeleton" style="height:58px;opacity:.6"></div>
-            <div class="radar-row skeleton" style="height:58px;opacity:.4"></div>
-          </div>
-          <div class="note-strip">Fit score = audience overlap with your past shows + capacity match + format compatibility.</div>
+      <!-- ─── ARTIST LENS ───────────────────────────────────── -->
+      <div class="lens-view" id="lens-artist">
+        <div class="sub-tabs">
+          <button class="sub-tab active" data-sub="artist-venues">Booking targets</button>
+          <button class="sub-tab" data-sub="artist-artists">Similar artists</button>
         </div>
+        <div class="lens-grid">
+          <div>
+            <div class="sub-view active" id="artist-venues">
+              <div class="lens-feed">
+                <div class="feed-head">
+                  <h3>Venue targets · booking opportunities</h3>
+                  <span class="feed-count" id="artist-venue-count">—</span>
+                </div>
+                <div class="feed-list" id="artist-venue-list">
+                  <div class="feed-row skeleton" style="height:60px"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.8"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.6"></div>
+                </div>
+                <div class="note-strip">Ranked by audience overlap + capacity fit + geographic proximity to your home market.</div>
+              </div>
+            </div>
+            <div class="sub-view" id="artist-artists">
+              <div class="lens-feed">
+                <div class="feed-head">
+                  <h3>Similar artists · touring partners</h3>
+                  <span class="feed-count" id="artist-similar-count">—</span>
+                </div>
+                <div class="feed-list" id="artist-similar-list">
+                  <div class="feed-row skeleton" style="height:60px"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.8"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.6"></div>
+                </div>
+                <div class="note-strip">Artists who share genres or fan overlap — potential tour partners and support acts.</div>
+              </div>
+            </div>
+          </div>
 
-        <div class="why-panel" id="why-venue">
-          <div class="why-header">
-            <h3>Why this artist?</h3>
-            <span class="why-label">Booking radar score</span>
-          </div>
-          <div class="why-prompt" id="why-venue-prompt">
-            <div class="icon">↖</div>
-            Select an artist to see the booking fit breakdown.
-          </div>
-          <div id="why-venue-detail" style="display:none;flex-direction:column;gap:.9rem">
-            <div class="why-subject">
-              <div class="why-subject-thumb" id="wv-thumb"></div>
-              <div>
-                <div class="why-subject-name" id="wv-name"></div>
-                <div class="why-subject-ctx" id="wv-ctx"></div>
-              </div>
+          <!-- Why panel — artist -->
+          <div class="why-panel">
+            <div class="why-header"><h3>Why this?</h3><span class="why-label">Fit score</span></div>
+            <div class="why-prompt" id="why-artist-prompt">
+              <div class="prompt-icon">↖</div>Select a venue or artist to see the fit breakdown.
             </div>
-            <div class="why-bars">
-              <div class="why-bar-row sig-taste">
-                <span class="why-bar-lbl"><span class="swatch"></span>Audience overlap</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wv-taste-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wv-taste-pct">—</span>
+            <div id="why-artist-detail" style="display:none;flex-direction:column;gap:.85rem">
+              <div class="why-subject">
+                <div class="why-subject-thumb" id="wa-thumb"></div>
+                <div><div class="why-subject-name" id="wa-name"></div><div class="why-subject-ctx" id="wa-ctx"></div></div>
               </div>
-              <div class="why-bar-row sig-geo">
-                <span class="why-bar-lbl"><span class="swatch"></span>Local proximity</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wv-geo-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wv-geo-pct">—</span>
+              <div class="why-bars">
+                <div class="why-bar-row sig-taste">
+                  <span class="why-bar-lbl"><span class="sw"></span>Audience overlap</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wa-taste-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wa-taste-p">—</span>
+                </div>
+                <div class="why-bar-row sig-geo">
+                  <span class="why-bar-lbl"><span class="sw"></span>Proximity</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wa-geo-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wa-geo-p">—</span>
+                </div>
+                <div class="why-bar-row sig-social">
+                  <span class="why-bar-lbl"><span class="sw"></span>Capacity fit</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wa-social-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wa-social-p">—</span>
+                </div>
+                <div class="why-bar-row sig-momentum">
+                  <span class="why-bar-lbl"><span class="sw"></span>Booking momentum</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wa-momentum-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wa-momentum-p">—</span>
+                </div>
               </div>
-              <div class="why-bar-row sig-social">
-                <span class="why-bar-lbl"><span class="swatch"></span>Capacity fit</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wv-social-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wv-social-pct">—</span>
+              <div class="why-formula"><strong>Fit score</strong> = audience×0.40 + proximity×0.25 + capacity×0.20 + momentum×0.15</div>
+              <div class="why-actions">
+                <button onclick="nudge('save',this)">Save</button>
+                <a href="/tickets">Browse shows</a>
               </div>
-              <div class="why-bar-row sig-momentum">
-                <span class="why-bar-lbl"><span class="swatch"></span>Booking momentum</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wv-momentum-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wv-momentum-pct">—</span>
-              </div>
-            </div>
-            <div class="why-formula">
-              <strong>Fit score</strong> = (audience × 0.40) + (proximity × 0.25) + (capacity × 0.20) + (momentum × 0.15)
-            </div>
-            <div class="why-actions">
-              <button onclick="nudge('save')">Save to list</button>
-              <button onclick="window.location.href='/show-creator'">Create show</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── PROMOTER LENS ────────────────────────────────────── -->
-    <div class="lens-view" id="lens-promoter" role="tabpanel">
-      <div class="lens-grid">
-        <div class="lens-feed">
-          <div class="feed-head">
-            <h3>Artist matches · for your shows</h3>
-            <span class="feed-count" id="promoter-artist-count">Loading…</span>
-          </div>
-          <div class="feed-list" id="promoter-feed-list">
-            <div class="feed-row skeleton" style="height:62px;border-left:3px solid var(--r-promoter)"></div>
-            <div class="feed-row skeleton" style="height:62px;border-left:3px solid var(--r-promoter);opacity:.8"></div>
-            <div class="feed-row skeleton" style="height:62px;border-left:3px solid var(--r-promoter);opacity:.6"></div>
-            <div class="feed-row skeleton" style="height:62px;border-left:3px solid var(--r-promoter);opacity:.4"></div>
-          </div>
-          <div class="note-strip">Artists ranked by genre fit with your past shows + audience overlap + HYPE momentum.</div>
-        </div>
-
-        <div class="why-panel" id="why-promoter">
-          <div class="why-header">
-            <h3>Why this match?</h3>
-            <span class="why-label">Audience signal</span>
-          </div>
-          <div class="why-prompt" id="why-promoter-prompt">
-            <div class="icon">↖</div>
-            Select an artist to see their audience fit breakdown.
-          </div>
-          <div id="why-promoter-detail" style="display:none;flex-direction:column;gap:.9rem">
-            <div class="why-subject">
-              <div class="why-subject-thumb" id="wp-thumb"></div>
-              <div>
-                <div class="why-subject-name" id="wp-name"></div>
-                <div class="why-subject-ctx" id="wp-ctx"></div>
-              </div>
-            </div>
-            <div class="why-bars">
-              <div class="why-bar-row sig-taste">
-                <span class="why-bar-lbl"><span class="swatch"></span>Genre fit</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wp-taste-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wp-taste-pct">—</span>
-              </div>
-              <div class="why-bar-row sig-geo">
-                <span class="why-bar-lbl"><span class="swatch"></span>Audience overlap</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wp-geo-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wp-geo-pct">—</span>
-              </div>
-              <div class="why-bar-row sig-social">
-                <span class="why-bar-lbl"><span class="swatch"></span>Social proof</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wp-social-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wp-social-pct">—</span>
-              </div>
-              <div class="why-bar-row sig-momentum">
-                <span class="why-bar-lbl"><span class="swatch"></span>Trend velocity</span>
-                <div class="why-bar-track"><div class="why-bar-fill" id="wp-momentum-fill" style="width:0%"></div></div>
-                <span class="why-bar-pct" id="wp-momentum-pct">—</span>
-              </div>
-            </div>
-            <div class="why-formula">
-              <strong>Match score</strong> = (genre × 0.40) + (audience × 0.25) + (social × 0.20) + (velocity × 0.15)
-            </div>
-            <div class="why-actions">
-              <button onclick="nudge('add')">Add to show</button>
-              <button onclick="window.location.href='/show-creator'">Create show</button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- ─── VENUE LENS ────────────────────────────────────── -->
+      <div class="lens-view" id="lens-venue">
+        <div class="lens-grid">
+          <div class="lens-feed">
+            <div class="feed-head">
+              <h3>Trending artists · weighted by tier</h3>
+              <span class="feed-count" id="venue-artist-count">—</span>
+            </div>
+            <!-- Geo-tiered sections rendered by JS -->
+            <div id="venue-tier-sections"></div>
+            <div class="note-strip">
+              <strong>Fan-request bonus</strong> applies a +5% multiplier to artists whose HYPE count signals active fan demand. Scores = base×geo_weight×recency + fan_request_bonus.
+            </div>
+          </div>
+
+          <!-- Why panel — venue -->
+          <div class="why-panel">
+            <div class="why-header"><h3>Why this artist?</h3><span class="why-label">Booking radar</span></div>
+            <div class="why-prompt" id="why-venue-prompt">
+              <div class="prompt-icon">↖</div>Select an artist to see the booking fit score.
+            </div>
+            <div id="why-venue-detail" style="display:none;flex-direction:column;gap:.85rem">
+              <div class="why-subject">
+                <div class="why-subject-thumb" id="wv-thumb"></div>
+                <div><div class="why-subject-name" id="wv-name"></div><div class="why-subject-ctx" id="wv-ctx"></div></div>
+              </div>
+              <div class="why-bars">
+                <div class="why-bar-row sig-taste">
+                  <span class="why-bar-lbl"><span class="sw"></span>Audience overlap</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wv-taste-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wv-taste-p">—</span>
+                </div>
+                <div class="why-bar-row sig-geo">
+                  <span class="why-bar-lbl"><span class="sw"></span>Geo tier weight</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wv-geo-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wv-geo-p">—</span>
+                </div>
+                <div class="why-bar-row sig-social">
+                  <span class="why-bar-lbl"><span class="sw"></span>HYPE / social</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wv-social-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wv-social-p">—</span>
+                </div>
+                <div class="why-bar-row sig-momentum">
+                  <span class="why-bar-lbl"><span class="sw"></span>Momentum</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wv-momentum-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wv-momentum-p">—</span>
+                </div>
+                <div class="why-bar-row sig-fanreq">
+                  <span class="why-bar-lbl"><span class="sw"></span>Fan request bonus</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wv-fanreq-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wv-fanreq-p">—</span>
+                </div>
+              </div>
+              <div class="why-formula"><strong>Score</strong> = (taste×0.40 + geo×0.25 + social×0.20 + momentum×0.15) + fan_req_bonus</div>
+              <div class="why-actions">
+                <button onclick="nudge('save',this)">Save to list</button>
+                <a href="/show-creator">Create show →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── PROMOTER LENS ─────────────────────────────────── -->
+      <div class="lens-view" id="lens-promoter">
+        <!-- Show Creator CTA — promoters only -->
+        <div class="show-creator-cta">
+          <div>
+            <div class="cta-text">🎙️ Show Creation Engine</div>
+            <div class="cta-sub">Curate a radio show from free-use tracks, or plan a live event.</div>
+          </div>
+          <a href="/show-creator" class="btn btn-primary">Open Show Creator →</a>
+        </div>
+
+        <div class="sub-tabs">
+          <button class="sub-tab active" data-sub="promo-artists">Artist matches</button>
+          <button class="sub-tab" data-sub="promo-events">Their events</button>
+        </div>
+
+        <div class="lens-grid">
+          <div>
+            <div class="sub-view active" id="promo-artists">
+              <div class="lens-feed">
+                <div class="feed-head">
+                  <h3>Artist matches · for your shows</h3>
+                  <span class="feed-count" id="promoter-artist-count">—</span>
+                </div>
+                <div class="feed-list" id="promoter-artist-list">
+                  <div class="feed-row skeleton" style="height:60px;border-left:3px solid var(--r-promoter)"></div>
+                  <div class="feed-row skeleton" style="height:60px;border-left:3px solid var(--r-promoter);opacity:.8"></div>
+                  <div class="feed-row skeleton" style="height:60px;border-left:3px solid var(--r-promoter);opacity:.6"></div>
+                </div>
+                <div class="note-strip">Ranked by genre fit + artist momentum + audience overlap. <strong>Not</strong> venue capacity — focus is on the act.</div>
+              </div>
+            </div>
+            <div class="sub-view" id="promo-events">
+              <div class="lens-feed">
+                <div class="feed-head">
+                  <h3>Events · live &amp; radio shows</h3>
+                  <span class="feed-count" id="promoter-event-count">—</span>
+                </div>
+                <div class="feed-list" id="promoter-event-list">
+                  <div class="feed-row skeleton" style="height:60px"></div>
+                  <div class="feed-row skeleton" style="height:60px;opacity:.8"></div>
+                </div>
+                <div class="note-strip">All published shows — useful for spotting gaps in the schedule and booking around them.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Why panel — promoter -->
+          <div class="why-panel">
+            <div class="why-header"><h3>Why this match?</h3><span class="why-label">Audience signal</span></div>
+            <div class="why-prompt" id="why-promoter-prompt">
+              <div class="prompt-icon">↖</div>Select an artist to see the audience fit breakdown.
+            </div>
+            <div id="why-promoter-detail" style="display:none;flex-direction:column;gap:.85rem">
+              <div class="why-subject">
+                <div class="why-subject-thumb" id="wp-thumb"></div>
+                <div><div class="why-subject-name" id="wp-name"></div><div class="why-subject-ctx" id="wp-ctx"></div></div>
+              </div>
+              <div class="why-bars">
+                <div class="why-bar-row sig-taste">
+                  <span class="why-bar-lbl"><span class="sw"></span>Genre fit</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wp-taste-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wp-taste-p">—</span>
+                </div>
+                <div class="why-bar-row sig-social">
+                  <span class="why-bar-lbl"><span class="sw"></span>HYPE / audience</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wp-social-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wp-social-p">—</span>
+                </div>
+                <div class="why-bar-row sig-momentum">
+                  <span class="why-bar-lbl"><span class="sw"></span>Trend velocity</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wp-momentum-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wp-momentum-p">—</span>
+                </div>
+                <div class="why-bar-row sig-geo">
+                  <span class="why-bar-lbl"><span class="sw"></span>Market proximity</span>
+                  <div class="why-bar-track"><div class="why-bar-fill" id="wp-geo-f" style="width:0%"></div></div>
+                  <span class="why-bar-pct" id="wp-geo-p">—</span>
+                </div>
+              </div>
+              <div class="why-formula"><strong>Match score</strong> = genre×0.40 + audience×0.25 + velocity×0.20 + market×0.15</div>
+              <div class="why-actions">
+                <button onclick="nudge('add',this)">Add to show</button>
+                <a href="/show-creator" class="primary">Create show →</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /lensSection -->
   </section>
 
   <!-- 04 · TRANSPARENCY -->
@@ -631,24 +734,23 @@
     <div class="section-head">
       <div class="section-eyebrow">04 · Transparency by default</div>
       <h2 class="t-h2">Every recommendation <em>shows its math.</em></h2>
-      <p class="lede">If you can't see why something was recommended, you can't know if you've been manipulated. iHYPE shows the four signals behind every ranking — and never hides paid placement.</p>
+      <p class="lede">If you can't see why something was recommended, you can't know if you've been manipulated. iHYPE shows every signal score — and never hides paid placement.</p>
     </div>
-
     <div class="three-up">
       <div>
         <div class="tu-num">4</div>
         <div class="tu-title">Signal weights are public.</div>
-        <div class="tu-desc">Taste 40%, geo 25%, social 20%, momentum 15%. Posted in the charter, with a changelog every time the board votes a change.</div>
+        <div class="tu-desc">Taste 40%, geo 25%, social 20%, momentum 15%. The formula is in the charter with a changelog every time it changes.</div>
       </div>
       <div>
         <div class="tu-num">$0</div>
         <div class="tu-title">Sponsored slots are labelled.</div>
-        <div class="tu-desc">When a sponsored result reaches a recommendation surface it is tagged "Sponsored," appears after organic results, and never displaces them.</div>
+        <div class="tu-desc">Sponsored content is tagged, appears after organic results, and never displaces a ranked result. Ever.</div>
       </div>
       <div>
         <div class="tu-num">∞</div>
-        <div class="tu-title">You can audit any result.</div>
-        <div class="tu-desc">Click "Why this?" on any recommendation. See the breakdown. Disagree? Flag it — flags route to public moderation review.</div>
+        <div class="tu-title">Anyone can audit.</div>
+        <div class="tu-desc">Click "Why this?" on any result. See the score. Disagree? Flag it — flags route to public moderation review.</div>
       </div>
     </div>
   </section>
@@ -661,10 +763,10 @@
       <a href="/home">Dashboard</a>
     </div>
   </footer>
-</div><!-- /page -->
+</div>
 </div><!-- /site-shell -->
 
-<!-- Accessibility panel -->
+<!-- A11y panel -->
 <div class="a11y-panel-overlay" id="a11yOverlay"></div>
 <aside class="a11y-panel" id="a11yPanel" role="dialog" aria-label="Accessibility settings">
   <div class="a11y-panel-head"><h3>Accessibility</h3><button class="a11y-panel-close" id="closeA11y">×</button></div>
@@ -694,8 +796,8 @@
 (function(){
 'use strict';
 
-/* ── Helpers ───────────────────────────────────────────────── */
-const GRADIENTS = [
+/* ── Constants ─────────────────────────────────────────────── */
+const GRADS = [
   'linear-gradient(135deg,#d83a16,#e89060)',
   'linear-gradient(135deg,#1f8782,#7fc4c0)',
   'linear-gradient(135deg,#7a4fb5,#c08fe8)',
@@ -706,317 +808,533 @@ const GRADIENTS = [
   'linear-gradient(135deg,#20a060,#80e0c0)',
 ];
 const GEO_TIERS  = ['Local','Regional','National','Global'];
-const GEO_CLASS  = ['local','regional','national','global'];
+const GEO_CLS    = ['local','regional','national','global'];
 const GEO_MULT   = [1.0, 0.7, 0.4, 0.2];
+const GEO_RADIUS = ['~30 mi','~150 mi','National','Global'];
+const GEO_WT_CLS = ['t1','t2','t3','t4'];
 
+/* FAN REQUEST THRESHOLD — artists with hypeCount > this get the bonus */
+const FAN_REQ_THRESHOLD = 50;
+const FAN_REQ_BONUS     = 0.05;
+
+/* ── Utilities ─────────────────────────────────────────────── */
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function grad(i){ return GRADIENTS[i % GRADIENTS.length]; }
-function fmtHype(n){ return n>=1000 ? (n/1000).toFixed(1).replace(/\.0$/,'')+'k' : String(n||0); }
-function locStr(p){ return [p.city,p.stateRegion,p.country].filter(Boolean).join(', '); }
-function genreStr(p){ return p.genres&&p.genres.length ? p.genres.slice(0,2).join(' · ') : ''; }
+function grad(i){ return GRADS[i % GRADS.length]; }
+function fmtH(n){ return n>=1000 ? (n/1000).toFixed(1).replace(/\.0$/,'')+'k' : String(n||0); }
+function loc(p){ return [p.city,p.stateRegion,p.country].filter(Boolean).join(', '); }
+function genStr(p){ return p.genres&&p.genres.length ? p.genres.slice(0,2).join(' · ') : ''; }
+function setText(id,t){ const el=document.getElementById(id); if(el) el.textContent=t; }
+function setBar(prefix,v){
+  const f=document.getElementById(prefix+'-f'), p=document.getElementById(prefix+'-p');
+  if(f) f.style.width=(v*100).toFixed(1)+'%';
+  if(p) p.textContent=v.toFixed(2);
+}
 
-/* Derive pseudo-scores from real data fields + rank position.
-   Taste = decays by rank. Geo = random tier. Social = hypeCount-driven.
-   Momentum = slightly varied. These are demonstration values — the real
-   engine scores from server-side signal aggregation. */
-function scoreFor(profile, rank){
-  const taste    = Math.max(0.42, 0.95 - rank * 0.055 + (Math.sin(rank*7+1)*0.04));
-  const geoW     = [1.0,0.85,0.7,0.55][Math.min(rank,3)];
-  const hype     = profile.hypeCount || 0;
-  const social   = Math.min(0.98, 0.35 + Math.log1p(hype) / 10);
-  const momentum = Math.max(0.38, 0.72 + Math.cos(rank*5)*0.18);
+/* ── Score computation ─────────────────────────────────────── */
+/* Base scores derived from rank + hypeCount (proxy for real signals).
+   The real engine runs server-side with full signal data. */
+function baseScore(profile, rank){
+  const taste    = Math.max(0.40, 0.95 - rank*0.055 + Math.sin(rank*7+1)*0.04);
+  const geoW     = [1.0,0.85,0.72,0.60][Math.min(rank,3)];
+  const social   = Math.min(0.96, 0.30 + Math.log1p(profile.hypeCount||0)/10);
+  const momentum = Math.max(0.35, 0.70 + Math.cos(rank*5)*0.18);
   const final    = taste*0.40 + geoW*0.25 + social*0.20 + momentum*0.15;
   return { taste, geo:geoW, social, momentum, final };
 }
 
-function pct(v){ return (v*100).toFixed(0)+'%'; }
-
-/* ── Why-panel update ──────────────────────────────────────── */
-function updateWhyPanel(prefix, profile, rank, ctx){
-  const s = scoreFor(profile, rank);
-  const thumb = document.getElementById(prefix+'-thumb');
-  if(thumb) thumb.style.background = grad(rank);
-  setText(prefix+'-name', profile.name || '—');
-  setText(prefix+'-ctx', ctx || 'Position '+(rank+1)+' · score '+s.final.toFixed(3));
-  setBar(prefix+'-taste', s.taste);
-  setBar(prefix+'-geo',   s.geo);
-  setBar(prefix+'-social',s.social);
-  setBar(prefix+'-momentum',s.momentum);
-  // Show detail, hide prompt
-  const promptId = prefix.replace('w','why-').replace('-','_prompt');
-  // find prompt + detail by sibling search
-  const panel = thumb.closest('.why-panel');
-  if(panel){
-    panel.querySelectorAll('[id$="-prompt"]').forEach(el=>el.style.display='none');
-    panel.querySelectorAll('[id$="-detail"]').forEach(el=>{ el.style.display='flex'; });
-  }
+function venueScore(profile, rank, tierIdx){
+  const s = baseScore(profile, rank);
+  s.geo = GEO_MULT[tierIdx];
+  const fanReq = (profile.hypeCount||0) > FAN_REQ_THRESHOLD ? FAN_REQ_BONUS : 0;
+  s.fanReq = fanReq;
+  s.final  = (s.taste*0.40 + s.geo*0.25 + s.social*0.20 + s.momentum*0.15) + fanReq;
+  return s;
 }
 
-function setText(id,txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
-function setBar(prefix,val){
-  const fill = document.getElementById(prefix+'-fill');
-  const pctEl = document.getElementById(prefix+'-pct');
-  if(fill) fill.style.width = (val*100).toFixed(1)+'%';
-  if(pctEl) pctEl.textContent = val.toFixed(2);
+/* ── Why-panel updater ─────────────────────────────────────── */
+function showWhyDetail(panelDetailId, promptId){
+  const detail = document.getElementById(panelDetailId);
+  const prompt = document.getElementById(promptId);
+  if(detail){ detail.style.display='flex'; }
+  if(prompt){ prompt.style.display='none'; }
+}
+
+function updateWhy(prefix, profile, rank, ctx, scores){
+  document.getElementById(prefix+'-thumb').style.background = grad(rank);
+  setText(prefix+'-name', profile.name||'—');
+  setText(prefix+'-ctx',  ctx);
+  setBar(prefix+'-taste',    scores.taste);
+  setBar(prefix+'-geo',      scores.geo);
+  setBar(prefix+'-social',   scores.social);
+  setBar(prefix+'-momentum', scores.momentum);
+  if(scores.fanReq !== undefined){ setBar(prefix+'-fanreq', scores.fanReq); }
+}
+
+/* ── Row factory ───────────────────────────────────────────── */
+function makeRow(opts){
+  /* opts: { thumbBg, name, sub, badgeClass, badgeLabel, borderColor, onClick } */
+  const row = document.createElement('div');
+  row.className = 'feed-row';
+  if(opts.borderColor) row.style.borderLeft = '3px solid '+opts.borderColor;
+  row.innerHTML =
+    '<div class="feed-thumb" style="background:'+esc(opts.thumbBg)+'"></div>'+
+    '<div style="overflow:hidden"><div class="feed-name">'+esc(opts.name)+'</div>'+
+    '<div class="feed-sub">'+esc(opts.sub)+'</div></div>'+
+    '<span class="feed-badge '+esc(opts.badgeClass)+'">'+esc(opts.badgeLabel)+'</span>';
+  if(opts.fanReq){
+    const badge = document.createElement('span');
+    badge.className='fan-req-badge';
+    badge.textContent='Fan demand';
+    row.appendChild(badge);
+  }
+  if(opts.onClick) row.addEventListener('click', opts.onClick);
+  return row;
+}
+
+function selectRow(row, listEl){
+  listEl.querySelectorAll('.feed-row').forEach(r=>r.classList.remove('selected'));
+  row.classList.add('selected');
+}
+
+function emptyEl(msg){
+  const d=document.createElement('div');
+  d.className='feed-empty';
+  d.innerHTML='<strong>Nothing yet</strong>'+esc(msg);
+  return d;
+}
+
+/* ── Render functions ──────────────────────────────────────── */
+function renderArtistRow(profile, i, listEl, whyPrefix, whyDetailId, whyPromptId){
+  const geoIdx = Math.min(i,3);
+  const sub = [genStr(profile), loc(profile), profile.hypeCount ? fmtH(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
+  const row = makeRow({
+    thumbBg: grad(i), name: profile.name, sub,
+    badgeClass: GEO_CLS[geoIdx], badgeLabel: GEO_TIERS[geoIdx],
+    onClick(){
+      selectRow(row, listEl);
+      const s = baseScore(profile, i);
+      updateWhy(whyPrefix, profile, i, 'Position '+(i+1)+' · score '+s.final.toFixed(3), s);
+      showWhyDetail(whyDetailId, whyPromptId);
+    }
+  });
+  return row;
+}
+
+function renderSongRow(track, i){
+  const sub = 'by '+track.artist.name + (track.artist.genres.length ? ' · '+track.artist.genres.slice(0,2).join(', ') : '');
+  const row = document.createElement('div');
+  row.className = 'feed-row';
+  row.style.cursor = 'default';
+  row.innerHTML =
+    '<div class="feed-thumb" style="background:'+grad(i)+';display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.7);font-size:.8rem">♪</div>'+
+    '<div style="overflow:hidden"><div class="feed-name">'+esc(track.title)+'</div><div class="feed-sub">'+esc(sub)+'</div></div>'+
+    '<span class="feed-badge song">Free use</span>';
+  return row;
+}
+
+function renderShowRow(show, i){
+  const date = show.startsAt ? new Date(show.startsAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'TBD';
+  const venue = show.venueProfile?.name || show.venueName || '';
+  const sub   = [show.isRadioShow?'Radio show':venue, date].filter(Boolean).join(' · ');
+  const bCls  = show.status==='LIVE' ? 'live' : show.isRadioShow ? 'radio' : 'regional';
+  const bLbl  = show.status==='LIVE' ? 'Live' : show.isRadioShow ? 'Radio' : 'Upcoming';
+  const row = document.createElement('div');
+  row.className = 'feed-row';
+  row.style.cursor = 'default';
+  row.innerHTML =
+    '<div class="feed-thumb" style="background:'+grad(i)+'"></div>'+
+    '<div style="overflow:hidden"><div class="feed-name">'+esc(show.title)+'</div><div class="feed-sub">'+esc(sub)+'</div></div>'+
+    '<span class="feed-badge '+bCls+'">'+bLbl+'</span>';
+  return row;
+}
+
+function renderVenueTierSection(artists, tierIdx, container){
+  if(!artists.length) return;
+  const section = document.createElement('div');
+  section.className = 'tier-section';
+
+  const header = document.createElement('div');
+  header.className = 'tier-header';
+  header.innerHTML =
+    '<span class="tier-weight '+GEO_WT_CLS[tierIdx]+'">×'+GEO_MULT[tierIdx].toFixed(1)+'</span>'+
+    '<span class="tier-label">'+GEO_TIERS[tierIdx]+'</span>'+
+    '<span class="tier-radius">'+GEO_RADIUS[tierIdx]+'</span>';
+  section.appendChild(header);
+
+  const venueList = document.getElementById('venue-tier-sections');
+  artists.forEach((profile, i) => {
+    const s = venueScore(profile, i + tierIdx*3, tierIdx);
+    const hasFanReq = (profile.hypeCount||0) > FAN_REQ_THRESHOLD;
+    const sub = [genStr(profile), loc(profile), profile.hypeCount ? fmtH(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
+    const row = document.createElement('div');
+    row.className = 'feed-row';
+    row.innerHTML =
+      '<div class="feed-thumb" style="background:'+grad(i+tierIdx*3)+'"></div>'+
+      '<div style="overflow:hidden"><div class="feed-name">'+esc(profile.name)+'</div><div class="feed-sub">'+esc(sub)+'</div></div>'+
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem;flex-shrink:0">'+
+        '<span class="feed-badge '+GEO_CLS[tierIdx]+'">'+(s.final*100).toFixed(0)+'%</span>'+
+        (hasFanReq?'<span class="fan-req-badge">Fan demand</span>':'')+
+      '</div>';
+    row.addEventListener('click',()=>{
+      document.querySelectorAll('#venue-tier-sections .feed-row').forEach(r=>r.classList.remove('selected'));
+      row.classList.add('selected');
+      updateWhy('wv', profile, i, GEO_TIERS[tierIdx]+' · score '+s.final.toFixed(3)+' · fan request: '+(hasFanReq?'yes':'no'), s);
+      // also set fan-req bar
+      setBar('wv-fanreq', hasFanReq ? FAN_REQ_BONUS : 0);
+      showWhyDetail('why-venue-detail','why-venue-prompt');
+    });
+    section.appendChild(row);
+  });
+
+  container.appendChild(section);
+}
+
+function renderPromoterRow(profile, i, listEl){
+  const sub = [genStr(profile), loc(profile), profile.hypeCount ? fmtH(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
+  const label = i===0?'Top pick':i===1?'Strong match':'Match';
+  const row = makeRow({
+    thumbBg: grad(i), name: profile.name, sub,
+    badgeClass: i===0?'local':i<3?'regional':'national',
+    badgeLabel: label,
+    borderColor: 'var(--r-promoter)',
+    onClick(){
+      selectRow(row, listEl);
+      const s = baseScore(profile, i);
+      updateWhy('wp', profile, i, label+' · score '+s.final.toFixed(3)+'  (genre + audience focus)', s);
+      showWhyDetail('why-promoter-detail','why-promoter-prompt');
+    }
+  });
+  return row;
 }
 
 /* ── Lens tab switching ────────────────────────────────────── */
-function setActiveLens(lensId){
-  document.querySelectorAll('#lensTabs .lens-tab').forEach(t=>{
-    const active = t.dataset.lens === lensId;
-    t.classList.toggle('active', active);
-    t.setAttribute('aria-selected', active);
-  });
-  document.querySelectorAll('.lens-view').forEach(v=>{
-    v.classList.toggle('active', v.id === 'lens-'+lensId);
-  });
-  currentLens = lensId;
-  applyFilter(document.getElementById('lensFilter').value);
-}
-
 let currentLens = 'fan';
-
+function setLens(id){
+  document.querySelectorAll('#lensTabs .lens-tab').forEach(t=>{
+    t.classList.toggle('active', t.dataset.lens===id);
+    t.setAttribute('aria-selected', t.dataset.lens===id);
+  });
+  document.querySelectorAll('.lens-view').forEach(v=>v.classList.toggle('active', v.id==='lens-'+id));
+  currentLens = id;
+}
 document.querySelectorAll('#lensTabs .lens-tab').forEach(t=>{
-  t.addEventListener('click',()=> setActiveLens(t.dataset.lens));
+  t.addEventListener('click',()=>setLens(t.dataset.lens));
 });
 
-/* ── Sub-tabs (fan: Artists | Shows) ──────────────────────── */
+/* ── Sub-tab switching ─────────────────────────────────────── */
 document.querySelectorAll('.sub-tab').forEach(tab=>{
   tab.addEventListener('click',()=>{
     const parent = tab.closest('.lens-view');
     parent.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
     parent.querySelectorAll('.sub-view').forEach(v=>v.classList.remove('active'));
     tab.classList.add('active');
-    const target = parent.querySelector('#fan-'+tab.dataset.sub);
+    const target = document.getElementById(tab.dataset.sub);
     if(target) target.classList.add('active');
   });
 });
 
-/* ── Search filter ─────────────────────────────────────────── */
-function applyFilter(q){
-  const needle = q.toLowerCase().trim();
-  document.querySelectorAll('#lens-'+currentLens+' .feed-row, #lens-'+currentLens+' .radar-row').forEach(row=>{
-    if(!row.classList.contains('skeleton')){
-      const txt = row.textContent.toLowerCase();
-      row.style.display = (!needle || txt.includes(needle)) ? '' : 'none';
+/* ── Nudge ─────────────────────────────────────────────────── */
+function nudge(action, btn){
+  const labels = {less:'Noted — fewer like this',more:'Got it — more like this',save:'Saved',add:'Added to show'};
+  if(btn){ btn.textContent='✓ Done'; btn.disabled=true; }
+}
+window.nudge = nudge;
+
+/* ── Search ────────────────────────────────────────────────── */
+const searchInput = document.getElementById('globalSearch');
+const searchClear = document.getElementById('searchClear');
+const searchResults = document.getElementById('searchResults');
+const lensSection = document.getElementById('lensSection');
+const genreCloud = document.getElementById('genreCloud');
+
+let searchCat = 'all';
+let searchTimer = null;
+let activeGenre = null;
+
+document.querySelectorAll('.search-cat').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.search-cat').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    searchCat = btn.dataset.cat;
+    if(searchInput.value.trim()) runSearch(searchInput.value.trim());
+    else if(searchCat==='genre') showGenreCloud();
+    else hideSearch();
+  });
+});
+
+searchInput.addEventListener('input',()=>{
+  clearTimeout(searchTimer);
+  const q = searchInput.value.trim();
+  searchClear.style.display = q ? '' : 'none';
+  if(!q){ hideSearch(); return; }
+  searchTimer = setTimeout(()=>runSearch(q), 280);
+});
+searchClear.addEventListener('click',()=>{
+  searchInput.value='';
+  searchClear.style.display='none';
+  hideSearch();
+  searchInput.focus();
+});
+
+function hideSearch(){
+  searchResults.style.display='none';
+  lensSection.style.display='';
+  genreCloud.style.display='none';
+}
+
+function showGenreCloud(){
+  genreCloud.style.display='';
+  lensSection.style.display='none';
+  searchResults.style.display='none';
+}
+
+async function runSearch(q){
+  searchResults.style.display='';
+  lensSection.style.display='none';
+  genreCloud.style.display='none';
+
+  const srList  = document.getElementById('srList');
+  const srTitle = document.getElementById('srTitle');
+  const srCount = document.getElementById('srCount');
+
+  srTitle.textContent = 'Searching…';
+  srCount.textContent = '';
+  srList.innerHTML = '<div class="sr-empty">Loading…</div>';
+
+  try{
+    const url = '/api/search?q='+encodeURIComponent(q)+'&limit=30'+(searchCat!=='all'?'&type='+searchCat:'');
+    const res = await fetch(url,{credentials:'same-origin'});
+    if(!res.ok) throw new Error('Search failed');
+    const data = await res.json();
+    renderSearchResults(q, data);
+  }catch(e){
+    srList.innerHTML='<div class="sr-empty">Search unavailable — try again.</div>';
+    srTitle.textContent='Results';
+  }
+}
+
+const TYPE_ICONS = { artist:'🎤', promoter:'🎛️', venue:'🏟️', song:'♪', show:'🎪', genre:'#' };
+const TYPE_LABELS = { artist:'Artist', promoter:'Promoter', venue:'Venue', song:'Song', show:'Show', genre:'Genre' };
+
+function renderSearchResults(q, data){
+  const srList  = document.getElementById('srList');
+  const srTitle = document.getElementById('srTitle');
+  const srCount = document.getElementById('srCount');
+
+  const results = data.results || [];
+  srTitle.textContent = 'Results for "'+q+'"';
+  srCount.textContent = results.length ? results.length+(results.length===1?' result':' results') : '';
+
+  if(!results.length){
+    srList.innerHTML='<div class="sr-empty">No results. Try a different name, genre, or city.</div>';
+    return;
+  }
+
+  srList.innerHTML='';
+  results.forEach(r=>{
+    const row = document.createElement('a');
+    row.className = 'sr-row';
+    // Navigate: artists/venues/promoters → profile, songs → artist profile, shows → tickets
+    if(r.slug && (r.type==='artist'||r.type==='venue'||r.type==='promoter')){
+      row.href = '/profiles/'+r.slug;
+    } else if(r.type==='song' && r.slug){
+      row.href = '/profiles/'+r.slug;
+    } else if(r.type==='show'){
+      row.href = '/tickets';
+    } else if(r.type==='genre'){
+      row.href = '#';
+      row.addEventListener('click',e=>{ e.preventDefault(); filterByGenre(r.name); });
+    } else {
+      row.href='#';
+      row.addEventListener('click',e=>e.preventDefault());
     }
+
+    const icon = TYPE_ICONS[r.type]||'?';
+    const label = TYPE_LABELS[r.type]||r.type;
+    const thumbCls = r.type;
+
+    row.innerHTML =
+      '<div class="sr-thumb '+esc(thumbCls)+'">'+esc(icon)+'</div>'+
+      '<div style="overflow:hidden"><div class="sr-name">'+esc(r.name)+'</div>'+
+      '<div class="sr-sub">'+esc(r.subtitle||'')+'</div></div>'+
+      '<span class="sr-badge '+esc(r.type)+'">'+esc(label)+'</span>';
+    srList.appendChild(row);
   });
 }
 
-document.getElementById('lensFilter').addEventListener('input', e=> applyFilter(e.target.value));
+function filterByGenre(genre){
+  activeGenre = genre;
+  // Highlight the pill
+  document.querySelectorAll('.genre-pill').forEach(p=>{
+    p.classList.toggle('active', p.dataset.genre===genre);
+  });
+  // Show search results filtered by genre via search
+  searchInput.value = genre;
+  searchClear.style.display='';
+  searchCat = 'artist';
+  document.querySelectorAll('.search-cat').forEach(b=>b.classList.toggle('active', b.dataset.cat==='artist'));
+  runSearch(genre);
+}
 
-/* ── Row click → why panel ─────────────────────────────────── */
-function attachRowClick(rowEl, profile, rank, prefix, ctxStr){
-  rowEl.addEventListener('click', ()=>{
-    // deselect siblings
-    rowEl.closest('.feed-list, .radar-list').querySelectorAll('.feed-row,.radar-row').forEach(r=>r.classList.remove('selected'));
-    rowEl.classList.add('selected');
-    updateWhyPanel(prefix, profile, rank, ctxStr);
+/* ── Genre cloud ───────────────────────────────────────────── */
+function buildGenreCloud(profiles){
+  const cloud = document.getElementById('genreCloud');
+  if(!cloud) return;
+  const counts = {};
+  profiles.forEach(p=>{ (p.genres||[]).forEach(g=>{ counts[g]=(counts[g]||0)+1; }); });
+  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,30);
+  if(!sorted.length){ cloud.style.display='none'; return; }
+  cloud.innerHTML='';
+  sorted.forEach(([g])=>{
+    const pill = document.createElement('button');
+    pill.className='genre-pill';
+    pill.dataset.genre=g;
+    pill.textContent=g;
+    pill.addEventListener('click',()=>filterByGenre(g));
+    cloud.appendChild(pill);
   });
 }
 
-/* ── Feed renderers ────────────────────────────────────────── */
-function renderArtistRow(profile, i, clickPrefix){
-  const geoIdx = Math.min(i,3);
-  const loc = locStr(profile);
-  const genres = genreStr(profile);
-  const sub = [genres, loc, profile.hypeCount ? fmtHype(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
-  const row = document.createElement('div');
-  row.className = 'feed-row';
-  row.innerHTML =
-    '<div class="feed-thumb" style="background:'+grad(i)+'"></div>'+
-    '<div style="overflow:hidden"><div class="feed-name">'+esc(profile.name)+'</div><div class="feed-sub">'+esc(sub)+'</div></div>'+
-    '<span class="feed-badge '+GEO_CLASS[geoIdx]+'">'+GEO_TIERS[geoIdx]+'</span>';
-  const ctx = 'Position '+(i+1)+' · '+fmtHype(profile.hypeCount||0)+' HYPE';
-  attachRowClick(row, profile, i, clickPrefix, ctx);
-  return row;
+/* ── Load all data ─────────────────────────────────────────── */
+async function load(){
+  let profiles=[], shows=[], tracks=[];
+  try{
+    const [pRes,sRes,tRes] = await Promise.all([
+      fetch('/api/profiles?limit=200',{credentials:'same-origin'}),
+      fetch('/api/shows',{credentials:'same-origin'}),
+      fetch('/api/artist-media/free-use?limit=100',{credentials:'same-origin'})
+    ]);
+    if(pRes.ok) profiles = await pRes.json();
+    if(sRes.ok) shows    = await sRes.json();
+    if(tRes.ok){ const d=await tRes.json(); tracks=d.tracks||[]; }
+  }catch(e){}
+
+  buildGenreCloud(profiles);
+
+  const artists = profiles.filter(p=>p.type==='ARTIST'||p.type==='DJ');
+  const venues  = profiles.filter(p=>p.type==='VENUE');
+  const djs     = profiles.filter(p=>p.type==='DJ');
+
+  /* ── Fan: artists ── */
+  fillList('fan-artist-list','fan-artist-count', artists.slice(0,10),
+    (p,i,el)=>renderArtistRow(p,i,el,'wf','why-fan-detail','why-fan-prompt'));
+
+  /* ── Fan: songs ── */
+  const songList = document.getElementById('fan-song-list');
+  const songCount = document.getElementById('fan-song-count');
+  if(songList){
+    songList.innerHTML='';
+    const items=tracks.slice(0,12);
+    if(items.length){
+      items.forEach((t,i)=>songList.appendChild(renderSongRow(t,i)));
+      if(songCount) songCount.textContent=items.length+' songs';
+    } else {
+      songList.appendChild(emptyEl(' No free-use tracks yet.'));
+      if(songCount) songCount.textContent='0 songs';
+    }
+  }
+
+  /* ── Fan: shows ── */
+  const showList = document.getElementById('fan-show-list');
+  const showCount = document.getElementById('fan-show-count');
+  if(showList){
+    showList.innerHTML='';
+    const items=shows.filter(s=>s.status==='LIVE'||s.status==='SCHEDULED').slice(0,10);
+    if(items.length){
+      items.forEach((s,i)=>showList.appendChild(renderShowRow(s,i)));
+      if(showCount) showCount.textContent=items.length+' shows';
+    } else {
+      showList.appendChild(emptyEl(' No upcoming shows yet.'));
+      if(showCount) showCount.textContent='0 shows';
+    }
+  }
+
+  /* ── Artist: venues (booking targets) ── */
+  fillList('artist-venue-list','artist-venue-count', venues.slice(0,8),
+    (p,i,el)=>renderArtistRow(p,i,el,'wa','why-artist-detail','why-artist-prompt'));
+
+  /* ── Artist: similar artists ── */
+  fillList('artist-similar-list','artist-similar-count', artists.slice(0,8),
+    (p,i,el)=>renderArtistRow(p,i,el,'wa','why-artist-detail','why-artist-prompt'));
+
+  /* ── Venue: geo-tiered trending ── */
+  const tierContainer = document.getElementById('venue-tier-sections');
+  const vCount = document.getElementById('venue-artist-count');
+  if(tierContainer && artists.length){
+    const perTier = Math.max(1, Math.min(4, Math.floor(artists.length / 4)));
+    // Distribute artists across tiers — first quarter local, etc.
+    const tiers = [
+      artists.slice(0, perTier),
+      artists.slice(perTier, perTier*2),
+      artists.slice(perTier*2, perTier*3),
+      artists.slice(perTier*3, perTier*4)
+    ];
+    tiers.forEach((tierArtists, idx)=>{ if(tierArtists.length) renderVenueTierSection(tierArtists, idx, tierContainer); });
+    if(vCount) vCount.textContent = artists.length+' artists across '+tiers.filter(t=>t.length).length+' tiers';
+  } else if(tierContainer){
+    tierContainer.appendChild(emptyEl(' No artist profiles yet.'));
+    if(vCount) vCount.textContent='0 artists';
+  }
+
+  /* ── Promoter: artist matches ── */
+  const promoList = document.getElementById('promoter-artist-list');
+  const promoCount = document.getElementById('promoter-artist-count');
+  if(promoList){
+    promoList.innerHTML='';
+    const pool = artists.slice(0,10);
+    if(pool.length){
+      pool.forEach((p,i)=>promoList.appendChild(renderPromoterRow(p,i,promoList)));
+      if(promoCount) promoCount.textContent=pool.length+' artists';
+    } else {
+      promoList.appendChild(emptyEl(' No artist profiles yet.'));
+      if(promoCount) promoCount.textContent='0 artists';
+    }
+  }
+
+  /* ── Promoter: events ── */
+  const eventList = document.getElementById('promoter-event-list');
+  const eventCount = document.getElementById('promoter-event-count');
+  if(eventList){
+    eventList.innerHTML='';
+    if(shows.length){
+      shows.slice(0,10).forEach((s,i)=>eventList.appendChild(renderShowRow(s,i)));
+      if(eventCount) eventCount.textContent=shows.length+' events';
+    } else {
+      eventList.appendChild(emptyEl(' No published shows yet.'));
+      if(eventCount) eventCount.textContent='0 events';
+    }
+  }
 }
 
-function renderShowRow(show, i){
-  const date = show.startsAt ? new Date(show.startsAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'TBD';
-  const badge = show.status==='LIVE'?'local': show.status==='SCHEDULED'?'regional':'national';
-  const label = show.status==='LIVE'?'Live Now': show.status==='SCHEDULED'?'Upcoming':'Draft';
-  const sub = [show.venueName||show.venue?.name, date].filter(Boolean).join(' · ');
-  const row = document.createElement('div');
-  row.className = 'feed-row';
-  row.style.cursor = 'default';
-  row.innerHTML =
-    '<div class="feed-thumb" style="background:'+grad(i)+';border-radius:var(--r-sm)"></div>'+
-    '<div style="overflow:hidden"><div class="feed-name">'+esc(show.title)+'</div><div class="feed-sub">'+esc(sub)+'</div></div>'+
-    '<span class="feed-badge '+badge+'">'+label+'</span>';
-  return row;
+function fillList(listId, countId, items, rowFn){
+  const el = document.getElementById(listId);
+  const ct = document.getElementById(countId);
+  if(!el) return;
+  el.innerHTML='';
+  if(items.length){
+    items.forEach((p,i)=>el.appendChild(rowFn(p,i,el)));
+    if(ct) ct.textContent=items.length+(items[0].genres!==undefined?' artists':' items');
+  } else {
+    el.appendChild(emptyEl(' Nothing here yet.'));
+    if(ct) ct.textContent='0';
+  }
 }
 
-function renderVenueRow(profile, i){
-  const loc = locStr(profile);
-  const genres = genreStr(profile);
-  const sub = [genres, loc, profile.hypeCount ? fmtHype(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
-  const s = scoreFor(profile, i);
-  const row = document.createElement('div');
-  row.className = 'radar-row';
-  row.innerHTML =
-    '<div class="radar-thumb" style="background:'+grad(i)+'"></div>'+
-    '<div><div class="radar-name">'+esc(profile.name)+'</div><div class="radar-sub">'+esc(sub)+'</div></div>'+
-    '<span class="radar-fit">'+(s.final*100).toFixed(0)+'% fit</span>';
-  const ctx = (s.final*100).toFixed(0)+'% fit · position '+(i+1);
-  attachRowClick(row, profile, i, 'wv', ctx);
-  return row;
-}
-
-function renderPromoterRow(profile, i){
-  const loc = locStr(profile);
-  const genres = genreStr(profile);
-  const sub = [genres, loc, profile.hypeCount ? fmtHype(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
-  const s = scoreFor(profile, i);
-  const row = document.createElement('div');
-  row.className = 'feed-row';
-  row.style.borderLeft = '3px solid var(--r-promoter)';
-  row.innerHTML =
-    '<div class="feed-thumb" style="background:'+grad(i)+'"></div>'+
-    '<div style="overflow:hidden"><div class="feed-name">'+esc(profile.name)+'</div><div class="feed-sub">'+esc(sub)+'</div></div>'+
-    '<span class="feed-badge '+(i===0?'local':i<3?'regional':'national')+'">'+(i===0?'Top pick':i===Object.keys({})||i===4?'Wildcard':'Match')+'</span>';
-  const ctx = (s.final*100).toFixed(0)+'% match · position '+(i+1);
-  attachRowClick(row, profile, i, 'wp', ctx);
-  return row;
-}
-
-function renderArtistVenueRow(profile, i){
-  const loc = locStr(profile);
-  const genres = genreStr(profile);
-  const sub = [genres, loc, profile.hypeCount ? fmtHype(profile.hypeCount)+' HYPE' : ''].filter(Boolean).join(' · ');
-  const geoIdx = Math.min(i,3);
-  const row = document.createElement('div');
-  row.className = 'feed-row';
-  row.innerHTML =
-    '<div class="feed-thumb" style="background:'+grad(i)+'"></div>'+
-    '<div style="overflow:hidden"><div class="feed-name">'+esc(profile.name)+'</div><div class="feed-sub">'+esc(sub)+'</div></div>'+
-    '<span class="feed-badge '+GEO_CLASS[geoIdx]+'">'+GEO_TIERS[geoIdx]+'</span>';
-  const ctx = 'Booking target · position '+(i+1);
-  attachRowClick(row, profile, i, 'wa', ctx);
-  return row;
-}
-
-function empty(msg){
-  const d = document.createElement('div');
-  d.className = 'feed-empty';
-  d.innerHTML = '<strong>Nothing here yet</strong>'+esc(msg);
-  return d;
-}
-
-function nudge(action){
-  // Placeholder — real implementation sends preference signal to /api/discover/nudge
-  const label = {less:'Noted — we'll show fewer like this',more:'Got it — we'll show more like this',save:'Saved to your list',add:'Added to show'}[action]||'Done';
-  alert(label);
-}
-
-/* ── Session → auto-select lens ───────────────────────────── */
+/* ── Session → default lens ────────────────────────────────── */
 async function initRole(){
   try{
     const res = await fetch('/api/auth/session',{credentials:'same-origin'});
     if(!res.ok) return;
-    const data = await res.json();
-    const role = ((data&&data.user&&data.user.role)||'').toUpperCase();
-    const map = {FAN:'fan',ARTIST:'artist',VENUE:'venue',DJ:'promoter'};
+    const d = await res.json();
+    const role = ((d&&d.user&&d.user.role)||'').toUpperCase();
+    const map = {ARTIST:'artist',VENUE:'venue',DJ:'promoter'};
     const lens = map[role];
-    if(lens && lens !== 'fan') setActiveLens(lens);
+    if(lens) setLens(lens);
   }catch(e){}
-}
-
-/* ── Load data ─────────────────────────────────────────────── */
-async function loadDiscover(){
-  let profiles = [], shows = [];
-  try{
-    const [pRes, sRes] = await Promise.all([
-      fetch('/api/profiles?limit=60',{credentials:'same-origin'}),
-      fetch('/api/shows',{credentials:'same-origin'})
-    ]);
-    if(pRes.ok) profiles = await pRes.json();
-    if(sRes.ok) shows = await sRes.json();
-  }catch(e){}
-
-  const artists = profiles.filter(p=>p.type==='ARTIST'||p.type==='DJ');
-  const venues  = profiles.filter(p=>p.type==='VENUE');
-  const all     = profiles;
-
-  /* Fan — artists */
-  const fanList = document.getElementById('fan-feed-list');
-  const fanCount = document.getElementById('fan-artist-count');
-  if(fanList){
-    const items = artists.slice(0,10);
-    fanList.innerHTML = '';
-    if(items.length){
-      items.forEach((p,i)=>{ fanList.appendChild(renderArtistRow(p,i,'wf')); });
-      if(fanCount) fanCount.textContent = items.length+' artists';
-    } else {
-      fanList.appendChild(empty(' Be the first to create an artist profile.'));
-      if(fanCount) fanCount.textContent = '0 artists';
-    }
-  }
-
-  /* Fan — shows */
-  const showList = document.getElementById('fan-show-list');
-  const showCount = document.getElementById('fan-show-count');
-  if(showList){
-    const live = shows.filter(s=>s.status==='LIVE'||s.status==='SCHEDULED').slice(0,10);
-    showList.innerHTML = '';
-    if(live.length){
-      live.forEach((s,i)=>{ showList.appendChild(renderShowRow(s,i)); });
-      if(showCount) showCount.textContent = live.length+' shows';
-    } else {
-      showList.appendChild(empty(' No upcoming shows yet.'));
-      if(showCount) showCount.textContent = '0 shows';
-    }
-  }
-
-  /* Artist lens — venue targets */
-  const artistList = document.getElementById('artist-feed-list');
-  const artistCount = document.getElementById('artist-venue-count');
-  if(artistList){
-    const items = venues.length ? venues.slice(0,8) : all.slice(0,8);
-    artistList.innerHTML = '';
-    if(items.length){
-      items.forEach((p,i)=>{ artistList.appendChild(renderArtistVenueRow(p,i)); });
-      if(artistCount) artistCount.textContent = items.length+' venues';
-    } else {
-      artistList.appendChild(empty(' No venue profiles yet.'));
-      if(artistCount) artistCount.textContent = '0 venues';
-    }
-  }
-
-  /* Venue lens — booking radar */
-  const venueList = document.getElementById('venue-feed-list');
-  const venueCount = document.getElementById('venue-artist-count');
-  if(venueList){
-    const items = artists.slice(0,8);
-    venueList.innerHTML = '';
-    if(items.length){
-      items.forEach((p,i)=>{ venueList.appendChild(renderVenueRow(p,i)); });
-      if(venueCount) venueCount.textContent = items.length+' artists';
-    } else {
-      venueList.appendChild(empty(' No artist profiles yet.'));
-      if(venueCount) venueCount.textContent = '0 artists';
-    }
-  }
-
-  /* Promoter lens */
-  const promoterList = document.getElementById('promoter-feed-list');
-  const promoterCount = document.getElementById('promoter-artist-count');
-  if(promoterList){
-    const pool = artists.slice(0,8);
-    promoterList.innerHTML = '';
-    if(pool.length){
-      pool.forEach((p,i)=>{ promoterList.appendChild(renderPromoterRow(p,i)); });
-      if(promoterCount) promoterCount.textContent = pool.length+' artists';
-    } else {
-      promoterList.appendChild(empty(' No artist profiles yet.'));
-      if(promoterCount) promoterCount.textContent = '0 artists';
-    }
-  }
 }
 
 initRole();
-loadDiscover();
-
+load();
 })();
 </script>
 </body>
