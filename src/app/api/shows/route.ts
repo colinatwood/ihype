@@ -41,7 +41,25 @@ const schema = z.object({
   productionPlan: showProductionPlanSchema.optional()
 });
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const mine = searchParams.get('mine') === '1' || searchParams.get('mine') === 'true';
+
+  // ?mine=1 — return authenticated user's own shows (all statuses including DRAFT)
+  if (mine) {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Login required' }, { status: 401 });
+    }
+    const shows = await db.show.findMany({
+      include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
+      where: { creatorId: session.user.id },
+      orderBy: [{ createdAt: 'desc' }]
+    });
+    return NextResponse.json(shows);
+  }
+
+  // Public feed — scheduled / live / ended only
   const shows = await db.show.findMany({
     include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
     where: { status: { in: ['SCHEDULED', 'LIVE', 'ENDED'] } }

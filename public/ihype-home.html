@@ -206,25 +206,43 @@
     if(!shows||!shows.length){
       return section+head+'<div class="shows-empty"><div>No shows yet.</div><a href="/show-creator">Create your first show →</a></div></div>';
     }
-    const rows = shows.slice(0,8).map(s=>{
+    const rows = shows.slice(0,10).map(s=>{
       const badges = [];
       if(s.status==='LIVE') badges.push('<span class="badge live">Live</span>');
       else if(s.status==='SCHEDULED') badges.push('<span class="badge scheduled">Scheduled</span>');
       else if(s.status==='DRAFT') badges.push('<span class="badge draft">Draft</span>');
+      else if(s.status==='ENDED') badges.push('<span class="badge draft">Ended</span>');
       if(s.isRadioShow) badges.push('<span class="badge radio">Radio</span>');
       else if(s.isTicketed) badges.push('<span class="badge scheduled">Ticketed</span>');
-      const meta = s.isRadioShow
-        ? (s.productionPlan?.tracks?.length||0)+' tracks'
-        : (s.startsAt ? fmtDate(s.startsAt) : '');
+
+      const metaParts = [];
+      if(s.isRadioShow){
+        const trackCount = (s.productionPlan?.tracks?.length||0);
+        metaParts.push(trackCount+' track'+(trackCount!==1?'s':''));
+      } else {
+        if(s.startsAt) metaParts.push(fmtDate(s.startsAt));
+        const venue = s.venueProfile?.name;
+        const headliner = s.headlinerProfile?.name;
+        if(headliner) metaParts.push(headliner);
+        if(venue) metaParts.push(venue);
+      }
+      if(s.isTicketed && s.ticketsSoldCount!=null){
+        metaParts.push(fmt(s.ticketsSoldCount)+' tickets sold');
+      }
+
+      const href = (s.status!=='DRAFT') ? '/tickets' : '/show-creator';
       return '<div class="show-row">'+
         '<div>'+
-          '<div class="show-title">'+esc(s.title)+'</div>'+
-          (meta?'<div class="show-meta">'+esc(meta)+'</div>':'')+
+          '<div class="show-title"><a href="'+href+'" style="color:inherit;text-decoration:none">'+esc(s.title)+'</a></div>'+
+          (metaParts.length?'<div class="show-meta">'+esc(metaParts.join(' · '))+'</div>':'')+
         '</div>'+
         '<div class="show-badges">'+badges.join('')+'</div>'+
       '</div>';
     }).join('');
-    return section+head+rows+'</div>';
+    const more = shows.length>10
+      ? '<div class="show-row" style="justify-content:center"><a href="/show-creator" style="font-family:var(--f-m);font-size:.8rem;color:var(--accent-ink);text-decoration:none">View all '+shows.length+' shows →</a></div>'
+      : '';
+    return section+head+rows+more+'</div>';
   }
 
   function buildEngines(role){
@@ -275,7 +293,7 @@
 
       const [statsRes, showsRes] = await Promise.all([
         fetch('/api/stats/me',{credentials:'same-origin'}),
-        fetch('/api/shows',{credentials:'same-origin'})
+        fetch('/api/shows?mine=1',{credentials:'same-origin'})
       ]);
 
       const stats = statsRes.ok ? await statsRes.json() : {role:session.user.role||'FAN'};
