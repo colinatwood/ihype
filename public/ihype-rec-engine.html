@@ -1136,14 +1136,13 @@ function renderSearchResults(q, data){
     row.className = 'sr-row';
     // Navigate: artists/venues/promoters → profile, songs → artist profile, shows → tickets
     if(r.slug && (r.type==='artist'||r.type==='venue'||r.type==='promoter')){
-      row.href = '/profiles/'+r.slug;
+      row.href = '/profile/'+r.slug;
     } else if(r.type==='song' && r.slug){
-      row.href = '/profiles/'+r.slug;
+      row.href = '/profile/'+r.slug;
     } else if(r.type==='show'){
       row.href = '/tickets';
     } else if(r.type==='genre'){
-      row.href = '#';
-      row.addEventListener('click',e=>{ e.preventDefault(); filterByGenre(r.name); });
+      row.href = '/search?q='+encodeURIComponent(r.name)+'&type=artist';
     } else {
       row.href='#';
       row.addEventListener('click',e=>e.preventDefault());

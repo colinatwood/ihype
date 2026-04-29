@@ -97,7 +97,8 @@ const nextConfig = {
         { source: '/tickets',    destination: '/ihype-ticketing.html' },
         { source: '/customizer',    destination: '/ihype-page-customizer.html' },
         { source: '/show-creator', destination: '/ihype-show-creator.html' },
-        { source: '/home',         destination: '/ihype-home.html' }
+        { source: '/home',         destination: '/ihype-home.html' },
+        { source: '/search',       destination: '/ihype-search.html' }
       ],
       afterFiles: [],
       fallback: []
@@ -127,6 +128,10 @@ const nextConfig = {
       },
       {
         source: '/register',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/search',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       }
     ];
