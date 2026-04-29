@@ -140,6 +140,98 @@ function injectAdminBar(persp){
   if(nav) nav.style.top=BAR_H;
 }
 
+/* ── Mobile drawer ─────────────────────────────────────────── */
+function buildMobileDrawer(user, engines, signoutFn){
+  const nav=document.querySelector('.nav');
+  if(!nav) return;
+  const navRight=nav.querySelector('.nav-right')||nav;
+
+  // Hamburger button
+  const ham=document.createElement('button');
+  ham.className='nav-hamburger';
+  ham.setAttribute('aria-label','Open navigation menu');
+  ham.setAttribute('aria-expanded','false');
+  ham.innerHTML='<span></span><span></span><span></span>';
+  navRight.insertBefore(ham,navRight.firstChild);
+
+  // Overlay
+  const overlay=document.createElement('div');
+  overlay.className='mobile-drawer-overlay';
+  document.body.appendChild(overlay);
+
+  // Drawer
+  const drawer=document.createElement('div');
+  drawer.className='mobile-drawer';
+  drawer.setAttribute('role','dialog');
+  drawer.setAttribute('aria-label','Navigation menu');
+
+  const display=user?user.name||(user.email?user.email.split('@')[0]:'You'):'';
+  const roleStr=user?(user.role&&user.role.toUpperCase()==='ADMIN'?'Admin':roleLabel(user.role)):'';
+
+  const engineLinksHTML=engines.map(e=>
+    '<a href="'+esc(e.href)+'" class="mobile-drawer-item">'+
+      '<span class="di-icon">'+e.icon+'</span>'+
+      '<span>'+esc(e.label)+'</span>'+
+    '</a>'
+  ).join('');
+
+  const userSection=user?
+    '<div class="mobile-drawer-user">'+
+      '<div class="mdu-name"></div>'+
+      '<div class="mdu-role"></div>'+
+    '</div>'
+    :'';
+
+  const footHTML=user
+    ?'<div class="mobile-drawer-foot"><button class="mobile-drawer-signout">Sign out</button></div>'
+    :'<div class="mobile-drawer-foot"><a href="/login" class="mobile-drawer-signin">Sign in →</a></div>';
+
+  drawer.innerHTML=
+    '<div class="mobile-drawer-head">'+
+      '<div class="brand">i<em>HYPE</em></div>'+
+      '<button class="mobile-drawer-close" aria-label="Close menu">✕</button>'+
+    '</div>'+
+    userSection+
+    '<div class="mobile-drawer-body">'+
+      '<div class="mobile-drawer-section">Engines</div>'+
+      engineLinksHTML+
+    '</div>'+
+    footHTML;
+
+  if(user){
+    drawer.querySelector('.mdu-name').textContent=display;
+    drawer.querySelector('.mdu-role').textContent=roleStr;
+  }
+
+  document.body.appendChild(drawer);
+
+  function open(){
+    drawer.classList.add('open');
+    overlay.classList.add('open');
+    document.body.style.overflow='hidden';
+    ham.setAttribute('aria-expanded','true');
+    ham.classList.add('open');
+  }
+  function close(){
+    drawer.classList.remove('open');
+    overlay.classList.remove('open');
+    document.body.style.overflow='';
+    ham.setAttribute('aria-expanded','false');
+    ham.classList.remove('open');
+  }
+
+  ham.addEventListener('click',e=>{ e.stopPropagation(); open(); });
+  overlay.addEventListener('click',close);
+  drawer.querySelector('.mobile-drawer-close').addEventListener('click',close);
+  drawer.querySelectorAll('.mobile-drawer-item').forEach(a=>{
+    a.addEventListener('click',close);
+  });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+
+  const signoutBtn=drawer.querySelector('.mobile-drawer-signout');
+  if(signoutBtn&&signoutFn) signoutBtn.addEventListener('click',signoutFn);
+}
+
 /* ── Build signed-in dropdown ──────────────────────────────── */
 function buildMenu(pill,user){
   const isAdmin=(user.role||'').toUpperCase()==='ADMIN';
@@ -232,15 +324,20 @@ function buildMenu(pill,user){
     if(e.key==='Escape') wrap.classList.remove('open');
   });
 
-  // Sign out — also clears perspective
-  dd.querySelector('[data-action="signout"]').addEventListener('click',async function(){
+  // Sign out handler (shared with mobile drawer)
+  async function doSignout(){
     try{ await fetch('/api/auth/otp/signout',{method:'POST',credentials:'same-origin'}); }catch(e){}
     try{ localStorage.removeItem(PERSP_KEY); }catch(e){}
     window.location.href='/';
-  });
+  }
+
+  dd.querySelector('[data-action="signout"]').addEventListener('click',doSignout);
 
   // Inject admin bar if previewing as a non-admin role
   if(isAdmin) injectAdminBar(persp);
+
+  // Mobile drawer
+  buildMobileDrawer(user, engines, doSignout);
 }
 
 /* ── Signed-out state ──────────────────────────────────────── */
@@ -248,6 +345,13 @@ function setSignedOut(pill){
   pill.className='role-pill fan';
   pill.innerHTML='<span class="name" style="padding:0 .35rem">Sign in</span>';
   pill.addEventListener('click',function(){ window.location.href='/login'; });
+
+  // Mobile drawer for signed-out: show basic public engines
+  const publicEngines=[
+    {label:'Discover',       href:'/discover', icon:'📡'},
+    {label:'Tickets',        href:'/tickets',  icon:'🎟️'},
+  ];
+  buildMobileDrawer(null, publicEngines, null);
 }
 
 /* ── Init ──────────────────────────────────────────────────── */
