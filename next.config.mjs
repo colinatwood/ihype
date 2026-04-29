@@ -98,7 +98,8 @@ const nextConfig = {
         { source: '/customizer',    destination: '/ihype-page-customizer.html' },
         { source: '/show-creator', destination: '/ihype-show-creator.html' },
         { source: '/home',         destination: '/ihype-home.html' },
-        { source: '/search',       destination: '/ihype-search.html' }
+        { source: '/search',       destination: '/ihype-search.html' },
+        { source: '/profile/:slug', destination: '/ihype-profile.html' }
       ],
       afterFiles: [],
       fallback: []
@@ -132,6 +133,10 @@ const nextConfig = {
       },
       {
         source: '/search',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/profile/:slug',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       }
     ];
