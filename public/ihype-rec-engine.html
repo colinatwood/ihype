@@ -153,6 +153,11 @@
 .note-strip{font-family:var(--f-m);font-size:.73rem;color:var(--ink-3);margin-top:.85rem;padding-top:.85rem;border-top:1px dashed var(--line);line-height:1.55}
 .note-strip strong{color:var(--ink-2)}
 
+/* ── Why nudge ─────────────────────────────────────────────── */
+.why-nudge{display:flex;align-items:center;gap:.45rem;font-family:var(--f-m);font-size:.72rem;color:var(--ink-3);padding:.3rem .7rem;border:1px dashed var(--line-2);border-radius:99px;transition:opacity .3s}
+.why-nudge-arrow{font-size:.82rem;color:var(--accent)}
+.why-nudge.hidden{opacity:0;pointer-events:none}
+
 /* ── Architecture card ─────────────────────────────────────── */
 .arch-card{padding:1.8rem 2rem;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-lg)}
 .arch-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:1rem;align-items:center;margin-bottom:1.8rem}
@@ -396,6 +401,10 @@
           <button class="lens-tab promoter" data-lens="promoter" role="tab">
             <span class="dot"></span>Promoter
           </button>
+        </div>
+        <div class="why-nudge" id="why-nudge">
+          <span class="why-nudge-arrow">→</span>
+          Click any result to see its auditable score
         </div>
       </div>
 
@@ -859,6 +868,10 @@ function venueScore(profile, tierIdx){
 
 /* ── Why-panel updater ─────────────────────────────────────── */
 function showWhyDetail(panelDetailId, promptId){
+  // Hide the nudge pill once the user has discovered the panel
+  const nudge = document.getElementById('why-nudge');
+  if(nudge) nudge.classList.add('hidden');
+
   const detail = document.getElementById(panelDetailId);
   const prompt = document.getElementById(promptId);
   if(detail){ detail.style.display='flex'; }

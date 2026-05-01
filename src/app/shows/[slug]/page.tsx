@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { notFound } from 'next/navigation';
 import { HypeButton } from '@/components/HypeButton';
@@ -11,6 +12,67 @@ import { parseShowProductionPlan } from '@/lib/show-composer';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import { formatShowTime } from '@/lib/utils';
 import { ShowPlaybackTracker } from '@/components/ShowPlaybackTracker';
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const show = await db.show.findUnique({
+    where: { slug },
+    select: {
+      title: true,
+      description: true,
+      status: true,
+      isRadioShow: true,
+      startsAt: true,
+      posterImage: true,
+      hypeCount: true,
+      venueProfile:     { select: { name: true, city: true, stateRegion: true } },
+      headlinerProfile: { select: { name: true } },
+    }
+  });
+
+  if (!show) return { title: 'Show · iHYPE' };
+
+  const dateStr = show.startsAt
+    ? new Date(show.startsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
+  const venueName = show.venueProfile?.name ?? null;
+  const venueCity = [show.venueProfile?.city, show.venueProfile?.stateRegion].filter(Boolean).join(', ') || null;
+  const headliner = show.headlinerProfile?.name ?? null;
+
+  const descParts = [
+    show.isRadioShow ? 'Radio show' : (dateStr ?? null),
+    venueName ?? null,
+    venueCity ?? null,
+    headliner ? `Featuring ${headliner}` : null,
+    show.hypeCount ? `${show.hypeCount} HYPE` : null,
+    show.description?.slice(0, 120) ?? null,
+  ].filter(Boolean);
+
+  const title       = `${show.title} · iHYPE`;
+  const description = descParts.join(' · ') || 'Live show on iHYPE';
+  const image       = show.posterImage ?? undefined;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: 'website',
+      siteName: 'iHYPE',
+      title,
+      description,
+      url:   `/shows/${slug}`,
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: {
+      card:        'summary_large_image',
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
+}
 
 export default async function ShowDetailPage({
   params,

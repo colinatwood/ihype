@@ -97,9 +97,12 @@ const nextConfig = {
         { source: '/tickets',    destination: '/ihype-ticketing.html' },
         { source: '/customizer',    destination: '/ihype-page-customizer.html' },
         { source: '/show-creator', destination: '/ihype-show-creator.html' },
+        { source: '/forgot',       destination: '/ihype-forgot.html' },
+        { source: '/media',        destination: '/ihype-media.html' },
         { source: '/home',         destination: '/ihype-home.html' },
         { source: '/search',       destination: '/ihype-search.html' },
-        { source: '/profile/:slug', destination: '/ihype-profile.html' }
+        { source: '/governance',   destination: '/ihype-governance.html' },
+        // /profile/:slug is handled by src/app/profile/[slug]/route.ts (OG tag injection)
       ],
       afterFiles: [],
       fallback: []
@@ -128,6 +131,14 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       {
+        source: '/forgot',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/media',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
         source: '/register',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
@@ -136,9 +147,11 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       {
-        source: '/profile/:slug',
+        source: '/governance',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
-      }
+      },
+      // /profile/:slug — cache headers set directly in the route handler
+      // /shows/:slug   — handled by src/app/shows/[slug]/page.tsx (no static rewrite)
     ];
   }
 };

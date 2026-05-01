@@ -63,6 +63,9 @@ const CREATOR_ENGINES=[
   {label:'Show Creation Engine',  href:'/show-creator', icon:'🎙️'},
   {label:'Customization Engine',  href:'/customizer',   icon:'🎨'},
 ];
+const ARTIST_ENGINES=[
+  {label:'Media Engine',          href:'/media',        icon:'🎵'},
+];
 const ADMIN_ENGINES=[
   {label:'Admin Dashboard',       href:'/dashboard',    icon:'⚙️'},
 ];
@@ -70,9 +73,11 @@ const ADMIN_ENGINES=[
 function enginesFor(role){
   const r=(role||'').toUpperCase();
   const isCreator=['ARTIST','DJ','VENUE'].includes(r);
+  const isArtist=r==='ARTIST';
   const isAdmin=r==='ADMIN';
   const list=[...ALL_ENGINES];
   if(isCreator||isAdmin) list.push(...CREATOR_ENGINES);
+  if(isArtist)           list.push(...ARTIST_ENGINES);
   if(isAdmin)            list.push(...ADMIN_ENGINES);
   return list;
 }

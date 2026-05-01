@@ -71,7 +71,16 @@
 .genre-pill:hover{border-color:var(--ink-3);color:var(--ink)}
 
 /* ── HYPE button ────────────────────────────────────────────── */
-.hype-btn-wrap{margin-top:.85rem}
+.hype-btn-wrap{margin-top:.75rem}
+.hype-btn{display:inline-flex;align-items:center;gap:.45rem;padding:.55rem 1.3rem;border-radius:99px;font-family:var(--f-d);font-size:.88rem;font-weight:700;letter-spacing:.01em;cursor:pointer;transition:all .18s;border:2px solid var(--accent);background:transparent;color:var(--accent);white-space:nowrap}
+.hype-btn:hover:not(:disabled){background:var(--accent);color:#fff;transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,80,41,.28)}
+.hype-btn:active:not(:disabled){transform:translateY(0)}
+.hype-btn.hyped{background:color-mix(in srgb,var(--accent) 12%,transparent);border-color:color-mix(in srgb,var(--accent) 35%,transparent);color:var(--accent);cursor:default}
+.hype-btn:disabled{opacity:.65;cursor:default}
+.hype-btn-arrow{font-size:1rem;transition:transform .18s}
+.hype-btn:hover:not(:disabled) .hype-btn-arrow,.hype-btn.hyped .hype-btn-arrow{transform:translateY(-2px)}
+@keyframes hype-pop{0%{transform:scale(1)}40%{transform:scale(1.22)}80%{transform:scale(.95)}100%{transform:scale(1)}}
+.hype-count-pop{animation:hype-pop .35s ease forwards}
 
 /* ── Skeleton ───────────────────────────────────────────────── */
 .skel{background:linear-gradient(90deg,var(--surface) 25%,var(--surface-2) 50%,var(--surface) 75%);background-size:200% 100%;animation:skel-shimmer 1.4s ease infinite;border-radius:var(--r-md)}
@@ -218,7 +227,7 @@
           s.isTicketed ? '<span class="s-badge ticketed">Ticketed</span>' : '',
         ].filter(Boolean).join('');
 
-        return `<a href="/tickets" class="show-card" style="margin-bottom:.45rem;display:grid">
+        return `<a href="/shows/${esc(s.slug||'')}" class="show-card" style="margin-bottom:.45rem;display:grid">
           <div>
             <div class="show-title">${esc(s.title)}</div>
             <div class="show-meta">${esc(metaParts.join(' · '))}</div>
@@ -315,8 +324,13 @@
 
         <aside class="profile-sidebar">
           <div class="sidebar-card" style="text-align:center">
-            <div class="hype-count-big">${fmt(profile.hypeCount)}</div>
+            <div class="hype-count-big" id="hype-count-display">${fmt(profile.hypeCount)}</div>
             <div class="hype-label">HYPE</div>
+            <div class="hype-btn-wrap">
+              <button id="hype-btn" class="hype-btn" type="button" aria-label="HYPE ${esc(profile.name)}">
+                <span class="hype-btn-arrow">▲</span><span id="hype-btn-label">HYPE this</span>
+              </button>
+            </div>
           </div>
 
           ${profile.genres && profile.genres.length ? `
@@ -339,6 +353,74 @@
 
     document.getElementById('profileContent').innerHTML = html;
     show('profileContent');
+    wireHypeButton(profile.id, profile.name);
+  }
+
+  // ── HYPE button logic ─────────────────────────────────────────────────────
+  function wireHypeButton(profileId, profileName) {
+    const btn       = document.getElementById('hype-btn');
+    const countEl   = document.getElementById('hype-count-display');
+    const labelEl   = document.getElementById('hype-btn-label');
+    if (!btn || !countEl || !labelEl) return;
+
+    let hyped = false;
+    let working = false;
+
+    btn.addEventListener('click', async function () {
+      if (hyped || working) return;
+      working = true;
+      btn.disabled = true;
+      labelEl.textContent = 'Hyping…';
+
+      try {
+        const res = await fetch('/api/hype', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetType: 'profile', targetId: profileId })
+        });
+
+        if (res.status === 401) {
+          // Not logged in — send to login then back
+          window.location.href = '/login?next=' + encodeURIComponent(location.pathname);
+          return;
+        }
+
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+          // Update count display
+          const newCount = data.hypeCount ?? 0;
+          countEl.textContent = fmt(newCount);
+          countEl.classList.remove('hype-count-pop');
+          // Force reflow so animation re-triggers
+          void countEl.offsetWidth;
+          countEl.classList.add('hype-count-pop');
+
+          hyped = true;
+          btn.classList.add('hyped');
+          btn.disabled = false;
+          working = false;
+
+          if (data.created) {
+            labelEl.textContent = 'Hyped ✓';
+            btn.setAttribute('aria-label', 'You hyped ' + profileName);
+          } else {
+            // Already hyped before this session
+            labelEl.textContent = 'Already hyped';
+          }
+        } else {
+          // Unexpected error — reset button
+          labelEl.textContent = 'HYPE this';
+          btn.disabled = false;
+          working = false;
+        }
+      } catch {
+        labelEl.textContent = 'HYPE this';
+        btn.disabled = false;
+        working = false;
+      }
+    });
   }
 })();
 </script>

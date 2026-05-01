@@ -287,7 +287,13 @@ async function handleVerify() {
       return;
     }
 
-    window.location.href = data.redirect || '/auth/landing';
+    var storedNext = sessionStorage.getItem('ihype_auth_next');
+    if (storedNext && storedNext.startsWith('/') && !storedNext.startsWith('//')) {
+      sessionStorage.removeItem('ihype_auth_next');
+      window.location.href = storedNext;
+    } else {
+      window.location.href = data.redirect || '/auth/landing';
+    }
   } catch {
     showError('otp-error', 'Something went wrong. Please try again.');
     setButtonState('otp-btn', 'Verify and continue', false);

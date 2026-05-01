@@ -3,124 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Page Customizer · iHYPE.org</title>
+<title>Page Customizer · iHYPE</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/ihype-shared.css">
 <style>
-/* Role switcher (top of customizer) */
-.role-switcher{display:flex;gap:.4rem;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.3rem;width:fit-content;margin:0 auto 2rem;flex-wrap:wrap}
-.role-switcher button{padding:.45rem 1.1rem;border-radius:99px;font-size:.84rem;font-weight:500;color:var(--ink-2);transition:all .15s;display:flex;align-items:center;gap:.5rem}
-.role-switcher button .dot{width:8px;height:8px;border-radius:50%}
-.role-switcher button.fan .dot{background:var(--r-fan)}
-.role-switcher button.artist .dot{background:var(--r-artist)}
-.role-switcher button.venue .dot{background:var(--r-venue)}
-.role-switcher button.promoter .dot{background:var(--r-promoter)}
-.role-switcher button.active{background:var(--ink);color:var(--bg)}
-.role-switcher button.active .dot{background:#fff}
-
-/* Workspace · 2-column */
-.editor-grid{display:grid;grid-template-columns:340px 1fr;gap:1px;background:var(--line);border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;min-height:560px}
-.editor-pane{background:var(--bg-2);padding:1.5rem 1.6rem;display:flex;flex-direction:column;gap:1.4rem}
-
-/* Section tabs (within left pane) */
-.editor-tabs{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.25rem;gap:.15rem}
-.editor-tab{padding:.45rem .8rem;border-radius:99px;font-size:.78rem;font-weight:500;color:var(--ink-2);transition:all .15s;flex:1;text-align:center}
+/* ── Workspace ────────────────────────────────────────────────── */
+.editor-grid{display:grid;grid-template-columns:340px 1fr;gap:1px;background:var(--line);border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;min-height:600px}
+.editor-pane{background:var(--bg-2);padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:1.2rem;overflow-y:auto}
+.editor-tabs{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.25rem;gap:.15rem;flex-shrink:0}
+.editor-tab{padding:.4rem .75rem;border-radius:99px;font-size:.76rem;font-weight:500;color:var(--ink-2);transition:all .15s;flex:1;text-align:center;cursor:pointer}
 .editor-tab.active{background:var(--ink);color:var(--bg)}
+.tab-section{display:none;flex-direction:column;gap:1rem}
+.tab-section.active{display:flex}
 
-/* Quick start templates */
-.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
-.quick-card{padding:1rem .9rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:.35rem;text-align:left}
-.quick-card:hover{background:var(--bg-2);border-color:var(--line-3);transform:translateY(-1px)}
-.quick-card.selected{border:1.5px solid var(--ink);background:var(--bg)}
-.quick-name{font-family:var(--f-d);font-size:.92rem;font-weight:600}
-.quick-desc{font-size:.74rem;color:var(--ink-3);line-height:1.4}
+/* ── Section headings ─────────────────────────────────────────── */
+.ctrl-label{font-family:var(--f-m);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:.55rem}
 
-/* Template gallery */
-.template-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem}
-.template-thumb{aspect-ratio:3/4;border-radius:var(--r-sm);background:var(--bg-2);border:1px solid var(--line);position:relative;overflow:hidden;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;justify-content:flex-end;padding:.5rem;color:#fff;font-family:var(--f-m);font-size:.62rem;letter-spacing:.04em;font-weight:500}
+/* ── Template thumbnails ──────────────────────────────────────── */
+.template-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.45rem}
+.template-thumb{aspect-ratio:3/4;border-radius:var(--r-sm);position:relative;overflow:hidden;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;justify-content:flex-end;padding:.45rem;font-family:var(--f-m);font-size:.58rem;letter-spacing:.04em;font-weight:500}
 .template-thumb:hover{transform:translateY(-2px)}
-.template-thumb.selected{outline:2px solid var(--ink);outline-offset:2px}
-.template-thumb .nm{font-family:var(--f-d);font-size:.8rem;font-weight:600;letter-spacing:-.005em}
+.template-thumb.selected{outline:2.5px solid var(--ink);outline-offset:2px}
 .template-thumb::before{content:'';position:absolute;inset:0;z-index:0}
-.template-thumb > *{position:relative;z-index:1}
-.tpl-1::before{background:linear-gradient(135deg,#d83a16,#e89060)}
-.tpl-2::before{background:linear-gradient(135deg,#1a1814,#5c5448);color:var(--bg)}
-.tpl-3::before{background:linear-gradient(180deg,var(--bg) 50%,var(--r-venue));color:var(--ink)}
-.tpl-4::before{background:linear-gradient(135deg,var(--r-fan),var(--r-promoter))}
-.tpl-5::before{background:linear-gradient(135deg,#ffd86e,#f3eee2);color:var(--ink)}
-.tpl-6::before{background:linear-gradient(135deg,var(--r-venue),#3a6f9a)}
-.tpl-7::before{background:linear-gradient(180deg,#fdebe6 0%,var(--bg) 50%,#1a1814);color:var(--ink)}
-.tpl-8::before{background:radial-gradient(circle at 30% 30%,var(--r-promoter),#1a1814)}
-.tpl-9::before{background:linear-gradient(180deg,var(--bg) 0%,#1a1814 100%);color:var(--ink)}
+.template-thumb > span{position:relative;z-index:1;color:#fff;font-family:var(--f-d);font-size:.78rem;font-weight:600;letter-spacing:-.01em;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.tpl-midnight-neon::before{background:linear-gradient(135deg,#080c18,#1a2040)}
+.tpl-sunset-paper::before{background:linear-gradient(135deg,#3c1a14,#1b0c0a)}
+.tpl-silver-signal::before{background:linear-gradient(135deg,#14181e,#090c11)}
+.tpl-fan-club::before{background:linear-gradient(135deg,#1c122e,#0c0a1c)}
+.tpl-y2k-sparkle::before{background:linear-gradient(135deg,#1c1236,#081230)}
+.tpl-scrapbook-zine::before{background:linear-gradient(135deg,#361c12,#180e0a)}
+.tpl-arcade-afterglow::before{background:linear-gradient(135deg,#090e26,#030816)}
+.tpl-pixel-diary::before{background:linear-gradient(135deg,#18122e,#0e0c20)}
 
-/* Theme controls */
-.swatch-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:.45rem}
-.swatch{aspect-ratio:1;border-radius:50%;border:2px solid var(--line);cursor:pointer;transition:all .15s}
+/* ── Swatches ─────────────────────────────────────────────────── */
+.swatch-grid{display:flex;flex-wrap:wrap;gap:.45rem}
+.swatch{width:36px;height:36px;border-radius:50%;border:2px solid var(--line);cursor:pointer;transition:all .15s;flex-shrink:0;position:relative}
 .swatch:hover{transform:scale(1.1)}
-.swatch.selected{outline:2px solid var(--ink);outline-offset:2px;border-color:var(--bg)}
-.font-grid{display:flex;flex-direction:column;gap:.4rem}
-.font-row{padding:.7rem .9rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md);cursor:pointer;transition:all .15s;display:flex;justify-content:space-between;align-items:center}
-.font-row:hover{background:var(--bg-2);border-color:var(--line-3)}
-.font-row.selected{border:1.5px solid var(--ink);background:var(--bg)}
-.font-row .name{font-size:.92rem;font-weight:600}
-.font-row .preview{font-size:.92rem;color:var(--ink-2)}
-.font-row.serif .preview{font-family:'Syne',serif;font-style:italic}
-.font-row.mono .preview{font-family:'JetBrains Mono',monospace;font-size:.84rem}
-.font-row.sans .preview{font-family:'DM Sans',sans-serif}
+.swatch.selected{outline:2.5px solid var(--ink);outline-offset:2px;border-color:var(--bg)}
+.swatch-preset{background:conic-gradient(#23d0d8 0deg 60deg,#ffb85e 60deg 120deg,#ff72c2 120deg 180deg,#b9ff66 180deg 240deg,#8f5bff 240deg 300deg,#fff4e7 300deg 360deg)}
 
-/* Preview pane (right) */
-.preview-pane{background:var(--bg-2);padding:1.5rem 1.6rem;display:flex;flex-direction:column;gap:1rem}
+/* ── Font rows ────────────────────────────────────────────────── */
+.font-grid{display:flex;flex-direction:column;gap:.35rem}
+.font-row{padding:.6rem .9rem;background:var(--bg-2);border:1.5px solid var(--line);border-radius:var(--r-md);cursor:pointer;transition:all .14s;display:flex;justify-content:space-between;align-items:center}
+.font-row.selected{border-color:var(--ink);background:var(--bg)}
+.font-row .fname{font-size:.86rem;font-weight:600}
+.font-row .fprev{font-size:.86rem;color:var(--ink-2)}
+
+/* ── Content fields ───────────────────────────────────────────── */
+.content-group{display:flex;flex-direction:column;gap:.65rem}
+.content-group + .content-group{padding-top:.85rem;border-top:1px solid var(--line)}
+
+/* ── Settings toggles ─────────────────────────────────────────── */
+.toggle-row{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;padding:.7rem .85rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md)}
+.toggle-row .tl{font-size:.86rem;font-weight:500;color:var(--ink)}
+.toggle-row .td{font-size:.76rem;color:var(--ink-3);margin-top:.1rem;line-height:1.4}
+
+/* ── Preview pane ─────────────────────────────────────────────── */
+.preview-pane{background:var(--bg-2);padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:1rem}
 .preview-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
-.preview-head h3{font-family:var(--f-d);font-size:1.05rem;font-weight:600}
-.preview-toggle{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.2rem}
-.preview-toggle button{padding:.32rem .85rem;border-radius:99px;font-size:.74rem;font-weight:500;color:var(--ink-2);transition:all .15s}
+.preview-head h3{font-family:var(--f-d);font-size:1rem;font-weight:700;margin:0}
+.preview-toggle{display:flex;background:var(--bg-2);border:1px solid var(--line);border-radius:99px;padding:.18rem;gap:.1rem}
+.preview-toggle button{padding:.3rem .75rem;border-radius:99px;font-size:.72rem;font-weight:500;color:var(--ink-2);cursor:pointer;transition:all .14s}
 .preview-toggle button.active{background:var(--ink);color:var(--bg)}
+.preview-frame{flex:1;min-height:480px;border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line-2);display:flex;flex-direction:column;transition:max-width .25s}
+.preview-frame.mobile{max-width:375px;margin:0 auto}
 
-/* Preview frame */
-.preview-frame{background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-md);padding:0;overflow:hidden;flex:1;min-height:480px;transition:all .25s;display:flex;flex-direction:column}
-.preview-frame.mobile{max-width:380px;margin:0 auto;border-radius:18px}
+/* ── Preview content ──────────────────────────────────────────── */
+.pp-cover{height:120px;position:relative;transition:background .3s}
+.pp-cover-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.35))}
+.pp-body{padding:1.2rem 1.3rem;display:flex;flex-direction:column;gap:.85rem;flex:1;transition:background .3s}
+.pp-name{font-size:1.4rem;font-weight:700;letter-spacing:-.01em;line-height:1.1;transition:color .2s,font-family .2s}
+.pp-sub{font-size:.78rem;opacity:.7;margin-top:.15rem;font-family:var(--f-m)}
+.pp-bio{font-size:.82rem;line-height:1.6;opacity:.8}
+.pp-divider{height:1px;background:rgba(255,255,255,.12)}
+.pp-stat-row{display:flex;gap:1.2rem;font-family:var(--f-m);font-size:.74rem;opacity:.75}
+.pp-stat-row strong{opacity:1;font-family:var(--f-d)}
 
-/* Live preview content (the artist/venue page being edited) */
-.pp-cover{height:120px;background:linear-gradient(135deg,#d83a16,#e89060);position:relative}
-.pp-cover.t1{background:linear-gradient(135deg,#d83a16,#e89060)}
-.pp-cover.t2{background:linear-gradient(135deg,#1a1814,#5c5448)}
-.pp-cover.t3{background:linear-gradient(135deg,var(--r-venue),#7fc4c0)}
-.pp-cover.t4{background:linear-gradient(135deg,var(--r-fan),var(--r-promoter))}
-.pp-cover-actions{position:absolute;bottom:.85rem;right:.85rem;display:flex;gap:.4rem}
-.pp-cover-actions button{padding:.3rem .7rem;border-radius:99px;font-size:.68rem;background:rgba(0,0,0,.4);color:#fff;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);font-family:var(--f-m);font-weight:500}
-.pp-body{padding:1.4rem 1.5rem;display:flex;flex-direction:column;gap:1rem;flex:1}
-.pp-name{font-family:var(--f-d);font-size:1.5rem;font-weight:600;letter-spacing:-.01em;line-height:1.1}
-.pp-name.serif{font-family:'Syne',serif;font-style:italic}
-.pp-bio{font-size:.86rem;color:var(--ink-2);line-height:1.55}
-.pp-stats{display:flex;gap:1.2rem;padding:.85rem 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-family:var(--f-m);font-size:.78rem;color:var(--ink-2);flex-wrap:wrap}
-.pp-stats strong{color:var(--ink);font-family:var(--f-d);font-weight:600}
-.pp-shows{display:flex;flex-direction:column;gap:.4rem}
-.pp-show{display:grid;grid-template-columns:auto 1fr auto;gap:.7rem;padding:.55rem .65rem;background:var(--bg-2);border-radius:var(--r-sm);align-items:center;font-size:.78rem}
-.pp-show .date{font-family:var(--f-m);color:var(--ink-3)}
-.pp-show .venue{font-weight:500}
-.pp-show .city{color:var(--ink-3);font-family:var(--f-m);font-size:.72rem}
+/* ── Save bar ─────────────────────────────────────────────────── */
+.save-bar{display:flex;gap:.5rem;justify-content:space-between;align-items:center;flex-wrap:wrap;padding-top:.5rem}
+.save-status{font-family:var(--f-m);font-size:.76rem;color:var(--ink-3);min-width:120px}
+.save-status.saving{color:var(--accent)}
+.save-status.saved{color:var(--r-venue)}
+.save-status.error{color:#f87171}
 
-/* Toggle row */
-.toggle-list{display:flex;flex-direction:column;gap:.4rem}
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:.65rem .85rem;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r-md)}
-.toggle-row .lbl{font-size:.86rem;font-weight:500}
-.toggle-row .desc{font-size:.7rem;color:var(--ink-3);margin-top:.1rem}
+/* ── Auth / not-creator gate ──────────────────────────────────── */
+.gate{padding:5rem 0;text-align:center;color:var(--ink-3)}
+.gate .big{font-size:3rem;margin-bottom:1rem}
 
-@media (max-width:1100px){
-  .editor-grid{grid-template-columns:1fr}
-  .preview-frame{min-height:380px}
-}
-@media (max-width:880px){
-  .quick-grid{grid-template-columns:1fr}
-  .template-grid{grid-template-columns:1fr 1fr}
-  .swatch-grid{grid-template-columns:repeat(7,1fr)}
-}
+/* ── Skeleton ─────────────────────────────────────────────────── */
+.skel{background:linear-gradient(90deg,var(--surface) 25%,var(--surface-2) 50%,var(--surface) 75%);background-size:200% 100%;animation:skel-shimmer 1.4s ease infinite;border-radius:var(--r-md)}
+@keyframes skel-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+@media(max-width:1060px){.editor-grid{grid-template-columns:1fr}}
+@media(max-width:860px){.template-grid{grid-template-columns:1fr 1fr 1fr}.preview-frame{min-height:340px}}
 </style>
 </head>
 <body>
-<!-- Animated background -->
 <div class="bg-canvas" aria-hidden="true">
   <div class="bg-orb bg-orb-1"></div>
   <div class="bg-orb bg-orb-2"></div>
@@ -130,45 +110,47 @@
 </div>
 <div class="site-shell">
 
-
 <nav class="nav">
   <div class="nav-left">
     <a href="/" style="text-decoration:none;color:inherit"><div class="brand">i<em>HYPE</em></div></a>
-    <div class="nav-links">
-      <a href="/discover" class="nav-link" data-i18n="nav.discover">Discover</a>
-      <a href="/customizer" class="nav-link">My page</a>
-      <a href="/customizer" class="nav-link active">Customize</a>
-      <a href="/promise" class="nav-link" data-i18n="nav.promise">The Promise</a>
-    </div>
+    <span style="font-family:var(--f-m);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;font-weight:600;padding:.2rem .5rem;border-radius:99px;background:rgba(255,80,41,.1);border:1px solid rgba(255,80,41,.22);color:var(--accent)">Beta</span>
   </div>
   <div class="nav-right">
-    <button class="a11y-btn" id="openA11y"><span aria-hidden="true">⊙</span><span data-i18n="nav.a11y">Accessibility</span></button>
-    <button class="role-pill artist"><span class="av">P</span><span class="name">Phantom Ridge</span><span class="ctx">Artist ▾</span></button>
+    <button class="role-pill fan"><span class="av">·</span><span class="name">…</span><span class="ctx">▾</span></button>
   </div>
 </nav>
 
 <div class="page">
 
-  <!-- HERO -->
-  <section class="hero" style="padding:3rem 0 2rem">
-    <div class="hero-eyebrow"><span class="dot"></span> Page customizer · all roles · live preview</div>
-    <h1 class="t-h1">Make your page <em>look like you.</em></h1>
-    <p class="hero-lede">One editor for artists, venues, promoters, and fans. Pick a template. Tweak the colors. Drag in your shows. Done.</p>
-  </section>
-
-  <!-- ROLE SWITCHER -->
-  <div class="role-switcher" id="roleSwitcher">
-    <button class="artist active" data-role="artist"><span class="dot"></span>Artist page</button>
-    <button class="venue" data-role="venue"><span class="dot"></span>Venue page</button>
-    <button class="promoter" data-role="promoter"><span class="dot"></span>Promoter page</button>
-    <button class="fan" data-role="fan"><span class="dot"></span>Fan profile</button>
+  <!-- Gate: not creator -->
+  <div id="gate" style="display:none" class="gate">
+    <div class="big">🎨</div>
+    <p style="font-size:.94rem;max-width:320px;margin:.5rem auto 1.5rem">Page customization is available for Artist, Venue, and Promoter accounts.</p>
+    <a href="/home" class="btn btn-ghost btn-sm">Back to dashboard →</a>
   </div>
 
-  <!-- WORKSPACE · 2-column -->
-  <section class="section" style="margin-top:0">
-    <div class="editor-grid">
+  <!-- Skeleton -->
+  <div id="skeleton">
+    <div style="padding:2rem 0 1.4rem;border-bottom:1px solid var(--line);margin-bottom:2rem">
+      <div class="skel" style="height:1.8rem;width:260px;margin-bottom:.6rem"></div>
+      <div class="skel" style="height:.85rem;width:380px"></div>
+    </div>
+    <div class="skel" style="height:600px;border-radius:var(--r-lg)"></div>
+  </div>
 
-      <!-- LEFT: Editor -->
+  <!-- Main workspace -->
+  <div id="workspace" style="display:none">
+    <!-- Header -->
+    <div style="padding:2rem 0 1.5rem;border-bottom:1px solid var(--line);margin-bottom:1.8rem;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
+      <div>
+        <h1 style="font-family:var(--f-h);font-size:clamp(1.4rem,4vw,2rem);font-weight:800;letter-spacing:-.03em;margin:0 0 .3rem">Page Customizer</h1>
+        <p style="color:var(--ink-2);font-size:.9rem;margin:0">Editing <strong id="hdr-profile-name">your page</strong> · <a id="hdr-profile-link" href="#" style="color:var(--accent);text-decoration:none;font-family:var(--f-m);font-size:.84rem">View page →</a></p>
+      </div>
+    </div>
+
+    <!-- 2-column editor -->
+    <div class="editor-grid">
+      <!-- LEFT: Editor panels -->
       <div class="editor-pane">
         <div class="editor-tabs">
           <button class="editor-tab active" data-tab="template">Template</button>
@@ -177,258 +159,587 @@
           <button class="editor-tab" data-tab="settings">Settings</button>
         </div>
 
-        <!-- Quick start -->
-        <div class="editor-section">
-          <h4 style="font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.7rem">Quick start</h4>
-          <div class="quick-grid">
-            <div class="quick-card selected">
-              <div class="quick-name">Tour mode</div>
-              <div class="quick-desc">Big show calendar, ticket links, audience map. For active touring.</div>
+        <!-- ── Template tab ────────────────────────────────── -->
+        <div class="tab-section active" data-section="template">
+          <div>
+            <div class="ctrl-label">Design preset · 8 options</div>
+            <div class="template-grid" id="templateGrid"></div>
+          </div>
+        </div>
+
+        <!-- ── Theme tab ───────────────────────────────────── -->
+        <div class="tab-section" data-section="theme">
+          <div>
+            <div class="ctrl-label">Accent tone</div>
+            <div class="swatch-grid" id="accentGrid"></div>
+          </div>
+          <div>
+            <div class="ctrl-label">Backdrop tone</div>
+            <div class="swatch-grid" id="backdropGrid"></div>
+          </div>
+          <div>
+            <div class="ctrl-label">Display font</div>
+            <div class="font-grid" id="fontGrid"></div>
+          </div>
+        </div>
+
+        <!-- ── Content tab ─────────────────────────────────── -->
+        <div class="tab-section" data-section="content">
+          <div class="content-group">
+            <div class="field">
+              <label class="field-label" for="f-headline">Headline <span style="color:var(--ink-4);font-weight:400;font-size:.8em">(max 140)</span></label>
+              <div class="field-input"><input id="f-headline" type="text" maxlength="140" placeholder="One line that captures your identity…" autocomplete="off"></div>
             </div>
-            <div class="quick-card">
-              <div class="quick-name">Album drop</div>
-              <div class="quick-desc">Big cover art, track grid, stream link. For releases.</div>
+            <div class="field">
+              <label class="field-label" for="f-bio">Short bio <span style="color:var(--ink-4);font-weight:400;font-size:.8em">(max 280)</span></label>
+              <div class="field-input"><textarea id="f-bio" maxlength="280" rows="3" placeholder="A few sentences for search results and discovery…" style="resize:vertical"></textarea></div>
             </div>
-            <div class="quick-card">
-              <div class="quick-name">Studio mode</div>
-              <div class="quick-desc">Audio-first. New tracks, demos, work-in-progress.</div>
+          </div>
+          <div class="content-group">
+            <div class="field">
+              <label class="field-label" for="f-about">About section <span style="color:var(--ink-4);font-weight:400;font-size:.8em">(max 5000)</span></label>
+              <div class="field-input"><textarea id="f-about" maxlength="5000" rows="5" placeholder="Your full story, background, influences…" style="resize:vertical"></textarea></div>
             </div>
-            <div class="quick-card">
-              <div class="quick-name">Minimal</div>
-              <div class="quick-desc">Bio + links. Quiet. For low-key artists.</div>
+          </div>
+          <div class="content-group" id="artistContentGroup">
+            <div class="field">
+              <label class="field-label" for="f-tour">Tour notes <span style="color:var(--ink-4);font-weight:400;font-size:.8em">(optional)</span></label>
+              <div class="field-input"><textarea id="f-tour" maxlength="5000" rows="3" placeholder="Current tour info, upcoming regions, dates…" style="resize:vertical"></textarea></div>
+            </div>
+          </div>
+          <div class="content-group" id="venueContentGroup" style="display:none">
+            <div class="field">
+              <label class="field-label" for="f-hours">Hours <span style="color:var(--ink-4);font-weight:400;font-size:.8em">(optional)</span></label>
+              <div class="field-input"><input id="f-hours" type="text" maxlength="200" placeholder="Mon–Fri 8pm–2am, Sat–Sun 6pm–3am" autocomplete="off"></div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="f-address">Address <span style="color:var(--ink-4);font-weight:400;font-size:.8em">(optional)</span></label>
+              <div class="field-input"><input id="f-address" type="text" maxlength="200" placeholder="123 Main St" autocomplete="off"></div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="f-parking">Parking details <span style="color:var(--ink-4);font-weight:400;font-size:.8em">(optional)</span></label>
+              <div class="field-input"><textarea id="f-parking" maxlength="500" rows="2" placeholder="Lot on the corner, street parking after 6pm…" style="resize:vertical"></textarea></div>
             </div>
           </div>
         </div>
 
-        <!-- Template gallery -->
-        <div class="editor-section">
-          <h4 style="font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.7rem">All templates · 9</h4>
-          <div class="template-grid">
-            <div class="template-thumb tpl-1 selected"><span class="nm">Campaign Glow</span></div>
-            <div class="template-thumb tpl-2"><span class="nm">Midnight Neon</span></div>
-            <div class="template-thumb tpl-3"><span class="nm">Sunset Paper</span></div>
-            <div class="template-thumb tpl-4"><span class="nm">Y2K Sparkle</span></div>
-            <div class="template-thumb tpl-5"><span class="nm">Editorial</span></div>
-            <div class="template-thumb tpl-6"><span class="nm">Gallery Index</span></div>
-            <div class="template-thumb tpl-7"><span class="nm">Split Showcase</span></div>
-            <div class="template-thumb tpl-8"><span class="nm">Poster Stack</span></div>
-            <div class="template-thumb tpl-9"><span class="nm">Minimal Index</span></div>
-          </div>
-        </div>
-
-        <!-- Theme: accents -->
-        <div class="editor-section">
-          <h4 style="font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.7rem">Accent · 7 tones</h4>
-          <div class="swatch-grid">
-            <div class="swatch selected" style="background:var(--accent)"></div>
-            <div class="swatch" style="background:var(--r-venue)"></div>
-            <div class="swatch" style="background:var(--r-promoter)"></div>
-            <div class="swatch" style="background:var(--r-fan)"></div>
-            <div class="swatch" style="background:#c2a040"></div>
-            <div class="swatch" style="background:#3a6f9a"></div>
-            <div class="swatch" style="background:#1a1814"></div>
-          </div>
-        </div>
-
-        <!-- Theme: fonts -->
-        <div class="editor-section">
-          <h4 style="font-family:var(--f-m);font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.7rem">Display font</h4>
-          <div class="font-grid">
-            <div class="font-row serif selected">
-              <span class="name">Editorial serif</span>
-              <span class="preview">Phantom Ridge</span>
+        <!-- ── Settings tab ────────────────────────────────── -->
+        <div class="tab-section" data-section="settings">
+          <div class="content-group">
+            <div class="ctrl-label">Location</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
+              <div class="field">
+                <label class="field-label" for="f-city">City</label>
+                <div class="field-input"><input id="f-city" type="text" maxlength="120" placeholder="Portland" autocomplete="off"></div>
+              </div>
+              <div class="field">
+                <label class="field-label" for="f-state">State / Region</label>
+                <div class="field-input"><input id="f-state" type="text" maxlength="120" placeholder="ME" autocomplete="off"></div>
+              </div>
             </div>
-            <div class="font-row sans">
-              <span class="name">Modern sans</span>
-              <span class="preview">Phantom Ridge</span>
+            <div class="field">
+              <label class="field-label" for="f-country">Country</label>
+              <div class="field-input"><input id="f-country" type="text" maxlength="120" placeholder="US" autocomplete="off"></div>
             </div>
-            <div class="font-row mono">
-              <span class="name">Mono</span>
-              <span class="preview">PHANTOM RIDGE</span>
+            <div class="field">
+              <label class="field-label" for="f-contact">Contact / booking email</label>
+              <div class="field-input"><input id="f-contact" type="text" maxlength="200" placeholder="booking@yourdomain.com" autocomplete="off"></div>
             </div>
           </div>
-        </div>
 
+          <div class="content-group">
+            <div class="ctrl-label">Sharing</div>
+            <label class="toggle-row" style="cursor:pointer">
+              <div>
+                <div class="tl">Share page with fans</div>
+                <div class="td">Allow fans with your profile link to see your custom page design and content. Turn off to keep it private.</div>
+              </div>
+              <input type="checkbox" id="f-fanShare" style="accent-color:var(--r-venue);width:18px;height:18px;flex-shrink:0;cursor:pointer">
+            </label>
+          </div>
+        </div>
       </div>
 
-      <!-- RIGHT: Live preview -->
+      <!-- RIGHT: Preview -->
       <div class="preview-pane">
         <div class="preview-head">
           <h3>Live preview</h3>
           <div class="preview-toggle">
-            <button class="active">Desktop</button>
-            <button>Tablet</button>
-            <button>Mobile</button>
+            <button class="active" data-view="desktop">Desktop</button>
+            <button data-view="mobile">Mobile</button>
           </div>
         </div>
 
-        <div class="preview-frame">
-          <div class="pp-cover t1">
-            <div class="pp-cover-actions">
-              <button>Edit cover</button>
-              <button>Replace</button>
-            </div>
+        <div class="preview-frame" id="previewFrame">
+          <div class="pp-cover" id="pvCover">
+            <div class="pp-cover-overlay"></div>
           </div>
-          <div class="pp-body">
+          <div class="pp-body" id="pvBody">
             <div>
-              <div class="pp-name serif">Phantom Ridge</div>
-              <div class="t-mono" style="color:var(--ink-3);font-size:.78rem;margin-top:.1rem">Indie · Portland, ME · since 2021</div>
+              <div class="pp-name" id="pvName">…</div>
+              <div class="pp-sub" id="pvSub"></div>
             </div>
-            <div class="pp-bio">Four-piece indie band. Two records, one EP. Currently on the Wreckage tour with stops across the Northeast through August.</div>
-            <div class="pp-stats">
-              <span><strong>14.2k</strong> followers</span>
-              <span><strong>8,412</strong> active HYPE</span>
-              <span><strong>12</strong> upcoming shows</span>
-            </div>
-            <div>
-              <div class="t-mono" style="font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);font-weight:500;margin-bottom:.5rem">Upcoming · Wreckage tour</div>
-              <div class="pp-shows">
-                <div class="pp-show"><span class="date">22 Jun</span><span class="venue">State Theatre <span class="city">· Portland, ME</span></span><span class="t-mono" style="color:var(--accent);font-weight:600;font-size:.74rem">62%</span></div>
-                <div class="pp-show"><span class="date">14 Jul</span><span class="venue">Crystal Ballroom <span class="city">· Boston, MA</span></span><span class="t-mono" style="color:var(--ink-3);font-size:.74rem">81%</span></div>
-                <div class="pp-show"><span class="date">19 Jul</span><span class="venue">Higher Ground <span class="city">· Burlington, VT</span></span><span class="t-mono" style="color:var(--ink-3);font-size:.74rem">38%</span></div>
-              </div>
+            <div class="pp-bio" id="pvBio"></div>
+            <div class="pp-divider"></div>
+            <div class="pp-stat-row">
+              <span id="pvHype"></span>
+              <span id="pvGenres"></span>
             </div>
           </div>
         </div>
 
-        <div style="display:flex;gap:.5rem;justify-content:space-between;align-items:center;flex-wrap:wrap">
-          <span class="t-mono" style="color:var(--ink-3);font-size:.74rem">Auto-saved 4s ago</span>
-          <div style="display:flex;gap:.4rem">
-            <button class="btn btn-ghost btn-sm">Discard</button>
-            <button class="btn btn-primary btn-sm">Publish changes</button>
+        <div class="save-bar">
+          <span class="save-status" id="saveStatus">No unsaved changes</span>
+          <div style="display:flex;gap:.45rem">
+            <button class="btn btn-ghost btn-sm" id="discardBtn" disabled>Discard</button>
+            <button class="btn btn-primary btn-sm" id="publishBtn" disabled>Publish changes</button>
           </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- HOW IT ADAPTS -->
-  <section class="section">
-    <div class="section-head">
-      <div class="section-eyebrow">Same editor, four roles</div>
-      <h2 class="t-h2">What changes per role</h2>
-      <p class="lede">Same templates, same theme controls. Content sections adapt to what each role actually publishes.</p>
-    </div>
-    <div class="three-up">
-      <div>
-        <div class="tu-num" style="color:var(--r-artist);font-size:1.6rem">Artist</div>
-        <div class="tu-title">Tour, releases, audience map</div>
-        <div class="tu-desc">Show calendar with capacity meters, album/track grid, audience heatmap, tip jar links.</div>
-      </div>
-      <div>
-        <div class="tu-num" style="color:var(--r-venue);font-size:1.6rem">Venue</div>
-        <div class="tu-title">Calendar, capacity, photos</div>
-        <div class="tu-desc">Booking calendar with hold/open dates, capacity layouts, sound system specs, gallery.</div>
-      </div>
-      <div>
-        <div class="tu-num" style="color:var(--r-promoter);font-size:1.6rem">Promoter</div>
-        <div class="tu-title">Mixtapes, shows, residencies</div>
-        <div class="tu-desc">Featured mixes, upcoming events, residency series, artist roster, affiliate dashboard.</div>
-      </div>
-    </div>
-  </section>
+</div><!-- /page -->
+</div><!-- /site-shell -->
 
-  <footer class="footer">
-    <div class="footer-left"><strong>iHYPE.org</strong> · <span data-i18n="footer.legal">501(c)(3) · books open</span></div>
-    <div class="footer-links"><a href="/promise">The Promise</a><a href="/promise">Charter</a><a href="/promise">990</a><a href="/promise">Contact</a><a href="#">Accessibility</a></div>
-  </footer>
-</div>
-
-<!-- A11y panel -->
+<button class="a11y-btn" id="openA11y" style="position:fixed;bottom:1.25rem;left:1.25rem;z-index:200"><span aria-hidden="true">⊙</span><span>Accessibility</span></button>
 <div class="a11y-panel-overlay" id="a11yOverlay"></div>
-<aside class="a11y-panel" id="a11yPanel" role="dialog">
-  <div class="a11y-panel-head"><h3 data-i18n="a11y.title">Accessibility</h3><button class="a11y-panel-close" id="closeA11y">×</button></div>
-  <div class="a11y-section"><h4 data-i18n="a11y.lang">Language</h4>
+<aside class="a11y-panel" id="a11yPanel" role="dialog" aria-label="Accessibility settings">
+  <div class="a11y-panel-head"><h3>Accessibility</h3><button class="a11y-panel-close" id="closeA11y">×</button></div>
+  <div class="a11y-section"><h4>Language</h4>
     <div class="toggle-pair" data-cols="4" role="radiogroup">
       <button class="active" data-lang="en">EN</button><button data-lang="es">ES</button><button data-lang="pt">PT</button><button data-lang="fr">FR</button>
     </div>
   </div>
-  <div class="a11y-section"><h4 data-i18n="a11y.vision">Vision</h4>
+  <div class="a11y-section"><h4>Text size</h4>
     <div class="toggle-pair" data-cols="3" role="radiogroup">
       <button class="active" data-size="default">Default</button><button data-size="large">Large</button><button data-size="xlarge">XL</button>
     </div>
   </div>
-  <div class="a11y-section"><h4 data-i18n="a11y.reading">Reading</h4>
-    <div class="a11y-row toggle"><div><div class="name" data-i18n="a11y.dyslexia">Dyslexia-friendly</div></div><button class="switch" data-toggle="dyslexia"></button></div>
-    <div class="a11y-row toggle"><div><div class="name" data-i18n="a11y.contrast">High contrast</div></div><button class="switch" data-toggle="contrast"></button></div>
+  <div class="a11y-section"><h4>Reading</h4>
+    <div class="a11y-row toggle"><div><div class="name">Dyslexia-friendly</div><div class="desc">Wider spacing</div></div><button class="switch" data-toggle="dyslexia"></button></div>
+    <div class="a11y-row toggle"><div><div class="name">High contrast</div><div class="desc">Pure black text</div></div><button class="switch" data-toggle="contrast"></button></div>
   </div>
-  <div class="a11y-section"><h4 data-i18n="a11y.motion">Motion</h4>
-    <div class="a11y-row toggle"><div><div class="name" data-i18n="a11y.reduced">Reduced motion</div></div><button class="switch" data-toggle="motion"></button></div>
+  <div class="a11y-section"><h4>Motion</h4>
+    <div class="a11y-row toggle"><div><div class="name">Reduced motion</div><div class="desc">Disable animations</div></div><button class="switch" data-toggle="motion"></button></div>
   </div>
+  <div class="a11y-panel-foot">Settings save automatically.</div>
 </aside>
 
 <script src="/ihype-shared.js"></script>
+<script src="/ihype-user-menu.js"></script>
 <script>
-// Role switcher
-document.querySelectorAll('#roleSwitcher button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    document.querySelectorAll('#roleSwitcher button').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-  });
-});
-// Editor tabs
-document.querySelectorAll('.editor-tabs .editor-tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.editor-tabs .editor-tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');
-  });
-});
-// Quick cards
-document.querySelectorAll('.quick-card').forEach(c=>{
-  c.addEventListener('click',()=>{
-    document.querySelectorAll('.quick-card').forEach(x=>x.classList.remove('selected'));
-    c.classList.add('selected');
-  });
-});
-// Templates
-document.querySelectorAll('.template-thumb').forEach(t=>{
-  t.addEventListener('click',()=>{
-    document.querySelectorAll('.template-thumb').forEach(x=>x.classList.remove('selected'));
-    t.classList.add('selected');
-    // Update preview cover
-    const tpl=Array.from(document.querySelectorAll('.template-thumb')).indexOf(t);
-    const cover=document.querySelector('.pp-cover');
-    if(cover){
-      cover.classList.remove('t1','t2','t3','t4');
-      cover.classList.add('t'+((tpl%4)+1));
-    }
-  });
-});
-// Swatches
-document.querySelectorAll('.swatch').forEach(s=>{
-  s.addEventListener('click',()=>{
-    document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('selected'));
-    s.classList.add('selected');
-  });
-});
-// Font rows
-document.querySelectorAll('.font-row').forEach(f=>{
-  f.addEventListener('click',()=>{
-    document.querySelectorAll('.font-row').forEach(x=>x.classList.remove('selected'));
-    f.classList.add('selected');
-    // Update preview name
-    const name=document.querySelector('.pp-name');
-    if(name){
-      name.classList.remove('serif');
-      if(f.classList.contains('serif'))name.classList.add('serif');
-      if(f.classList.contains('mono'))name.style.fontFamily="'JetBrains Mono',monospace";
-      else if(f.classList.contains('sans'))name.style.fontFamily="'DM Sans',sans-serif";
-      else name.style.fontFamily='';
-    }
-  });
-});
-// Preview toggle (desktop/mobile)
-document.querySelectorAll('.preview-toggle button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    document.querySelectorAll('.preview-toggle button').forEach(x=>x.classList.remove('active'));
-    b.classList.add('active');
-    const frame=document.querySelector('.preview-frame');
-    frame.classList.toggle('mobile',b.textContent==='Mobile');
-  });
-});
-</script>
+(function () {
+  'use strict';
 
-</div><!-- /site-shell -->
-<script src="/ihype-user-menu.js" defer></script>
+  // ── Design data ───────────────────────────────────────────────
+  var PRESETS = [
+    { id: 'midnight-neon',    label: 'Midnight Neon',    cover: 'linear-gradient(135deg,#080c18,#1a2040)', accent: '#23d0d8', text: '#ecf5ff' },
+    { id: 'sunset-paper',     label: 'Sunset Paper',     cover: 'linear-gradient(135deg,#3c1a14,#1b0c0a)', accent: '#ffb85e', text: '#fff4e7' },
+    { id: 'silver-signal',    label: 'Silver Signal',    cover: 'linear-gradient(135deg,#14181e,#090c11)', accent: '#dce8f6', text: '#f5f8fc' },
+    { id: 'fan-club',         label: 'Fan Club',         cover: 'linear-gradient(135deg,#1c122e,#0c0a1c)', accent: '#ff72c2', text: '#fff2fb' },
+    { id: 'y2k-sparkle',      label: 'Y2K Sparkle',      cover: 'linear-gradient(135deg,#1c1236,#081230)', accent: '#ff8ee8', text: '#fff8ff' },
+    { id: 'scrapbook-zine',   label: 'Scrapbook Zine',   cover: 'linear-gradient(135deg,#361c12,#180e0a)', accent: '#ffd267', text: '#fff8eb' },
+    { id: 'arcade-afterglow', label: 'Arcade Afterglow', cover: 'linear-gradient(135deg,#090e26,#030816)', accent: '#5df0ff', text: '#f3fbff' },
+    { id: 'pixel-diary',      label: 'Pixel Diary',      cover: 'linear-gradient(135deg,#18122e,#0e0c20)', accent: '#88beff', text: '#f7f6ff' },
+  ];
+
+  var ACCENT_TONES = [
+    { id: 'preset',         label: 'Preset',         color: null },
+    { id: 'electric-cyan',  label: 'Electric Cyan',  color: '#23d0d8' },
+    { id: 'sunset-gold',    label: 'Sunset Gold',    color: '#ffb85e' },
+    { id: 'laser-rose',     label: 'Laser Rose',     color: '#ff72c2' },
+    { id: 'signal-lime',    label: 'Signal Lime',    color: '#b9ff66' },
+    { id: 'ultraviolet',    label: 'Ultraviolet',    color: '#8f5bff' },
+  ];
+
+  var BACKDROP_TONES = [
+    { id: 'preset',           label: 'Preset',           color: null },
+    { id: 'glass-night',      label: 'Glass Night',      color: '#070c18' },
+    { id: 'warehouse-smoke',  label: 'Warehouse Smoke',  color: '#0e1014' },
+    { id: 'sunset-haze',      label: 'Sunset Haze',      color: '#2d1619' },
+    { id: 'city-lights',      label: 'City Lights',      color: '#080e1c' },
+    { id: 'velvet-room',      label: 'Velvet Room',      color: '#1b0814' },
+  ];
+
+  var FONTS = [
+    { id: 'night-broadcast', label: 'Night Broadcast', family: '"Trebuchet MS",sans-serif',     sample: 'Night Broadcast' },
+    { id: 'poster-serif',    label: 'Poster Serif',    family: 'Georgia,serif',                sample: 'Poster Serif' },
+    { id: 'club-mono',       label: 'Club Mono',       family: '"Courier New",monospace',       sample: 'CLUB MONO' },
+    { id: 'neon-script',     label: 'Neon Script',     family: '"Brush Script MT",cursive',     sample: 'Neon Script' },
+    { id: 'bubble-pop',      label: 'Bubble Pop',      family: '"Comic Sans MS",cursive',       sample: 'Bubble Pop' },
+    { id: 'punch-card',      label: 'Punch Card',      family: 'Impact,"Arial Black",sans-serif',sample: 'PUNCH CARD' },
+  ];
+
+  // ── State ─────────────────────────────────────────────────────
+  var profileId   = null;
+  var profileSlug = null;
+  var profileType = null;
+  var profileName = '';
+  var profileHype = 0;
+  var profileGenres = [];
+
+  var saved   = {}; // last persisted values
+  var current = {}; // live working copy
+
+  var dirty       = false;
+  var saving      = false;
+  var saveTimer   = null;
+  var autoSaveMsec = 3000;
+
+  // ── DOM refs ──────────────────────────────────────────────────
+  var skeleton = document.getElementById('skeleton');
+  var workspace = document.getElementById('workspace');
+  var gate = document.getElementById('gate');
+  var publishBtn  = document.getElementById('publishBtn');
+  var discardBtn  = document.getElementById('discardBtn');
+  var saveStatus  = document.getElementById('saveStatus');
+  var pvCover  = document.getElementById('pvCover');
+  var pvBody   = document.getElementById('pvBody');
+  var pvName   = document.getElementById('pvName');
+  var pvSub    = document.getElementById('pvSub');
+  var pvBio    = document.getElementById('pvBio');
+  var pvHype   = document.getElementById('pvHype');
+  var pvGenres = document.getElementById('pvGenres');
+
+  // ── Boot ──────────────────────────────────────────────────────
+  fetch('/api/stats/me', { credentials: 'same-origin' })
+    .then(function (r) {
+      if (r.status === 401) { window.location.href = '/login?next=/customizer'; return null; }
+      return r.json();
+    })
+    .then(function (data) {
+      if (!data) return;
+      var role = (data.role || '').toUpperCase();
+      var isCreator = ['ARTIST','DJ','VENUE'].includes(role);
+      if (!isCreator) {
+        skeleton.style.display = 'none';
+        gate.style.display = '';
+        return;
+      }
+      var profiles = data.profiles || [];
+      var p = profiles[0];
+      if (!p) {
+        skeleton.style.display = 'none';
+        gate.style.display = '';
+        return;
+      }
+      profileId   = p.id;
+      profileSlug = p.slug;
+      profileType = p.type;
+      profileName = p.name;
+      profileHype = p.hypeCount || 0;
+      // Load full profile data
+      return fetch('/api/profile/' + encodeURIComponent(p.slug), { credentials: 'same-origin' });
+    })
+    .then(function (r) { return r ? r.json() : null; })
+    .then(function (data) {
+      if (!data) return;
+      var profile = data.profile || {};
+      profileGenres = profile.genres || [];
+
+      // Build initial saved state from profile
+      saved = {
+        themePreset:      profile.themePreset      || 'midnight-neon',
+        themeAccentTone:  profile.themeAccentTone  || 'preset',
+        themeBackdropTone:profile.themeBackdropTone|| 'preset',
+        themeFontPreset:  profile.themeFontPreset  || 'night-broadcast',
+        headline:     profile.headline     || '',
+        bio:          profile.bio          || '',
+        aboutContent: profile.aboutContent || '',
+        tourContent:  profile.tourContent  || '',
+        hoursText:    profile.hoursText    || '',
+        addressLine1: profile.addressLine1 || '',
+        parkingDetails:profile.parkingDetails||'',
+        city:         profile.city         || '',
+        stateRegion:  profile.stateRegion  || '',
+        country:      profile.country      || '',
+        contactInfo:  profile.contactInfo  || '',
+        fanShareEnabled: !!profile.fanShareEnabled,
+      };
+      current = Object.assign({}, saved);
+
+      // Build UI
+      skeleton.style.display = 'none';
+      workspace.style.display = '';
+      buildUI();
+      fillForm();
+      updatePreview();
+    })
+    .catch(function () {
+      window.location.href = '/login?next=/customizer';
+    });
+
+  // ── Build pickers ─────────────────────────────────────────────
+  function buildUI() {
+    // Header
+    document.getElementById('hdr-profile-name').textContent = profileName;
+    var link = document.getElementById('hdr-profile-link');
+    link.href = '/profile/' + profileSlug;
+    link.textContent = 'View page →';
+
+    // Show/hide role-specific content groups
+    if (profileType === 'VENUE') {
+      document.getElementById('venueContentGroup').style.display = '';
+      document.getElementById('artistContentGroup').style.display = 'none';
+    }
+
+    // Template grid
+    var tg = document.getElementById('templateGrid');
+    tg.innerHTML = PRESETS.map(function (p) {
+      return '<div class="template-thumb tpl-' + p.id + (p.id === current.themePreset ? ' selected' : '') + '" data-preset="' + p.id + '" title="' + p.label + '"><span>' + p.label + '</span></div>';
+    }).join('');
+    tg.querySelectorAll('.template-thumb').forEach(function (el) {
+      el.addEventListener('click', function () {
+        tg.querySelectorAll('.template-thumb').forEach(function (x) { x.classList.remove('selected'); });
+        el.classList.add('selected');
+        setField('themePreset', el.dataset.preset);
+      });
+    });
+
+    // Accent swatches
+    var ag = document.getElementById('accentGrid');
+    ag.innerHTML = ACCENT_TONES.map(function (t) {
+      var bg = t.color ? ('background:' + t.color) : 'class="swatch-preset"';
+      var cls = t.id === current.themeAccentTone ? ' selected' : '';
+      if (t.id === 'preset') return '<div class="swatch swatch-preset' + cls + '" data-accent="' + t.id + '" title="' + t.label + '"></div>';
+      return '<div class="swatch' + cls + '" style="background:' + t.color + '" data-accent="' + t.id + '" title="' + t.label + '"></div>';
+    }).join('');
+    ag.querySelectorAll('.swatch').forEach(function (el) {
+      el.addEventListener('click', function () {
+        ag.querySelectorAll('.swatch').forEach(function (x) { x.classList.remove('selected'); });
+        el.classList.add('selected');
+        setField('themeAccentTone', el.dataset.accent);
+      });
+    });
+
+    // Backdrop swatches
+    var bg = document.getElementById('backdropGrid');
+    bg.innerHTML = BACKDROP_TONES.map(function (t) {
+      var cls = t.id === current.themeBackdropTone ? ' selected' : '';
+      if (t.id === 'preset') return '<div class="swatch swatch-preset' + cls + '" data-backdrop="' + t.id + '" title="' + t.label + '"></div>';
+      return '<div class="swatch' + cls + '" style="background:' + t.color + '" data-backdrop="' + t.id + '" title="' + t.label + '"></div>';
+    }).join('');
+    bg.querySelectorAll('.swatch').forEach(function (el) {
+      el.addEventListener('click', function () {
+        bg.querySelectorAll('.swatch').forEach(function (x) { x.classList.remove('selected'); });
+        el.classList.add('selected');
+        setField('themeBackdropTone', el.dataset.backdrop);
+      });
+    });
+
+    // Font rows
+    var fg = document.getElementById('fontGrid');
+    fg.innerHTML = FONTS.map(function (f) {
+      var cls = f.id === current.themeFontPreset ? ' selected' : '';
+      return '<div class="font-row' + cls + '" data-font="' + f.id + '">' +
+        '<span class="fname">' + f.label + '</span>' +
+        '<span class="fprev" style="font-family:' + f.family + '">' + f.sample + '</span>' +
+      '</div>';
+    }).join('');
+    fg.querySelectorAll('.font-row').forEach(function (el) {
+      el.addEventListener('click', function () {
+        fg.querySelectorAll('.font-row').forEach(function (x) { x.classList.remove('selected'); });
+        el.classList.add('selected');
+        setField('themeFontPreset', el.dataset.font);
+      });
+    });
+  }
+
+  // ── Fill form fields from current state ───────────────────────
+  function fillForm() {
+    function val(id, v) { var el = document.getElementById(id); if (el) el.value = v || ''; }
+    function chk(id, v) { var el = document.getElementById(id); if (el) el.checked = !!v; }
+    val('f-headline', current.headline);
+    val('f-bio', current.bio);
+    val('f-about', current.aboutContent);
+    val('f-tour', current.tourContent);
+    val('f-hours', current.hoursText);
+    val('f-address', current.addressLine1);
+    val('f-parking', current.parkingDetails);
+    val('f-city', current.city);
+    val('f-state', current.stateRegion);
+    val('f-country', current.country);
+    val('f-contact', current.contactInfo);
+    chk('f-fanShare', current.fanShareEnabled);
+  }
+
+  // ── Wire text field changes ───────────────────────────────────
+  function wireField(inputId, stateKey) {
+    var el = document.getElementById(inputId);
+    if (!el) return;
+    el.addEventListener('input', function () {
+      current[stateKey] = el.value;
+      markDirty();
+      if (stateKey === 'headline' || stateKey === 'bio') updatePreview();
+    });
+  }
+  wireField('f-headline', 'headline');
+  wireField('f-bio', 'bio');
+  wireField('f-about', 'aboutContent');
+  wireField('f-tour', 'tourContent');
+  wireField('f-hours', 'hoursText');
+  wireField('f-address', 'addressLine1');
+  wireField('f-parking', 'parkingDetails');
+  wireField('f-city', 'city');
+  wireField('f-state', 'stateRegion');
+  wireField('f-country', 'country');
+  wireField('f-contact', 'contactInfo');
+  document.getElementById('f-fanShare').addEventListener('change', function () {
+    current.fanShareEnabled = this.checked;
+    markDirty();
+  });
+
+  // ── Design field setter ───────────────────────────────────────
+  function setField(key, val) {
+    current[key] = val;
+    markDirty();
+    updatePreview();
+  }
+
+  // ── Update live preview ───────────────────────────────────────
+  function updatePreview() {
+    var preset = PRESETS.find(function (p) { return p.id === current.themePreset; }) || PRESETS[0];
+    var accent = ACCENT_TONES.find(function (t) { return t.id === current.themeAccentTone; });
+    var font   = FONTS.find(function (f) { return f.id === current.themeFontPreset; }) || FONTS[0];
+
+    var accentColor = (accent && accent.color) ? accent.color : preset.accent;
+
+    pvCover.style.background = preset.cover;
+    pvBody.style.background  = preset.cover.replace('135deg', '180deg').split(')')[0] + ',#0e0e0e)';
+    pvBody.style.color = preset.text;
+
+    pvName.style.fontFamily = font.family;
+    pvName.style.color = preset.text;
+    pvName.textContent = profileName || '…';
+
+    var typeLabel = { ARTIST: 'Artist', DJ: 'Promoter', VENUE: 'Venue' }[profileType] || '';
+    var loc = [current.city, current.stateRegion].filter(Boolean).join(', ');
+    pvSub.textContent = [typeLabel, loc].filter(Boolean).join(' · ');
+    pvSub.style.color = accentColor;
+
+    pvBio.textContent = current.headline || current.bio || '';
+    pvBio.style.color = preset.text;
+
+    pvHype.innerHTML = '<strong style="color:' + accentColor + '">' + (profileHype || '0') + '</strong> HYPE';
+    pvHype.style.color = preset.text;
+    pvGenres.textContent = profileGenres.slice(0, 2).join(' · ');
+    pvGenres.style.color = preset.text;
+  }
+
+  // ── Dirty / save tracking ─────────────────────────────────────
+  function markDirty() {
+    dirty = true;
+    publishBtn.disabled = false;
+    discardBtn.disabled = false;
+    setSaveStatus('Unsaved changes');
+    // Debounced auto-save
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, autoSaveMsec);
+  }
+
+  function setSaveStatus(msg, cls) {
+    saveStatus.textContent = msg;
+    saveStatus.className = 'save-status' + (cls ? ' ' + cls : '');
+  }
+
+  async function doSave() {
+    if (!dirty || saving || !profileId) return;
+    saving = true;
+    setSaveStatus('Saving…', 'saving');
+
+    var payload = {
+      themePreset:       current.themePreset,
+      themeAccentTone:   current.themeAccentTone,
+      themeBackdropTone: current.themeBackdropTone,
+      themeFontPreset:   current.themeFontPreset,
+      headline:          current.headline,
+      bio:               current.bio,
+      aboutContent:      current.aboutContent,
+      tourContent:       current.tourContent,
+      hoursText:         current.hoursText,
+      addressLine1:      current.addressLine1,
+      parkingDetails:    current.parkingDetails,
+      city:              current.city,
+      stateRegion:       current.stateRegion,
+      country:           current.country,
+      contactInfo:       current.contactInfo,
+      fanShareEnabled:   current.fanShareEnabled,
+    };
+
+    try {
+      var res = await fetch('/api/profile-pages/' + encodeURIComponent(profileId), {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        saved = Object.assign({}, current);
+        dirty = false;
+        saving = false;
+        publishBtn.disabled = true;
+        discardBtn.disabled = true;
+        setSaveStatus('✓ Saved', 'saved');
+        setTimeout(function () {
+          if (!dirty) setSaveStatus('No unsaved changes');
+        }, 2500);
+      } else {
+        var data = await res.json().catch(function() { return {}; });
+        saving = false;
+        setSaveStatus('Save failed: ' + (data.error || 'Unknown error'), 'error');
+      }
+    } catch (e) {
+      saving = false;
+      setSaveStatus('Network error — check connection', 'error');
+    }
+  }
+
+  // ── Publish button ────────────────────────────────────────────
+  publishBtn.addEventListener('click', function () {
+    clearTimeout(saveTimer);
+    doSave();
+  });
+
+  // ── Discard button ────────────────────────────────────────────
+  discardBtn.addEventListener('click', function () {
+    if (!confirm('Discard all unsaved changes?')) return;
+    clearTimeout(saveTimer);
+    current = Object.assign({}, saved);
+    dirty = false;
+    saving = false;
+    publishBtn.disabled = true;
+    discardBtn.disabled = true;
+    setSaveStatus('No unsaved changes');
+    fillForm();
+    buildUI();
+    updatePreview();
+  });
+
+  // ── Tabs ──────────────────────────────────────────────────────
+  document.querySelectorAll('.editor-tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var target = tab.dataset.tab;
+      document.querySelectorAll('.editor-tab').forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-section').forEach(function (s) { s.classList.remove('active'); });
+      tab.classList.add('active');
+      var section = document.querySelector('.tab-section[data-section="' + target + '"]');
+      if (section) section.classList.add('active');
+    });
+  });
+
+  // ── Preview viewport toggle ───────────────────────────────────
+  document.querySelectorAll('.preview-toggle button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.preview-toggle button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var frame = document.getElementById('previewFrame');
+      frame.classList.toggle('mobile', btn.dataset.view === 'mobile');
+    });
+  });
+
+})();
+</script>
 </body>
 </html>

@@ -214,7 +214,16 @@ export function TicketSaleCard({
           </div>
         </div>
       ) : !currentFan.hasStoredPaymentToken ? (
-        <div className="empty">Your fan account needs a stored payment token before you can reserve this event.</div>
+        <div className="empty">
+          <strong style={{ display: 'block', marginBottom: '0.5rem' }}>Payment method required</strong>
+          Fan accounts need a saved payment method before reserving tickets. Payment onboarding
+          is being finalised for beta launch — your account will be notified when it opens.
+          <div className="cta-row" style={{ marginTop: '1rem' }}>
+            <Link className="button small secondary" href="/tickets">
+              Ticketing Engine →
+            </Link>
+          </div>
+        </div>
       ) : (
         <form className="form" onSubmit={handleSubmit}>
           {currentFan || viewerTaxRegion || venueTaxRegion ? (

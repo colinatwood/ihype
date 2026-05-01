@@ -69,6 +69,14 @@
       <div id="si-error" class="auth-error"></div>
       <button id="si-btn" class="btn btn-primary btn-block btn-lg" type="button">Send my code</button>
 
+      <div style="text-align:right;margin-top:-.4rem">
+        <a href="/forgot" style="font-size:.8rem;color:var(--ink-3);text-decoration:none">Forgot password?</a>
+      </div>
+
+      <div id="si-reset-banner" style="display:none;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);border-radius:var(--r-md);padding:.6rem .85rem;font-size:.85rem;color:var(--ink-2)">
+        ✓ Password updated. Sign in with your new password.
+      </div>
+
       <div class="auth-footer">
         By signing in you agree to the <a href="/promise">iHYPE charter</a> and privacy promise.
       </div>
@@ -137,5 +145,21 @@
 
 <script src="/ihype-shared.js"></script>
 <script src="/ihype-auth.js"></script>
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  // Password reset success banner
+  if(params.get('reset')==='1'){
+    var b=document.getElementById('si-reset-banner');
+    if(b) b.style.display='block';
+    history.replaceState(null,'',location.pathname);
+  }
+  // Store ?next= so auth.js can redirect back after login
+  var nextUrl = params.get('next');
+  if(nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('//')) {
+    sessionStorage.setItem('ihype_auth_next', nextUrl);
+  }
+})();
+</script>
 </body>
 </html>
