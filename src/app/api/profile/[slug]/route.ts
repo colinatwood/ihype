@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { ShowStatus } from '@prisma/client';
 import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -49,7 +50,7 @@ export async function GET(
 
   // Upcoming shows — role-appropriate relation
   const showWhere = {
-    status: { in: ['SCHEDULED', 'LIVE'] as const },
+    status: { in: [ShowStatus.SCHEDULED, ShowStatus.LIVE] },
     startsAt: { gte: now },
   };
 
