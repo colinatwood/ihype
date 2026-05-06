@@ -11,7 +11,7 @@ import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
 import { RoleModuleSubheader } from '@/components/RoleModuleSubheader';
 import { resolveDiscoverModule } from '@/lib/discover-modules';
-import { getSharedDiscoverFeed } from '@/lib/discover-feed';
+import { getSharedDiscoverFeed, type ViewerRecommendContext } from '@/lib/discover-feed';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDirectoryProfiles } from '@/lib/public-data';
@@ -185,7 +185,12 @@ export default async function ListenersIndexPage({
         fontPreset: myFanProfile.themeFontPreset
       })
     : undefined;
-  const discoverFeed = await getSharedDiscoverFeed(viewerLocation);
+  const viewerContext: ViewerRecommendContext = {
+    genres: myFanProfile?.genres ?? [],
+    stateRegion: viewerLocation?.stateRegion ?? null,
+    country: viewerLocation?.country ?? null,
+  };
+  const discoverFeed = await getSharedDiscoverFeed(viewerLocation, viewerContext);
   const viewerLocationLabel =
     [viewerLocation?.city, viewerLocation?.stateRegion ?? viewerLocation?.country].filter(Boolean).join(', ') ||
     'your area';

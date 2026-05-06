@@ -3,10 +3,14 @@ import { withDbRetry, db } from '@/lib/db';
 import type { DirectoryBrowserProfile, DirectoryMediaSearchEntry } from '@/components/ProfileDirectoryBrowser';
 import type { RequestLocation } from '@/lib/request-location';
 import { buildArtistMediaCollection } from '@/lib/media';
+import { scoreProfiles, type RecommendScores, type ViewerRecommendContext } from '@/lib/recommend';
+
+export type { ViewerRecommendContext };
 
 export type DiscoverSpotlightProfile = DirectoryBrowserProfile & {
   scopeLabel: string;
   createdAtLabel: string;
+  _scores?: RecommendScores;
 };
 
 export type DiscoverLocationMatchCandidate = {
@@ -138,7 +142,10 @@ function sortByLocalRegional<T extends SpotlightProfileRecord>(profiles: T[], lo
   });
 }
 
-export async function getSharedDiscoverFeed(viewerLocation: RequestLocation | null) {
+export async function getSharedDiscoverFeed(
+  viewerLocation: RequestLocation | null,
+  viewerContext?: ViewerRecommendContext
+) {
   const [artistProfiles, promoterProfiles] = await withDbRetry(() =>
     db.$transaction([
       db.profile.findMany({
@@ -159,10 +166,17 @@ export async function getSharedDiscoverFeed(viewerLocation: RequestLocation | nu
     return [[], []] as [SpotlightProfileRecord[], SpotlightProfileRecord[]];
   });
 
-  const hypedNearMe = sortByLocalRegional(artistProfiles, viewerLocation)
-    .filter((profile) => isLocalMatch(profile, viewerLocation) || isRegionalMatch(profile, viewerLocation) || !viewerLocation)
-    .slice(0, 6)
-    .map((profile) => withScopeLabel(profile, viewerLocation));
+  const hypedNearMeCandidates = sortByLocalRegional(artistProfiles, viewerLocation)
+    .filter((profile) => isLocalMatch(profile, viewerLocation) || isRegionalMatch(profile, viewerLocation) || !viewerLocation);
+
+  let hypedNearMe: DiscoverSpotlightProfile[];
+  if (viewerContext && hypedNearMeCandidates.length) {
+    const scored = scoreProfiles(hypedNearMeCandidates, viewerContext);
+    scored.sort((a, b) => b._scores.final - a._scores.final);
+    hypedNearMe = scored.slice(0, 6).map((p) => ({ ...withScopeLabel(p, viewerLocation), _scores: p._scores }));
+  } else {
+    hypedNearMe = hypedNearMeCandidates.slice(0, 6).map((profile) => withScopeLabel(profile, viewerLocation));
+  }
 
   const newArtists = artistProfiles
     .filter((profile) => isLocalMatch(profile, viewerLocation) || !viewerLocation)

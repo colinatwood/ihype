@@ -205,8 +205,21 @@ export function DiscoverExplorerPanel({
                   <article className="discover-spotlight-card" key={`hyped-${profile.id}`}>
                     <div className="discover-spotlight-topline">
                       <span className="badge">{profile.scopeLabel}</span>
-                      <span className="meta">{profile.hypeCount} hype</span>
+                      {profile._scores
+                        ? <span className="meta">{Math.round(profile._scores.final * 100)}% match</span>
+                        : <span className="meta">{profile.hypeCount} hype</span>
+                      }
                     </div>
+                    {profile._scores && (
+                      <div className="discover-spotlight-signals">
+                        {profile._scores.taste !== null && (
+                          <span className="meta">Taste {Math.round(profile._scores.taste * 100)}</span>
+                        )}
+                        <span className="meta">Trending {Math.round(profile._scores.social * 100)}</span>
+                        <span className="meta">Rising {Math.round(profile._scores.momentum * 100)}</span>
+                        <span className="meta">{profile.hypeCount} hype</span>
+                      </div>
+                    )}
                     <ProfileCard profile={profile} />
                   </article>
                 ))
