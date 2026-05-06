@@ -4,6 +4,7 @@ import { HeaderMediaPlayer } from '@/components/GlobalMediaPlayer';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderLogo } from '@/components/HeaderLogo';
+import { SiteSubnav } from '@/components/SiteSubnav';
 
 export const metadata = {
   title: 'iHYPE.org',
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 <HeaderAuthLinks />
               </div>
             </header>
+            <SiteSubnav />
             {children}
           </div>
         </AppProviders>

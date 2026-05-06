@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { getSiteNavItemsForPerspective, useAdminPerspective } from '@/components/AdminPerspective';
 
 function isActivePath(pathname: string, match: string) {
@@ -14,13 +15,22 @@ function isActivePath(pathname: string, match: string) {
 
 export function SiteSubnav() {
   const pathname = usePathname();
+  const { data: session, status } = useSession();
   const { isAdmin, perspective } = useAdminPerspective();
 
   if (pathname.startsWith('/login') || pathname.startsWith('/register')) {
     return null;
   }
 
-  const navItems = getSiteNavItemsForPerspective(isAdmin, perspective);
+  if (status === 'loading') {
+    return null;
+  }
+
+  if (!session?.user) {
+    return null;
+  }
+
+  const navItems = getSiteNavItemsForPerspective(isAdmin, perspective, session.user.role);
 
   return (
     <div className="site-subnav-shell">

@@ -42,6 +42,33 @@ const defaultNavItems: NavItem[] = [
   { href: '/venues', label: 'Venues', match: '/venues' }
 ];
 
+const userRoleNavItems: Record<string, NavItem[]> = {
+  FAN: [
+    { href: '/dashboard', label: 'Dashboard', match: '/dashboard' },
+    { href: '/', label: 'Discover', match: '/' },
+    { href: '/shows', label: 'Shows', match: '/shows' },
+    { href: '/artists', label: 'Artists', match: '/artists' }
+  ],
+  ARTIST: [
+    { href: '/dashboard', label: 'Dashboard', match: '/dashboard' },
+    { href: '/my/artist', label: 'My Artist', match: '/my/artist' },
+    { href: '/shows', label: 'Shows', match: '/shows' },
+    { href: '/promoters', label: 'Promoters', match: '/promoters' }
+  ],
+  DJ: [
+    { href: '/dashboard', label: 'Dashboard', match: '/dashboard' },
+    { href: '/my/promoter', label: 'My Promoter', match: '/my/promoter' },
+    { href: '/artists', label: 'Artists', match: '/artists' },
+    { href: '/venues', label: 'Venues', match: '/venues' }
+  ],
+  VENUE: [
+    { href: '/dashboard', label: 'Dashboard', match: '/dashboard' },
+    { href: '/my/venue', label: 'My Venue', match: '/my/venue' },
+    { href: '/shows', label: 'Shows', match: '/shows' },
+    { href: '/artists', label: 'Artists', match: '/artists' }
+  ]
+};
+
 const perspectiveNavItems: Record<AdminPerspective, NavItem[]> = {
   ADMIN: [{ href: '/dashboard', label: 'Dashboard', match: '/dashboard' }, ...defaultNavItems],
   LISTENER: [
@@ -117,9 +144,12 @@ export function useAdminPerspective() {
 
 export function getSiteNavItemsForPerspective(
   isAdmin: boolean,
-  perspective: AdminPerspective
+  perspective: AdminPerspective,
+  userRole?: string
 ) {
-  return isAdmin ? perspectiveNavItems[perspective] : defaultNavItems;
+  if (isAdmin) return perspectiveNavItems[perspective];
+  if (userRole && userRoleNavItems[userRole]) return userRoleNavItems[userRole];
+  return defaultNavItems;
 }
 
 export function getPerspectiveHomeHref(perspective: AdminPerspective) {
