@@ -96,7 +96,12 @@ export default async function ShowDetailPage({
       promoterProfile: true,
       ticketOrders: {
         orderBy: { createdAt: 'desc' },
-        take: 6
+        take: 6,
+        include: {
+          tickets: {
+            select: { reassignCount: true }
+          }
+        }
       },
       radioTracks: {
         orderBy: { position: 'asc' },
@@ -481,10 +486,13 @@ export default async function ShowDetailPage({
                   <th>Venue</th>
                   <th>Artist</th>
                   <th>Promoter</th>
+                  <th title="Total reassignments across all tickets in this order">Passed</th>
                 </tr>
               </thead>
               <tbody>
-                {show.ticketOrders.map((order) => (
+                {show.ticketOrders.map((order) => {
+                  const totalPassed = order.tickets.reduce((sum, t) => sum + t.reassignCount, 0);
+                  return (
                   <tr key={order.id}>
                     <td>{order.status}</td>
                     <td>{formatCurrencyFromCents(order.totalTaxCents)}</td>
@@ -495,8 +503,12 @@ export default async function ShowDetailPage({
                     <td>{formatCurrencyFromCents(order.venuePayoutCents)}</td>
                     <td>{formatCurrencyFromCents(order.artistPayoutCents)}</td>
                     <td>{formatCurrencyFromCents(order.promoterPayoutCents)}</td>
+                    <td style={totalPassed > 0 ? { color: 'var(--accent-3)', fontWeight: 600 } : { color: 'var(--muted)' }}>
+                      {totalPassed > 0 ? `${totalPassed}×` : '—'}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

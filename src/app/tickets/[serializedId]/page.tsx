@@ -86,6 +86,12 @@ export default async function TicketPage({
                 Scan time
               </div>
               <div className="stat">
+                <strong style={ticket.reassignCount > 0 ? { color: 'var(--accent-3)' } : {}}>
+                  {ticket.reassignCount === 0 ? 'Never' : `${ticket.reassignCount}×`}
+                </strong>
+                Passed on
+              </div>
+              <div className="stat">
                 <strong>{ticket.show.venueProfile?.postalCode ?? 'Open'}</strong>
                 Venue ZIP
               </div>
@@ -108,6 +114,13 @@ export default async function TicketPage({
             {canScan ? (
               <div className="request-history">
                 <h3>Venue reassignment</h3>
+                {ticket.reassignCount > 0 && ticket.reassignedAt ? (
+                  <p className="meta" style={{ marginBottom: '0.75rem' }}>
+                    This ticket has been passed on <strong>{ticket.reassignCount}</strong> time{ticket.reassignCount !== 1 ? 's' : ''}.
+                    Last reassigned{' '}
+                    {new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(ticket.reassignedAt)}.
+                  </p>
+                ) : null}
                 <TicketReassignmentForm
                   faceValueCents={Math.round(ticket.ticketOrder.subtotalCents / ticket.ticketOrder.quantity)}
                   serializedId={ticket.serializedId}
