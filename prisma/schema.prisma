@@ -548,6 +548,7 @@ model RadioShowTrack {
   mediaAssetId String?
   externalUrl  String?
   durationSecs Int?
+  blockLabel   String?
   createdAt    DateTime          @default(now())
   show         Show              @relation(fields: [showId], references: [id], onDelete: Cascade)
   mediaAsset   ArtistMediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)

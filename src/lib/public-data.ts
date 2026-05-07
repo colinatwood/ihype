@@ -18,6 +18,8 @@ const publicShowArgs = Prisma.validator<Prisma.ShowDefaultArgs>()({
     ticketCapacity: true,
     ticketsSoldCount: true,
     tags: true,
+    isRadioShow: true,
+    radioTracks: { select: { durationSecs: true } },
     venueProfile: {
       select: {
         name: true,

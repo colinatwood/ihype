@@ -11,6 +11,8 @@ type ShowCardShow = {
   status: 'DRAFT' | 'SCHEDULED' | 'LIVE' | 'ENDED' | 'CANCELED';
   startsAt: Date;
   hypeCount: number;
+  isRadioShow: boolean;
+  radioTracks?: { durationSecs: number | null }[];
   isTicketed: boolean;
   ticketPriceCents: number;
   ticketCapacity: number | null;
@@ -34,6 +36,10 @@ export function ShowCard({
 }) {
   const visibility = getShowVisibilitySignals(show);
   const allChips = [...visibility.chips, ...(reasonChips ?? [])];
+  const totalSecs = show.radioTracks?.reduce((s, t) => s + (t.durationSecs ?? 0), 0) ?? 0;
+  const radioDuration = show.isRadioShow && totalSecs > 0
+    ? `${Math.floor(totalSecs / 3600) > 0 ? `${Math.floor(totalSecs / 3600)}h ` : ''}${Math.floor((totalSecs % 3600) / 60)}m`
+    : null;
 
   return (
     <article className="card show-card">
@@ -41,7 +47,10 @@ export function ShowCard({
         {show.status === 'LIVE' ? 'LIVE NOW' : show.status === 'ENDED' ? 'ENDED' : show.status === 'CANCELED' ? 'CANCELED' : 'STREAM SHOW'}
       </div>
       <div>
-        <div className="badge">{show.status}</div>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div className="badge">{show.status}</div>
+          {show.isRadioShow && <div className="badge" style={{ background: 'rgba(113,217,255,0.1)', borderColor: 'rgba(113,217,255,0.3)', color: '#a8ecff' }}>📻 Radio</div>}
+        </div>
         <h3>{show.title}</h3>
         <p className="meta">
           {formatShowTime(show.startsAt)}
@@ -49,6 +58,7 @@ export function ShowCard({
           {show.headlinerProfile ? ` | ${show.headlinerProfile.name}` : ''}
         </p>
         <p>{show.description}</p>
+        {radioDuration && <p className="meta">📻 {show.radioTracks?.length} tracks · {radioDuration}</p>}
         {show.isTicketed ? (
           <p className="meta">
             Tickets {formatCurrencyFromCents(show.ticketPriceCents)}

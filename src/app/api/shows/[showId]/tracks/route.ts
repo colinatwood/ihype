@@ -31,6 +31,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
       artistName: true,
       externalUrl: true,
       durationSecs: true,
+      blockLabel: true,
       mediaAsset: {
         select: { hexId: true, mimeType: true }
       }
@@ -45,7 +46,8 @@ const trackSchema = z.object({
   artistName: z.string().trim().max(200).optional(),
   mediaAssetId: z.string().optional(),
   externalUrl: z.string().url().optional(),
-  durationSecs: z.number().int().positive().optional()
+  durationSecs: z.number().int().positive().optional(),
+  blockLabel: z.string().trim().max(100).optional()
 }).refine(
   (d) => d.mediaAssetId || d.externalUrl,
   { message: 'Either mediaAssetId or externalUrl is required.' }
@@ -78,7 +80,8 @@ export async function POST(req: Request, { params }: RouteContext) {
       artistName: body.artistName ?? null,
       mediaAssetId: body.mediaAssetId ?? null,
       externalUrl: body.externalUrl ?? null,
-      durationSecs: body.durationSecs ?? null
+      durationSecs: body.durationSecs ?? null,
+      blockLabel: body.blockLabel ?? null
     }
   });
 
