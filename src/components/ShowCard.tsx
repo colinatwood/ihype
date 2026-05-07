@@ -37,7 +37,9 @@ export function ShowCard({
 
   return (
     <article className="card show-card">
-      <div className="show-art">{show.status === 'LIVE' ? 'LIVE NOW' : 'STREAM SHOW'}</div>
+      <div className="show-art" data-status={show.status}>
+        {show.status === 'LIVE' ? 'LIVE NOW' : show.status === 'ENDED' ? 'ENDED' : show.status === 'CANCELED' ? 'CANCELED' : 'STREAM SHOW'}
+      </div>
       <div>
         <div className="badge">{show.status}</div>
         <h3>{show.title}</h3>

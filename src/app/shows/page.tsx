@@ -72,28 +72,55 @@ export default async function ShowsIndexPage() {
 
       <section className="section" id="live-now">
         <div className="directory-section-head">
-          <h2>Live now</h2>
+          <h2>
+            <span className="section-status-chip section-status-chip-live">● LIVE</span>
+            {liveShows.length > 0 && <span style={{ fontWeight: 400, fontSize: '1rem', color: 'var(--muted)' }}>{liveShows.length} broadcast{liveShows.length !== 1 ? 's' : ''}</span>}
+          </h2>
         </div>
         <div className="grid grid-2">
-          {liveShows.length ? liveShows.map((show) => <ShowCard key={show.id} show={show} reasonChips={locationChips(show)} />) : <div className="empty">No live broadcasts right now.</div>}
+          {liveShows.length ? liveShows.map((show) => <ShowCard key={show.id} show={show} reasonChips={locationChips(show)} />) : (
+            <div className="empty">
+              <span className="empty-icon">📡</span>
+              <span className="empty-title">Nothing live right now</span>
+              <p>Check back soon — Chicago artists stream every day.</p>
+            </div>
+          )}
         </div>
       </section>
 
       <section className="section">
         <div className="directory-section-head">
-          <h2>Upcoming</h2>
+          <h2>
+            <span className="section-status-chip section-status-chip-upcoming">UPCOMING</span>
+            {upcomingShows.length > 0 && <span style={{ fontWeight: 400, fontSize: '1rem', color: 'var(--muted)' }}>{upcomingShows.length} show{upcomingShows.length !== 1 ? 's' : ''}</span>}
+          </h2>
         </div>
         <div className="grid grid-2">
-          {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} reasonChips={locationChips(show)} />) : <div className="empty">No scheduled shows yet.</div>}
+          {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} reasonChips={locationChips(show)} />) : (
+            <div className="empty">
+              <span className="empty-icon">🗓️</span>
+              <span className="empty-title">No upcoming shows scheduled</span>
+              <p>Artists add new dates regularly — check back or <a href="/artists">browse artists</a>.</p>
+            </div>
+          )}
         </div>
       </section>
 
       <section className="section">
         <div className="directory-section-head">
-          <h2>Recent archives</h2>
+          <h2>
+            <span className="section-status-chip section-status-chip-past">RECENT ARCHIVES</span>
+            {recentShows.length > 0 && <span style={{ fontWeight: 400, fontSize: '1rem', color: 'var(--muted)' }}>{recentShows.length} show{recentShows.length !== 1 ? 's' : ''}</span>}
+          </h2>
         </div>
         <div className="grid grid-2">
-          {recentShows.length ? recentShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No recent archives yet.</div>}
+          {recentShows.length ? recentShows.map((show) => <ShowCard key={show.id} show={show} />) : (
+            <div className="empty">
+              <span className="empty-icon">📼</span>
+              <span className="empty-title">No recent archives yet</span>
+              <p>Past broadcasts will appear here once the platform launches.</p>
+            </div>
+          )}
         </div>
       </section>
     </main>

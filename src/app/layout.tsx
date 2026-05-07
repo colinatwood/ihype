@@ -5,6 +5,7 @@ import { HeaderMediaPlayer } from '@/components/GlobalMediaPlayer';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderLogo } from '@/components/HeaderLogo';
+import { NavPrimaryLinks } from '@/components/NavPrimaryLinks';
 
 export const metadata: Metadata = {
   title: {
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <header className="nav">
               <div className="container nav-inner">
                 <HeaderLogo />
+                <NavPrimaryLinks />
                 <div className="nav-player-slot nav-player-slot-centered">
                   <HeaderMediaPlayer />
                 </div>

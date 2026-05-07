@@ -15,6 +15,7 @@ export function HypeButton({ targetType, targetId, initialCount, entityLabel }: 
   const [pending, setPending] = useState(false);
   const [alreadyHyped, setAlreadyHyped] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [popping, setPopping] = useState(false);
   const noun = entityLabel ?? (targetType === 'show' ? 'show' : 'profile');
 
   useEffect(() => {
@@ -41,6 +42,8 @@ export function HypeButton({ targetType, targetId, initialCount, entityLabel }: 
     if (response.ok) {
       setCount(data.hypeCount);
       if (data.created) {
+        setPopping(true);
+        setTimeout(() => setPopping(false), 400);
         setAlreadyHyped(true);
         try { localStorage.setItem(storageKey, '1'); } catch {}
         setMessage(`Hyped! You've hyped ${data.hypeCount.toLocaleString()} total on this ${noun}.`);
@@ -59,7 +62,7 @@ export function HypeButton({ targetType, targetId, initialCount, entityLabel }: 
   return (
     <div className="cta-row">
       <button
-        className={`button${alreadyHyped ? ' secondary' : ''}`}
+        className={`button${alreadyHyped ? ' secondary' : ''}${popping ? ' hype-pop' : ''}`}
         onClick={handleHype}
         disabled={pending}
         title={alreadyHyped ? `You hyped this ${noun}` : `Hype this ${noun}`}
