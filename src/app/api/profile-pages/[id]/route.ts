@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isSafeImageInput, isSafeVideoInput } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
+import { buildBlockDeletes, buildBlockUpserts, type BlockType } from '@/lib/profile-blocks';
 import {
   profileAccentToneIds,
   profileBackdropToneIds,
@@ -61,6 +62,20 @@ const schema = z.object({
   fanShareEnabled: z.boolean().optional()
 });
 
+// Map from API field name → BlockType used in ProfileBlock table.
+const FIELD_TO_BLOCK_TYPE: Partial<Record<keyof z.infer<typeof schema>, BlockType>> = {
+  aboutContent:           'about',
+  journalContent:         'journal',
+  mediaContent:           'media',
+  tourContent:            'tour',
+  merchContent:           'merch',
+  requestContent:         'request',
+  recommendContent:       'recommend',
+  topFiveContent:         'topfive',
+  upcomingContent:        'upcoming',
+  previousShowHighlights: 'prevshows'
+};
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -87,46 +102,72 @@ export async function PATCH(
       return NextResponse.json({ error: 'Only the page owner can edit this page' }, { status: 403 });
     }
 
-    const updatedProfile = await db.profile.update({
-      where: { id },
-      data: {
-        headline: body.headline || null,
-        bio: body.bio || null,
-        heroImage: body.heroImage || null,
-        avatarImage: body.avatarImage || null,
-        logoImage: body.logoImage || null,
-        galleryImage: body.galleryImage || null,
-        featureVideoUrl: body.featureVideoUrl || null,
-        aboutContent: body.aboutContent || null,
-        journalContent: body.journalContent || null,
-        mediaContent: body.mediaContent || null,
-        tourContent: body.tourContent || null,
-        merchContent: body.merchContent || null,
-        requestContent: body.requestContent || null,
-        recommendContent: body.recommendContent || null,
-        topFiveContent: body.topFiveContent || null,
-        addressLine1: body.addressLine1 || null,
-        contactInfo: body.contactInfo || null,
-        hoursText: body.hoursText || null,
-        hometown: body.hometown || null,
-        city: body.city || null,
-        stateRegion: body.stateRegion || null,
-        postalCode: body.postalCode || null,
-        country: body.country || null,
-        parkingDetails: body.parkingDetails || null,
-        stayRecommendations: body.stayRecommendations || null,
-        upcomingContent: body.upcomingContent || null,
-        previousShowHighlights: body.previousShowHighlights || null,
-        verificationNotes: body.verificationNotes || null,
-        verificationStatus: body.verificationNotes ? 'PENDING' : undefined,
-        verificationSubmittedAt: body.verificationNotes ? new Date() : undefined,
-        themePreset: body.themePreset ?? undefined,
-        themeFontPreset: body.themeFontPreset ?? undefined,
-        themeAccentTone: body.themeAccentTone ?? undefined,
-        themeBackdropTone: body.themeBackdropTone ?? undefined,
-        fanShareEnabled: body.fanShareEnabled ?? undefined
+    // Build the ProfileBlock content map from submitted body fields.
+    const blockContent: Partial<Record<BlockType, string | null | undefined>> = {};
+    for (const [field, blockType] of Object.entries(FIELD_TO_BLOCK_TYPE) as [
+      keyof typeof FIELD_TO_BLOCK_TYPE,
+      BlockType
+    ][]) {
+      if (field in body) {
+        blockContent[blockType] = body[field] as string | null | undefined;
       }
-    });
+    }
+
+    const upserts = buildBlockUpserts(profile.id, blockContent);
+    const deletes = buildBlockDeletes(profile.id, blockContent);
+
+    const [updatedProfile] = await db.$transaction([
+      // Legacy column write — kept for backward-compatible reads.
+      db.profile.update({
+        where: { id },
+        data: {
+          headline: body.headline || null,
+          bio: body.bio || null,
+          heroImage: body.heroImage || null,
+          avatarImage: body.avatarImage || null,
+          logoImage: body.logoImage || null,
+          galleryImage: body.galleryImage || null,
+          featureVideoUrl: body.featureVideoUrl || null,
+          aboutContent: body.aboutContent || null,
+          journalContent: body.journalContent || null,
+          mediaContent: body.mediaContent || null,
+          tourContent: body.tourContent || null,
+          merchContent: body.merchContent || null,
+          requestContent: body.requestContent || null,
+          recommendContent: body.recommendContent || null,
+          topFiveContent: body.topFiveContent || null,
+          addressLine1: body.addressLine1 || null,
+          contactInfo: body.contactInfo || null,
+          hoursText: body.hoursText || null,
+          hometown: body.hometown || null,
+          city: body.city || null,
+          stateRegion: body.stateRegion || null,
+          postalCode: body.postalCode || null,
+          country: body.country || null,
+          parkingDetails: body.parkingDetails || null,
+          stayRecommendations: body.stayRecommendations || null,
+          upcomingContent: body.upcomingContent || null,
+          previousShowHighlights: body.previousShowHighlights || null,
+          verificationNotes: body.verificationNotes || null,
+          verificationStatus: body.verificationNotes ? 'PENDING' : undefined,
+          verificationSubmittedAt: body.verificationNotes ? new Date() : undefined,
+          themePreset: body.themePreset ?? undefined,
+          themeFontPreset: body.themeFontPreset ?? undefined,
+          themeAccentTone: body.themeAccentTone ?? undefined,
+          themeBackdropTone: body.themeBackdropTone ?? undefined,
+          fanShareEnabled: body.fanShareEnabled ?? undefined
+        }
+      }),
+      // Dual-write to ProfileBlock (the future source of truth).
+      ...(deletes.length
+        ? [
+            db.profileBlock.deleteMany({
+              where: { profileId: profile.id, blockType: { in: deletes } }
+            })
+          ]
+        : []),
+      ...upserts.map((u) => db.profileBlock.upsert(u))
+    ]);
 
     return NextResponse.json(updatedProfile);
   } catch (error) {

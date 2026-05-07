@@ -176,6 +176,7 @@ model Profile {
   issuedTickets                 Ticket[]                    @relation("VenueIssuedTickets")
   affiliateTicketOrders         TicketOrder[]               @relation("AffiliatePromoterTicketOrders")
   accountsPayableEntries        AccountsPayableEntry[]
+  contentBlocks                 ProfileBlock[]
 }
 
 model FanPlaylist {
@@ -498,6 +499,23 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Versioned content blocks — the normalized replacement for the flat content
+// columns on Profile. During the dual-write transition both exist; once all
+// reads have been migrated the columns can be dropped.
+model ProfileBlock {
+  id          String   @id @default(cuid())
+  profileId   String
+  blockType   String
+  content     String
+  position    Int      @default(0)
+  version     Int      @default(1)
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, blockType])
+  @@index([profileId])
 }
 
 // Idempotency log for inbound webhooks. Inserting a duplicate eventId fails
