@@ -241,7 +241,8 @@ model ArtistMediaAsset {
   profileId        String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile          Profile           @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  radioTracks      RadioShowTrack[]
 
   @@index([profileId, createdAt])
   @@index([freeUseEnabled, createdAt])
@@ -287,6 +288,7 @@ model Show {
   ticketOrders           TicketOrder[]
   tickets                Ticket[]
   accountsPayableEntries AccountsPayableEntry[]
+  radioTracks            RadioShowTrack[]
 }
 
 model TicketOrder {
@@ -516,6 +518,25 @@ model ProfileBlock {
 
   @@unique([profileId, blockType])
   @@index([profileId])
+}
+
+// Ordered tracklist for radio-style shows. Each row links a show to either
+// an uploaded ArtistMediaAsset or an external stream URL.
+model RadioShowTrack {
+  id           String            @id @default(cuid())
+  showId       String
+  position     Int
+  title        String
+  artistName   String?
+  mediaAssetId String?
+  externalUrl  String?
+  durationSecs Int?
+  createdAt    DateTime          @default(now())
+  show         Show              @relation(fields: [showId], references: [id], onDelete: Cascade)
+  mediaAsset   ArtistMediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+
+  @@unique([showId, position])
+  @@index([showId])
 }
 
 // Idempotency log for inbound webhooks. Inserting a duplicate eventId fails

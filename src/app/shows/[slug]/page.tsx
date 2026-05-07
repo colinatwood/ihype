@@ -97,6 +97,17 @@ export default async function ShowDetailPage({
       ticketOrders: {
         orderBy: { createdAt: 'desc' },
         take: 6
+      },
+      radioTracks: {
+        orderBy: { position: 'asc' },
+        select: {
+          id: true,
+          position: true,
+          title: true,
+          artistName: true,
+          externalUrl: true,
+          durationSecs: true
+        }
       }
     }
   });
@@ -491,6 +502,58 @@ export default async function ShowDetailPage({
           </div>
         </section>
       ) : null}
+
+      {show.isRadioShow && show.radioTracks.length > 0 && (
+        <section className="section">
+          <div className="panel" style={{ padding: '1.25rem' }}>
+            <h2 style={{ marginBottom: '1rem' }}>Tracklist</h2>
+            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '0.5rem' }}>
+              {show.radioTracks.map((track) => (
+                <li
+                  key={track.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2rem 1fr auto',
+                    gap: '0.75rem',
+                    alignItems: 'center',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '10px',
+                    background: 'rgba(255,255,255,0.03)'
+                  }}
+                >
+                  <span className="meta" style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    {String(track.position + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <strong style={{ display: 'block' }}>{track.title}</strong>
+                    {track.artistName && (
+                      <span className="meta">{track.artistName}</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    {track.durationSecs && (
+                      <span className="meta" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {Math.floor(track.durationSecs / 60)}:{String(track.durationSecs % 60).padStart(2, '0')}
+                      </span>
+                    )}
+                    {track.externalUrl && (
+                      <a
+                        href={track.externalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="button small secondary"
+                        style={{ fontSize: '0.75rem' }}
+                      >
+                        Play ↗
+                      </a>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
     </main>
   );
 }
