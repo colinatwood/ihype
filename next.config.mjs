@@ -1,3 +1,5 @@
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === 'production';
 const contentSecurityPolicy = [
@@ -128,15 +130,15 @@ const nextConfig = {
       },
       {
         source: '/home',
-        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }]
       },
       {
         source: '/login',
-        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' }]
       },
       {
         source: '/forgot',
-        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' }]
       },
       {
         source: '/media',
@@ -144,15 +146,15 @@ const nextConfig = {
       },
       {
         source: '/register/:path*',
-        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' }]
       },
       {
         source: '/search',
-        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }]
       },
       {
         source: '/governance',
-        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }]
       },
       // /profile/:slug — cache headers set directly in the route handler
       // /shows/:slug   — handled by src/app/shows/[slug]/page.tsx (no static rewrite)
@@ -160,4 +162,5 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+const bundleAnalyzer = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
+export default bundleAnalyzer(nextConfig);

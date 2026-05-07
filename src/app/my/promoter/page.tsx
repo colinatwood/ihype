@@ -9,7 +9,8 @@ import {
   DiscoverMyPagePanel,
   DiscoverStatsPanel
 } from '@/components/DiscoverModulePanels';
-import { PromoterShowCreationTool } from '@/components/PromoterShowCreationTool';
+import dynamic from 'next/dynamic';
+const PromoterShowCreationTool = dynamic(() => import('@/components/PromoterShowCreationTool').then(m => ({ default: m.PromoterShowCreationTool })), { ssr: false });
 import { PromoterAffiliateLinks } from '@/components/PromoterAffiliateLinks';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 

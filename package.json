@@ -16,6 +16,7 @@
                     "prisma:migrate":  "prisma migrate dev",
                     "prisma:seed":  "tsx prisma/seed.ts",
                     "prisma:migrate:deploy":  "prisma migrate deploy",
+                    "analyze":  "ANALYZE=true npm run build",
                     "vercel-build":  "prisma generate && next build"
                 },
     "dependencies":  {
@@ -38,6 +39,7 @@
                          "zod":  "^3.24.1"
                      },
     "devDependencies":  {
+                            "@next/bundle-analyzer":  "^15.0.0",
                             "@types/bcryptjs":  "^2.4.6",
                             "@types/node":  "^22.15.30",
                             "@types/nodemailer":  "^7.0.11",
