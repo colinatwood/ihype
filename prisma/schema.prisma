@@ -254,6 +254,7 @@ model Show {
   title                  String
   description            String?
   productionPlan         Json?
+  productionPlanVersion  Int                    @default(1)
   isRadioShow            Boolean                @default(false)
   status                 ShowStatus             @default(DRAFT)
   startsAt               DateTime
@@ -289,6 +290,20 @@ model Show {
   tickets                Ticket[]
   accountsPayableEntries AccountsPayableEntry[]
   radioTracks            RadioShowTrack[]
+  advertisingConfig      ShowAdvertisingConfig?
+}
+
+// Extracted from the productionPlan JSON blob so advertising settings are
+// queryable and auditable without deserialising the full plan.
+model ShowAdvertisingConfig {
+  id              String   @id @default(cuid())
+  showId          String   @unique
+  show            Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+  enabled         Boolean  @default(true)
+  scope           String   @default("local")
+  frequency       Int      @default(3)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model TicketOrder {

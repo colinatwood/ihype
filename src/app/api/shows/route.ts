@@ -234,7 +234,16 @@ export async function POST(request: Request) {
         artistPayoutPercent: body.isTicketed ? body.artistPayoutPercent : null,
         promoterPayoutPercent: body.isTicketed ? body.promoterPayoutPercent ?? DEFAULT_PROMOTER_AFFILIATE_PERCENT : DEFAULT_PROMOTER_AFFILIATE_PERCENT,
         productionPlan: body.productionPlan,
-        status: body.status
+        status: body.status,
+        ...(body.productionPlan?.advertising !== undefined && {
+          advertisingConfig: {
+            create: {
+              enabled: body.productionPlan.advertising.enabled ?? true,
+              scope: body.productionPlan.advertising.scope ?? 'local',
+              frequency: body.productionPlan.advertising.frequency ?? 3
+            }
+          }
+        })
       }
     });
 
