@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature.' }, { status: 400 });
   }
 
+  // Drop duplicate deliveries using the shared idempotency log.
+  try {
+    await db.processedWebhookEvent.create({
+      data: { source: 'stripe', eventId: event.id }
+    });
+  } catch {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   switch (event.type) {
     case 'payment_intent.amount_capturable_updated': {
       // PaymentIntent authorized — fan's card hold is confirmed.

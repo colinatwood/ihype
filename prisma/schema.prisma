@@ -499,3 +499,16 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+// Idempotency log for inbound webhooks. Inserting a duplicate eventId fails
+// on the unique constraint, which lets handlers skip already-processed events
+// without any additional SELECT.
+model ProcessedWebhookEvent {
+  id          String   @id @default(cuid())
+  source      String
+  eventId     String
+  processedAt DateTime @default(now())
+
+  @@unique([source, eventId])
+  @@index([processedAt])
+}
