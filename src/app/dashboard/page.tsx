@@ -497,6 +497,12 @@ export default async function DashboardPage({
                   <span>Scope</span>
                   <strong>{isAdmin ? 'All profiles' : 'Your profiles'}</strong>
                 </article>
+                {isAdmin && (
+                  <Link className="dashboard-editor-hero-pill" href="/admin/verifications" style={{ textDecoration: 'none' }}>
+                    <span>Verification queue</span>
+                    <strong>→</strong>
+                  </Link>
+                )}
               </div>
             </>
           )}
