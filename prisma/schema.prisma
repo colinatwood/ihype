@@ -89,6 +89,7 @@ model User {
   storedPaymentTokenRef   String?
   storedPaymentTokenBrand String?
   storedPaymentTokenLast4 String?
+  stripeCustomerId        String?                  @unique
   role                    Role                     @default(FAN)
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
@@ -153,6 +154,8 @@ model Profile {
   stayRecommendations           String?
   upcomingContent               String?
   previousShowHighlights        String?
+  stripeConnectAccountId        String?                     @unique
+  stripeConnectOnboarded        Boolean                     @default(false)
   verified                      Boolean                     @default(false)
   verificationStatus            OwnershipVerificationStatus @default(UNVERIFIED)
   verificationSubmittedAt       DateTime?
@@ -295,6 +298,7 @@ model TicketOrder {
   quantity                   Int
   status                     TicketOrderStatus      @default(RESERVED)
   paymentTokenRef            String?
+  stripePaymentIntentId      String?                @unique
   affiliatePromoterProfileId String?
   subtotalCents              Int
   taxLocalCents              Int                    @default(0)

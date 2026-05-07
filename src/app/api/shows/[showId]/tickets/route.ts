@@ -7,6 +7,12 @@ import { db } from '@/lib/db';
 import { sendIssuedTicketEmail } from '@/lib/mailer';
 import { detectLocationFromHeaders } from '@/lib/request-location';
 import {
+  captureTicketPaymentIntent,
+  createTicketPaymentIntent,
+  getOrCreateStripeCustomer,
+  isStripeConfigured
+} from '@/lib/stripe';
+import {
   calculateTicketOrderFinancials,
   formatCurrencyFromCents
 } from '@/lib/ticketing';
@@ -19,7 +25,8 @@ import {
 
 const schema = z.object({
   quantity: z.coerce.number().int().min(1).max(8),
-  affiliatePromoterProfileId: z.string().cuid().optional()
+  affiliatePromoterProfileId: z.string().cuid().optional(),
+  stripePaymentMethodId: z.string().startsWith('pm_').optional()
 });
 
 function shouldCaptureTicketsNow(show: { status: string; ticketingOpensAt: Date | null }) {
@@ -165,15 +172,16 @@ export async function POST(
           role: true,
           storedPaymentTokenRef: true,
           storedPaymentTokenBrand: true,
-          storedPaymentTokenLast4: true
+          storedPaymentTokenLast4: true,
+          stripeCustomerId: true
         }
       }),
       db.show.findUnique({
         where: { id: showId },
         include: {
-          venueProfile: true,
-          headlinerProfile: true,
-          promoterProfile: true
+          venueProfile: { select: { id: true, name: true, postalCode: true, stateRegion: true, country: true, stripeConnectAccountId: true } },
+          headlinerProfile: { select: { id: true, name: true, stripeConnectAccountId: true } },
+          promoterProfile: { select: { id: true, name: true } }
         }
       })
     ]);
@@ -182,9 +190,10 @@ export async function POST(
       return NextResponse.json({ error: 'Only fan accounts can reserve or purchase tickets.' }, { status: 403 });
     }
 
-    if (!user.storedPaymentTokenRef) {
+    const stripeActive = isStripeConfigured() && body.stripePaymentMethodId;
+    if (!stripeActive && !user.storedPaymentTokenRef) {
       return NextResponse.json(
-        { error: 'Add a stored payment token to your fan account before reserving tickets.' },
+        { error: 'Add a payment method to your fan account before reserving tickets.' },
         { status: 400 }
       );
     }
@@ -317,6 +326,41 @@ export async function POST(
         createdTickets
       };
     });
+
+    // --- Stripe payment processing (when configured and payment method provided) ---
+    if (stripeActive && body.stripePaymentMethodId) {
+      const customerId = await getOrCreateStripeCustomer({
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        existingCustomerId: user.stripeCustomerId
+      });
+
+      if (!user.stripeCustomerId) {
+        await db.user.update({ where: { id: user.id }, data: { stripeCustomerId: customerId } });
+      }
+
+      const { paymentIntentId } = await createTicketPaymentIntent({
+        amountCents: financials.totalChargeCents,
+        stripeCustomerId: customerId,
+        paymentMethodId: body.stripePaymentMethodId,
+        showId: show.id,
+        ticketOrderConfirmationCode: result.createdOrder.confirmationCode,
+        venueConnectAccountId: show.venueProfile?.stripeConnectAccountId,
+        artistConnectAccountId: show.headlinerProfile?.stripeConnectAccountId,
+        venuePayoutCents: financials.venuePayoutCents,
+        artistPayoutCents: financials.artistPayoutCents
+      });
+
+      await db.ticketOrder.update({
+        where: { id: result.createdOrder.id },
+        data: { stripePaymentIntentId: paymentIntentId, paymentTokenRef: paymentIntentId }
+      });
+
+      if (captureNow) {
+        await captureTicketPaymentIntent(paymentIntentId);
+      }
+    }
 
     const tickets = await Promise.all(
       result.createdTickets.map(async (ticket, index) => ({
