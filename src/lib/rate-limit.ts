@@ -14,6 +14,20 @@ type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
+// Standard rate-limit response headers (IETF draft-6585 + RateLimit header draft)
+export function rateLimitHeaders(result: RateLimitResult): Record<string, string> {
+  return {
+    'X-RateLimit-Remaining': String(result.remaining),
+    'X-RateLimit-Reset': String(result.retryAfterSeconds),
+    ...(result.allowed ? {} : { 'Retry-After': String(result.retryAfterSeconds) })
+  };
+}
+
+// Convenience: build the ip:userId composite key used by most API routes
+export function rateLimitKey(prefix: string, userId: string | undefined, ip: string | null): string {
+  return userId ? `${prefix}:user:${userId}` : `${prefix}:ip:${ip ?? 'unknown'}`;
+}
+
 const globalForRateLimit = globalThis as typeof globalThis & {
   __ihypeRateLimitStore?: Map<string, RateLimitRecord>;
 };

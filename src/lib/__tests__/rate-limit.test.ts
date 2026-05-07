@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { consumeRateLimit } from '../rate-limit';
+import { consumeRateLimit, rateLimitHeaders, rateLimitKey } from '../rate-limit';
 
 // Clear the in-process store between tests by consuming under a unique key prefix per test
 let testId = 0;
@@ -70,5 +70,34 @@ describe('consumeRateLimit', () => {
     consumeRateLimit(k, opts);
     const result = consumeRateLimit(k, opts);
     expect(result.remaining).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('rateLimitHeaders', () => {
+  it('includes X-RateLimit-Remaining and X-RateLimit-Reset on allowed result', () => {
+    const headers = rateLimitHeaders({ allowed: true, remaining: 4, retryAfterSeconds: 60 });
+    expect(headers['X-RateLimit-Remaining']).toBe('4');
+    expect(headers['X-RateLimit-Reset']).toBe('60');
+    expect(headers['Retry-After']).toBeUndefined();
+  });
+
+  it('includes Retry-After when blocked', () => {
+    const headers = rateLimitHeaders({ allowed: false, remaining: 0, retryAfterSeconds: 30 });
+    expect(headers['Retry-After']).toBe('30');
+    expect(headers['X-RateLimit-Remaining']).toBe('0');
+  });
+});
+
+describe('rateLimitKey', () => {
+  it('uses user-scoped key when userId is present', () => {
+    expect(rateLimitKey('hype', 'user-123', '1.2.3.4')).toBe('hype:user:user-123');
+  });
+
+  it('falls back to IP-scoped key when userId is absent', () => {
+    expect(rateLimitKey('search', undefined, '1.2.3.4')).toBe('search:ip:1.2.3.4');
+  });
+
+  it('uses unknown when both userId and IP are absent', () => {
+    expect(rateLimitKey('search', undefined, null)).toBe('search:ip:unknown');
   });
 });
