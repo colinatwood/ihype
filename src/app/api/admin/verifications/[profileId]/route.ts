@@ -49,23 +49,34 @@ export async function PATCH(
     );
   }
 
-  const updated = await db.profile.update({
-    where: { id: profileId },
-    data: {
-      verificationStatus: body.decision,
-      verified: body.decision === 'VERIFIED',
-      verificationReviewedAt: new Date(),
-      ...(body.adminNote ? { verificationNotes: body.adminNote } : {})
-    },
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      verificationStatus: true,
-      verified: true,
-      verificationReviewedAt: true
-    }
-  });
+  const [updated] = await db.$transaction([
+    db.profile.update({
+      where: { id: profileId },
+      data: {
+        verificationStatus: body.decision,
+        verified: body.decision === 'VERIFIED',
+        verificationReviewedAt: new Date(),
+        ...(body.adminNote ? { verificationNotes: body.adminNote } : {})
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        verificationStatus: true,
+        verified: true,
+        verificationReviewedAt: true
+      }
+    }),
+    db.adminAuditLog.create({
+      data: {
+        actorId: session!.user!.id!,
+        action: `verification.${body.decision.toLowerCase()}`,
+        targetType: 'Profile',
+        targetId: profileId,
+        meta: body.adminNote ? { adminNote: body.adminNote } : undefined
+      }
+    })
+  ]);
 
   return NextResponse.json(updated);
 }

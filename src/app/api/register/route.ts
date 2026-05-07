@@ -22,6 +22,7 @@ const schema = z.object({
     .regex(/[A-Za-z]/)
     .regex(/[0-9]/),
   role: z.enum(['FAN', 'ARTIST', 'DJ', 'VENUE']).default('FAN'),
+  inviteCode: z.string().optional(),
   isThirteenOrOlder: z.boolean().optional().default(false),
   acceptedArtistUploadPolicy: z.boolean().optional().default(false),
   contactInfo: z.string().trim().max(200).optional(),
@@ -155,7 +156,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = schema.parse(await request.json());
+    const rawBody = await request.json();
+
+    // Beta invite gate — set BETA_INVITE_CODE env var to require a code at signup.
+    const betaCode = process.env.BETA_INVITE_CODE?.trim();
+    if (betaCode && rawBody?.inviteCode?.trim() !== betaCode) {
+      return NextResponse.json({ error: 'A valid beta invite code is required to sign up.' }, { status: 403 });
+    }
+
+    const body = schema.parse(rawBody);
     const normalizedUsername = normalizeUsername(body.username);
 
     if (!isValidUsername(normalizedUsername)) {

@@ -11,6 +11,7 @@ import { detectRequestLocation } from '@/lib/request-location';
 import { parseShowProductionPlan } from '@/lib/show-composer';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import { formatShowTime } from '@/lib/utils';
+import { getMuxPlaybackToken } from '@/lib/mux';
 import { ShowPlaybackTracker } from '@/components/ShowPlaybackTracker';
 
 export async function generateMetadata(
@@ -156,7 +157,25 @@ export default async function ShowDetailPage({
 
   const visibility = getShowVisibilitySignals(show);
   const productionPlan = parseShowProductionPlan(show.productionPlan);
-  const playbackUrl = show.streamPlaybackId ? `https://stream.mux.com/${show.streamPlaybackId}.m3u8` : null;
+
+  // Ticketed shows require a signed playback token; public shows use the raw HLS URL.
+  // Token signing only activates when MUX_SIGNING_KEY_ID + MUX_SIGNING_PRIVATE_KEY are set.
+  const hasTicket = session?.user?.id
+    ? await db.ticket.findFirst({
+        where: { showId: show.id, holderEmail: (await db.user.findUnique({ where: { id: session.user.id }, select: { email: true } }))?.email ?? '' },
+        select: { id: true }
+      }).then(Boolean)
+    : false;
+
+  const canWatch = !show.isTicketed || hasTicket || (session?.user?.id === show.creatorId) || isAdminSession(session);
+
+  let playbackUrl: string | null = null;
+  if (show.streamPlaybackId && canWatch) {
+    const token = show.isTicketed ? getMuxPlaybackToken(show.streamPlaybackId) : null;
+    playbackUrl = token
+      ? `https://stream.mux.com/${show.streamPlaybackId}.m3u8?token=${token}`
+      : `https://stream.mux.com/${show.streamPlaybackId}.m3u8`;
+  }
 
   return (
     <main className="container section">

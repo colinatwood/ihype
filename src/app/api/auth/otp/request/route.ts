@@ -39,6 +39,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
     }
 
+    // Per-identifier limit prevents targeted inbox flooding independent of IP
+    const identifierRl = await consumeRateLimit(
+      `otp-request:id:${body.identifier.toLowerCase().trim()}`,
+      { limit: 5, windowMs: 10 * 60 * 1000 }
+    );
+    if (!identifierRl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many code requests. Wait a few minutes and try again.' },
+        { status: 429, headers: { 'Retry-After': String(identifierRl.retryAfterSeconds) } }
+      );
+    }
+
     const challenge = await createLoginOtpChallenge({
       identifier: body.identifier,
       password: body.password

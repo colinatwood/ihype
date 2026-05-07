@@ -83,6 +83,7 @@ model User {
   username                String                   @unique
   passwordHash            String?
   isThirteenOrOlder       Boolean                  @default(true)
+  emailVerified           DateTime?
   mfaSecret               String?
   mfaEnabledAt            DateTime?
   mfaBackupCodes          String?
@@ -555,6 +556,21 @@ model RadioShowTrack {
 
   @@unique([showId, position])
   @@index([showId])
+}
+
+// Immutable record of admin actions for accountability and debugging.
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  actorId      String
+  action       String
+  targetType   String
+  targetId     String
+  meta         Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetId])
+  @@index([createdAt])
 }
 
 // Idempotency log for inbound webhooks. Inserting a duplicate eventId fails
