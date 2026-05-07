@@ -1,17 +1,30 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { z } from 'zod';
+import { consumeRateLimit, rateLimitHeaders, rateLimitKey } from '@/lib/rate-limit';
 
 const schema = z.discriminatedUnion('targetType', [
   z.object({ targetType: z.literal('show'), targetId: z.string().cuid() }),
   z.object({ targetType: z.literal('profile'), targetId: z.string().cuid() })
 ]);
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Login required' }, { status: 401 });
+  }
+
+  // 30 hype actions per minute per user — prevents scripted spam
+  const rl = consumeRateLimit(
+    rateLimitKey('hype', session.user.id, request.headers.get('x-forwarded-for')),
+    { limit: 30, windowMs: 60_000 }
+  );
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many hype requests. Slow down.' },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
   }
 
   try {

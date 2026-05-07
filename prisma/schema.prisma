@@ -89,6 +89,7 @@ model User {
   storedPaymentTokenRef   String?
   storedPaymentTokenBrand String?
   storedPaymentTokenLast4 String?
+  stripeCustomerId        String?                  @unique
   role                    Role                     @default(FAN)
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
@@ -153,6 +154,8 @@ model Profile {
   stayRecommendations           String?
   upcomingContent               String?
   previousShowHighlights        String?
+  stripeConnectAccountId        String?                     @unique
+  stripeConnectOnboarded        Boolean                     @default(false)
   verified                      Boolean                     @default(false)
   verificationStatus            OwnershipVerificationStatus @default(UNVERIFIED)
   verificationSubmittedAt       DateTime?
@@ -173,6 +176,7 @@ model Profile {
   issuedTickets                 Ticket[]                    @relation("VenueIssuedTickets")
   affiliateTicketOrders         TicketOrder[]               @relation("AffiliatePromoterTicketOrders")
   accountsPayableEntries        AccountsPayableEntry[]
+  contentBlocks                 ProfileBlock[]
 }
 
 model FanPlaylist {
@@ -237,7 +241,8 @@ model ArtistMediaAsset {
   profileId        String
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  profile          Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  profile          Profile           @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  radioTracks      RadioShowTrack[]
 
   @@index([profileId, createdAt])
   @@index([freeUseEnabled, createdAt])
@@ -249,6 +254,7 @@ model Show {
   title                  String
   description            String?
   productionPlan         Json?
+  productionPlanVersion  Int                    @default(1)
   isRadioShow            Boolean                @default(false)
   status                 ShowStatus             @default(DRAFT)
   startsAt               DateTime
@@ -283,6 +289,21 @@ model Show {
   ticketOrders           TicketOrder[]
   tickets                Ticket[]
   accountsPayableEntries AccountsPayableEntry[]
+  radioTracks            RadioShowTrack[]
+  advertisingConfig      ShowAdvertisingConfig?
+}
+
+// Extracted from the productionPlan JSON blob so advertising settings are
+// queryable and auditable without deserialising the full plan.
+model ShowAdvertisingConfig {
+  id              String   @id @default(cuid())
+  showId          String   @unique
+  show            Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+  enabled         Boolean  @default(true)
+  scope           String   @default("local")
+  frequency       Int      @default(3)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model TicketOrder {
@@ -295,6 +316,7 @@ model TicketOrder {
   quantity                   Int
   status                     TicketOrderStatus      @default(RESERVED)
   paymentTokenRef            String?
+  stripePaymentIntentId      String?                @unique
   affiliatePromoterProfileId String?
   subtotalCents              Int
   taxLocalCents              Int                    @default(0)
@@ -333,6 +355,7 @@ model Ticket {
   scannedByUserId    String?
   reassignedAt       DateTime?
   reassignedByUserId String?
+  reassignCount      Int       @default(0)
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   ticketOrder        TicketOrder  @relation(fields: [ticketOrderId], references: [id], onDelete: Cascade)
@@ -494,4 +517,53 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Versioned content blocks — the normalized replacement for the flat content
+// columns on Profile. During the dual-write transition both exist; once all
+// reads have been migrated the columns can be dropped.
+model ProfileBlock {
+  id          String   @id @default(cuid())
+  profileId   String
+  blockType   String
+  content     String
+  position    Int      @default(0)
+  version     Int      @default(1)
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, blockType])
+  @@index([profileId])
+}
+
+// Ordered tracklist for radio-style shows. Each row links a show to either
+// an uploaded ArtistMediaAsset or an external stream URL.
+model RadioShowTrack {
+  id           String            @id @default(cuid())
+  showId       String
+  position     Int
+  title        String
+  artistName   String?
+  mediaAssetId String?
+  externalUrl  String?
+  durationSecs Int?
+  createdAt    DateTime          @default(now())
+  show         Show              @relation(fields: [showId], references: [id], onDelete: Cascade)
+  mediaAsset   ArtistMediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+
+  @@unique([showId, position])
+  @@index([showId])
+}
+
+// Idempotency log for inbound webhooks. Inserting a duplicate eventId fails
+// on the unique constraint, which lets handlers skip already-processed events
+// without any additional SELECT.
+model ProcessedWebhookEvent {
+  id          String   @id @default(cuid())
+  source      String
+  eventId     String
+  processedAt DateTime @default(now())
+
+  @@unique([source, eventId])
+  @@index([processedAt])
 }

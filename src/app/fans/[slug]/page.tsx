@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
@@ -107,6 +108,48 @@ function sortByLocationSignal<
 
     return left.name.localeCompare(right.name);
   });
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    select: { name: true, genres: true, city: true, stateRegion: true, hypeCount: true, avatarImage: true }
+  });
+
+  if (!profile) return { title: 'Fan · iHYPE' };
+
+  const loc    = [profile.city, profile.stateRegion].filter(Boolean).join(', ');
+  const genres = profile.genres.slice(0, 3).join(', ');
+  const title  = `${profile.name} · iHYPE`;
+  const description = [
+    'Fan',
+    genres || null,
+    loc || null,
+    profile.hypeCount ? `${profile.hypeCount} HYPE` : null,
+  ].filter(Boolean).join(' · ');
+  const image = profile.avatarImage ?? undefined;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type:        'profile',
+      siteName:    'iHYPE',
+      title,
+      description,
+      url:         `/fans/${slug}`,
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: {
+      card:        'summary',
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
 export default async function ListenerPage({
@@ -261,6 +304,49 @@ export default async function ListenerPage({
       }
     })
   ]);
+
+  // Cross-fan discovery: find fans with overlapping genres or Top 5 terms
+  const fanGenres = profile.genres ?? [];
+  const fanTopFiveTerms = getTopFiveItems(profile.topFiveContent)
+    .map((t) => t.toLowerCase());
+
+  const similarFans = fanGenres.length > 0
+    ? await db.profile.findMany({
+        where: {
+          type: 'LISTENER',
+          id: { not: profile.id },
+          genres: { hasSome: fanGenres }
+        },
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          city: true,
+          country: true,
+          genres: true,
+          hypeCount: true,
+          avatarImage: true,
+          topFiveContent: true
+        },
+        orderBy: { hypeCount: 'desc' },
+        take: 12
+      })
+    : [];
+
+  // Score by genre overlap + Top 5 term overlap, keep top 5
+  const scoredFans = similarFans
+    .map((fan) => {
+      const genreOverlap = fan.genres.filter((g) =>
+        fanGenres.some((fg) => fg.toLowerCase() === g.toLowerCase())
+      ).length;
+      const fanTerms = getTopFiveItems(fan.topFiveContent).map((t) => t.toLowerCase());
+      const topFiveOverlap = fanTopFiveTerms.filter((term) =>
+        fanTerms.some((ft) => ft.includes(term) || term.includes(ft))
+      ).length;
+      return { ...fan, score: genreOverlap * 2 + topFiveOverlap * 3 };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
 
   const now = new Date();
   const shows = hypedShows.map((entry) => entry.show);
@@ -506,6 +592,42 @@ export default async function ListenerPage({
                     <div className="empty fan-page-empty-compact">No top 5 list yet.</div>
                   )}
                 </section>
+
+                {scoredFans.length > 0 && (
+                  <section className="fan-page-about-card fan-page-about-similar-card">
+                    <div className="fan-page-section-head">
+                      <h3>Fans like you</h3>
+                      <span className="meta">Overlapping taste</span>
+                    </div>
+                    <div className="fan-similar-list">
+                      {scoredFans.map((fan) => {
+                        const sharedGenres = fan.genres.filter((g) =>
+                          fanGenres.some((fg) => fg.toLowerCase() === g.toLowerCase())
+                        ).slice(0, 3);
+                        return (
+                          <Link className="fan-similar-row" href={`/fans/${fan.slug}`} key={fan.id}>
+                            <div className="fan-similar-avatar">
+                              {fan.avatarImage
+                                ? <img src={fan.avatarImage} alt={fan.name} />
+                                : <span>{fan.name.slice(0, 1).toUpperCase()}</span>}
+                            </div>
+                            <div className="fan-similar-info">
+                              <strong>{fan.name}</strong>
+                              <span className="meta">{[fan.city, fan.country].filter(Boolean).join(', ')}</span>
+                              {sharedGenres.length > 0 && (
+                                <div className="fan-similar-genres">
+                                  {sharedGenres.map((g) => (
+                                    <span className="tag" key={g}>{g}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
 
                 <section className="fan-page-about-card fan-page-about-events-card">
                   <div className="fan-page-section-head">

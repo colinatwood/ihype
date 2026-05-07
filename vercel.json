@@ -5,6 +5,19 @@
     "functions":  {
                       "src/app/api/**/route.{ts,js}":  {
                                                            "maxDuration":  30
-                                                       }
+                                                       },
+                      "src/app/api/cron/**/route.{ts,js}":  {
+                                                                "maxDuration":  60
+                                                            }
+                  },
+    "crons":  [
+                  {
+                      "path":  "/api/cron/show-lifecycle",
+                      "schedule":  "* * * * *"
+                  },
+                  {
+                      "path":  "/api/cron/expire-reservations",
+                      "schedule":  "*/5 * * * *"
                   }
+              ]
 }

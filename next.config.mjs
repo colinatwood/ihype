@@ -91,7 +91,11 @@ const nextConfig = {
       beforeFiles: [
         { source: '/',           destination: '/ihype-homepage.html' },
         { source: '/login',      destination: '/ihype-login.html' },
-        { source: '/register',   destination: '/ihype-register.html' },
+        { source: '/register',          destination: '/ihype-register.html' },
+        { source: '/register/fan',      destination: '/ihype-register.html' },
+        { source: '/register/artist',   destination: '/ihype-register.html' },
+        { source: '/register/promoter', destination: '/ihype-register.html' },
+        { source: '/register/venue',    destination: '/ihype-register.html' },
         { source: '/hype',       destination: '/ihype-hype-engine.html' },
         { source: '/discover',   destination: '/ihype-rec-engine.html' },
         { source: '/tickets',    destination: '/ihype-ticketing.html' },
@@ -139,7 +143,7 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       {
-        source: '/register',
+        source: '/register/:path*',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       {

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
@@ -45,6 +46,47 @@ function formatRequestStatus(value: 'PENDING' | 'BOOKED' | 'DISMISSED') {
   if (value === 'BOOKED') return 'Booked';
   if (value === 'DISMISSED') return 'Dismissed';
   return 'Pending';
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    select: { name: true, headline: true, bio: true, city: true, stateRegion: true, country: true, hypeCount: true, avatarImage: true }
+  });
+
+  if (!profile) return { title: 'Venue · iHYPE' };
+
+  const loc    = [profile.city, profile.stateRegion, profile.country].filter(Boolean).join(', ');
+  const title  = `${profile.name} · iHYPE`;
+  const description = [
+    'Venue',
+    loc || null,
+    profile.hypeCount ? `${profile.hypeCount} HYPE` : null,
+    profile.headline || null,
+  ].filter(Boolean).join(' · ');
+  const image = profile.avatarImage ?? undefined;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type:        'website',
+      siteName:    'iHYPE',
+      title,
+      description,
+      url:         `/venues/${slug}`,
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: {
+      card:        'summary',
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
 export default async function VenuePage({

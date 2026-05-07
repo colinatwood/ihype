@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { consumeRateLimit, rateLimitHeaders } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +15,17 @@ export const dynamic = 'force-dynamic';
  * Returns { results, genres } where genres is the set of unique genre
  * strings found across matched artist profiles.
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
+  // 60 searches per minute per IP — allows normal autocomplete usage
+  const ip = request.headers.get('x-forwarded-for') ?? 'unknown';
+  const rl = consumeRateLimit(`search:ip:${ip}`, { limit: 60, windowMs: 60_000 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many search requests.' },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const q = searchParams.get('q')?.trim() ?? '';
   const typeFilter = searchParams.get('type') ?? 'all';

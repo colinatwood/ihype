@@ -61,7 +61,8 @@ export async function POST(
         holderName: body.newHolderName.trim(),
         holderEmail: body.newHolderEmail.trim().toLowerCase(),
         reassignedAt: new Date(),
-        reassignedByUserId: session.user.id
+        reassignedByUserId: session.user.id,
+        reassignCount: { increment: 1 }
       }
     });
 

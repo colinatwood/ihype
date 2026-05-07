@@ -194,6 +194,16 @@ document.querySelectorAll('#role-grid .role-btn').forEach(btn => {
     document.getElementById('su-role').value = btn.dataset.role;
   });
 });
+
+// Pre-select role from URL path (e.g. /register/artist → ARTIST)
+(function() {
+  const pathMap = { fan: 'FAN', artist: 'ARTIST', promoter: 'DJ', venue: 'VENUE' };
+  const segment = window.location.pathname.split('/').pop();
+  const role = pathMap[segment];
+  if (!role) return;
+  const btn = document.querySelector('#role-grid .role-btn[data-role="' + role + '"]');
+  if (btn) btn.click();
+})();
 </script>
 <script src="/ihype-auth.js"></script>
 </body>

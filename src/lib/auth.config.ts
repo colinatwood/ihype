@@ -1,3 +1,9 @@
+// Upgrade checklist for next-auth beta bumps:
+//   1. Read https://github.com/nextauthjs/next-auth/releases for the target version.
+//   2. Check for NextAuthConfig type changes (especially cookies, session, callbacks shapes).
+//   3. Verify PrismaAdapter interface parity with the new @auth/prisma-adapter release.
+//   4. Test the full OTP login flow and session persistence after the bump.
+//   5. Update the pinned version in package.json overrides AND the dependency specifier.
 import type { NextAuthConfig } from 'next-auth';
 
 const useSecureCookies = process.env.NODE_ENV === 'production';

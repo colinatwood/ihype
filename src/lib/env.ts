@@ -14,7 +14,10 @@ const envSchema = z.object({
   SMTP_FROM: z.string().email().optional(),
   MUX_TOKEN_ID: z.string().optional(),
   MUX_TOKEN_SECRET: z.string().optional(),
-  MUX_WEBHOOK_SECRET: z.string().optional()
+  MUX_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().startsWith('sk_').optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().startsWith('pk_').optional()
 });
 
 type Env = z.infer<typeof envSchema>;

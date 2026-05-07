@@ -79,13 +79,15 @@ export default async function ShowDetailPage({
   searchParams
 }: {
   params: Promise<{ slug: string }>;
-  searchParams?: Promise<{ affiliate?: string | string[] }>;
+  searchParams?: Promise<{ affiliate?: string | string[]; ref?: string | string[] }>;
 }) {
   const session = await auth();
   const { slug } = await params;
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const affiliateId =
     typeof resolvedSearchParams.affiliate === 'string' ? resolvedSearchParams.affiliate : undefined;
+  const refHexId =
+    typeof resolvedSearchParams.ref === 'string' ? resolvedSearchParams.ref : undefined;
   const show = await db.show.findUnique({
     where: { slug },
     include: {
@@ -94,7 +96,23 @@ export default async function ShowDetailPage({
       promoterProfile: true,
       ticketOrders: {
         orderBy: { createdAt: 'desc' },
-        take: 6
+        take: 6,
+        include: {
+          tickets: {
+            select: { reassignCount: true }
+          }
+        }
+      },
+      radioTracks: {
+        orderBy: { position: 'asc' },
+        select: {
+          id: true,
+          position: true,
+          title: true,
+          artistName: true,
+          externalUrl: true,
+          durationSecs: true
+        }
       }
     }
   });
@@ -122,18 +140,17 @@ export default async function ShowDetailPage({
           }
         })
       : Promise.resolve(null),
-    affiliateId
+    refHexId
       ? db.profile.findFirst({
-          where: {
-            id: affiliateId,
-            type: 'DJ'
-          },
-          select: {
-            id: true,
-            name: true
-          }
+          where: { hexId: refHexId, type: 'DJ' },
+          select: { id: true, name: true }
         })
-      : Promise.resolve(null)
+      : affiliateId
+        ? db.profile.findFirst({
+            where: { id: affiliateId, type: 'DJ' },
+            select: { id: true, name: true }
+          })
+        : Promise.resolve(null)
   ]);
 
   const visibility = getShowVisibilitySignals(show);
@@ -469,10 +486,13 @@ export default async function ShowDetailPage({
                   <th>Venue</th>
                   <th>Artist</th>
                   <th>Promoter</th>
+                  <th title="Total reassignments across all tickets in this order">Passed</th>
                 </tr>
               </thead>
               <tbody>
-                {show.ticketOrders.map((order) => (
+                {show.ticketOrders.map((order) => {
+                  const totalPassed = order.tickets.reduce((sum, t) => sum + t.reassignCount, 0);
+                  return (
                   <tr key={order.id}>
                     <td>{order.status}</td>
                     <td>{formatCurrencyFromCents(order.totalTaxCents)}</td>
@@ -483,13 +503,69 @@ export default async function ShowDetailPage({
                     <td>{formatCurrencyFromCents(order.venuePayoutCents)}</td>
                     <td>{formatCurrencyFromCents(order.artistPayoutCents)}</td>
                     <td>{formatCurrencyFromCents(order.promoterPayoutCents)}</td>
+                    <td style={totalPassed > 0 ? { color: 'var(--accent-3)', fontWeight: 600 } : { color: 'var(--muted)' }}>
+                      {totalPassed > 0 ? `${totalPassed}×` : '—'}
+                    </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </section>
       ) : null}
+
+      {show.isRadioShow && show.radioTracks.length > 0 && (
+        <section className="section">
+          <div className="panel" style={{ padding: '1.25rem' }}>
+            <h2 style={{ marginBottom: '1rem' }}>Tracklist</h2>
+            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '0.5rem' }}>
+              {show.radioTracks.map((track) => (
+                <li
+                  key={track.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '2rem 1fr auto',
+                    gap: '0.75rem',
+                    alignItems: 'center',
+                    padding: '0.6rem 0.75rem',
+                    borderRadius: '10px',
+                    background: 'rgba(255,255,255,0.03)'
+                  }}
+                >
+                  <span className="meta" style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    {String(track.position + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <strong style={{ display: 'block' }}>{track.title}</strong>
+                    {track.artistName && (
+                      <span className="meta">{track.artistName}</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    {track.durationSecs && (
+                      <span className="meta" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {Math.floor(track.durationSecs / 60)}:{String(track.durationSecs % 60).padStart(2, '0')}
+                      </span>
+                    )}
+                    {track.externalUrl && (
+                      <a
+                        href={track.externalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="button small secondary"
+                        style={{ fontSize: '0.75rem' }}
+                      >
+                        Play ↗
+                      </a>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

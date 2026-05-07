@@ -43,7 +43,11 @@ const defaultNavItems: NavItem[] = [
 ];
 
 const perspectiveNavItems: Record<AdminPerspective, NavItem[]> = {
-  ADMIN: [{ href: '/dashboard', label: 'Dashboard', match: '/dashboard' }, ...defaultNavItems],
+  ADMIN: [
+    { href: '/dashboard', label: 'Dashboard', match: '/dashboard' },
+    { href: '/admin/verifications', label: 'Verifications', match: '/admin/verifications' },
+    ...defaultNavItems
+  ],
   LISTENER: [
     { href: '/', label: 'Discover', match: '/' },
     { href: '/artists', label: 'Artists', match: '/artists' },

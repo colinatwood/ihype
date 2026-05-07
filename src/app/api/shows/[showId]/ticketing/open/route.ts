@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { sendIssuedTicketEmail } from '@/lib/mailer';
 import { canManageOwnedResource, isAdminSession } from '@/lib/permissions';
+import { captureTicketPaymentIntent } from '@/lib/stripe';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import {
   buildTicketQrCodeDataUrl,
@@ -126,7 +127,24 @@ export async function POST(
       headlinerProfile: true,
       ticketOrders: {
         where: { status: TicketOrderStatus.RESERVED },
-        orderBy: { createdAt: 'asc' }
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          confirmationCode: true,
+          buyerName: true,
+          buyerEmail: true,
+          quantity: true,
+          totalChargeCents: true,
+          taxLocalCents: true,
+          taxStateCents: true,
+          taxCountryCents: true,
+          taxInternationalCents: true,
+          venuePayoutCents: true,
+          artistPayoutCents: true,
+          promoterPayoutCents: true,
+          affiliatePromoterProfileId: true,
+          stripePaymentIntentId: true
+        }
       }
     }
   });
@@ -144,6 +162,14 @@ export async function POST(
   }
 
   const openedAt = new Date();
+
+  // Capture all Stripe PaymentIntents before marking orders captured in the DB.
+  // This is best-effort: orders with no PI (legacy stored-token flow) continue as before.
+  await Promise.allSettled(
+    show.ticketOrders
+      .filter((o) => o.stripePaymentIntentId)
+      .map((o) => captureTicketPaymentIntent(o.stripePaymentIntentId!))
+  );
 
   const captureResult = await db.$transaction(async (tx) => {
     await tx.show.update({

@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -7,6 +7,7 @@ import { canManageOwnedResource, isAdminSession } from '@/lib/permissions';
 import { showProductionPlanSchema } from '@/lib/show-composer';
 import { DEFAULT_PROMOTER_AFFILIATE_PERCENT, validateTicketSplit } from '@/lib/ticketing';
 import { slugify } from '@/lib/utils';
+import { consumeRateLimit, rateLimitHeaders, rateLimitKey } from '@/lib/rate-limit';
 
 const radioTrackSchema = z.object({
   hexId: z.string(),
@@ -67,12 +68,24 @@ export async function GET(request: Request) {
   return NextResponse.json(sortShowsForFeed(shows));
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Login required' }, { status: 401 });
   }
   const isAdmin = isAdminSession(session);
+
+  // 10 show creations per hour per user — prevents automated abuse
+  const rl = consumeRateLimit(
+    rateLimitKey('show-create', session.user.id, request.headers.get('x-forwarded-for')),
+    { limit: 10, windowMs: 60 * 60_000 }
+  );
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many show creation requests. Try again later.' },
+      { status: 429, headers: rateLimitHeaders(rl) }
+    );
+  }
 
   try {
     const body = schema.parse(await request.json());
@@ -234,7 +247,16 @@ export async function POST(request: Request) {
         artistPayoutPercent: body.isTicketed ? body.artistPayoutPercent : null,
         promoterPayoutPercent: body.isTicketed ? body.promoterPayoutPercent ?? DEFAULT_PROMOTER_AFFILIATE_PERCENT : DEFAULT_PROMOTER_AFFILIATE_PERCENT,
         productionPlan: body.productionPlan,
-        status: body.status
+        status: body.status,
+        ...(body.productionPlan?.advertising !== undefined && {
+          advertisingConfig: {
+            create: {
+              enabled: body.productionPlan.advertising.enabled ?? true,
+              scope: body.productionPlan.advertising.scope ?? 'local',
+              frequency: body.productionPlan.advertising.frequency ?? 3
+            }
+          }
+        })
       }
     });
 
