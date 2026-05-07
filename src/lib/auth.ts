@@ -1,3 +1,6 @@
+// next-auth is pinned to 5.0.0-beta.31 — do not bump without reading the beta
+// changelog for session/jwt callback shape changes, adapter interface changes,
+// and cookie config renames. @auth/prisma-adapter must be bumped together.
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { PrismaAdapter } from '@auth/prisma-adapter';
