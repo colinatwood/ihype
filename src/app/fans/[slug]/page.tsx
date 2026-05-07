@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
@@ -107,6 +108,48 @@ function sortByLocationSignal<
 
     return left.name.localeCompare(right.name);
   });
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    select: { name: true, genres: true, city: true, stateRegion: true, hypeCount: true, avatarImage: true }
+  });
+
+  if (!profile) return { title: 'Fan · iHYPE' };
+
+  const loc    = [profile.city, profile.stateRegion].filter(Boolean).join(', ');
+  const genres = profile.genres.slice(0, 3).join(', ');
+  const title  = `${profile.name} · iHYPE`;
+  const description = [
+    'Fan',
+    genres || null,
+    loc || null,
+    profile.hypeCount ? `${profile.hypeCount} HYPE` : null,
+  ].filter(Boolean).join(' · ');
+  const image = profile.avatarImage ?? undefined;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type:        'profile',
+      siteName:    'iHYPE',
+      title,
+      description,
+      url:         `/fans/${slug}`,
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: {
+      card:        'summary',
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
 export default async function ListenerPage({

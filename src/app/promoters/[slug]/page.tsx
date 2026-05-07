@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
@@ -49,6 +50,49 @@ function formatShowDate(value: Date) {
     day: 'numeric',
     year: 'numeric'
   }).format(value);
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    select: { name: true, headline: true, genres: true, city: true, stateRegion: true, hypeCount: true, avatarImage: true }
+  });
+
+  if (!profile) return { title: 'Promoter · iHYPE' };
+
+  const loc    = [profile.city, profile.stateRegion].filter(Boolean).join(', ');
+  const genres = profile.genres.slice(0, 3).join(', ');
+  const title  = `${profile.name} · iHYPE`;
+  const description = [
+    'Promoter',
+    genres || null,
+    loc || null,
+    profile.hypeCount ? `${profile.hypeCount} HYPE` : null,
+    profile.headline || null,
+  ].filter(Boolean).join(' · ');
+  const image = profile.avatarImage ?? undefined;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type:        'profile',
+      siteName:    'iHYPE',
+      title,
+      description,
+      url:         `/promoters/${slug}`,
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: {
+      card:        'summary',
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
 export default async function PromoterPage({
