@@ -154,6 +154,18 @@ assertIncludes(
   'recommendation-stat-card',
   'Merged stats should render inside Recommendation Engine cards.'
 );
+assertNotIncludes(
+  'src/components/DiscoverModulePanels.tsx',
+  'DiscoverStatsPanel',
+  'The old standalone Stats panel should not come back.'
+);
+['src/app/my/fan/page.tsx', 'src/app/my/artist/page.tsx', 'src/app/my/promoter/page.tsx', 'src/app/my/venue/page.tsx'].forEach((pagePath) => {
+  assertNotIncludes(
+    pagePath,
+    'module=stats',
+    'Signed-in role pages should route stats into Recommendation Engine instead of a separate tab.'
+  );
+});
 assertIncludes(
   'src/app/globals.css',
   '.recommendation-stat-strip',

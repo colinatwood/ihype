@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import {
   DiscoverCreatorPanel,
   DiscoverMyPagePanel,
-  DiscoverStatsPanel
+  DiscoverRecommendationPanel
 } from '@/components/DiscoverModulePanels';
 import { VenueEventScheduler, type BookedAct } from '@/components/VenueEventScheduler';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
@@ -13,10 +13,11 @@ import { buildVenueBookingRecommendations } from '@/lib/venue-booking';
 
 export const dynamic = 'force-dynamic';
 
-type LandingModule = 'my-page' | 'stats' | 'events';
+type LandingModule = 'my-page' | 'recommendation-engine' | 'events';
 
 function resolveModule(value: string | string[] | undefined): LandingModule {
-  if (value === 'stats' || value === 'events') return value;
+  if (value === 'stats' || value === 'recommendation-engine') return 'recommendation-engine';
+  if (value === 'events') return 'events';
   return 'my-page';
 }
 
@@ -159,6 +160,35 @@ export default async function VenueLandingPage({
     currency: 'USD',
     maximumFractionDigits: 0
   });
+  const venueStats = [
+    { label: 'Fan hype (total)', value: myVenueProfile.hypeCount },
+    { label: 'New hypes (30 days)', value: recentVenueHypeCount },
+    { label: 'Gross ticket revenue', value: grossRevenueDisplay },
+    { label: 'Tickets sold', value: ticketsSold },
+    { label: 'Unique artists hosted', value: uniqueArtistsHosted },
+    { label: 'Total events', value: myVenueShows.length },
+    { label: 'Live + upcoming', value: liveOrUpcomingShows.length },
+    { label: 'Requests received', value: myVenueRequestCount }
+  ];
+  const venueRecommendationOpportunities = [
+    {
+      title: 'Book around proven demand',
+      summary: `${myVenueRequestCount} artist requests and ${myVenueShows.length} events can guide the next room decision.`,
+      detail: 'The strongest recommendations blend fan requests, event history, and ticket movement.'
+    },
+    {
+      title: 'Use ticket velocity as a signal',
+      summary: `${ticketsSold} tickets sold gives the engine a better read on what fills your room.`,
+      detail: 'Open events only when the booking, split, and capacity are ready.'
+    },
+    {
+      title: 'Bring back high-fit artists',
+      summary: topHeadliners.length
+        ? `Recent headliner signal: ${topHeadliners.join(', ')}.`
+        : 'Headliner signals will sharpen once more events are tied to this venue.',
+      detail: 'Repeat-fit artists are easier to recommend when fan HYPE clusters nearby.'
+    }
+  ];
   const recommendationData = buildVenueBookingRecommendations({
     requests: venueRequests.map((r) => ({
       status: r.status,
@@ -244,22 +274,13 @@ export default async function VenueLandingPage({
         tags={myVenueProfile.genres}
         title="My venue page"
       />
-    ) : activeModule === 'stats' ? (
-      <DiscoverStatsPanel
-        badge="Stats"
-        description="A quick read on the live signals tied to your venue page."
-        highlights={topHeadliners.length ? topHeadliners : undefined}
-        stats={[
-          { label: 'Fan hype (total)', value: myVenueProfile.hypeCount },
-          { label: 'New hypes (30 days)', value: recentVenueHypeCount },
-          { label: 'Gross ticket revenue', value: grossRevenueDisplay },
-          { label: 'Tickets sold', value: ticketsSold },
-          { label: 'Unique artists hosted', value: uniqueArtistsHosted },
-          { label: 'Total events', value: myVenueShows.length },
-          { label: 'Live + upcoming', value: liveOrUpcomingShows.length },
-          { label: 'Requests received', value: myVenueRequestCount }
-        ]}
-        title="My venue stats"
+    ) : activeModule === 'recommendation-engine' ? (
+      <DiscoverRecommendationPanel
+        badge="Recommendation Engine"
+        description="Your venue stats now sit beside the booking recommendations they influence."
+        opportunities={venueRecommendationOpportunities}
+        stats={venueStats}
+        title="My venue recommendations"
       />
     ) : (
       <DiscoverCreatorPanel
@@ -295,10 +316,10 @@ export default async function VenueLandingPage({
             My Page
           </Link>
           <Link
-            className={activeModule === 'stats' ? 'site-subnav-link active' : 'site-subnav-link'}
-            href="/my/venue?module=stats"
+            className={activeModule === 'recommendation-engine' ? 'site-subnav-link active' : 'site-subnav-link'}
+            href="/my/venue?module=recommendation-engine"
           >
-            Stats
+            Recommendation Engine
           </Link>
           <Link
             className={activeModule === 'events' ? 'site-subnav-link active' : 'site-subnav-link'}

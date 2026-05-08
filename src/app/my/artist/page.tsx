@@ -6,16 +6,17 @@ import {
   DiscoverCreatorPanel,
   DiscoverEventsPanel,
   DiscoverMyPagePanel,
-  DiscoverStatsPanel
+  DiscoverRecommendationPanel
 } from '@/components/DiscoverModulePanels';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 
 export const dynamic = 'force-dynamic';
 
-type LandingModule = 'my-page' | 'stats' | 'events';
+type LandingModule = 'my-page' | 'recommendation-engine' | 'events';
 
 function resolveModule(value: string | string[] | undefined): LandingModule {
-  if (value === 'stats' || value === 'events') return value;
+  if (value === 'stats' || value === 'recommendation-engine') return 'recommendation-engine';
+  if (value === 'events') return 'events';
   return 'my-page';
 }
 
@@ -96,6 +97,35 @@ export default async function ArtistLandingPage({
       ).slice(0, 5)
     )
   ]);
+  const artistStats = [
+    { label: 'Fan hype (total)', value: myArtistProfile.hypeCount },
+    { label: 'New hypes (30 days)', value: recentHypeCount },
+    { label: 'Full song listens', value: mediaListenCount },
+    { label: 'Full show listens', value: showListenCount },
+    { label: 'Tickets sold', value: ticketsSold },
+    { label: 'Total events', value: myArtistShows.length },
+    { label: 'Live + upcoming', value: liveOrUpcomingShows.length },
+    { label: 'Verified', value: myArtistProfile.verified ? 'Yes' : 'No' }
+  ];
+  const artistRecommendationOpportunities = [
+    {
+      title: 'Route around real demand',
+      summary: `${myArtistProfile.hypeCount} fan HYPE signals can guide where your next push should land.`,
+      detail: 'Prioritize markets and venues where completed listens and HYPE overlap.'
+    },
+    {
+      title: 'Convert attention into dates',
+      summary: `${liveOrUpcomingShows.length} live or upcoming events are attached to your artist page.`,
+      detail: 'Use fresh HYPE and recent listens to support stronger booking asks.'
+    },
+    {
+      title: 'Tune the venue short list',
+      summary: topVenueNames.length
+        ? `Recent venue signal: ${topVenueNames.join(', ')}.`
+        : 'Venue recommendations will sharpen once shows and requests accumulate.',
+      detail: 'The engine favors rooms with matching fan activity.'
+    }
+  ];
 
   const modulePanel =
     activeModule === 'my-page' ? (
@@ -116,22 +146,13 @@ export default async function ArtistLandingPage({
         tags={myArtistProfile.genres}
         title="My artist page"
       />
-    ) : activeModule === 'stats' ? (
-      <DiscoverStatsPanel
-        badge="Stats"
-        description="A quick read on the artist page signals attached to your profile."
-        highlights={topVenueNames.length ? topVenueNames : undefined}
-        stats={[
-          { label: 'Fan hype (total)', value: myArtistProfile.hypeCount },
-          { label: 'New hypes (30 days)', value: recentHypeCount },
-          { label: 'Full song listens', value: mediaListenCount },
-          { label: 'Full show listens', value: showListenCount },
-          { label: 'Tickets sold', value: ticketsSold },
-          { label: 'Total events', value: myArtistShows.length },
-          { label: 'Live + upcoming', value: liveOrUpcomingShows.length },
-          { label: 'Verified', value: myArtistProfile.verified ? 'Yes' : 'No' }
-        ]}
-        title="My artist stats"
+    ) : activeModule === 'recommendation-engine' ? (
+      <DiscoverRecommendationPanel
+        badge="Recommendation Engine"
+        description="Your artist stats now sit inside the recommendation flow they power."
+        opportunities={artistRecommendationOpportunities}
+        stats={artistStats}
+        title="My artist recommendations"
       />
     ) : (
       <DiscoverEventsPanel
@@ -155,10 +176,10 @@ export default async function ArtistLandingPage({
             My Page
           </Link>
           <Link
-            className={activeModule === 'stats' ? 'site-subnav-link active' : 'site-subnav-link'}
-            href="/my/artist?module=stats"
+            className={activeModule === 'recommendation-engine' ? 'site-subnav-link active' : 'site-subnav-link'}
+            href="/my/artist?module=recommendation-engine"
           >
-            Stats
+            Recommendation Engine
           </Link>
           <Link
             className={activeModule === 'events' ? 'site-subnav-link active' : 'site-subnav-link'}

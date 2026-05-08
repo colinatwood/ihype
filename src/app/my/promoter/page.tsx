@@ -7,7 +7,7 @@ import {
   DiscoverCreatorPanel,
   DiscoverEventsPanel,
   DiscoverMyPagePanel,
-  DiscoverStatsPanel
+  DiscoverRecommendationPanel
 } from '@/components/DiscoverModulePanels';
 import { PromoterShowCreationTool } from '@/components/PromoterShowCreationTool';
 import { PromoterAffiliateLinks } from '@/components/PromoterAffiliateLinks';
@@ -15,10 +15,11 @@ import { getProfileDesignStyleVars } from '@/lib/profile-design';
 
 export const dynamic = 'force-dynamic';
 
-type LandingModule = 'my-page' | 'stats' | 'events' | 'show-creator' | 'affiliate-links';
+type LandingModule = 'my-page' | 'recommendation-engine' | 'events' | 'show-creator' | 'affiliate-links';
 
 function resolveModule(value: string | string[] | undefined): LandingModule {
-  if (value === 'stats' || value === 'events' || value === 'show-creator' || value === 'affiliate-links') return value;
+  if (value === 'stats' || value === 'recommendation-engine') return 'recommendation-engine';
+  if (value === 'events' || value === 'show-creator' || value === 'affiliate-links') return value;
   return 'my-page';
 }
 
@@ -102,6 +103,34 @@ export default async function PromoterLandingPage({
         .filter((n): n is string => Boolean(n))
     )
   ).slice(0, 5);
+  const promoterStats = [
+    { label: 'Fan hype (total)', value: myPromoterProfile.hypeCount },
+    { label: 'New hypes (30 days)', value: promoterRecentHypeCount },
+    { label: 'Gross ticket revenue', value: promoterGrossRevenueDisplay },
+    { label: 'Tickets sold', value: ticketsSold },
+    { label: 'Total shows', value: myPromoterShows.length },
+    { label: 'Live + upcoming', value: liveOrUpcomingShows.length },
+    { label: 'Venues worked', value: venueCount }
+  ];
+  const promoterRecommendationOpportunities = [
+    {
+      title: 'Build shows from proven rooms',
+      summary: `${venueCount} venues have already worked with your promoter page.`,
+      detail: 'Prioritize repeat rooms when fan HYPE and ticket movement are rising.'
+    },
+    {
+      title: 'Turn demand into lineups',
+      summary: `${myPromoterShows.length} shows give the engine a pattern for stronger artist pairings.`,
+      detail: 'Completed show listens and fan HYPE help shape the next playlist and booking mix.'
+    },
+    {
+      title: 'Focus the next market',
+      summary: topVenuesWorked.length
+        ? `Venue signal: ${topVenuesWorked.join(', ')}.`
+        : 'Venue signals will appear as shows are saved to your promoter page.',
+      detail: 'The best recommendations combine your history with live local demand.'
+    }
+  ];
 
   const pageStyle = getProfileDesignStyleVars(myPromoterProfile.themePreset, {
     accentTone: myPromoterProfile.themeAccentTone,
@@ -132,22 +161,14 @@ export default async function PromoterLandingPage({
         title="My promoter page"
       />
     );
-  } else if (activeModule === 'stats') {
+  } else if (activeModule === 'recommendation-engine') {
     modulePanel = (
-      <DiscoverStatsPanel
-        badge="Stats"
-        description="A quick read on the event momentum tied to your promoter profile."
-        highlights={topVenuesWorked.length ? topVenuesWorked : undefined}
-        stats={[
-          { label: 'Fan hype (total)', value: myPromoterProfile.hypeCount },
-          { label: 'New hypes (30 days)', value: promoterRecentHypeCount },
-          { label: 'Gross ticket revenue', value: promoterGrossRevenueDisplay },
-          { label: 'Tickets sold', value: ticketsSold },
-          { label: 'Total shows', value: myPromoterShows.length },
-          { label: 'Live + upcoming', value: liveOrUpcomingShows.length },
-          { label: 'Venues worked', value: venueCount }
-        ]}
-        title="My promoter stats"
+      <DiscoverRecommendationPanel
+        badge="Recommendation Engine"
+        description="Your promoter stats now live inside the recommendation flow used to build better shows."
+        opportunities={promoterRecommendationOpportunities}
+        stats={promoterStats}
+        title="My promoter recommendations"
       />
     );
   } else if (activeModule === 'events') {
@@ -263,10 +284,10 @@ export default async function PromoterLandingPage({
             My Page
           </Link>
           <Link
-            className={activeModule === 'stats' ? 'site-subnav-link active' : 'site-subnav-link'}
-            href="/my/promoter?module=stats"
+            className={activeModule === 'recommendation-engine' ? 'site-subnav-link active' : 'site-subnav-link'}
+            href="/my/promoter?module=recommendation-engine"
           >
-            Stats
+            Recommendation Engine
           </Link>
           <Link
             className={activeModule === 'show-creator' ? 'site-subnav-link active' : 'site-subnav-link'}

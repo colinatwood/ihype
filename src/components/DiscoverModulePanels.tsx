@@ -74,48 +74,6 @@ function DiscoverEmptyState({
   );
 }
 
-export function DiscoverStatsPanel({
-  badge,
-  title,
-  description,
-  stats,
-  highlights
-}: {
-  badge: string;
-  title: string;
-  description: string;
-  stats: DiscoverStatItem[];
-  highlights?: string[];
-}) {
-  return (
-    <DiscoverModuleShell
-      badge={badge}
-      className="stats-engine-panel"
-      description={description}
-      title={title}
-    >
-      <div className="discover-stat-grid stats-engine-grid">
-        {stats.map((stat) => (
-          <div className="discover-stat-card" key={stat.label}>
-            <span>{stat.label}</span>
-            <strong>{stat.value}</strong>
-          </div>
-        ))}
-      </div>
-
-      {highlights?.length ? (
-        <div className="discover-market-strip" aria-label="Top focus markets">
-          {highlights.map((highlight) => (
-            <span className="discover-market-pill" key={highlight}>
-              {highlight}
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </DiscoverModuleShell>
-  );
-}
-
 export function DiscoverRecommendationPanel({
   badge,
   title,

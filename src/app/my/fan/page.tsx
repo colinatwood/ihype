@@ -5,16 +5,17 @@ import { db } from '@/lib/db';
 import {
   DiscoverEventsPanel,
   DiscoverMyPagePanel,
-  DiscoverStatsPanel
+  DiscoverRecommendationPanel
 } from '@/components/DiscoverModulePanels';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 
 export const dynamic = 'force-dynamic';
 
-type LandingModule = 'my-page' | 'stats' | 'events';
+type LandingModule = 'my-page' | 'recommendation-engine' | 'events';
 
 function resolveModule(value: string | string[] | undefined): LandingModule {
-  if (value === 'stats' || value === 'events') return value;
+  if (value === 'stats' || value === 'recommendation-engine') return 'recommendation-engine';
+  if (value === 'events') return 'events';
   return 'my-page';
 }
 
@@ -86,6 +87,33 @@ export default async function FanLandingPage({
   const topGenres = Array.from(
     new Set(myFanProfile.genres.slice(0, 5))
   );
+  const fanStats = [
+    { label: 'Hype points', value: hypePoints },
+    { label: 'New hypes (30 days)', value: recentFanHypeCount },
+    { label: 'Full songs listened', value: fullSongListenCount },
+    { label: 'Full shows listened', value: fullShowListenCount },
+    { label: 'Events attended', value: myPastShows.length },
+    { label: 'Upcoming events', value: myUpcomingShows.length }
+  ];
+  const fanRecommendationOpportunities = [
+    {
+      title: 'Build from completed listens',
+      summary: `${fullSongListenCount} full song listens can shape more accurate artist and event recommendations.`,
+      detail: 'Completed listens carry more weight than skips.'
+    },
+    {
+      title: 'Turn HYPE into next events',
+      summary: `${hypePoints} HYPE points help surface rooms and promoters tied to what you already support.`,
+      detail: 'Your signal gets stronger as you attend and finish shows.'
+    },
+    {
+      title: 'Keep your local taste fresh',
+      summary: topGenres.length
+        ? `Current focus: ${topGenres.join(', ')}.`
+        : 'Add genre tags from your page editor to tune recommendations faster.',
+      detail: 'Local recommendations get better when your profile has taste markers.'
+    }
+  ];
   const pageStyle = getProfileDesignStyleVars(myFanProfile.themePreset, {
     accentTone: myFanProfile.themeAccentTone,
     backdropTone: myFanProfile.themeBackdropTone,
@@ -108,20 +136,13 @@ export default async function FanLandingPage({
         tags={myFanProfile.genres}
         title="My fan page"
       />
-    ) : activeModule === 'stats' ? (
-      <DiscoverStatsPanel
-        badge="Stats"
-        description="Track the listening and event signals that make up your fan footprint across iHYPE."
-        highlights={topGenres.length ? topGenres : undefined}
-        stats={[
-          { label: 'Hype points', value: hypePoints },
-          { label: 'New hypes (30 days)', value: recentFanHypeCount },
-          { label: 'Full songs listened', value: fullSongListenCount },
-          { label: 'Full shows listened', value: fullShowListenCount },
-          { label: 'Events attended', value: myPastShows.length },
-          { label: 'Upcoming events', value: myUpcomingShows.length }
-        ]}
-        title="My fan stats"
+    ) : activeModule === 'recommendation-engine' ? (
+      <DiscoverRecommendationPanel
+        badge="Recommendation Engine"
+        description="Your fan stats now live here, alongside the recommendations they help shape."
+        opportunities={fanRecommendationOpportunities}
+        stats={fanStats}
+        title="My fan recommendations"
       />
     ) : (
       <DiscoverEventsPanel
@@ -145,10 +166,10 @@ export default async function FanLandingPage({
             My Page
           </Link>
           <Link
-            className={activeModule === 'stats' ? 'site-subnav-link active' : 'site-subnav-link'}
-            href="/my/fan?module=stats"
+            className={activeModule === 'recommendation-engine' ? 'site-subnav-link active' : 'site-subnav-link'}
+            href="/my/fan?module=recommendation-engine"
           >
-            Stats
+            Recommendation Engine
           </Link>
           <Link
             className={activeModule === 'events' ? 'site-subnav-link active' : 'site-subnav-link'}
