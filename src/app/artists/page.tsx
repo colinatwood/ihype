@@ -14,6 +14,7 @@ import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
 import { RoleModuleSubheader } from '@/components/RoleModuleSubheader';
 import { resolveDiscoverModule } from '@/lib/discover-modules';
 import { getSharedDiscoverFeed } from '@/lib/discover-feed';
+import { buildHypeQueue } from '@/lib/hype-queue';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDirectoryProfiles } from '@/lib/public-data';
@@ -145,6 +146,20 @@ export default async function ArtistsIndexPage({
     [viewerLocation?.city, viewerLocation?.stateRegion ?? viewerLocation?.country].filter(Boolean).join(', ') ||
     'your area';
   const ticketedArtistShows = myArtistShows.filter((show) => show.isTicketed);
+  const hypeQueueItems = buildHypeQueue({
+    role: 'artist',
+    viewerLocationLabel,
+    mediaEntries: discoverFeed.mediaEntries,
+    hypedNearMe: discoverFeed.hypedNearMe,
+    newArtists: discoverFeed.newArtists,
+    newPromoters: discoverFeed.newPromoters,
+    shows: artistShows.map((show) => ({
+      title: show.title,
+      headlinerSlug: show.headlinerProfile?.slug,
+      headlinerName: show.headlinerProfile?.name,
+      venueName: show.venueProfile?.name
+    }))
+  });
   const artistRecommendationOpportunities = [
     {
       title: 'Tour markets to watch',
@@ -254,6 +269,7 @@ export default async function ArtistsIndexPage({
     <DiscoverRecommendationPanel
       badge="Recommendation Engine"
       description="Artist recommendations combine tour routing, venue density, promoter discovery, and nearby HYPE."
+      hypeQueueItems={hypeQueueItems}
       opportunities={artistRecommendationOpportunities}
       title="Artist growth recommendations"
     >

@@ -30,6 +30,8 @@ export type DirectoryMediaSearchEntry = {
   title: string;
   artistName: string;
   artistSlug: string;
+  artistProfileId?: string | null;
+  artistHypeCount?: number | null;
   url: string;
   notes: string | null;
   artworkUrl: string | null;

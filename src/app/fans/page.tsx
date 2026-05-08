@@ -14,6 +14,7 @@ import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
 import { RoleModuleSubheader } from '@/components/RoleModuleSubheader';
 import { resolveDiscoverModule } from '@/lib/discover-modules';
 import { getSharedDiscoverFeed } from '@/lib/discover-feed';
+import { buildHypeQueue } from '@/lib/hype-queue';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDirectoryProfiles } from '@/lib/public-data';
@@ -189,6 +190,20 @@ export default async function ListenersIndexPage({
     [viewerLocation?.city, viewerLocation?.stateRegion ?? viewerLocation?.country].filter(Boolean).join(', ') ||
     'your area';
   const ticketedFanShows = activeShows.filter((show) => show.isTicketed);
+  const hypeQueueItems = buildHypeQueue({
+    role: 'fan',
+    viewerLocationLabel,
+    mediaEntries: discoverFeed.mediaEntries,
+    hypedNearMe: discoverFeed.hypedNearMe,
+    newArtists: discoverFeed.newArtists,
+    newPromoters: discoverFeed.newPromoters,
+    shows: activeShows.map((show) => ({
+      title: show.title,
+      headlinerSlug: show.headlinerProfile?.slug,
+      headlinerName: show.headlinerProfile?.name,
+      venueName: show.venueProfile?.name
+    }))
+  });
   const fanRecommendationOpportunities = [
     {
       title: 'Local and regional trending artists',
@@ -291,6 +306,7 @@ export default async function ListenersIndexPage({
     <DiscoverRecommendationPanel
       badge="Recommendation Engine"
       description="Fan recommendations combine nearby HYPE, new artists, venue proximity, promoter activity, and ticket openings."
+      hypeQueueItems={hypeQueueItems}
       opportunities={fanRecommendationOpportunities}
       title="Recommended next moves"
     >

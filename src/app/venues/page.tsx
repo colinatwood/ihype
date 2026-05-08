@@ -15,6 +15,7 @@ import { VenueEventScheduler, type BookedAct } from '@/components/VenueEventSche
 import { RoleModuleSubheader } from '@/components/RoleModuleSubheader';
 import { resolveDiscoverModule } from '@/lib/discover-modules';
 import { getSharedDiscoverFeed } from '@/lib/discover-feed';
+import { buildHypeQueue } from '@/lib/hype-queue';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDirectoryProfiles } from '@/lib/public-data';
@@ -314,6 +315,20 @@ export default async function VenuesIndexPage({
   const viewerLocationLabel =
     [viewerLocation?.city, viewerLocation?.stateRegion ?? viewerLocation?.country].filter(Boolean).join(', ') ||
     'your area';
+  const hypeQueueItems = buildHypeQueue({
+    role: 'venue',
+    viewerLocationLabel,
+    mediaEntries: discoverFeed.mediaEntries,
+    hypedNearMe: discoverFeed.hypedNearMe,
+    newArtists: discoverFeed.newArtists,
+    newPromoters: discoverFeed.newPromoters,
+    shows: venueShows.map((show) => ({
+      title: show.title,
+      headlinerSlug: show.headlinerProfile?.slug,
+      headlinerName: show.headlinerProfile?.name,
+      venueName: show.venueProfile?.name
+    }))
+  });
 
   const globeRouteStops = buildGlobeRouteStops(venueShows, { includePastTiming: true, now });
 
@@ -390,7 +405,7 @@ export default async function VenuesIndexPage({
       title="My venue stats"
     />
   ) : activeModule === 'recommendation-engine' ? (
-    <VenueBookingRecommendationEngine currentHref="/venues" scopes={recommendationData.scopeGroups}>
+    <VenueBookingRecommendationEngine currentHref="/venues" hypeQueueItems={hypeQueueItems} scopes={recommendationData.scopeGroups}>
       {recommendationDiscoveryContent}
     </VenueBookingRecommendationEngine>
   ) : activeModule === 'ticket-hub' ? (

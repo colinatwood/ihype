@@ -16,6 +16,7 @@ import { PromoterShowCreationTool } from '@/components/PromoterShowCreationTool'
 import { RoleModuleSubheader } from '@/components/RoleModuleSubheader';
 import { resolveDiscoverModule } from '@/lib/discover-modules';
 import { getSharedDiscoverFeed } from '@/lib/discover-feed';
+import { buildHypeQueue } from '@/lib/hype-queue';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDirectoryProfiles } from '@/lib/public-data';
@@ -153,6 +154,20 @@ export default async function PromotersIndexPage({
   const viewerLocationLabel =
     [viewerLocation?.city, viewerLocation?.stateRegion ?? viewerLocation?.country].filter(Boolean).join(', ') ||
     'your area';
+  const hypeQueueItems = buildHypeQueue({
+    role: 'promoter',
+    viewerLocationLabel,
+    mediaEntries: discoverFeed.mediaEntries,
+    hypedNearMe: discoverFeed.hypedNearMe,
+    newArtists: discoverFeed.newArtists,
+    newPromoters: discoverFeed.newPromoters,
+    shows: promoterShows.map((show) => ({
+      title: show.title,
+      headlinerSlug: show.headlinerProfile?.slug,
+      headlinerName: show.headlinerProfile?.name,
+      venueName: show.venueProfile?.name
+    }))
+  });
   const promoterRecommendationOpportunities = [
     {
       title: 'Artists to program',
@@ -267,6 +282,7 @@ export default async function PromotersIndexPage({
         <DiscoverRecommendationPanel
           badge="Recommendation Engine"
           description="Promoter recommendations combine artist momentum, venue routing, ticket opportunity, and show-building focus."
+          hypeQueueItems={hypeQueueItems}
           opportunities={promoterRecommendationOpportunities}
           title="Promoter recommendations"
         >

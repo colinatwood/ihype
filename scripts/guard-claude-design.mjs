@@ -215,9 +215,29 @@ assertIncludes(
   'Recommendation Engine must use the signed-in visual schema instead of the obsolete discover-page card styling.'
 );
 assertIncludes(
+  'src/components/DiscoverModulePanels.tsx',
+  'HypeQueue',
+  'Recommendation Engine should include the guided HYPE Queue so new listens can feed the HYPE engine.'
+);
+assertIncludes(
+  'src/lib/hype-queue.ts',
+  'buildHypeQueue',
+  'HYPE Queue recommendations should stay centralized instead of being duplicated across role pages.'
+);
+assertIncludes(
+  'src/components/HypeQueue.tsx',
+  'Not for me',
+  'HYPE Queue should keep lightweight listener controls for relevance feedback.'
+);
+assertIncludes(
   'src/app/globals.css',
   '.signed-landing-schema .recommendation-engine-panel',
   'Recommendation Engine needs schema-scoped CSS so old discover styles cannot bleed through.'
+);
+assertIncludes(
+  'src/app/globals.css',
+  '.hype-queue',
+  'HYPE Queue needs polished shared styling inside the Recommendation Engine.'
 );
 assertIncludes(
   'src/app/tickets/page.tsx',

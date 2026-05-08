@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
+import { HypeQueue } from '@/components/HypeQueue';
 import { ProfileDirectoryBrowser, type DirectoryBrowserProfile, type DirectoryMediaSearchEntry } from '@/components/ProfileDirectoryBrowser';
 import { ProfileCard } from '@/components/ProfileCard';
 import { ShowCard } from '@/components/ShowCard';
 import type { DiscoverSpotlightProfile } from '@/lib/discover-feed';
+import type { HypeQueueItem } from '@/lib/hype-queue';
 import type { VenueBookingScopeGroup } from '@/lib/venue-booking';
 
 type DiscoverShow = Parameters<typeof ShowCard>[0]['show'];
@@ -119,12 +121,14 @@ export function DiscoverRecommendationPanel({
   title,
   description,
   opportunities,
+  hypeQueueItems = [],
   children
 }: {
   badge: string;
   title: string;
   description: string;
   opportunities: DiscoverOpportunity[];
+  hypeQueueItems?: HypeQueueItem[];
   children?: ReactNode;
 }) {
   return (
@@ -134,6 +138,7 @@ export function DiscoverRecommendationPanel({
       description={description}
       title={title}
     >
+      <HypeQueue items={hypeQueueItems} />
       <div className="discover-recommendation-grid">
         {opportunities.map((opportunity) => (
           <article className="discover-recommendation-card" key={opportunity.title}>
@@ -486,10 +491,12 @@ export function DiscoverCreatorPanel({
 export function VenueBookingRecommendationEngine({
   currentHref,
   scopes,
+  hypeQueueItems = [],
   children
 }: {
   currentHref: string;
   scopes: VenueBookingScopeGroup[];
+  hypeQueueItems?: HypeQueueItem[];
   children?: ReactNode;
 }) {
   return (
@@ -499,6 +506,7 @@ export function VenueBookingRecommendationEngine({
       description="Fan request signals are grouped by local, regional, national, and global scope so venues can see who to book next."
       title="Venue booking recommendations"
     >
+      <HypeQueue items={hypeQueueItems} />
       <div className="venue-booking-scope-grid">
         {scopes.map((scope) => (
           <section className="venue-booking-scope-card" key={scope.key}>

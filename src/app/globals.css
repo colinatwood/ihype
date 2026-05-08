@@ -11404,6 +11404,141 @@ html.high-contrast p {
   gap: 12px;
 }
 
+.hype-queue {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  padding: clamp(1rem, 2vw, 1.25rem);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(255, 87, 56, 0.12), transparent 30%),
+    radial-gradient(circle at 100% 0%, rgba(57, 216, 223, 0.1), transparent 32%),
+    rgba(255, 255, 255, 0.035);
+}
+
+.hype-queue-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.55fr);
+  gap: 1rem;
+  align-items: end;
+}
+
+.hype-queue-head h3 {
+  margin: 0.45rem 0 0;
+  color: #f7f4ff;
+  font-size: clamp(1.45rem, 3vw, 2.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+.hype-queue-filters,
+.hype-queue-reasons,
+.hype-queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.hype-queue-filter {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.48rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  color: #aeb8d3;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.hype-queue-filter:hover,
+.hype-queue-filter.active {
+  border-color: rgba(57, 216, 223, 0.28);
+  background: rgba(57, 216, 223, 0.1);
+  color: #fff;
+}
+
+.hype-queue-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.hype-queue-card {
+  display: grid;
+  gap: 0.65rem;
+  min-height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 1rem;
+  background: rgba(6, 8, 19, 0.56);
+}
+
+.hype-queue-card-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #ff5738;
+  font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hype-queue-card > strong {
+  color: #f7f4ff;
+  font-size: 1.12rem;
+  line-height: 1.1;
+}
+
+.hype-queue-card > p {
+  margin: 0;
+  color: #aeb8d3;
+}
+
+.hype-queue-reasons span {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  padding: 0.28rem 0.55rem;
+  color: #d9fbff;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.hype-queue-why {
+  line-height: 1.5;
+}
+
+.hype-queue-actions .cta-row {
+  display: contents;
+}
+
+.hype-queue-actions .button,
+.hype-queue-actions .button.small {
+  min-height: 34px;
+}
+
+.hype-queue-empty {
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  padding: 1rem;
+  color: #aeb8d3;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.hype-queue-empty strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #f7f4ff;
+}
+
+.hype-queue-empty p {
+  margin: 0;
+}
+
 .signed-landing-schema .recommendation-engine-panel .discover-recommendation-card,
 .signed-landing-schema .recommendation-engine-panel .venue-booking-scope-card {
   min-height: 154px;
@@ -11500,6 +11635,7 @@ html.high-contrast p {
 
 @media (max-width: 1120px) {
   .signed-landing-schema .stats-engine-grid,
+  .hype-queue-grid,
   .signed-landing-schema .recommendation-engine-panel .discover-recommendation-grid,
   .signed-landing-schema .recommendation-engine-signal-map .discover-explorer-rail,
   .signed-landing-schema .recommendation-engine-signal-map .discover-explorer-main {
@@ -11507,7 +11643,8 @@ html.high-contrast p {
   }
 
   .signed-landing-schema .stats-engine-panel .discover-module-header,
-  .signed-landing-schema .recommendation-engine-panel .discover-module-header {
+  .signed-landing-schema .recommendation-engine-panel .discover-module-header,
+  .hype-queue-head {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -11522,7 +11659,9 @@ html.high-contrast p {
   .signed-landing-schema .stats-engine-panel .discover-stat-card,
   .signed-landing-schema .recommendation-engine-panel .discover-recommendation-card,
   .signed-landing-schema .recommendation-engine-panel .venue-booking-scope-card,
-  .signed-landing-schema .recommendation-engine-signal-map .discover-explorer-section {
+  .signed-landing-schema .recommendation-engine-signal-map .discover-explorer-section,
+  .hype-queue,
+  .hype-queue-card {
     border-radius: 18px;
   }
 }

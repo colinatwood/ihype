@@ -192,6 +192,8 @@ export async function getSharedDiscoverFeed(viewerLocation: RequestLocation | nu
         title: entry.title,
         artistName: profile.name,
         artistSlug: profile.slug,
+        artistProfileId: profile.id,
+        artistHypeCount: profile.hypeCount,
         url: entry.url,
         notes: entry.notes,
         artworkUrl: profile.avatarImage,
