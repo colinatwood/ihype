@@ -2,8 +2,7 @@ function isAllowedImageProtocol(value: string) {
   return (
     value.startsWith('/') ||
     value.startsWith('https://') ||
-    value.startsWith('http://') ||
-    value.startsWith('data:image/') ||
+    /^data:image\/(?:png|jpe?g|gif|webp|avif);base64,/i.test(value) ||
     value.startsWith('blob:')
   );
 }
@@ -11,8 +10,7 @@ function isAllowedImageProtocol(value: string) {
 function isAllowedVideoProtocol(value: string) {
   return (
     value.startsWith('https://') ||
-    value.startsWith('http://') ||
-    value.startsWith('data:video/') ||
+    /^data:video\/(?:mp4|webm|ogg);base64,/i.test(value) ||
     value.startsWith('blob:')
   );
 }

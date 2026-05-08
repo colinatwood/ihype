@@ -27,6 +27,13 @@ const demoIdentifiers = new Set([
   'venue@ihype.org'
 ]);
 
+export const demoUserEmails = [
+  'fan@ihype.org',
+  'artist@ihype.org',
+  'promoter@ihype.org',
+  'venue@ihype.org'
+];
+
 export function areDemoLoginsEnabled() {
   return parseBooleanFlag(
     process.env.FEATURE_ENABLE_DEMO_LOGINS,
@@ -49,6 +56,26 @@ export function isDemoUser(user: {
   return isDemoIdentifier(user.email) || isDemoIdentifier(user.username);
 }
 
+export function shouldHideDemoContent() {
+  return process.env.NODE_ENV === 'production' && !areDemoLoginsEnabled();
+}
+
+export function getDemoOwnerExclusion() {
+  return shouldHideDemoContent() ? { owner: { email: { notIn: demoUserEmails } } } : {};
+}
+
+export function getDemoCreatorExclusion() {
+  return shouldHideDemoContent() ? { creator: { email: { notIn: demoUserEmails } } } : {};
+}
+
+export function getDemoProfileRelationExclusion() {
+  return shouldHideDemoContent() ? { profile: { owner: { email: { notIn: demoUserEmails } } } } : {};
+}
+
+export function getDemoShowRelationExclusion() {
+  return shouldHideDemoContent() ? { show: { creator: { email: { notIn: demoUserEmails } } } } : {};
+}
+
 export function isReservedPlatformEmail(email: string | null | undefined) {
   if (!email) {
     return false;
@@ -59,4 +86,31 @@ export function isReservedPlatformEmail(email: string | null | undefined) {
 
 export function isProductionSeedingAllowed() {
   return parseBooleanFlag(process.env.ALLOW_PRODUCTION_SEEDING, false);
+}
+
+export function areDatabaseMediaUploadsEnabled() {
+  return parseBooleanFlag(
+    process.env.FEATURE_ALLOW_DATABASE_MEDIA_STORAGE,
+    process.env.NODE_ENV !== 'production'
+  );
+}
+
+export function areLiveStreamsEnabled() {
+  return parseBooleanFlag(process.env.FEATURE_ENABLE_LIVE_STREAMS, false);
+}
+
+export function isInviteCodeRequired() {
+  return parseBooleanFlag(process.env.FEATURE_REQUIRE_INVITE_CODE, false);
+}
+
+export function isValidInviteCode(value: string | null | undefined) {
+  const configuredCodes = process.env.BETA_INVITE_CODES?.split(',')
+    .map((code) => code.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (!configuredCodes?.length) {
+    return !isInviteCodeRequired();
+  }
+
+  return configuredCodes.includes(value?.trim().toLowerCase() ?? '');
 }

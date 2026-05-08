@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { ContentReportControl } from '@/components/ContentReportControl';
 import { HypeButton } from '@/components/HypeButton';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { FanRecommendationsPanel } from '@/components/FanRecommendationsPanel';
@@ -12,6 +13,14 @@ import { canManageOwnedResource } from '@/lib/permissions';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation, type RequestLocation } from '@/lib/request-location';
 import { calculateFanLevel } from '@/lib/fan-level';
+import {
+  getDemoCreatorExclusion,
+  getDemoOwnerExclusion,
+  getDemoProfileRelationExclusion,
+  getDemoShowRelationExclusion,
+  isDemoUser,
+  shouldHideDemoContent
+} from '@/lib/runtime-flags';
 
 const listenerSections = ['about', 'recommend'] as const;
 
@@ -164,8 +173,19 @@ export default async function ListenerPage({
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeSection = getActiveSection(resolvedSearchParams.section);
 
-  const profile = await db.profile.findUnique({ where: { slug } });
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    include: {
+      owner: {
+        select: {
+          email: true,
+          username: true
+        }
+      }
+    }
+  });
   if (!profile || profile.type !== 'LISTENER') return notFound();
+  if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
   const viewerLocationPromise = detectRequestLocation();
 
   const [
@@ -182,7 +202,10 @@ export default async function ListenerPage({
     promoterProfiles
   ] = await Promise.all([
     db.hypeEvent.findMany({
-      where: { userId: profile.ownerId },
+      where: {
+        userId: profile.ownerId,
+        ...getDemoShowRelationExclusion()
+      },
       include: {
         show: {
           include: {
@@ -203,7 +226,8 @@ export default async function ListenerPage({
       where: {
         type: 'VENUE',
         latitude: { not: null },
-        longitude: { not: null }
+        longitude: { not: null },
+        ...getDemoOwnerExclusion()
       },
       orderBy: [{ verified: 'desc' }, { name: 'asc' }],
       select: {
@@ -230,7 +254,8 @@ export default async function ListenerPage({
     }),
     db.show.findMany({
       where: {
-        status: { in: ['SCHEDULED', 'LIVE'] }
+        status: { in: ['SCHEDULED', 'LIVE'] },
+        ...getDemoCreatorExclusion()
       },
       include: {
         venueProfile: true,
@@ -241,7 +266,10 @@ export default async function ListenerPage({
       take: 16
     }),
     db.profileHypeEvent.findMany({
-      where: { userId: profile.ownerId },
+      where: {
+        userId: profile.ownerId,
+        ...getDemoProfileRelationExclusion()
+      },
       include: {
         profile: {
           select: {
@@ -255,7 +283,8 @@ export default async function ListenerPage({
     db.show.findMany({
       where: {
         promoterProfileId: { not: null },
-        headlinerProfileId: { not: null }
+        headlinerProfileId: { not: null },
+        ...getDemoCreatorExclusion()
       },
       include: {
         promoterProfile: true,
@@ -279,7 +308,8 @@ export default async function ListenerPage({
     viewerLocationPromise.then((location) => getSharedDiscoverFeed(location)),
     db.profile.findMany({
       where: {
-        type: 'DJ'
+        type: 'DJ',
+        ...getDemoOwnerExclusion()
       },
       orderBy: [{ hypeCount: 'desc' }, { createdAt: 'desc' }],
       take: 24,
@@ -695,6 +725,8 @@ export default async function ListenerPage({
           ) : null}
         </div>
       </section>
+
+      <ContentReportControl targetId={profile.id} targetType="profile" />
     </main>
   );
 }

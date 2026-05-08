@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { ShowStatus } from '@prisma/client';
+import type { ShowStatus } from '@prisma/client';
 import { db } from '@/lib/db';
+import { getDemoCreatorExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,19 +40,21 @@ export async function GET(
       parkingDetails: true,
       fanShareEnabled: true,
       createdAt: true,
+      owner: { select: { email: true, username: true } }
     }
   });
 
-  if (!profile) {
+  if (!profile || (shouldHideDemoContent() && isDemoUser(profile.owner))) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
   }
 
+  const { owner: _owner, ...safeProfile } = profile;
   const now = new Date();
-
-  // Upcoming shows — role-appropriate relation
+  const publicShowStatuses: ShowStatus[] = ['SCHEDULED', 'LIVE'];
   const showWhere = {
-    status: { in: [ShowStatus.SCHEDULED, ShowStatus.LIVE] },
+    status: { in: publicShowStatuses },
     startsAt: { gte: now },
+    ...getDemoCreatorExclusion()
   };
 
   const [shows, tracks] = await Promise.all([
@@ -59,10 +62,10 @@ export async function GET(
       where: {
         ...showWhere,
         OR: [
-          { venueProfileId:      profile.id },
-          { headlinerProfileId:  profile.id },
-          { promoterProfileId:   profile.id },
-        ],
+          { venueProfileId: profile.id },
+          { headlinerProfileId: profile.id },
+          { promoterProfileId: profile.id }
+        ]
       },
       orderBy: { startsAt: 'asc' },
       take: 10,
@@ -76,21 +79,20 @@ export async function GET(
         ticketPriceCents: true,
         posterImage: true,
         tags: true,
-        venueProfile:     { select: { name: true, slug: true, city: true, stateRegion: true } },
+        venueProfile: { select: { name: true, slug: true, city: true, stateRegion: true } },
         headlinerProfile: { select: { name: true, slug: true } },
-        promoterProfile:  { select: { name: true, slug: true } },
-      },
+        promoterProfile: { select: { name: true, slug: true } }
+      }
     }),
-
     profile.type === 'ARTIST'
       ? db.artistMediaAsset.findMany({
           where: { profileId: profile.id, freeUseEnabled: true },
           orderBy: { createdAt: 'desc' },
           take: 12,
-          select: { hexId: true, title: true, mimeType: true, notes: true, createdAt: true },
+          select: { hexId: true, title: true, mimeType: true, notes: true, createdAt: true }
         })
-      : Promise.resolve([]),
+      : Promise.resolve([])
   ]);
 
-  return NextResponse.json({ profile, shows, tracks });
+  return NextResponse.json({ profile: safeProfile, shows, tracks });
 }

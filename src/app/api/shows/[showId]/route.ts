@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getDemoCreatorExclusion } from '@/lib/runtime-flags';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * GET /api/shows/[showId]
- * Look up a single show by slug or CUID.
- * Returns { show } or 404.
- */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ showId: string }> }
@@ -21,7 +17,8 @@ export async function GET(
   const show = await db.show.findFirst({
     where: {
       OR: [{ slug: showId }, { id: showId }],
-      status: { in: ['SCHEDULED', 'LIVE', 'ENDED'] }
+      status: { in: ['SCHEDULED', 'LIVE', 'ENDED'] },
+      ...getDemoCreatorExclusion()
     },
     select: {
       id: true,
@@ -45,9 +42,9 @@ export async function GET(
       venuePayoutPercent: true,
       artistPayoutPercent: true,
       promoterPayoutPercent: true,
-      venueProfile:     { select: { name: true, slug: true, city: true, stateRegion: true, country: true } },
+      venueProfile: { select: { name: true, slug: true, city: true, stateRegion: true, country: true } },
       headlinerProfile: { select: { name: true, slug: true, type: true, genres: true, avatarImage: true } },
-      promoterProfile:  { select: { name: true, slug: true } },
+      promoterProfile: { select: { name: true, slug: true } }
     }
   });
 

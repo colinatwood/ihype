@@ -17,3 +17,7 @@ dev-server.err.log
 cloudflared.log
 .tools
 tsconfig.tsbuildinfo
+.git-deploy
+.npm-cache
+.sync-bundles
+.vercel-sandbox-data

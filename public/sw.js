@@ -1,12 +1,8 @@
-const CACHE_VERSION = 'ihype-v2';
+const CACHE_VERSION = 'ihype-v6-recommendation-engine';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 
 const STATIC_ASSETS = [
-  '/ihype-shared.css',
-  '/ihype-shared.js',
-  '/ihype-auth.js',
-  '/ihype-user-menu.js',
   '/manifest.json',
   '/icons/icon-180.png',
   '/icons/icon-192.png',
@@ -14,6 +10,21 @@ const STATIC_ASSETS = [
 ];
 
 const CORE_PAGES = [
+  '/',
+  '/hype',
+  '/tickets'
+];
+
+const NETWORK_ONLY_PATHS = [
+  '/login',
+  '/register',
+  '/forgot',
+  '/discover',
+  '/ihype-login.html',
+  '/ihype-register.html',
+  '/ihype-forgot.html',
+  '/ihype-auth.html',
+  '/ihype-home.html',
   '/ihype-homepage.html',
   '/ihype-promise.html',
   '/ihype-hype-engine.html',
@@ -21,13 +32,14 @@ const CORE_PAGES = [
   '/ihype-ticketing.html',
   '/ihype-show-creator.html',
   '/ihype-page-customizer.html',
-  '/index.html'
-];
-
-const NETWORK_ONLY_PATHS = [
-  '/login',
-  '/register',
-  '/ihype-auth.html',
+  '/ihype-profile.html',
+  '/ihype-media.html',
+  '/ihype-show.html',
+  '/ihype-search.html',
+  '/ihype-governance.html',
+  '/ihype-investor.html',
+  '/ihype-beta.html',
+  '/index.html',
   '/api/auth',
   '/api/register'
 ];
@@ -133,17 +145,17 @@ function offlineFallback() {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>iHYPE offline</title>
 <style>
-body{background:#faf8f3;color:#1a1814;font-family:system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:2rem;text-align:center}
-h1{font-family:Georgia,serif;font-size:2rem;margin:0 0 .75rem}
-p{color:#5c5448;line-height:1.65;max-width:400px;margin:0 auto 1.5rem}
-a{display:inline-block;padding:.7rem 1.5rem;background:#1a1814;color:#faf8f3;border-radius:99px;text-decoration:none}
+body{background:linear-gradient(115deg,#0d0610,#060813 48%,#051014);color:#f7f4ff;font-family:system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:2rem;text-align:center}
+h1{font-size:2rem;margin:0 0 .75rem}
+p{color:#aeb8d3;line-height:1.65;max-width:400px;margin:0 auto 1.5rem}
+a{display:inline-block;padding:.8rem 1.5rem;background:linear-gradient(135deg,#ff4635,#ff3d87 44%,#39d8df);color:#fff;border-radius:99px;text-decoration:none;font-weight:800}
 </style>
 </head>
 <body>
 <div>
   <h1>You're offline.</h1>
-  <p>iHYPE needs a connection to load this page. Try going back to Discover.</p>
-  <a href="/ihype-homepage.html">Back to Discover</a>
+  <p>iHYPE needs a connection to load this page. Try going back to the Promise.</p>
+  <a href="/">Back to iHYPE</a>
 </div>
 </body>
 </html>`,

@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 const productGates = [
   'App Store and Play Store approvals completed, or the pre-approval checklist cleared with resubmission buffer built in.',
-  'Streaming start time p95 below 2.0 seconds on LTE in Chicago, with a 30-day soak test at 99.9% uptime.',
+  'Playback, upload, and account flows pass a documented beta soak test before public promotion.',
   'Crash-free sessions at or above 99.0% on both iOS and Android.',
   'Anti-fraud controls live: rate limiting, playback verification, device fingerprinting, and basic bot scoring.',
   'DMCA takedown workflow and content-policy enforcement fully operational before public launch.'
@@ -17,9 +17,9 @@ const legalGates = [
 ];
 
 const gtmGates = [
-  'Chicago pilot roster secured: at least 100 artists, 10 DJs for a later DJ-set wave, and 5 venue LOIs or advisory commitments.',
-  'Launch event booked, 30-day marketing calendar committed, and on-site onboarding plan staffed.',
-  'Support and moderation coverage mapped for launch week with business-hours coverage plus on-call escalation.'
+  'Beta roster uses real opted-in artists, promoters, venues, and fans only.',
+  'Launch communications avoid fictional users, fictional events, and simulated growth numbers.',
+  'Support and moderation coverage is mapped before inviting broader public traffic.'
 ];
 
 const corePillars = [
@@ -49,33 +49,33 @@ const roadmap = [
   {
     phase: '90 Days Out',
     items: [
-      'Drive 5,000 Chicago-area waitlist signups.',
-      'Recruit 100 artists with at least three tracks each.',
-      'Stand up a 10-person ambassador and street-team program.'
+      'Define the first beta market and acceptance criteria.',
+      'Invite only real account owners with clear consent.',
+      'Document support, moderation, and incident ownership.'
     ]
   },
   {
     phase: '60 Days Out',
     items: [
-      'Run weekly HYPE Sessions listening parties.',
-      'Ship a Chicago Underhype spotlight series for artists and neighborhoods.',
-      'Pressure-test onboarding, analytics, and moderation response times.'
+      'Test onboarding, profile setup, media upload, and email MFA.',
+      'Review every public page for beta-safe language.',
+      'Pressure-test analytics, moderation, and account recovery.'
     ]
   },
   {
     phase: '30 Days Out',
     items: [
-      'Start press outreach, launch trailer distribution, and embargoed previews.',
-      'Lock the launch lineup, venue operations plan, and QR-based download flow.',
-      'Finalize support macros, incident runbooks, and launch-week staffing.'
+      'Prepare beta invite copy and public status notes.',
+      'Lock the real beta roster and venue operations plan if ticketing is included.',
+      'Finalize support macros, incident runbooks, and escalation coverage.'
     ]
   },
   {
     phase: 'Launch Targets',
     items: [
-      '5,000 downloads in the first 7 days.',
-      '1,500 DAU by the end of month 1.',
-      '1,000 uploaded tracks by the end of month 1.'
+      'Measure verified account activation, not vanity traffic.',
+      'Measure completed listens, profile updates, and successful MFA delivery.',
+      'Publish only real aggregate counters from production data.'
     ]
   }
 ];
@@ -145,7 +145,7 @@ const risks = [
   },
   {
     name: 'Low retention after launch',
-    mitigation: 'Chicago-local relevance, weekly drops, shareable profiles, and fast onboarding fixes.'
+    mitigation: 'Market relevance, weekly product reviews, shareable profiles, and fast onboarding fixes.'
   },
   {
     name: 'Scaling outages',
@@ -159,7 +159,7 @@ const risks = [
 
 export const metadata = {
   title: 'Launch Readiness | iHYPE.org',
-  description: 'Curated launch-readiness plan for the HYPE Network Chicago pilot and September 6, 2026 launch target.'
+  description: 'Beta launch-readiness plan for iHYPE.org.'
 };
 
 export default function LaunchReadinessPage() {
@@ -167,11 +167,11 @@ export default function LaunchReadinessPage() {
     <main className="container section">
       <section className="panel launch-hero">
         <div className="launch-hero-copy">
-          <div className="badge">Launch Readiness Package</div>
-          <h1 className="title" style={{ fontSize: '3rem' }}>HYPE Network launch plan, distilled for execution.</h1>
+          <div className="badge">Beta Readiness Package</div>
+          <h1 className="title" style={{ fontSize: '3rem' }}>iHYPE beta plan, distilled for execution.</h1>
           <p className="subtitle">
-            This page pulls the strongest pieces from the long-form launch package into one operating view for the
-            Chicago electronic and house pilot, with a target public launch date of September 6, 2026.
+            This page keeps the launch-readiness work honest: no fictional roster, no fictional launch date, and no
+            public growth numbers that are not backed by production data.
           </p>
           <div className="cta-row">
             <Link className="button" href="/artists">Open artist pages</Link>
@@ -179,10 +179,10 @@ export default function LaunchReadinessPage() {
           </div>
         </div>
         <div className="launch-hero-meta">
-          <div className="stat"><strong>Pre-launch</strong>Status</div>
-          <div className="stat"><strong>Chicago, IL</strong>Launch market</div>
-          <div className="stat"><strong>September 6, 2026</strong>Target date</div>
-          <div className="stat"><strong>House + electronic</strong>Pilot focus</div>
+          <div className="stat"><strong>Beta</strong>Status</div>
+          <div className="stat"><strong>TBD</strong>First market</div>
+          <div className="stat"><strong>TBD</strong>Public launch date</div>
+          <div className="stat"><strong>Real data only</strong>Public rule</div>
         </div>
       </section>
 
@@ -191,7 +191,7 @@ export default function LaunchReadinessPage() {
           <div className="badge">Executive Gate</div>
           <h2>Launch-ready means product, legal, and GTM all clear together.</h2>
           <p className="kicker">
-            A public launch is only real when the app, the policies, and the city-specific go-to-market motion are all
+            A public launch is only real when the app, the policies, and the market-specific go-to-market motion are all
             operational at the same time.
           </p>
         </div>
@@ -239,7 +239,7 @@ export default function LaunchReadinessPage() {
       <section className="section">
         <div className="launch-section-heading">
           <div className="badge">90 / 60 / 30</div>
-          <h2>Chicago pilot rollout and launch calendar.</h2>
+          <h2>Beta rollout and launch calendar.</h2>
         </div>
 
         <div className="launch-grid launch-grid-4">

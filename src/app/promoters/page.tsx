@@ -6,7 +6,9 @@ import {
   DiscoverExplorerPanel,
   DiscoverEventsPanel,
   DiscoverMyPagePanel,
-  DiscoverStatsPanel
+  DiscoverRecommendationPanel,
+  DiscoverStatsPanel,
+  DiscoverTicketHubPanel
 } from '@/components/DiscoverModulePanels';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
@@ -17,16 +19,11 @@ import { getSharedDiscoverFeed } from '@/lib/discover-feed';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDirectoryProfiles } from '@/lib/public-data';
+import { buildGlobeRouteStops } from '@/lib/globe-route-stops';
+import { getDemoCreatorExclusion, getDemoOwnerExclusion } from '@/lib/runtime-flags';
+import { isAdminSession } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
-
-function formatShowDate(value: Date) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(value);
-}
 
 export default async function PromotersIndexPage({
   searchParams
@@ -36,6 +33,7 @@ export default async function PromotersIndexPage({
   const session = await auth();
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeModule = resolveDiscoverModule('promoters', resolvedSearchParams.module);
+  const isAdminQa = isAdminSession(session);
   const [promoters, artistsForDiscover, venuesForDiscover] = await Promise.all([
     getDirectoryProfiles('DJ'),
     getDirectoryProfiles('ARTIST'),
@@ -49,7 +47,8 @@ export default async function PromotersIndexPage({
       where: {
         type: 'VENUE',
         latitude: { not: null },
-        longitude: { not: null }
+        longitude: { not: null },
+        ...getDemoOwnerExclusion()
       },
       orderBy: [{ verified: 'desc' }, { name: 'asc' }],
       select: {
@@ -69,7 +68,8 @@ export default async function PromotersIndexPage({
     db.show.findMany({
       where: {
         status: { not: 'CANCELED' },
-        promoterProfileId: { not: null }
+        promoterProfileId: { not: null },
+        ...getDemoCreatorExclusion()
       },
       include: {
         venueProfile: true,
@@ -81,10 +81,18 @@ export default async function PromotersIndexPage({
     }),
     session?.user?.id
       ? db.profile.findFirst({
-          where: {
-            ownerId: session.user.id,
-            type: 'DJ'
-          },
+          where: isAdminQa
+            ? {
+                type: 'DJ' as const,
+                ...getDemoOwnerExclusion()
+              }
+            : {
+                ownerId: session.user.id,
+                type: 'DJ' as const
+              },
+          orderBy: isAdminQa
+            ? [{ verified: 'desc' as const }, { hypeCount: 'desc' as const }, { createdAt: 'asc' as const }]
+            : { createdAt: 'asc' as const },
           select: {
             id: true,
             slug: true,
@@ -128,6 +136,7 @@ export default async function PromotersIndexPage({
     (show) => show.status === 'LIVE' || show.startsAt >= now
   );
   const ticketsSold = myPromoterShows.reduce((sum, show) => sum + show.ticketsSoldCount, 0);
+  const ticketedPromoterShows = myPromoterShows.filter((show) => show.isTicketed);
   const venueCount = new Set(
     myPromoterShows
       .map((show) => show.venueProfileId)
@@ -144,29 +153,36 @@ export default async function PromotersIndexPage({
   const viewerLocationLabel =
     [viewerLocation?.city, viewerLocation?.stateRegion ?? viewerLocation?.country].filter(Boolean).join(', ') ||
     'your area';
+  const promoterRecommendationOpportunities = [
+    {
+      title: 'Artists to program',
+      summary: discoverFeed.hypedNearMe.length
+        ? `${discoverFeed.hypedNearMe[0].name} is leading nearby artist momentum around ${viewerLocationLabel}.`
+        : 'Nearby artist momentum is still building.',
+      detail: `${artistsForDiscover.length} artist profile${artistsForDiscover.length === 1 ? '' : 's'} available`
+    },
+    {
+      title: 'Venue routing',
+      summary: venueCount
+        ? `Your shows already touch ${venueCount} venue${venueCount === 1 ? '' : 's'}. Use the globe lane to find the next room.`
+        : `${venues.length} mapped venue point${venues.length === 1 ? '' : 's'} can help shape the next show.`,
+      detail: 'Globe search signal'
+    },
+    {
+      title: 'Ticket referrals',
+      summary: ticketedPromoterShows.length
+        ? `${ticketedPromoterShows.length} ticketed promoter show${ticketedPromoterShows.length === 1 ? '' : 's'} can support tracked referrals.`
+        : 'No ticketed promoter shows are open yet.',
+      detail: `${ticketsSold} total ticket${ticketsSold === 1 ? '' : 's'} sold`
+    },
+    {
+      title: 'Show builder focus',
+      summary: 'Use artist page media, session sound effects, and microphone overdubs to publish prerecorded radio-style shows.',
+      detail: 'Show Creator engine'
+    }
+  ];
 
-  const globeRouteStops = promoterShows
-    .filter((show) => show.venueProfile?.latitude != null && show.venueProfile.longitude != null)
-    .map((show) => ({
-      id: show.id,
-      title: show.title,
-      href: `/shows/${show.slug}`,
-      venueName: show.venueProfile?.name ?? 'Venue',
-      venueSlug: show.venueProfile?.slug ?? null,
-      city: show.venueProfile?.city ?? null,
-      stateRegion: show.venueProfile?.stateRegion ?? null,
-      country: show.venueProfile?.country ?? null,
-      postalCode: show.venueProfile?.postalCode ?? null,
-      latitude: show.venueProfile?.latitude ?? null,
-      longitude: show.venueProfile?.longitude ?? null,
-      startsAtLabel: formatShowDate(show.startsAt),
-      timing:
-        show.status === 'LIVE'
-          ? ('live' as const)
-          : show.startsAt >= now
-            ? ('upcoming' as const)
-            : ('past' as const)
-    }));
+  const globeRouteStops = buildGlobeRouteStops(promoterShows, { includePastTiming: true, now });
 
   const discoverPanel = (
     <NetworkEarthGlobe
@@ -179,15 +195,18 @@ export default async function PromotersIndexPage({
       viewerLocation={viewerLocation}
     />
   );
-  const discoverModuleContent = (
+  const recommendationDiscoveryContent = (
     <DiscoverExplorerPanel
       currentHref="/promoters"
+      description="Search songs, artists, promoters, venues, and show momentum from the same place the promoter recommendations are built."
+      embedded
       globePanel={discoverPanel}
       hypedNearMe={discoverFeed.hypedNearMe}
       mediaEntries={discoverFeed.mediaEntries}
       newArtists={discoverFeed.newArtists}
       newPromoters={discoverFeed.newPromoters}
       profiles={discoverProfiles}
+      title="Recommendation signal map"
       viewerLocationLabel={viewerLocationLabel}
     />
   );
@@ -243,6 +262,19 @@ export default async function PromotersIndexPage({
           title="My promoter stats"
         />
       );
+    } else if (activeModule === 'recommendation-engine') {
+      modulePanel = (
+        <DiscoverRecommendationPanel
+          badge="Recommendation Engine"
+          description="Promoter recommendations combine artist momentum, venue routing, ticket opportunity, and show-building focus."
+          opportunities={promoterRecommendationOpportunities}
+          title="Promoter recommendations"
+        >
+          {recommendationDiscoveryContent}
+        </DiscoverRecommendationPanel>
+      );
+    } else if (activeModule === 'ticket-hub') {
+      modulePanel = <DiscoverTicketHubPanel shows={ticketedPromoterShows} />;
     } else if (activeModule === 'events') {
       modulePanel = (
         <DiscoverEventsPanel
@@ -257,6 +289,7 @@ export default async function PromotersIndexPage({
       const artistProfiles = await db.profile.findMany({
         where: {
           type: 'ARTIST',
+          ...getDemoOwnerExclusion(),
           OR: [{ mediaContent: { not: null } }, { mediaUploads: { some: {} } }, { featureVideoUrl: { not: null } }]
         },
         select: {
@@ -321,6 +354,16 @@ export default async function PromotersIndexPage({
             artists={artists}
             initialPromoterProfileId={myPromoterProfile.id}
             promoters={[{ profileId: myPromoterProfile.id, name: myPromoterProfile.name, slug: myPromoterProfile.slug }]}
+            venues={venues.map((venue) => ({
+              profileId: venue.id,
+              slug: venue.slug,
+              name: venue.name,
+              addressLine1: venue.addressLine1,
+              city: venue.city,
+              stateRegion: venue.stateRegion,
+              country: venue.country,
+              postalCode: venue.postalCode
+            }))}
           />
         </DiscoverCreatorPanel>
       );
@@ -332,12 +375,11 @@ export default async function PromotersIndexPage({
       activeModule={activeModule}
       badge="PROMOTERS"
       currentHref="/promoters"
-      description="Promoter discover keeps the focus on show momentum, room pressure, and the tools that move concepts into booked nights."
-      discoverModuleContent={discoverModuleContent}
+      description="Promoter engines keep show momentum, room pressure, recommendations, and show-building tools in one streamlined lane."
       modulePanel={modulePanel}
       moduleSubheader={<RoleModuleSubheader activeModule={activeModule} currentHref="/promoters" role="promoters" />}
       profiles={discoverProfiles}
-      title="Promoter discover"
+      title="Promoter lane"
     />
   );
 }

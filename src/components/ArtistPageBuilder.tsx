@@ -1,8 +1,9 @@
 'use client';
 
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
+import { VisualDropStudio, type VisualDropStudioSlot } from '@/components/VisualDropStudio';
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import {
   getProfileDesignStyleVars,
@@ -75,14 +76,7 @@ type ArtistBuilderValues = {
   fanShareEnabled: boolean;
 };
 
-async function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('Could not read file'));
-    reader.readAsDataURL(file);
-  });
-}
+type ArtistVisualSlot = 'heroImage' | 'logoImage' | 'galleryImage' | 'featureVideoUrl' | 'mediaContent';
 
 function getPreviewSnippet(value: string, fallback: string) {
   const trimmed = value.trim();
@@ -202,49 +196,57 @@ export function ArtistPageBuilder({
     formValues.mediaContent,
     'Use this area for visual notes, embedded context, and the story around your uploaded tracks.'
   );
-
-  async function handleAssetSelection(
-    event: ChangeEvent<HTMLInputElement>,
-    field: 'heroImage' | 'logoImage' | 'galleryImage' | 'featureVideoUrl',
-    kind: 'image' | 'video'
-  ) {
-    const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    const maxSizeBytes = kind === 'video' ? 12 * 1024 * 1024 : 4 * 1024 * 1024;
-    const expectedPrefix = kind === 'video' ? 'video/' : 'image/';
-
-    if (!file.type.startsWith(expectedPrefix)) {
-      setMessage(`Choose a ${kind} file for this slot.`);
-      event.target.value = '';
-      return;
-    }
-
-    if (file.size > maxSizeBytes) {
-      setMessage(
-        kind === 'video'
-          ? 'Video uploads are capped at 12MB for this builder.'
-          : 'Image uploads are capped at 4MB for this builder.'
-      );
-      event.target.value = '';
-      return;
-    }
-
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setFormValues((current) => ({
-        ...current,
-        [field]: dataUrl
-      }));
-      setMessage(`${file.name} loaded into the preview.`);
-    } catch {
-      setMessage(`Could not load ${file.name}.`);
-    } finally {
-      event.target.value = '';
-    }
-  }
+  const visualDropSlots = useMemo<VisualDropStudioSlot<ArtistVisualSlot>[]>(
+    () => [
+      {
+        id: 'heroImage',
+        label: 'Background',
+        description: 'Hero artwork behind the first artist impression.',
+        kind: 'image',
+        value: formValues.heroImage,
+        placeholder: 'Drop background'
+      },
+      {
+        id: 'logoImage',
+        label: 'Logo',
+        description: 'Artist mark placed beside the name.',
+        kind: 'image',
+        value: formValues.logoImage,
+        placeholder: 'Drop logo'
+      },
+      {
+        id: 'galleryImage',
+        label: 'Picture',
+        description: 'Feature image for media, tour, or press-kit sections.',
+        kind: 'image',
+        value: formValues.galleryImage,
+        placeholder: 'Drop picture'
+      },
+      {
+        id: 'featureVideoUrl',
+        label: 'Video',
+        description: 'Music video, live clip, or short page teaser.',
+        kind: 'video',
+        value: formValues.featureVideoUrl,
+        placeholder: 'Drop video'
+      },
+      {
+        id: 'mediaContent',
+        label: 'Links',
+        description: 'Drop a song, playlist, press, or merch link.',
+        kind: 'link',
+        value: formValues.mediaContent,
+        placeholder: 'Drop link'
+      }
+    ],
+    [
+      formValues.featureVideoUrl,
+      formValues.galleryImage,
+      formValues.heroImage,
+      formValues.logoImage,
+      formValues.mediaContent
+    ]
+  );
 
   function applyQuickStartPreset(presetId: string) {
     const preset = artistQuickStartPresets.find((entry) => entry.id === presetId);
@@ -508,27 +510,18 @@ export function ArtistPageBuilder({
                 </label>
               </div>
 
-              <div className="artist-builder-upload-grid">
-                <label className="field artist-builder-upload-field">
-                  <span>Background upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'heroImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Logo upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'logoImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Picture upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'galleryImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Video upload</span>
-                  <input accept="video/*" onChange={(event) => handleAssetSelection(event, 'featureVideoUrl', 'video')} type="file" />
-                </label>
-              </div>
+              <VisualDropStudio
+                description="Drag media from your desktop, tap to upload from a phone, or drag a loaded asset to a different page slot."
+                onChange={(slotId, value) =>
+                  setFormValues((current) => ({
+                    ...current,
+                    [slotId]: value
+                  }))
+                }
+                onStatus={setMessage}
+                slots={visualDropSlots}
+                title="Place artist graphics, video, and links"
+              />
             </div>
 
             <div className="artist-page-builder-section">

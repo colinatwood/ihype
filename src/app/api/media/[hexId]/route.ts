@@ -25,13 +25,22 @@ export async function GET(
       select: {
         originalFileName: true,
         mimeType: true,
-        fileDataBase64: true
+        fileDataBase64: true,
+        storageUrl: true
       }
     })
   );
 
   if (!asset) {
     return NextResponse.json({ error: 'Media not found.' }, { status: 404 });
+  }
+
+  if (!asset.fileDataBase64) {
+    if (asset.storageUrl) {
+      return NextResponse.redirect(asset.storageUrl);
+    }
+
+    return NextResponse.json({ error: 'Media storage is not available for this asset.' }, { status: 410 });
   }
 
   const bytes = Buffer.from(asset.fileDataBase64, 'base64');

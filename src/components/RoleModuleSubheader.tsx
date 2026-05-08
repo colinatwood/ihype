@@ -32,7 +32,7 @@ export function RoleModuleSubheader({
 
   return (
     <div className="site-subnav-shell">
-      <nav aria-label={`${role} discover modules`} className="container site-subnav">
+      <nav aria-label={`${role} engine modules`} className="container site-subnav">
         <span className="site-subnav-label">{roleLabels[role]}</span>
         {modules.map((module) => (
           <Link

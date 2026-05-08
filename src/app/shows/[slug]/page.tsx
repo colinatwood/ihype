@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { notFound } from 'next/navigation';
+import { ContentReportControl } from '@/components/ContentReportControl';
 import { HypeButton } from '@/components/HypeButton';
 import { ShowSequencePlayer } from '@/components/ShowSequencePlayer';
 import { TicketSaleCard } from '@/components/TicketSaleCard';
@@ -8,6 +9,7 @@ import { db } from '@/lib/db';
 import { getShowVisibilitySignals } from '@/lib/integrity';
 import { isAdminSession } from '@/lib/permissions';
 import { detectRequestLocation } from '@/lib/request-location';
+import { isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { parseShowProductionPlan } from '@/lib/show-composer';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import { formatShowTime } from '@/lib/utils';
@@ -27,50 +29,55 @@ export async function generateMetadata(
       startsAt: true,
       posterImage: true,
       hypeCount: true,
-      venueProfile:     { select: { name: true, city: true, stateRegion: true } },
-      headlinerProfile: { select: { name: true } },
+      creator: { select: { email: true, username: true } },
+      venueProfile: { select: { name: true, city: true, stateRegion: true } },
+      headlinerProfile: { select: { name: true } }
     }
   });
 
-  if (!show) return { title: 'Show · iHYPE' };
+  if (
+    !show ||
+    show.status === 'DRAFT' ||
+    (shouldHideDemoContent() && isDemoUser(show.creator))
+  ) {
+    return { title: 'Show | iHYPE' };
+  }
 
-  const dateStr = show.startsAt
-    ? new Date(show.startsAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const dateLabel = show.startsAt
+    ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(show.startsAt)
     : null;
   const venueName = show.venueProfile?.name ?? null;
-  const venueCity = [show.venueProfile?.city, show.venueProfile?.stateRegion].filter(Boolean).join(', ') || null;
-  const headliner = show.headlinerProfile?.name ?? null;
-
-  const descParts = [
-    show.isRadioShow ? 'Radio show' : (dateStr ?? null),
-    venueName ?? null,
-    venueCity ?? null,
-    headliner ? `Featuring ${headliner}` : null,
+  const venueLocation = [show.venueProfile?.city, show.venueProfile?.stateRegion].filter(Boolean).join(', ') || null;
+  const headlinerName = show.headlinerProfile?.name ?? null;
+  const title = `${show.title} | iHYPE`;
+  const description = [
+    show.isRadioShow ? 'Radio show' : dateLabel,
+    venueName,
+    venueLocation,
+    headlinerName ? `Featuring ${headlinerName}` : null,
     show.hypeCount ? `${show.hypeCount} HYPE` : null,
-    show.description?.slice(0, 120) ?? null,
-  ].filter(Boolean);
-
-  const title       = `${show.title} · iHYPE`;
-  const description = descParts.join(' · ') || 'Live show on iHYPE';
-  const image       = show.posterImage ?? undefined;
+    show.description?.slice(0, 120) ?? null
+  ]
+    .filter(Boolean)
+    .join(' | ');
 
   return {
     title,
-    description,
+    description: description || 'Show on iHYPE',
     openGraph: {
       type: 'website',
       siteName: 'iHYPE',
       title,
-      description,
-      url:   `/shows/${slug}`,
-      ...(image ? { images: [{ url: image }] } : {}),
+      description: description || 'Show on iHYPE',
+      url: `/shows/${slug}`,
+      ...(show.posterImage ? { images: [{ url: show.posterImage }] } : {})
     },
     twitter: {
-      card:        'summary_large_image',
+      card: 'summary_large_image',
       title,
-      description,
-      ...(image ? { images: [image] } : {}),
-    },
+      description: description || 'Show on iHYPE',
+      ...(show.posterImage ? { images: [show.posterImage] } : {})
+    }
   };
 }
 
@@ -91,6 +98,12 @@ export default async function ShowDetailPage({
   const show = await db.show.findUnique({
     where: { slug },
     include: {
+      creator: {
+        select: {
+          email: true,
+          username: true
+        }
+      },
       venueProfile: true,
       headlinerProfile: true,
       promoterProfile: true,
@@ -118,6 +131,7 @@ export default async function ShowDetailPage({
   });
 
   if (!show) return notFound();
+  if (shouldHideDemoContent() && isDemoUser(show.creator)) return notFound();
   const canPreviewDraft =
     Boolean(session?.user?.id) &&
     (session?.user?.id === show.creatorId || (session ? isAdminSession(session) : false));
@@ -515,57 +529,7 @@ export default async function ShowDetailPage({
         </section>
       ) : null}
 
-      {show.isRadioShow && show.radioTracks.length > 0 && (
-        <section className="section">
-          <div className="panel" style={{ padding: '1.25rem' }}>
-            <h2 style={{ marginBottom: '1rem' }}>Tracklist</h2>
-            <ol style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gap: '0.5rem' }}>
-              {show.radioTracks.map((track) => (
-                <li
-                  key={track.id}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2rem 1fr auto',
-                    gap: '0.75rem',
-                    alignItems: 'center',
-                    padding: '0.6rem 0.75rem',
-                    borderRadius: '10px',
-                    background: 'rgba(255,255,255,0.03)'
-                  }}
-                >
-                  <span className="meta" style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                    {String(track.position + 1).padStart(2, '0')}
-                  </span>
-                  <div>
-                    <strong style={{ display: 'block' }}>{track.title}</strong>
-                    {track.artistName && (
-                      <span className="meta">{track.artistName}</span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    {track.durationSecs && (
-                      <span className="meta" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        {Math.floor(track.durationSecs / 60)}:{String(track.durationSecs % 60).padStart(2, '0')}
-                      </span>
-                    )}
-                    {track.externalUrl && (
-                      <a
-                        href={track.externalUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="button small secondary"
-                        style={{ fontSize: '0.75rem' }}
-                      >
-                        Play ↗
-                      </a>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-      )}
+      <ContentReportControl targetId={show.id} targetType="show" />
     </main>
   );
 }

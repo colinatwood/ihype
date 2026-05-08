@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { VisualDropStudio, type VisualDropStudioSlot } from '@/components/VisualDropStudio';
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import {
   getProfileSetupPresets,
@@ -83,14 +84,7 @@ type VenueBuilderValues = {
   fanShareEnabled: boolean;
 };
 
-async function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('Could not read file'));
-    reader.readAsDataURL(file);
-  });
-}
+type VenueVisualSlot = 'heroImage' | 'logoImage' | 'galleryImage' | 'featureVideoUrl' | 'upcomingContent';
 
 function getPreviewSnippet(value: string, fallback: string) {
   const trimmed = value.trim();
@@ -151,6 +145,57 @@ export function VenuePageBuilder({
     formValues.upcomingContent || formValues.previousShowHighlights,
     'Frame the calendar and tell visitors what kind of energy lives in the room on upcoming nights.'
   );
+  const visualDropSlots = useMemo<VisualDropStudioSlot<VenueVisualSlot>[]>(
+    () => [
+      {
+        id: 'heroImage',
+        label: 'Background',
+        description: 'Room/venue hero image behind the page header.',
+        kind: 'image',
+        value: formValues.heroImage,
+        placeholder: 'Drop background'
+      },
+      {
+        id: 'logoImage',
+        label: 'Logo',
+        description: 'Venue mark or room logo beside the name.',
+        kind: 'image',
+        value: formValues.logoImage,
+        placeholder: 'Drop logo'
+      },
+      {
+        id: 'galleryImage',
+        label: 'Room image',
+        description: 'Stage, crowd, exterior, or room detail image.',
+        kind: 'image',
+        value: formValues.galleryImage,
+        placeholder: 'Drop room image'
+      },
+      {
+        id: 'featureVideoUrl',
+        label: 'Video',
+        description: 'Venue walkthrough, recap, or show teaser.',
+        kind: 'video',
+        value: formValues.featureVideoUrl,
+        placeholder: 'Drop video'
+      },
+      {
+        id: 'upcomingContent',
+        label: 'Event links',
+        description: 'Drop ticket, calendar, or upcoming-show links.',
+        kind: 'link',
+        value: formValues.upcomingContent,
+        placeholder: 'Drop link'
+      }
+    ],
+    [
+      formValues.featureVideoUrl,
+      formValues.galleryImage,
+      formValues.heroImage,
+      formValues.logoImage,
+      formValues.upcomingContent
+    ]
+  );
 
   function applyQuickPreset(presetId: string) {
     const preset = quickSetupPresets.find((entry) => entry.id === presetId);
@@ -167,47 +212,6 @@ export function VenuePageBuilder({
       aboutContent: current.aboutContent || preset.starterAbout || current.aboutContent
     }));
     setMessage(`${preset.label} applied to the preview.`);
-  }
-
-  async function handleAssetSelection(
-    event: ChangeEvent<HTMLInputElement>,
-    field: 'heroImage' | 'logoImage' | 'galleryImage' | 'featureVideoUrl',
-    kind: 'image' | 'video'
-  ) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const maxSizeBytes = kind === 'video' ? 12 * 1024 * 1024 : 4 * 1024 * 1024;
-    const expectedPrefix = kind === 'video' ? 'video/' : 'image/';
-
-    if (!file.type.startsWith(expectedPrefix)) {
-      setMessage(`Choose a ${kind} file for this slot.`);
-      event.target.value = '';
-      return;
-    }
-
-    if (file.size > maxSizeBytes) {
-      setMessage(
-        kind === 'video'
-          ? 'Video uploads are capped at 12MB for this builder.'
-          : 'Image uploads are capped at 4MB for this builder.'
-      );
-      event.target.value = '';
-      return;
-    }
-
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setFormValues((current) => ({
-        ...current,
-        [field]: dataUrl
-      }));
-      setMessage(`${file.name} loaded into the preview.`);
-    } catch {
-      setMessage(`Could not load ${file.name}.`);
-    } finally {
-      event.target.value = '';
-    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -423,27 +427,18 @@ export function VenuePageBuilder({
                 </label>
               </div>
 
-              <div className="artist-builder-upload-grid">
-                <label className="field artist-builder-upload-field">
-                  <span>Background upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'heroImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Logo upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'logoImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Picture upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'galleryImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Video upload</span>
-                  <input accept="video/*" onChange={(event) => handleAssetSelection(event, 'featureVideoUrl', 'video')} type="file" />
-                </label>
-              </div>
+              <VisualDropStudio
+                description="Drag room photos, logos, recap clips, and ticket/calendar links directly into their page positions."
+                onChange={(slotId, value) =>
+                  setFormValues((current) => ({
+                    ...current,
+                    [slotId]: value
+                  }))
+                }
+                onStatus={setMessage}
+                slots={visualDropSlots}
+                title="Place venue graphics, video, and links"
+              />
             </div>
 
             <div className="artist-page-builder-section">

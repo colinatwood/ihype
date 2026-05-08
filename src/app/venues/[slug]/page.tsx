@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
+import { ContentReportControl } from '@/components/ContentReportControl';
 import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
 import { VenueEventScheduler } from '@/components/VenueEventScheduler';
@@ -11,6 +12,7 @@ import { VenueConnectionRequestActions } from '@/components/VenueConnectionReque
 import { VenueConnectionRequestForm } from '@/components/VenueConnectionRequestForm';
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
+import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 
 const venueSections = ['about', 'upcoming', 'request'] as const;
 
@@ -101,19 +103,36 @@ export default async function VenuePage({
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeSection = getActiveSection(resolvedSearchParams.section);
 
-  const profile = await db.profile.findUnique({ where: { slug } });
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    include: {
+      owner: {
+        select: {
+          email: true,
+          username: true
+        }
+      }
+    }
+  });
   if (!profile || profile.type !== 'VENUE') return notFound();
+  if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
   const profileSlug = profile.slug;
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
   const [shows, bookableProfiles, connectionRequests, myRequests, totalRequestCount, fanHypeCount] = await Promise.all([
     db.show.findMany({
-      where: { venueProfileId: profile.id },
+      where: {
+        venueProfileId: profile.id,
+        ...getDemoCreatorExclusion()
+      },
       include: { venueProfile: true, headlinerProfile: true },
       orderBy: { startsAt: 'asc' }
     }),
     db.profile.findMany({
-      where: { type: { in: ['ARTIST', 'DJ'] } },
+      where: {
+        type: { in: ['ARTIST', 'DJ'] },
+        ...getDemoOwnerExclusion()
+      },
       orderBy: [{ verified: 'desc' }, { name: 'asc' }],
       select: { id: true, name: true, type: true }
     }),
@@ -365,6 +384,8 @@ export default async function VenuePage({
           ) : null}
         </div>
       </section>
+
+      <ContentReportControl targetId={profile.id} targetType="profile" />
     </main>
   );
 }

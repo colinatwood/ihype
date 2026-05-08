@@ -1,5 +1,6 @@
 import { ProfileType } from '@prisma/client';
 import { db } from '@/lib/db';
+import type { DiscoverModuleId } from '@/lib/discover-modules';
 
 export function getProfilePathForType(type: ProfileType, slug: string) {
   if (type === 'DJ') return `/promoters/${slug}`;
@@ -15,11 +16,8 @@ export function getDiscoverPathForType(type: ProfileType) {
   return '/artists';
 }
 
-export function getLandingPathForType(type: ProfileType) {
-  if (type === 'DJ') return '/my/promoter';
-  if (type === 'VENUE') return '/my/venue';
-  if (type === 'LISTENER') return '/my/fan';
-  return '/my/artist';
+export function getRoleLandingPathForType(type: ProfileType, module: DiscoverModuleId = 'stats') {
+  return `${getDiscoverPathForType(type)}?module=${module}`;
 }
 
 function getPreferredProfileTypeForRole(role: string | null | undefined): ProfileType | null {
@@ -32,13 +30,15 @@ function getPreferredProfileTypeForRole(role: string | null | undefined): Profil
 
 export async function getDefaultLandingPathForUser({
   userId,
-  role
+  role,
+  module
 }: {
   userId: string;
   role: string | null | undefined;
+  module?: DiscoverModuleId;
 }) {
   if (role === 'ADMIN') {
-    return '/dashboard';
+    return '/admin';
   }
 
   const preferredProfileType = getPreferredProfileTypeForRole(role);
@@ -56,7 +56,7 @@ export async function getDefaultLandingPathForUser({
     });
 
     if (preferredProfile) {
-      return getLandingPathForType(preferredProfile.type);
+      return getRoleLandingPathForType(preferredProfile.type, module);
     }
   }
 
@@ -69,7 +69,11 @@ export async function getDefaultLandingPathForUser({
   });
 
   if (fallbackProfile) {
-    return getLandingPathForType(fallbackProfile.type);
+    return getRoleLandingPathForType(fallbackProfile.type, module);
+  }
+
+  if (preferredProfileType) {
+    return getRoleLandingPathForType(preferredProfileType, module);
   }
 
   return '/dashboard';

@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { recordEmailDelivery } from '@/lib/audit';
 import { env } from '@/lib/env';
 
 let transporter: nodemailer.Transporter | null = null;
@@ -14,6 +15,18 @@ function parseSmtpSecureFlag(value: string | undefined) {
 
 export function isSmtpEmailConfigured() {
   return Boolean(env.SMTP_HOST && env.SMTP_PORT && env.SMTP_FROM);
+}
+
+function getEmailFrom() {
+  return env.EMAIL_FROM || env.SMTP_FROM;
+}
+
+export function isResendEmailConfigured() {
+  return Boolean(env.RESEND_API_KEY && getEmailFrom());
+}
+
+export function isEmailDeliveryConfigured() {
+  return isResendEmailConfigured() || isSmtpEmailConfigured();
 }
 
 function getTransporter() {
@@ -39,6 +52,63 @@ function getTransporter() {
   return transporter;
 }
 
+type ConfiguredEmailInput = {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+};
+
+async function sendConfiguredEmail(input: ConfiguredEmailInput) {
+  const from = getEmailFrom();
+  if (!from) {
+    throw new Error('Email sender is not configured.');
+  }
+
+  // Prefer Resend's HTTPS API when available. It avoids SMTP credential drift
+  // and works well in Vercel serverless functions.
+  if (isResendEmailConfigured()) {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from,
+        to: input.to,
+        subject: input.subject,
+        text: input.text,
+        html: input.html
+      })
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      const nestedError = payload.error;
+      const message =
+        typeof payload.message === 'string'
+          ? payload.message
+          : nestedError && typeof nestedError === 'object' && 'message' in nestedError && typeof nestedError.message === 'string'
+            ? nestedError.message
+          : typeof payload.error === 'string'
+            ? payload.error
+            : `HTTP ${response.status}`;
+      throw new Error(`Resend email delivery failed: ${message}`);
+    }
+
+    return 'resend' as const;
+  }
+
+  const transport = getTransporter();
+  await transport.sendMail({
+    from,
+    ...input
+  });
+
+  return 'smtp' as const;
+}
+
 type LoginOtpEmailInput = {
   email: string;
   name?: string | null;
@@ -48,21 +118,20 @@ type LoginOtpEmailInput = {
 export async function sendLoginOtpEmail({ email, name, otp }: LoginOtpEmailInput) {
   const resolvedName = name?.trim() || 'there';
 
-  if (!isSmtpEmailConfigured()) {
+  if (!isEmailDeliveryConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(`[login-otp] ${email} -> ${otp}`);
+      await recordEmailDelivery({ type: 'login-otp', recipient: email, status: 'LOGGED', provider: 'console' });
       return { mode: 'log' as const };
     }
     throw new Error('SMTP is not configured for OTP email delivery.');
   }
 
-  const transport = getTransporter();
-
-  await transport.sendMail({
-    from: env.SMTP_FROM,
-    to: email,
-    subject: 'Your iHYPE sign-in code',
-    text: [
+  try {
+    const provider = await sendConfiguredEmail({
+      to: email,
+      subject: 'Your iHYPE sign-in code',
+      text: [
       `Hi ${resolvedName},`,
       '',
       `Your iHYPE sign-in code is ${otp}.`,
@@ -70,7 +139,7 @@ export async function sendLoginOtpEmail({ email, name, otp }: LoginOtpEmailInput
       '',
       'If you did not request this, you can safely ignore this email.'
     ].join('\n'),
-    html: `
+      html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#10182a;">
         <p style="margin:0 0 16px;">Hi ${resolvedName},</p>
         <p style="margin:0 0 16px;">Your iHYPE sign-in code is:</p>
@@ -81,9 +150,20 @@ export async function sendLoginOtpEmail({ email, name, otp }: LoginOtpEmailInput
         <p style="margin:0;color:#5b657a;">If you did not try to sign in to iHYPE, you can safely ignore this email.</p>
       </div>
     `
-  });
+    });
+    await recordEmailDelivery({ type: 'login-otp', recipient: email, status: 'SENT', provider });
+  } catch (error) {
+    await recordEmailDelivery({
+      type: 'login-otp',
+      recipient: email,
+      status: 'FAILED',
+      provider: isResendEmailConfigured() ? 'resend' : 'smtp',
+      error: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
 
-  return { mode: 'smtp' as const };
+  return { mode: isResendEmailConfigured() ? ('resend' as const) : ('smtp' as const) };
 }
 
 type PasswordResetEmailInput = {
@@ -114,9 +194,10 @@ export async function sendPasswordResetPasscodeEmail({
   name,
   expiresInMinutes
 }: PasswordResetEmailInput) {
-  if (!isSmtpEmailConfigured()) {
+  if (!isEmailDeliveryConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(`[password-reset] ${email} -> ${code} (valid ${expiresInMinutes} minutes)`);
+      await recordEmailDelivery({ type: 'password-reset', recipient: email, status: 'LOGGED', provider: 'console' });
       return { mode: 'log' as const };
     }
 
@@ -124,13 +205,12 @@ export async function sendPasswordResetPasscodeEmail({
   }
 
   const resolvedName = name?.trim() || 'there';
-  const transport = getTransporter();
 
-  await transport.sendMail({
-    from: env.SMTP_FROM,
-    to: email,
-    subject: 'iHYPE password reset passcode',
-    text: [
+  try {
+    const provider = await sendConfiguredEmail({
+      to: email,
+      subject: 'iHYPE password reset passcode',
+      text: [
       `Hi ${resolvedName},`,
       '',
       `Your iHYPE password reset passcode is ${code}.`,
@@ -138,7 +218,7 @@ export async function sendPasswordResetPasscodeEmail({
       '',
       'If you did not request this change, you can ignore this email.'
     ].join('\n'),
-    html: `
+      html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#10182a;">
         <p style="margin:0 0 16px;">Hi ${resolvedName},</p>
         <p style="margin:0 0 16px;">Your iHYPE password reset passcode is:</p>
@@ -149,9 +229,20 @@ export async function sendPasswordResetPasscodeEmail({
         <p style="margin:0;color:#5b657a;">If you did not request this change, you can safely ignore this email.</p>
       </div>
     `
-  });
+    });
+    await recordEmailDelivery({ type: 'password-reset', recipient: email, status: 'SENT', provider });
+  } catch (error) {
+    await recordEmailDelivery({
+      type: 'password-reset',
+      recipient: email,
+      status: 'FAILED',
+      provider: isResendEmailConfigured() ? 'resend' : 'smtp',
+      error: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
 
-  return { mode: 'smtp' as const };
+  return { mode: isResendEmailConfigured() ? ('resend' as const) : ('smtp' as const) };
 }
 
 export async function sendIssuedTicketEmail({
@@ -163,11 +254,12 @@ export async function sendIssuedTicketEmail({
   totalChargeLabel,
   tickets
 }: IssuedTicketEmailInput) {
-  if (!isSmtpEmailConfigured()) {
+  if (!isEmailDeliveryConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(
         `[ticket-email] ${email} -> ${showTitle} (${tickets.length} ticket${tickets.length === 1 ? '' : 's'})`
       );
+      await recordEmailDelivery({ type: 'ticket', recipient: email, status: 'LOGGED', provider: 'console' });
       return { mode: 'log' as const };
     }
 
@@ -175,16 +267,15 @@ export async function sendIssuedTicketEmail({
   }
 
   const resolvedName = name?.trim() || 'there';
-  const transport = getTransporter();
   const ticketLines = tickets
     .map((ticket) => `${ticket.label}: ${ticket.serializedId} | ${ticket.verificationUrl}`)
     .join('\n');
 
-  await transport.sendMail({
-    from: env.SMTP_FROM,
-    to: email,
-    subject: `iHYPE tickets for ${showTitle}`,
-    text: [
+  try {
+    const provider = await sendConfiguredEmail({
+      to: email,
+      subject: `iHYPE tickets for ${showTitle}`,
+      text: [
       `Hi ${resolvedName},`,
       '',
       `Your ticket${tickets.length === 1 ? ' is' : 's are'} ready for ${showTitle}.`,
@@ -199,7 +290,7 @@ export async function sendIssuedTicketEmail({
     ]
       .filter(Boolean)
       .join('\n'),
-    html: `
+      html: `
       <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#10182a;">
         <p style="margin:0 0 16px;">Hi ${resolvedName},</p>
         <p style="margin:0 0 16px;">Your ticket${tickets.length === 1 ? ' is' : 's are'} ready for <strong>${showTitle}</strong>.</p>
@@ -225,7 +316,18 @@ export async function sendIssuedTicketEmail({
         <p style="margin:18px 0 0;color:#5b657a;">Present the QR-coded ticket at entry. Each ticket is single-use.</p>
       </div>
     `
-  });
+    });
+    await recordEmailDelivery({ type: 'ticket', recipient: email, status: 'SENT', provider });
+  } catch (error) {
+    await recordEmailDelivery({
+      type: 'ticket',
+      recipient: email,
+      status: 'FAILED',
+      provider: isResendEmailConfigured() ? 'resend' : 'smtp',
+      error: error instanceof Error ? error.message : String(error)
+    });
+    throw error;
+  }
 
-  return { mode: 'smtp' as const };
+  return { mode: isResendEmailConfigured() ? ('resend' as const) : ('smtp' as const) };
 }

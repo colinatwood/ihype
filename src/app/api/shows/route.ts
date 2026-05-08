@@ -4,15 +4,16 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { sortShowsForFeed } from '@/lib/integrity';
 import { canManageOwnedResource, isAdminSession } from '@/lib/permissions';
+import { getDemoCreatorExclusion } from '@/lib/runtime-flags';
 import { showProductionPlanSchema } from '@/lib/show-composer';
 import { DEFAULT_PROMOTER_AFFILIATE_PERCENT, validateTicketSplit } from '@/lib/ticketing';
 import { slugify } from '@/lib/utils';
 import { consumeRateLimit, rateLimitHeaders, rateLimitKey } from '@/lib/rate-limit';
 
 const radioTrackSchema = z.object({
-  hexId: z.string(),
-  title: z.string(),
-  artistName: z.string(),
+  hexId: z.string().min(1),
+  title: z.string().min(1),
+  artistName: z.string().min(1),
   artistProfileSlug: z.string().optional(),
   position: z.number().int().nonnegative()
 });
@@ -20,7 +21,6 @@ const radioTrackSchema = z.object({
 const schema = z.object({
   title: z.string().min(3),
   description: z.string().optional(),
-  // isRadioShow=true → curated stream show; no venue/tickets required; startsAt defaults to now
   isRadioShow: z.boolean().default(false),
   status: z.enum(['DRAFT', 'SCHEDULED', 'LIVE']).default('SCHEDULED'),
   startsAt: z.string().datetime().optional(),
@@ -37,7 +37,6 @@ const schema = z.object({
   artistPayoutPercent: z.coerce.number().int().min(0).max(95).optional(),
   promoterPayoutPercent: z.coerce.number().int().min(0).max(10).optional(),
   tags: z.array(z.string()).default([]),
-  // For radio shows: tracks stored here; for live shows: production plan
   radioTracks: z.array(radioTrackSchema).optional(),
   productionPlan: showProductionPlanSchema.optional()
 });
@@ -46,12 +45,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const mine = searchParams.get('mine') === '1' || searchParams.get('mine') === 'true';
 
-  // ?mine=1 — return authenticated user's own shows (all statuses including DRAFT)
   if (mine) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Login required' }, { status: 401 });
     }
+
     const shows = await db.show.findMany({
       include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
       where: { creatorId: session.user.id },
@@ -60,10 +59,12 @@ export async function GET(request: Request) {
     return NextResponse.json(shows);
   }
 
-  // Public feed — scheduled / live / ended only
   const shows = await db.show.findMany({
     include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
-    where: { status: { in: ['SCHEDULED', 'LIVE', 'ENDED'] } }
+    where: {
+      status: { in: ['SCHEDULED', 'LIVE', 'ENDED'] },
+      ...getDemoCreatorExclusion()
+    }
   });
   return NextResponse.json(sortShowsForFeed(shows));
 }
@@ -90,34 +91,51 @@ export async function POST(request: NextRequest) {
   try {
     const body = schema.parse(await request.json());
 
-    // ── Radio show: validate track list, skip venue/ticket checks ─
     if (body.isRadioShow) {
       const tracks = body.radioTracks ?? [];
-      if (tracks.length === 0) {
+      if (!tracks.length) {
         return NextResponse.json({ error: 'A radio show needs at least one track.' }, { status: 400 });
       }
+
       if (tracks.length > 50) {
         return NextResponse.json({ error: 'A radio show can have at most 50 tracks.' }, { status: 400 });
       }
 
-      // Verify all referenced tracks exist and have freeUseEnabled
-      const hexIds = tracks.map(t => t.hexId);
+      const promoterProfile = body.promoterProfileId
+        ? await db.profile.findUnique({ where: { id: body.promoterProfileId } })
+        : null;
+
+      if (body.promoterProfileId && (!promoterProfile || promoterProfile.type !== 'DJ')) {
+        return NextResponse.json({ error: 'Promoter must be a promoter profile' }, { status: 400 });
+      }
+
+      if (
+        body.promoterProfileId &&
+        !isAdmin &&
+        promoterProfile?.ownerId !== session.user.id
+      ) {
+        return NextResponse.json({ error: 'Only the promoter owner can create radio shows from this promoter page' }, { status: 403 });
+      }
+
+      const hexIds = tracks.map((track) => track.hexId);
       const assets = await db.artistMediaAsset.findMany({
         where: { hexId: { in: hexIds }, freeUseEnabled: true },
         select: { hexId: true }
       });
-      const validHexIds = new Set(assets.map(a => a.hexId));
-      const invalid = hexIds.filter(h => !validHexIds.has(h));
-      if (invalid.length > 0) {
+      const validHexIds = new Set(assets.map((asset) => asset.hexId));
+      const invalidTracks = hexIds.filter((hexId) => !validHexIds.has(hexId));
+
+      if (invalidTracks.length) {
         return NextResponse.json(
-          { error: `${invalid.length} track(s) are not in the free-use catalogue.` },
+          { error: `${invalidTracks.length} track(s) are not in the free-use catalogue.` },
           { status: 400 }
         );
       }
 
-      const sortedTracks = [...tracks].sort((a, b) => a.position - b.position);
       const baseSlug = slugify(body.title);
       const slug = `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`;
+      const status = body.status === 'DRAFT' ? 'DRAFT' : 'SCHEDULED';
+      const sortedTracks = [...tracks].sort((left, right) => left.position - right.position);
 
       const show = await db.show.create({
         data: {
@@ -128,19 +146,18 @@ export async function POST(request: NextRequest) {
           startsAt: new Date(),
           creatorId: session.user.id,
           promoterProfileId: body.promoterProfileId ?? null,
-          tags: [...body.tags, 'radio-show'],
+          tags: Array.from(new Set([...body.tags, 'radio-show', 'prerecorded-show'])),
           productionPlan: {
             kind: 'radio',
             tracks: sortedTracks
           },
-          status: body.status === 'LIVE' ? 'LIVE' : body.status === 'DRAFT' ? 'DRAFT' : 'LIVE'
+          status
         }
       });
 
       return NextResponse.json(show, { status: 201 });
     }
 
-    // ── Live event: existing validation path ──────────────────────
     if (!body.startsAt) {
       return NextResponse.json({ error: 'A start date/time is required for live events.' }, { status: 400 });
     }
@@ -162,14 +179,29 @@ export async function POST(request: NextRequest) {
           })
         : Promise.resolve(null)
     ]);
+    const canManageVenueProfile = Boolean(
+      venueProfile && canManageOwnedResource(session, venueProfile.ownerId)
+    );
+    const canManagePromoterProfile = Boolean(
+      promoterProfile && (isAdmin || promoterProfile.ownerId === session.user.id)
+    );
+    const isPromoterVenueDraft = Boolean(
+      body.venueProfileId &&
+        body.status === 'DRAFT' &&
+        !body.isTicketed &&
+        canManagePromoterProfile
+    );
 
     if (body.venueProfileId) {
       if (!venueProfile || venueProfile.type !== 'VENUE') {
         return NextResponse.json({ error: 'Venue profile not found' }, { status: 404 });
       }
 
-      if (!canManageOwnedResource(session, venueProfile.ownerId)) {
-        return NextResponse.json({ error: 'Only the venue owner can schedule events for this venue' }, { status: 403 });
+      if (!canManageVenueProfile && !isPromoterVenueDraft) {
+        return NextResponse.json(
+          { error: 'Only the venue owner can schedule events for this venue. Promoters can save draft event requests for venue review.' },
+          { status: 403 }
+        );
       }
     }
 
@@ -181,13 +213,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Promoter must be a promoter profile' }, { status: 400 });
     }
 
-    if (
-      body.promoterProfileId &&
-      !isAdmin &&
-      promoterProfile?.ownerId !== session.user.id &&
-      !body.venueProfileId
-    ) {
-      return NextResponse.json({ error: 'Only the promoter owner can create streaming shows from this promoter page' }, { status: 403 });
+    if (body.promoterProfileId && !canManagePromoterProfile && !canManageVenueProfile) {
+      return NextResponse.json(
+        { error: 'Only the promoter owner or venue owner can attach this promoter profile to a show' },
+        { status: 403 }
+      );
     }
 
     if (body.productionPlan && !body.promoterProfileId) {
@@ -195,6 +225,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (body.isTicketed) {
+      if (body.venueProfileId && !canManageVenueProfile) {
+        return NextResponse.json({ error: 'Only the venue owner can open ticketing for venue events' }, { status: 403 });
+      }
+
       if (!body.ticketPriceCents || !body.ticketCapacity) {
         return NextResponse.json({ error: 'Ticket price and capacity are required for ticketed events' }, { status: 400 });
       }
@@ -231,7 +265,7 @@ export async function POST(request: NextRequest) {
         slug,
         title: body.title,
         description: body.description,
-        startsAt: new Date(body.startsAt!),
+        startsAt: new Date(body.startsAt),
         endsAt: body.endsAt ? new Date(body.endsAt) : undefined,
         creatorId: session.user.id,
         venueProfileId: body.venueProfileId,

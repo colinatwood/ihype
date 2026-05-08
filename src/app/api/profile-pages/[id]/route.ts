@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { recordAuditEvent } from '@/lib/audit';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isSafeImageInput, isSafeVideoInput } from '@/lib/asset-safety';
@@ -168,6 +169,16 @@ export async function PATCH(
         : []),
       ...upserts.map((u) => db.profileBlock.upsert(u))
     ]);
+
+    await recordAuditEvent({
+      actorUserId: session.user.id,
+      action: 'profile_updated',
+      entityType: 'profile',
+      entityId: id,
+      metadata: {
+        changedFields: Object.keys(body)
+      }
+    });
 
     return NextResponse.json(updatedProfile);
   } catch (error) {

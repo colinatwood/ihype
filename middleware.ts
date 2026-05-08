@@ -5,7 +5,8 @@ import { authConfig } from '@/lib/auth.config';
 const { auth } = NextAuth(authConfig);
 
 function isLocalHost(hostname: string) {
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.localhost');
+  const normalizedHost = hostname.split(':')[0]?.toLowerCase() ?? hostname.toLowerCase();
+  return normalizedHost === 'localhost' || normalizedHost === '127.0.0.1' || normalizedHost.endsWith('.localhost');
 }
 
 export default auth((request) => {

@@ -1,19 +1,21 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { isSmtpEmailConfigured } from '@/lib/mailer';
+import { recordAuditEvent } from '@/lib/audit';
+import { isEmailDeliveryConfigured } from '@/lib/mailer';
 import { createLoginOtpChallenge } from '@/lib/login-otp';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 
 const schema = z.object({
   identifier: z.string().trim().min(1),
-  password: z.string().min(1)
+  password: z.string().min(1),
+  website: z.string().trim().max(120).optional()
 });
 
 export async function POST(request: Request) {
   try {
     const clientAddress = readClientAddress(request);
-    const rateLimit = consumeRateLimit(`otp-request:${clientAddress}`, {
+    const rateLimit = await consumeRateLimit(`otp-request:${clientAddress}`, {
       limit: 5,
       windowMs: 10 * 60 * 1000
     });
@@ -25,7 +27,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!isSmtpEmailConfigured()) {
+    if (!isEmailDeliveryConfigured()) {
       return NextResponse.json(
         { error: 'Email delivery is not configured on this server. Contact support.' },
         { status: 503 }
@@ -36,6 +38,16 @@ export async function POST(request: Request) {
     try {
       body = schema.parse(await request.json());
     } catch {
+      return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
+    }
+
+    if (body.website) {
+      await recordAuditEvent({
+        action: 'bot_trap_triggered',
+        entityType: 'login',
+        ipAddress: clientAddress,
+        metadata: { field: 'website' }
+      });
       return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
     }
 

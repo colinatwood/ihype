@@ -1,3 +1,5 @@
+import { db } from '@/lib/db';
+
 type RateLimitRecord = {
   count: number;
   resetAt: number;
@@ -14,48 +16,23 @@ type RateLimitResult = {
   retryAfterSeconds: number;
 };
 
-// Standard rate-limit response headers (IETF draft-6585 + RateLimit header draft)
-export function rateLimitHeaders(result: RateLimitResult): Record<string, string> {
-  return {
-    'X-RateLimit-Remaining': String(result.remaining),
-    'X-RateLimit-Reset': String(result.retryAfterSeconds),
-    ...(result.allowed ? {} : { 'Retry-After': String(result.retryAfterSeconds) })
-  };
-}
-
-// Convenience: build the ip:userId composite key used by most API routes
-export function rateLimitKey(prefix: string, userId: string | undefined, ip: string | null): string {
-  return userId ? `${prefix}:user:${userId}` : `${prefix}:ip:${ip ?? 'unknown'}`;
-}
-
-const globalForRateLimit = globalThis as typeof globalThis & {
-  __ihypeRateLimitStore?: Map<string, RateLimitRecord>;
-};
-
-const rateLimitStore = globalForRateLimit.__ihypeRateLimitStore ?? new Map<string, RateLimitRecord>();
-
-if (!globalForRateLimit.__ihypeRateLimitStore) {
-  globalForRateLimit.__ihypeRateLimitStore = rateLimitStore;
-}
-
-function pruneExpired(now: number) {
-  for (const [key, value] of rateLimitStore.entries()) {
-    if (value.resetAt <= now) {
-      rateLimitStore.delete(key);
-    }
-  }
-}
-
-export function consumeRateLimit(key: string, { limit, windowMs }: RateLimitOptions): RateLimitResult {
+export async function consumeRateLimit(key: string, { limit, windowMs }: RateLimitOptions): Promise<RateLimitResult> {
   const now = Date.now();
-  pruneExpired(now);
+  const resetAt = new Date(now + windowMs);
+  const existing = await db.rateLimitBucket.findUnique({ where: { key } });
 
-  const existing = rateLimitStore.get(key);
-
-  if (!existing || existing.resetAt <= now) {
-    rateLimitStore.set(key, {
+  if (!existing || existing.resetAt.getTime() <= now) {
+    await db.rateLimitBucket.upsert({
+      where: { key },
+      create: {
+        key,
+        count: 1,
+        resetAt
+      },
+      update: {
       count: 1,
-      resetAt: now + windowMs
+        resetAt
+      }
     });
 
     return {
@@ -69,16 +46,22 @@ export function consumeRateLimit(key: string, { limit, windowMs }: RateLimitOpti
     return {
       allowed: false,
       remaining: 0,
-      retryAfterSeconds: Math.max(1, Math.ceil((existing.resetAt - now) / 1000))
+      retryAfterSeconds: Math.max(1, Math.ceil((existing.resetAt.getTime() - now) / 1000))
     };
   }
 
-  existing.count += 1;
-  rateLimitStore.set(key, existing);
+  const updated = await db.rateLimitBucket.update({
+    where: { key },
+    data: {
+      count: {
+        increment: 1
+      }
+    }
+  });
 
   return {
     allowed: true,
-    remaining: Math.max(0, limit - existing.count),
-    retryAfterSeconds: Math.max(1, Math.ceil((existing.resetAt - now) / 1000))
+    remaining: Math.max(0, limit - updated.count),
+    retryAfterSeconds: Math.max(1, Math.ceil((existing.resetAt.getTime() - now) / 1000))
   };
 }

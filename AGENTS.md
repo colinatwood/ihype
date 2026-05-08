@@ -8,6 +8,8 @@ This repository contains a production-oriented Next.js app for hosting artist, D
 - Keep the app compatible with Vercel deployment and Prisma migrations.
 - Preserve the current stack unless a task explicitly requires a replacement.
 - Treat environment variables and secrets as external configuration. Never hardcode secrets.
+- Preserve the newer Claude-derived signed-in visual schema. Do not replace the role landing pages with older listener/dashboard/directory layouts.
+- Keep auth redirects and role module links working while updating visuals. The safe path is to keep role pages wrapped by `ProfileDirectoryPage`, keep `RoleModuleSubheader`, and keep role-aware routing in `src/lib/account-routing.ts`.
 
 ## Stack expectations
 - Framework: Next.js App Router
@@ -25,6 +27,7 @@ This repository contains a production-oriented Next.js app for hosting artist, D
 
 ## After changing code
 - Run the narrowest useful validation first.
+- Run `npm run guard:design` after Claude/Codex UI syncs. It is intentionally wired into build/deploy to catch old-design regressions before they ship.
 - For dependency or build changes, run:
   - `npm install`
   - `npx prisma generate`

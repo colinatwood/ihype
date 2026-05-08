@@ -23,7 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!credentials?.challengeId || !credentials?.otp) return null;
 
         const clientAddress = readClientAddress(request);
-        const rateLimit = consumeRateLimit(`otp-verify:${clientAddress}`, {
+        const rateLimit = await consumeRateLimit(`otp-verify:${clientAddress}`, {
           limit: 10,
           windowMs: 15 * 60 * 1000
         });

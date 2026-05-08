@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createLoginOtpChallenge } from '@/lib/login-otp';
-import { isSmtpEmailConfigured } from '@/lib/mailer';
+import { isEmailDeliveryConfigured } from '@/lib/mailer';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 
@@ -14,7 +14,7 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   const clientAddress = readClientAddress(request);
-  const rateLimit = consumeRateLimit(`mfa-start:${clientAddress}`, {
+  const rateLimit = await consumeRateLimit(`mfa-start:${clientAddress}`, {
     limit: 5,
     windowMs: 10 * 60 * 1000
   });
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isSmtpEmailConfigured()) {
+  if (!isEmailDeliveryConfigured()) {
     return NextResponse.json(
       { error: 'Email delivery is not configured on this server. Contact support.' },
       { status: 503 }

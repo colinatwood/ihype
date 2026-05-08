@@ -23,16 +23,18 @@ function DiscoverModuleShell({
   badge,
   title,
   description,
-  children
+  children,
+  className
 }: {
   badge: string;
   title: string;
   description: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
     <section className="section">
-      <div className="panel discover-module-panel">
+      <div className={className ? `panel discover-module-panel ${className}` : 'panel discover-module-panel'}>
         <div className="discover-module-header">
           <div>
             <div className="badge">{badge}</div>
@@ -60,8 +62,13 @@ export function DiscoverStatsPanel({
   highlights?: string[];
 }) {
   return (
-    <DiscoverModuleShell badge={badge} description={description} title={title}>
-      <div className="discover-stat-grid">
+    <DiscoverModuleShell
+      badge={badge}
+      className="stats-engine-panel"
+      description={description}
+      title={title}
+    >
+      <div className="discover-stat-grid stats-engine-grid">
         {stats.map((stat) => (
           <div className="discover-stat-card" key={stat.label}>
             <span>{stat.label}</span>
@@ -87,15 +94,22 @@ export function DiscoverRecommendationPanel({
   badge,
   title,
   description,
-  opportunities
+  opportunities,
+  children
 }: {
   badge: string;
   title: string;
   description: string;
   opportunities: DiscoverOpportunity[];
+  children?: ReactNode;
 }) {
   return (
-    <DiscoverModuleShell badge={badge} description={description} title={title}>
+    <DiscoverModuleShell
+      badge={badge}
+      className="recommendation-engine-panel"
+      description={description}
+      title={title}
+    >
       <div className="discover-recommendation-grid">
         {opportunities.map((opportunity) => (
           <article className="discover-recommendation-card" key={opportunity.title}>
@@ -105,6 +119,7 @@ export function DiscoverRecommendationPanel({
           </article>
         ))}
       </div>
+      {children ? <div className="recommendation-engine-signal-map">{children}</div> : null}
     </DiscoverModuleShell>
   );
 }
@@ -169,7 +184,11 @@ export function DiscoverExplorerPanel({
   globePanel,
   hypedNearMe,
   newArtists,
-  newPromoters
+  newPromoters,
+  badge = 'Signal inputs',
+  title = 'Scene search and nearby momentum',
+  description,
+  embedded = false
 }: {
   currentHref: string;
   profiles: DirectoryBrowserProfile[];
@@ -179,17 +198,27 @@ export function DiscoverExplorerPanel({
   hypedNearMe: DiscoverSpotlightProfile[];
   newArtists: DiscoverSpotlightProfile[];
   newPromoters: DiscoverSpotlightProfile[];
+  badge?: string;
+  title?: string;
+  description?: string;
+  embedded?: boolean;
 }) {
-  return (
-    <section className="section discover-explorer-stack">
-      <div className="panel discover-module-panel discover-explorer-surface">
+  const surface = (
+    <div
+      className={
+        embedded
+          ? 'discover-explorer-surface discover-explorer-embedded-surface'
+          : 'panel discover-module-panel discover-explorer-surface'
+      }
+    >
         <div className="discover-module-header">
           <div>
-            <div className="badge">Discover</div>
-            <h2>Scene search and nearby momentum</h2>
+            <div className="badge">{badge}</div>
+            <h2>{title}</h2>
           </div>
           <p className="meta">
-            Search by song, artist, promoter, venue, and location while tracking what is heating up closest to {viewerLocationLabel}.
+            {description ??
+              `Search by song, artist, promoter, venue, and location while tracking what is heating up closest to ${viewerLocationLabel}.`}
           </p>
         </div>
 
@@ -265,7 +294,7 @@ export function DiscoverExplorerPanel({
           <div className="discover-explorer-section discover-explorer-browser">
             <div className="discover-explorer-section-head">
               <strong>Search everything in one place</strong>
-              <span className="meta">Browse pages, play song matches, and move through the live network without leaving discover.</span>
+              <span className="meta">Browse pages, play song matches, and move through the live network without leaving this engine.</span>
             </div>
             <ProfileDirectoryBrowser currentHref={currentHref} mediaEntries={mediaEntries} profiles={profiles} />
           </div>
@@ -273,6 +302,15 @@ export function DiscoverExplorerPanel({
           {globePanel ? <div className="discover-explorer-globe-shell">{globePanel}</div> : null}
         </div>
       </div>
+  );
+
+  if (embedded) {
+    return surface;
+  }
+
+  return (
+    <section className="section discover-explorer-stack">
+      {surface}
     </section>
   );
 }
@@ -402,14 +440,17 @@ export function DiscoverCreatorPanel({
 
 export function VenueBookingRecommendationEngine({
   currentHref,
-  scopes
+  scopes,
+  children
 }: {
   currentHref: string;
   scopes: VenueBookingScopeGroup[];
+  children?: ReactNode;
 }) {
   return (
     <DiscoverModuleShell
       badge="Recommendation engine"
+      className="recommendation-engine-panel"
       description="Fan request signals are grouped by local, regional, national, and global scope so venues can see who to book next."
       title="Venue booking recommendations"
     >
@@ -452,6 +493,7 @@ export function VenueBookingRecommendationEngine({
           </section>
         ))}
       </div>
+      {children ? <div className="recommendation-engine-signal-map">{children}</div> : null}
     </DiscoverModuleShell>
   );
 }

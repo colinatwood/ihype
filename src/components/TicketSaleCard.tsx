@@ -216,11 +216,11 @@ export function TicketSaleCard({
       ) : !currentFan.hasStoredPaymentToken ? (
         <div className="empty">
           <strong style={{ display: 'block', marginBottom: '0.5rem' }}>Payment method required</strong>
-          Fan accounts need a saved payment method before reserving tickets. Payment onboarding
-          is being finalised for beta launch — your account will be notified when it opens.
+          Fan accounts need a saved payment method before reserving tickets. Payment onboarding is being finalised for
+          beta launch, and your account will be notified when it opens.
           <div className="cta-row" style={{ marginTop: '1rem' }}>
             <Link className="button small secondary" href="/tickets">
-              Ticketing Engine →
+              Ticketing Engine
             </Link>
           </div>
         </div>

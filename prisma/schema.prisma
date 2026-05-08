@@ -109,6 +109,8 @@ model User {
   reassignedTickets       Ticket[]                 @relation("TicketReassignments")
   fanPlaylists            FanPlaylist[]
   favoriteMedia           FanFavoriteMedia[]
+  auditLogs               AuditLog[]
+  contentReports          ContentReport[]
 }
 
 model Profile {
@@ -236,7 +238,10 @@ model ArtistMediaAsset {
   originalFileName String
   mimeType         String
   fileSizeBytes    Int
-  fileDataBase64   String
+  fileDataBase64   String?
+  storageProvider  String   @default("database")
+  storageKey       String?
+  storageUrl       String?
   freeUseEnabled   Boolean  @default(false)
   profileId        String
   createdAt        DateTime @default(now())
@@ -246,6 +251,81 @@ model ArtistMediaAsset {
 
   @@index([profileId, createdAt])
   @@index([freeUseEnabled, createdAt])
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int      @default(0)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String?
+  ipAddress   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model EmailDeliveryLog {
+  id        String   @id @default(cuid())
+  type      String
+  recipient String
+  status    String
+  provider  String?
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([recipient, createdAt])
+  @@index([status, createdAt])
+}
+
+model ContentReport {
+  id             String   @id @default(cuid())
+  reporterUserId String?
+  targetType     String
+  targetId       String
+  reason         String
+  details        String?
+  status         String   @default("OPEN")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  reporter       User?    @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@index([reporterUserId, createdAt])
+}
+
+model SupportRequest {
+  id              String   @id @default(cuid())
+  requesterUserId String?
+  type            String
+  name            String?
+  email           String?
+  subject         String
+  details         String
+  status          String   @default("OPEN")
+  priority        String   @default("NORMAL")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([type, createdAt])
+  @@index([requesterUserId, createdAt])
 }
 
 model Show {

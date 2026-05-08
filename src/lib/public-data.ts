@@ -1,7 +1,8 @@
 import { unstable_cache } from 'next/cache';
-import { Prisma, ProfileType } from '@prisma/client';
+import { Prisma, ProfileType, ShowStatus } from '@prisma/client';
 import { db, withDbRetry } from '@/lib/db';
 import { sortShowsForFeed } from '@/lib/integrity';
+import { demoUserEmails, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { getTransparencySnapshot } from '@/lib/transparency';
 
 const publicShowArgs = Prisma.validator<Prisma.ShowDefaultArgs>()({
@@ -85,6 +86,45 @@ type PublicShow = Prisma.ShowGetPayload<typeof publicShowArgs>;
 type PublicProfile = Prisma.ProfileGetPayload<typeof publicProfileArgs>;
 type PublicRequest = Prisma.VenueConnectionRequestGetPayload<typeof publicRequestArgs>;
 
+function publicProfileWhere(type?: ProfileType) {
+  return {
+    ...(type ? { type } : {}),
+    ...(shouldHideDemoContent() ? { owner: { email: { notIn: demoUserEmails } } } : {})
+  };
+}
+
+function publicShowWhere() {
+  return {
+    status: { in: [ShowStatus.SCHEDULED, ShowStatus.LIVE, ShowStatus.ENDED] },
+    ...(shouldHideDemoContent() ? { creator: { email: { notIn: demoUserEmails } } } : {})
+  };
+}
+
+function sanitizePublicProfile(profile: PublicProfile): PublicProfile {
+  return {
+    ...profile,
+    contactInfo: null,
+    addressLine1: null,
+    postalCode: null,
+    latitude: null,
+    longitude: null
+  };
+}
+
+function sanitizePublicShow(show: PublicShow): PublicShow {
+  return {
+    ...show,
+    venueProfile: show.venueProfile
+      ? {
+          ...show.venueProfile,
+          postalCode: null,
+          latitude: null,
+          longitude: null
+        }
+      : null
+  };
+}
+
 const getHomePageDataCached = unstable_cache(
   async () => {
     let shows: PublicShow[] = [];
@@ -95,11 +135,12 @@ const getHomePageDataCached = unstable_cache(
       [shows, profiles, requests] = await withDbRetry(() =>
         db.$transaction([
           db.show.findMany({
-            where: { status: { not: 'CANCELED' } },
+            where: publicShowWhere(),
             orderBy: [{ startsAt: 'asc' }],
             ...publicShowArgs
           }),
           db.profile.findMany({
+            where: publicProfileWhere(),
             orderBy: [{ verified: 'desc' }, { hypeCount: 'desc' }, { name: 'asc' }],
             ...publicProfileArgs
           }),
@@ -111,12 +152,12 @@ const getHomePageDataCached = unstable_cache(
     }
 
     const transparencySnapshot = await getTransparencySnapshot();
-    const rankedShows = sortShowsForFeed(shows);
+    const rankedShows = sortShowsForFeed(shows.map(sanitizePublicShow));
 
     return {
       rankedShows,
       featuredShows: rankedShows.slice(0, 4),
-      profiles,
+      profiles: profiles.map(sanitizePublicProfile),
       requests,
       transparencySnapshot
     };
@@ -129,14 +170,14 @@ const getDirectoryProfilesCached = unstable_cache(
   async (type: ProfileType) =>
     withDbRetry(() =>
       db.profile.findMany({
-        where: { type },
+        where: publicProfileWhere(type),
         orderBy: [{ verified: 'desc' }, { hypeCount: 'desc' }, { name: 'asc' }],
         ...publicProfileArgs
       })
     ).catch((error) => {
       console.error(`Falling back to empty directory for ${type}`, error);
       return [];
-    }),
+    }).then((profiles) => profiles.map(sanitizePublicProfile)),
   ['directory-profiles-v1'],
   { revalidate: 120 }
 );
@@ -145,11 +186,12 @@ const getShowsDirectoryDataCached = unstable_cache(
   async () =>
     withDbRetry(() =>
       db.show.findMany({
-        where: { status: { not: 'CANCELED' } },
+        where: publicShowWhere(),
         orderBy: [{ startsAt: 'asc' }],
         ...publicShowArgs
       })
-    ).catch((error) => {
+    ).then((shows) => shows.map(sanitizePublicShow))
+    .catch((error) => {
       console.error('Falling back to empty shows directory', error);
       return [];
     }),

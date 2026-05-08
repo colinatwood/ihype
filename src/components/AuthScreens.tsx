@@ -1,0 +1,607 @@
+'use client';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import type { FormEvent, ReactNode } from 'react';
+import { useMemo, useState } from 'react';
+
+type RoleOption = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
+
+const roleOptions: Array<{ value: RoleOption; label: string; help: string }> = [
+  { value: 'FAN', label: 'Fan', help: 'Discover, hype, playlist, and track your music life.' },
+  { value: 'ARTIST', label: 'Artist', help: 'Publish your page, media, shows, and growth signals.' },
+  { value: 'DJ', label: 'Promoter', help: 'Create radio-style shows and connect scenes.' },
+  { value: 'VENUE', label: 'Venue', help: 'Manage events, ticketing, and demand signals.' }
+];
+
+type AuthSignal = {
+  label: string;
+  value: string;
+  detail: string;
+};
+
+function AuthSignalShell({
+  eyebrow,
+  title,
+  highlight,
+  description,
+  badge,
+  cardTitle,
+  cardSubtitle,
+  signals,
+  wide = false,
+  children
+}: {
+  eyebrow: string;
+  title: string;
+  highlight: string;
+  description: string;
+  badge: string;
+  cardTitle: string;
+  cardSubtitle: string;
+  signals: AuthSignal[];
+  wide?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className={wide ? 'auth-signal-page auth-signal-page-wide' : 'auth-signal-page'}>
+      <div className="auth-signal-shell">
+        <div className="auth-signal-copy">
+          <p className="auth-signal-eyebrow">{eyebrow}</p>
+          <h1>
+            {title}
+            <span>{highlight}</span>
+          </h1>
+          <p>{description}</p>
+          <div className="auth-signal-grid" aria-label="iHYPE account signals">
+            {signals.map((signal) => (
+              <article className="auth-signal-tile" key={signal.label}>
+                <span>{signal.label}</span>
+                <strong>{signal.value}</strong>
+                <small>{signal.detail}</small>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className="auth-route-card auth-signal-card">
+          <div className="badge">{badge}</div>
+          <h2>{cardTitle}</h2>
+          <p className="subtitle">{cardSubtitle}</p>
+          {children}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+async function postJson<T>(url: string, body: unknown): Promise<T> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(typeof payload.error === 'string' ? payload.error : 'Request failed.');
+  }
+
+  return payload as T;
+}
+
+export function LoginScreen({
+  initialIdentifier = '',
+  justRegistered = false
+}: {
+  initialIdentifier?: string;
+  justRegistered?: boolean;
+}) {
+  const router = useRouter();
+  const [identifier, setIdentifier] = useState(initialIdentifier);
+  const [password, setPassword] = useState('');
+  const [challengeId, setChallengeId] = useState('');
+  const [otp, setOtp] = useState('');
+  const [maskedEmail, setMaskedEmail] = useState('');
+  const [message, setMessage] = useState(
+    justRegistered ? 'Account created. Sign in with your email/username and password to continue.' : ''
+  );
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [website, setWebsite] = useState('');
+  const isCodeStep = Boolean(challengeId);
+
+  async function requestCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setIsSubmitting(true);
+
+    try {
+      const payload = await postJson<{ challengeId: string; email: string }>('/api/auth/otp/request', {
+        identifier,
+        password,
+        website
+      });
+      setChallengeId(payload.challengeId);
+      setMaskedEmail(payload.email);
+      setMessage('We sent a 6-digit sign-in code to your email.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not request a sign-in code.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function verifyCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const payload = await postJson<{ redirect?: string }>('/api/auth/otp/signin', {
+        challengeId,
+        otp
+      });
+      router.push(payload.redirect || '/auth/landing');
+      router.refresh();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not verify that code.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <AuthSignalShell
+      badge="Secure sign in"
+      cardSubtitle={
+        isCodeStep
+          ? `Use the 6-digit code sent to ${maskedEmail || 'your email'}.`
+          : 'Use your email or username. iHYPE sends a short-lived code before opening your workspace.'
+      }
+      cardTitle={isCodeStep ? 'Enter your code' : 'Sign in to iHYPE'}
+      description="Access your role lane without exposing account state. Codes are short-lived, email-first, and built for fast workspace entry."
+      eyebrow="Secure access"
+      highlight={isCodeStep ? 'Verify the signal.' : 'Open your lane.'}
+      signals={[
+        { label: 'Step 1', value: 'Password', detail: 'Confirms your account' },
+        { label: 'Step 2', value: 'Code', detail: 'Short-lived inbox check' },
+        { label: 'Step 3', value: 'Workspace', detail: 'Role-aware redirect' }
+      ]}
+      title={isCodeStep ? 'Check your inbox.' : 'Sign in.'}
+    >
+      {!isCodeStep ? (
+        <form className="form" onSubmit={requestCode}>
+          <label className="field">
+            <span>Email or username</span>
+            <input
+              autoComplete="username"
+              onChange={(event) => setIdentifier(event.target.value)}
+              required
+              type="text"
+              value={identifier}
+            />
+          </label>
+          <label className="field">
+            <span>Password</span>
+            <input
+              autoComplete="current-password"
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              type="password"
+              value={password}
+            />
+          </label>
+          <button className="button" disabled={isSubmitting} type="submit">
+            {isSubmitting ? 'Sending code...' : 'Send sign-in code'}
+          </button>
+          <label className="bot-field" aria-hidden="true">
+            <span>Website</span>
+            <input
+              autoComplete="off"
+              onChange={(event) => setWebsite(event.target.value)}
+              tabIndex={-1}
+              type="text"
+              value={website}
+            />
+          </label>
+        </form>
+      ) : (
+        <form className="form" onSubmit={verifyCode}>
+          <label className="field">
+            <span>6-digit code</span>
+            <input
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              maxLength={6}
+              onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              pattern="[0-9]{6}"
+              required
+              type="text"
+              value={otp}
+            />
+          </label>
+          <button className="button" disabled={isSubmitting || otp.length !== 6} type="submit">
+            {isSubmitting ? 'Verifying...' : 'Open my workspace'}
+          </button>
+          <button
+            className="text-link"
+            onClick={() => {
+              setChallengeId('');
+              setOtp('');
+              setMessage('');
+            }}
+            type="button"
+          >
+            Use a different login
+          </button>
+        </form>
+      )}
+
+      {message ? <p className="status-note">{message}</p> : null}
+      {error ? <p className="status-note status-note-error">{error}</p> : null}
+
+      <div className="auth-route-links">
+        <Link className="text-link" href="/forgot">
+          Reset password
+        </Link>
+        <Link className="text-link" href="/register">
+          Join free
+        </Link>
+      </div>
+    </AuthSignalShell>
+  );
+}
+
+export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOption }) {
+  const router = useRouter();
+  const [role, setRole] = useState<RoleOption>(initialRole);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [city, setCity] = useState('');
+  const [stateRegion, setStateRegion] = useState('');
+  const [country, setCountry] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [contactInfo, setContactInfo] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [hoursText, setHoursText] = useState('');
+  const [acceptedAge, setAcceptedAge] = useState(false);
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [company, setCompany] = useState('');
+  const needsPublicName = role !== 'FAN';
+  const needsUploadPolicy = role === 'ARTIST' || role === 'DJ';
+  const selectedRole = useMemo(() => roleOptions.find((option) => option.value === role), [role]);
+
+  async function createAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      await postJson('/api/register', {
+        name,
+        email,
+        username,
+        password,
+        role,
+        isThirteenOrOlder: acceptedAge,
+        acceptedArtistUploadPolicy: needsUploadPolicy ? acceptedPolicy : true,
+        inviteCode,
+        company,
+        city,
+        stateRegion,
+        country,
+        postalCode,
+        contactInfo,
+        addressLine1,
+        hoursText
+      });
+      router.push(`/login?registered=1&identifier=${encodeURIComponent(email)}`);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not create account.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <AuthSignalShell
+      badge="Join iHYPE"
+      cardSubtitle="Choose the lane you are joining first. If anything needs correction, this form keeps what you already typed."
+      cardTitle="Create your account"
+      description="One free account opens the ecosystem. Pick your role first, then build the page, shows, tickets, and discovery tools that match your lane."
+      eyebrow="Free forever"
+      highlight="Choose your lane."
+      signals={[
+        { label: 'Fans', value: 'Hype', detail: 'Discover and attend' },
+        { label: 'Artists', value: 'Publish', detail: 'Media and tour signals' },
+        { label: 'Rooms', value: 'Book', detail: 'Venue event tools' }
+      ]}
+      title="Join free."
+      wide
+    >
+      <form className="form" onSubmit={createAccount}>
+          <fieldset className="role-choice-grid">
+            <legend>Account type</legend>
+            {roleOptions.map((option) => (
+              <label className={option.value === role ? 'role-choice active' : 'role-choice'} key={option.value}>
+                <input
+                  checked={option.value === role}
+                  name="role"
+                  onChange={() => setRole(option.value)}
+                  type="radio"
+                  value={option.value}
+                />
+                <strong>{option.label}</strong>
+                <span>{option.help}</span>
+              </label>
+            ))}
+          </fieldset>
+
+          {needsPublicName ? (
+            <label className="field">
+              <span>{selectedRole?.label ?? 'Profile'} name</span>
+              <input onChange={(event) => setName(event.target.value)} required type="text" value={name} />
+            </label>
+          ) : null}
+
+          <div className="auth-field-grid">
+            <label className="field">
+              <span>Email</span>
+              <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+            </label>
+            <label className="field">
+              <span>Username</span>
+              <input autoComplete="username" onChange={(event) => setUsername(event.target.value)} required type="text" value={username} />
+            </label>
+          </div>
+
+          <label className="field">
+            <span>Password</span>
+            <input
+              autoComplete="new-password"
+              minLength={8}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              type="password"
+              value={password}
+            />
+          </label>
+
+          <label className="field">
+            <span>Beta invite code</span>
+            <input
+              autoComplete="off"
+              onChange={(event) => setInviteCode(event.target.value)}
+              placeholder="Required only when beta invite mode is enabled"
+              type="text"
+              value={inviteCode}
+            />
+          </label>
+
+          <div className="auth-field-grid">
+            <label className="field">
+              <span>City</span>
+              <input onChange={(event) => setCity(event.target.value)} type="text" value={city} />
+            </label>
+            <label className="field">
+              <span>State / province</span>
+              <input onChange={(event) => setStateRegion(event.target.value)} type="text" value={stateRegion} />
+            </label>
+            <label className="field">
+              <span>Country</span>
+              <input onChange={(event) => setCountry(event.target.value)} type="text" value={country} />
+            </label>
+            <label className="field">
+              <span>Home ZIP / postal code</span>
+              <input onChange={(event) => setPostalCode(event.target.value)} type="text" value={postalCode} />
+            </label>
+          </div>
+
+          {role === 'VENUE' ? (
+            <div className="auth-field-grid">
+              <label className="field">
+                <span>Venue address</span>
+                <input onChange={(event) => setAddressLine1(event.target.value)} type="text" value={addressLine1} />
+              </label>
+              <label className="field">
+                <span>Hours</span>
+                <input onChange={(event) => setHoursText(event.target.value)} type="text" value={hoursText} />
+              </label>
+            </div>
+          ) : null}
+
+          {role !== 'FAN' ? (
+            <label className="field">
+              <span>Contact info</span>
+              <input onChange={(event) => setContactInfo(event.target.value)} type="text" value={contactInfo} />
+            </label>
+          ) : null}
+
+          <label className="check-row">
+            <input checked={acceptedAge} onChange={(event) => setAcceptedAge(event.target.checked)} required type="checkbox" />
+            <span>
+              I attest that I am 13 years of age or older and I recognize that iHYPE is not responsible for any
+              content within.
+            </span>
+          </label>
+
+          {needsUploadPolicy ? (
+            <label className="check-row">
+              <input
+                checked={acceptedPolicy}
+                onChange={(event) => setAcceptedPolicy(event.target.checked)}
+                required
+                type="checkbox"
+              />
+              <span>I confirm I am authorized to upload or use the music/media I add to iHYPE.</span>
+            </label>
+          ) : null}
+
+          <button className="button" disabled={isSubmitting} type="submit">
+            {isSubmitting ? 'Creating account...' : 'Create account'}
+          </button>
+          <label className="bot-field" aria-hidden="true">
+            <span>Company</span>
+            <input
+              autoComplete="off"
+              onChange={(event) => setCompany(event.target.value)}
+              tabIndex={-1}
+              type="text"
+              value={company}
+            />
+          </label>
+      </form>
+
+      {error ? <p className="status-note status-note-error">{error}</p> : null}
+    </AuthSignalShell>
+  );
+}
+
+export function ForgotPasswordScreen() {
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [codeRequested, setCodeRequested] = useState(false);
+  const [company, setCompany] = useState('');
+
+  async function requestReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setIsSubmitting(true);
+
+    try {
+      const payload = await postJson<{ message?: string }>('/api/auth/password-reset/request', { email, company });
+      setCodeRequested(true);
+      setMessage(payload.message || 'If that email exists, a reset passcode has been sent.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not request a reset code.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function confirmReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    setIsSubmitting(true);
+
+    try {
+      const payload = await postJson<{ message?: string }>('/api/auth/password-reset/confirm', {
+        email,
+        code,
+        password,
+        confirmPassword
+      });
+      setMessage(payload.message || 'Password updated.');
+      setCode('');
+      setPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not update your password.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <AuthSignalShell
+      badge="Password reset"
+      cardSubtitle="Request a temporary code, then enter it within the 5-minute reset window."
+      cardTitle={codeRequested ? 'Enter your reset code' : 'Reset your password'}
+      description="Reset codes are single-purpose and short-lived. If an email is not connected to an account, iHYPE keeps the response private."
+      eyebrow="Account recovery"
+      highlight="Reset securely."
+      signals={[
+        { label: 'Window', value: '5 min', detail: 'Temporary reset code' },
+        { label: 'Privacy', value: 'Quiet', detail: 'No account enumeration' },
+        { label: 'Return', value: 'Sign in', detail: 'Back to your lane' }
+      ]}
+      title="Need a new key?"
+    >
+      {!codeRequested ? (
+        <form className="form" onSubmit={requestReset}>
+          <label className="field">
+            <span>Email</span>
+            <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+          </label>
+          <button className="button" disabled={isSubmitting} type="submit">
+            {isSubmitting ? 'Sending...' : 'Send reset code'}
+          </button>
+          <label className="bot-field" aria-hidden="true">
+            <span>Company</span>
+            <input
+              autoComplete="off"
+              onChange={(event) => setCompany(event.target.value)}
+              tabIndex={-1}
+              type="text"
+              value={company}
+            />
+          </label>
+        </form>
+      ) : (
+        <form className="form" onSubmit={confirmReset}>
+          <label className="field">
+            <span>Email</span>
+            <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
+          </label>
+          <label className="field">
+            <span>6-digit reset code</span>
+            <input
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              maxLength={6}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              pattern="[0-9]{6}"
+              required
+              type="text"
+              value={code}
+            />
+          </label>
+          <label className="field">
+            <span>New password</span>
+            <input minLength={8} onChange={(event) => setPassword(event.target.value)} required type="password" value={password} />
+          </label>
+          <label className="field">
+            <span>Confirm password</span>
+            <input
+              minLength={8}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+              type="password"
+              value={confirmPassword}
+            />
+          </label>
+          <button className="button" disabled={isSubmitting} type="submit">
+            {isSubmitting ? 'Updating...' : 'Update password'}
+          </button>
+        </form>
+      )}
+
+      {message ? <p className="status-note">{message}</p> : null}
+      {error ? <p className="status-note status-note-error">{error}</p> : null}
+
+      <div className="auth-route-links">
+        <Link className="text-link" href="/login">
+          Back to sign in
+        </Link>
+      </div>
+    </AuthSignalShell>
+  );
+}

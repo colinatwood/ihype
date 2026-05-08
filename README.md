@@ -1,6 +1,6 @@
 # ihype.org production app starter
 
-A production-oriented Next.js application for hosting artist, DJ, and venue pages with streaming shows as the homepage focus, account support, hype/upvotes, and backend logic for livestream provisioning.
+A production-oriented Next.js application for hosting artist, promoter, venue, and fan pages with beta-safe public pages, account support, hype/upvotes, Prisma/Postgres storage, and Vercel deployment config.
 
 ## Stack
 
@@ -11,16 +11,19 @@ A production-oriented Next.js application for hosting artist, DJ, and venue page
 
 ## Features
 
-- Streaming shows are the main homepage content.
+- The Promise is the main public start page while the product is in beta.
 - Pages for artists, DJs, and venues.
 - Fan pages with preset-based customization, profile styling, hype tracking, and public fan pages.
 - Platform-wide profile hex IDs for fans, artists, promoters, and venues, plus universal share links at `/profiles/<hexId>`.
-- Curated in-app launch-readiness page for the Chicago pilot and September 6, 2026 launch target.
+- Curated in-app launch-readiness page for beta launch gates, hype/fraud architecture, legal and operational readiness, and top launch risks.
 - Public integrity page plus transparency snapshot endpoint with versioned feed heuristics and explainable show surfacing.
 - Account registration and login.
 - Password reset by emailed six-digit passcode with a 5-minute reset window.
 - Essential auth cookies only, with session cookies shortened and non-session auth cookies scoped to `/api/auth`.
 - Hype button that works like an upvote, one hype per account per show.
+- Public health endpoint at `/api/health` for uptime monitors and beta launch checks.
+- Admin beta console for verification review, content reports, support requests, CSV exports, email/MFA delivery, integration readiness, and audit activity.
+- Support intake at `/support` for login, verification, takedown, safety, and ticketing issues.
 - Authenticated API route for creating shows.
 - Authenticated API route for provisioning a Mux live stream and storing playback info.
 - Mux webhook endpoint to flip show status between `LIVE` and `ENDED`.
@@ -81,6 +84,7 @@ These demo accounts are for local development and controlled staging only. Produ
 - Replace the simple webhook verification helper with the exact provider-recommended verification flow for your chosen streaming vendor.
 - Add observability, background jobs, chat moderation, and rate limiting before trusting the internet with it. The internet is not a serious place.
 - Public signup reserves `@ihype.org` email addresses for internal use only.
+- Optional invite-only signup is controlled by `FEATURE_REQUIRE_INVITE_CODE=true` and comma-separated `BETA_INVITE_CODES`.
 - Auth, signup, and dashboard pages are intentionally marked `noindex`.
 - The Prisma seed is for local/demo data only and refuses production runs unless `ALLOW_PRODUCTION_SEEDING=true` is explicitly set.
 
@@ -93,13 +97,15 @@ These demo accounts are for local development and controlled staging only. Produ
 ## Launch readiness page
 
 - Route: `/launch-readiness`
-- Focus: executive launch gates, Chicago pilot plan, hype/fraud architecture, legal and operational readiness, and top launch risks.
+- Focus: executive launch gates, beta pilot planning, hype/fraud architecture, legal and operational readiness, and top launch risks.
 - Source: curated from the extended HYPE Network launch-readiness package rather than copied verbatim, so the highest-signal launch material is visible in-product.
 
 ## Integrity and transparency
 
 - Route: `/integrity`
 - API: `/api/transparency`
+- Trust center: `/trust`
+- Health endpoint: `/api/health`
 - What it adds:
   - versioned public feed heuristics
   - plain-language “Why are you seeing this?” explanations on show surfaces
@@ -114,9 +120,35 @@ These demo accounts are for local development and controlled staging only. Produ
 4. Connect a managed PostgreSQL database such as Neon and set `DATABASE_URL` per environment.
 5. Add your Mux credentials and webhook secret.
 6. Add `OPENAI_API_KEY` if you want fan avatar generation enabled.
-7. Add SMTP delivery settings (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`) if you want live password reset emails enabled.
-8. Deploy with the included `vercel.json`, which runs `npm run vercel-build`.
-9. Point your production domain to Vercel and verify auth callbacks, password reset email delivery, show creation, hype voting, Mux webhooks, fan avatar generation, and the integrity/transparency routes.
+7. Add SMTP delivery settings (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`) for live sign-in MFA, sign-up verification, ticket emails, and password reset emails.
+8. Add `BLOB_READ_WRITE_TOKEN` before allowing production media uploads.
+9. Add `STRIPE_SECRET_KEY` before opening paid ticket capture. Ticket reservations are allowed, but capture is intentionally blocked until real payment processing is configured.
+10. Configure email authentication for `ihype.org`: SPF, DKIM, and DMARC for whichever SMTP provider sends MFA, password reset, support, and ticket emails.
+11. Enable Vercel Web Analytics, Speed Insights, and an uptime monitor pointed at `/api/health`.
+12. Configure database backups and practice one restore into a Preview database before public beta.
+13. Have counsel review nonprofit language, user-uploaded media terms, takedown process, ticketing/refund language, tax handling, and payment terms.
+14. Deploy with the included `vercel.json`, which runs `npm run vercel-build`.
+15. Point your production domain to Vercel and verify auth callbacks, password reset email delivery, show creation, hype voting, Mux webhooks, fan avatar generation, support intake, CSV exports, and the integrity/transparency routes.
+
+## Smoke checks
+
+After starting the app locally or deploying to production, run a lightweight public-route check:
+
+```bash
+SMOKE_BASE_URL=https://ihype.org npm run smoke
+SMOKE_BASE_URL=https://ihype.org npm run smoke:flows
+```
+
+Without `SMOKE_BASE_URL`, the script checks `http://localhost:3000`.
+
+## Beta operations checklist
+
+- Monitoring: enable Vercel Web Analytics and Speed Insights, add an uptime check for `/api/health`, and review Vercel function errors after each deployment.
+- Email delivery: verify SPF, DKIM, and DMARC for `ihype.org`; confirm MFA, reset, ticket, and support emails from the production SMTP provider.
+- Ticketing: keep paid capture blocked until `STRIPE_SECRET_KEY` and webhook verification are configured; reconcile ticket orders with CSV exports.
+- Backups: schedule database backups and test restoring a backup into the Preview database.
+- Legal: review nonprofit positioning, uploaded-media rights, copyright/takedown flow, ticketing/refund terms, privacy, and tax/payment handling before public launch.
+- Support: triage `/support` requests from the admin console and export support/report/audit CSVs for review.
 
 ### Vercel config refresh
 

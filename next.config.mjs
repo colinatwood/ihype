@@ -9,7 +9,7 @@ const contentSecurityPolicy = [
   "img-src 'self' data: blob: https:",
   "media-src 'self' data: blob: https:",
   "font-src 'self' data: https:",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"}`,
   "connect-src 'self' https://api.mux.com https://stream.mux.com https://*.mux.com",
   "frame-src 'self' https://*.mux.com",
@@ -62,11 +62,159 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    workerThreads: true
+  },
   async redirects() {
     return [
       {
         source: '/auth',
         destination: '/login',
+        permanent: false
+      },
+      {
+        source: '/ihype-auth.html',
+        destination: '/login',
+        permanent: false
+      },
+      {
+        source: '/ihype-login.html',
+        destination: '/login',
+        permanent: false
+      },
+      {
+        source: '/ihype-register.html',
+        destination: '/register',
+        permanent: false
+      },
+      {
+        source: '/ihype-forgot.html',
+        destination: '/forgot',
+        permanent: false
+      },
+      {
+        source: '/ihype-home.html',
+        destination: '/',
+        permanent: false
+      },
+      {
+        source: '/ihype-homepage.html',
+        destination: '/',
+        permanent: false
+      },
+      {
+        source: '/ihype-promise.html',
+        destination: '/',
+        permanent: false
+      },
+      {
+        source: '/index.html',
+        destination: '/',
+        permanent: false
+      },
+      {
+        source: '/ihype-hype-engine.html',
+        destination: '/hype',
+        permanent: false
+      },
+      {
+        source: '/ihype-rec-engine.html',
+        destination: '/auth/landing?module=recommendation-engine',
+        permanent: false
+      },
+      {
+        source: '/ihype-ticketing.html',
+        destination: '/tickets',
+        permanent: false
+      },
+      {
+        source: '/ihype-show-creator.html',
+        destination: '/promoters?module=show-creator',
+        permanent: false
+      },
+      {
+        source: '/ihype-page-customizer.html',
+        destination: '/dashboard',
+        permanent: false
+      },
+      {
+        source: '/ihype-profile.html',
+        destination: '/fans',
+        permanent: false
+      },
+      {
+        source: '/ihype-media.html',
+        destination: '/artists',
+        permanent: false
+      },
+      {
+        source: '/ihype-show.html',
+        destination: '/shows',
+        permanent: false
+      },
+      {
+        source: '/ihype-search.html',
+        destination: '/auth/landing?module=recommendation-engine',
+        permanent: false
+      },
+      {
+        source: '/ihype-governance.html',
+        destination: '/launch-readiness',
+        permanent: false
+      },
+      {
+        source: '/ihype-investor.html',
+        destination: '/launch-readiness',
+        permanent: false
+      },
+      {
+        source: '/ihype-beta.html',
+        destination: '/launch-readiness',
+        permanent: false
+      },
+      {
+        source: '/home',
+        destination: '/',
+        permanent: false
+      },
+      {
+        source: '/discover',
+        destination: '/auth/landing?module=recommendation-engine',
+        permanent: false
+      },
+      {
+        source: '/customizer',
+        destination: '/dashboard',
+        permanent: false
+      },
+      {
+        source: '/show-creator',
+        destination: '/promoters?module=show-creator',
+        permanent: false
+      },
+      {
+        source: '/media',
+        destination: '/artists',
+        permanent: false
+      },
+      {
+        source: '/search',
+        destination: '/auth/landing?module=recommendation-engine',
+        permanent: false
+      },
+      {
+        source: '/governance',
+        destination: '/launch-readiness',
+        permanent: false
+      },
+      {
+        source: '/investor',
+        destination: '/launch-readiness',
+        permanent: false
+      },
+      {
+        source: '/beta',
+        destination: '/launch-readiness',
         permanent: false
       },
       {
@@ -79,38 +227,7 @@ const nextConfig = {
         destination: '/fans/:slug',
         permanent: true
       },
-      {
-        source: '/promise',
-        destination: '/',
-        permanent: false
-      }
     ];
-  },
-  async rewrites() {
-    return {
-      beforeFiles: [
-        { source: '/',           destination: '/ihype-homepage.html' },
-        { source: '/login',      destination: '/ihype-login.html' },
-        { source: '/register',          destination: '/ihype-register.html' },
-        { source: '/register/fan',      destination: '/ihype-register.html' },
-        { source: '/register/artist',   destination: '/ihype-register.html' },
-        { source: '/register/promoter', destination: '/ihype-register.html' },
-        { source: '/register/venue',    destination: '/ihype-register.html' },
-        { source: '/hype',       destination: '/ihype-hype-engine.html' },
-        { source: '/discover',   destination: '/ihype-rec-engine.html' },
-        { source: '/tickets',    destination: '/ihype-ticketing.html' },
-        { source: '/customizer',    destination: '/ihype-page-customizer.html' },
-        { source: '/show-creator', destination: '/ihype-show-creator.html' },
-        { source: '/forgot',       destination: '/ihype-forgot.html' },
-        { source: '/media',        destination: '/ihype-media.html' },
-        { source: '/home',         destination: '/ihype-home.html' },
-        { source: '/search',       destination: '/ihype-search.html' },
-        { source: '/governance',   destination: '/ihype-governance.html' },
-        // /profile/:slug is handled by src/app/profile/[slug]/route.ts (OG tag injection)
-      ],
-      afterFiles: [],
-      fallback: []
-    };
   },
   async headers() {
     return [
@@ -127,7 +244,19 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       {
+        source: '/promise',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
         source: '/home',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/hype',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/tickets',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       {
@@ -147,11 +276,23 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       {
+        source: '/forgot',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/media',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
         source: '/search',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       {
         source: '/governance',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+      },
+      {
+        source: '/investor',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
       },
       // /profile/:slug — cache headers set directly in the route handler

@@ -3,6 +3,7 @@ import { AccountsPayableCategory, AccountsPayableStatus, TicketOrderStatus } fro
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { sendIssuedTicketEmail } from '@/lib/mailer';
+import { isPaymentProcessingConfigured } from '@/lib/payments';
 import { canManageOwnedResource, isAdminSession } from '@/lib/permissions';
 import { captureTicketPaymentIntent } from '@/lib/stripe';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
@@ -163,13 +164,15 @@ export async function POST(
 
   const openedAt = new Date();
 
-  // Capture all Stripe PaymentIntents before marking orders captured in the DB.
-  // This is best-effort: orders with no PI (legacy stored-token flow) continue as before.
-  await Promise.allSettled(
-    show.ticketOrders
-      .filter((o) => o.stripePaymentIntentId)
-      .map((o) => captureTicketPaymentIntent(o.stripePaymentIntentId!))
-  );
+  if (show.ticketOrders.length > 0 && !isPaymentProcessingConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          'Reserved ticket orders cannot be captured until STRIPE_SECRET_KEY is configured in production.'
+      },
+      { status: 501 }
+    );
+  }
 
   const captureResult = await db.$transaction(async (tx) => {
     await tx.show.update({

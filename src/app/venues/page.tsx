@@ -3,8 +3,11 @@ import { db } from '@/lib/db';
 import {
   DiscoverCreatorPanel,
   DiscoverExplorerPanel,
+  DiscoverEventsPanel,
   DiscoverMyPagePanel,
-  DiscoverStatsPanel
+  DiscoverStatsPanel,
+  DiscoverTicketHubPanel,
+  VenueBookingRecommendationEngine
 } from '@/components/DiscoverModulePanels';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
@@ -16,16 +19,11 @@ import { getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDirectoryProfiles } from '@/lib/public-data';
 import { buildVenueBookingRecommendations } from '@/lib/venue-booking';
+import { buildGlobeRouteStops, formatShowDate } from '@/lib/globe-route-stops';
+import { getDemoCreatorExclusion, getDemoOwnerExclusion } from '@/lib/runtime-flags';
+import { isAdminSession } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
-
-function formatShowDate(value: Date) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(value);
-}
 
 export default async function VenuesIndexPage({
   searchParams
@@ -35,6 +33,7 @@ export default async function VenuesIndexPage({
   const session = await auth();
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeModule = resolveDiscoverModule('venues', resolvedSearchParams.module);
+  const isAdminQa = isAdminSession(session);
   const preferredArtistId =
     typeof resolvedSearchParams.artist === 'string' ? resolvedSearchParams.artist : undefined;
   const [venues, artistsForDiscover, promotersForDiscover] = await Promise.all([
@@ -50,7 +49,8 @@ export default async function VenuesIndexPage({
       where: {
         type: 'VENUE',
         latitude: { not: null },
-        longitude: { not: null }
+        longitude: { not: null },
+        ...getDemoOwnerExclusion()
       },
       orderBy: [{ verified: 'desc' }, { name: 'asc' }],
       select: {
@@ -70,7 +70,8 @@ export default async function VenuesIndexPage({
     db.show.findMany({
       where: {
         status: { not: 'CANCELED' },
-        venueProfileId: { not: null }
+        venueProfileId: { not: null },
+        ...getDemoCreatorExclusion()
       },
       include: {
         venueProfile: true,
@@ -82,10 +83,18 @@ export default async function VenuesIndexPage({
     }),
     session?.user?.id
       ? db.profile.findFirst({
-          where: {
-            ownerId: session.user.id,
-            type: 'VENUE'
-          },
+          where: isAdminQa
+            ? {
+                type: 'VENUE' as const,
+                ...getDemoOwnerExclusion()
+              }
+            : {
+                ownerId: session.user.id,
+                type: 'VENUE' as const
+              },
+          orderBy: isAdminQa
+            ? [{ verified: 'desc' as const }, { hypeCount: 'desc' as const }, { createdAt: 'asc' as const }]
+            : { createdAt: 'asc' as const },
           select: {
             id: true,
             slug: true,
@@ -156,7 +165,8 @@ export default async function VenuesIndexPage({
           }),
           db.profile.findMany({
             where: {
-              type: 'DJ'
+              type: 'DJ',
+              ...getDemoOwnerExclusion()
             },
             orderBy: [{ verified: 'desc' }, { hypeCount: 'desc' }, { name: 'asc' }],
             select: {
@@ -167,7 +177,8 @@ export default async function VenuesIndexPage({
           }),
           db.profile.findMany({
             where: {
-              type: { in: ['ARTIST', 'DJ'] }
+              type: { in: ['ARTIST', 'DJ'] },
+              ...getDemoOwnerExclusion()
             },
             orderBy: [{ verified: 'desc' }, { hypeCount: 'desc' }, { name: 'asc' }],
             select: {
@@ -200,7 +211,8 @@ export default async function VenuesIndexPage({
     ? await db.show.findMany({
         where: {
           headlinerProfileId: { in: bookableActIds },
-          status: { notIn: ['CANCELED', 'ENDED'] }
+          status: { notIn: ['CANCELED', 'ENDED'] },
+          ...getDemoCreatorExclusion()
         },
         select: {
           id: true,
@@ -216,6 +228,7 @@ export default async function VenuesIndexPage({
   const now = new Date();
   const liveOrUpcomingVenueShows = myVenueShows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
   const ticketsSold = myVenueShows.reduce((sum, show) => sum + show.ticketsSoldCount, 0);
+  const ticketedVenueShows = myVenueShows.filter((show) => show.isTicketed);
   const recommendationData = buildVenueBookingRecommendations({
     requests: venueRequests.map((request) => ({
       status: request.status,
@@ -302,28 +315,7 @@ export default async function VenuesIndexPage({
     [viewerLocation?.city, viewerLocation?.stateRegion ?? viewerLocation?.country].filter(Boolean).join(', ') ||
     'your area';
 
-  const globeRouteStops = venueShows
-    .filter((show) => show.venueProfile?.latitude != null && show.venueProfile.longitude != null)
-    .map((show) => ({
-      id: show.id,
-      title: show.title,
-      href: `/shows/${show.slug}`,
-      venueName: show.venueProfile?.name ?? 'Venue',
-      venueSlug: show.venueProfile?.slug ?? null,
-      city: show.venueProfile?.city ?? null,
-      stateRegion: show.venueProfile?.stateRegion ?? null,
-      country: show.venueProfile?.country ?? null,
-      postalCode: show.venueProfile?.postalCode ?? null,
-      latitude: show.venueProfile?.latitude ?? null,
-      longitude: show.venueProfile?.longitude ?? null,
-      startsAtLabel: formatShowDate(show.startsAt),
-      timing:
-        show.status === 'LIVE'
-          ? ('live' as const)
-          : show.startsAt >= now
-            ? ('upcoming' as const)
-            : ('past' as const)
-    }));
+  const globeRouteStops = buildGlobeRouteStops(venueShows, { includePastTiming: true, now });
 
   const discoverPanel = (
     <NetworkEarthGlobe
@@ -336,15 +328,18 @@ export default async function VenuesIndexPage({
       viewerLocation={viewerLocation}
     />
   );
-  const discoverModuleContent = (
+  const recommendationDiscoveryContent = (
     <DiscoverExplorerPanel
       currentHref="/venues"
+      description="Search songs, artists, promoters, venues, and room momentum from the same place the venue recommendations are built."
+      embedded
       globePanel={discoverPanel}
       hypedNearMe={discoverFeed.hypedNearMe}
       mediaEntries={discoverFeed.mediaEntries}
       newArtists={discoverFeed.newArtists}
       newPromoters={discoverFeed.newPromoters}
       profiles={discoverProfiles}
+      title="Recommendation signal map"
       viewerLocationLabel={viewerLocationLabel}
     />
   );
@@ -394,7 +389,13 @@ export default async function VenuesIndexPage({
       ]}
       title="My venue stats"
     />
-  ) : activeModule === 'events' ? (
+  ) : activeModule === 'recommendation-engine' ? (
+    <VenueBookingRecommendationEngine currentHref="/venues" scopes={recommendationData.scopeGroups}>
+      {recommendationDiscoveryContent}
+    </VenueBookingRecommendationEngine>
+  ) : activeModule === 'ticket-hub' ? (
+    <DiscoverTicketHubPanel shows={ticketedVenueShows} />
+  ) : activeModule === 'event-creator' ? (
     <DiscoverCreatorPanel
       badge="Events"
       description="Create new ticketed events, pull in requested artists, and open reserved ticket orders once the night is ready to go live."
@@ -414,6 +415,14 @@ export default async function VenuesIndexPage({
         venueProfileId={myVenueProfile.id}
       />
     </DiscoverCreatorPanel>
+  ) : activeModule === 'events' ? (
+    <DiscoverEventsPanel
+      badge="Events"
+      description="Review the ticketed and non-ticketed events attached to your venue page."
+      emptyLabel="No venue events are attached to your page yet."
+      shows={myVenueShows}
+      title="My venue events"
+    />
   ) : (
     lockedPanel
   );
@@ -423,12 +432,11 @@ export default async function VenuesIndexPage({
       activeModule={activeModule}
       badge="VENUES"
       currentHref="/venues"
-      description="Venue discover keeps the focus on room performance, booking demand, and the nights that deserve a bigger push."
-      discoverModuleContent={discoverModuleContent}
+      description="Venue engines keep room performance, booking demand, recommendations, and event creation in one streamlined lane."
       modulePanel={modulePanel}
       moduleSubheader={<RoleModuleSubheader activeModule={activeModule} currentHref="/venues" role="venues" />}
       profiles={discoverProfiles}
-      title="Venue discover"
+      title="Venue lane"
     />
   );
 }

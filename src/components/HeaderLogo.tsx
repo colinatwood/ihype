@@ -67,10 +67,10 @@ export function HeaderLogo() {
       aria-label={showBrowseCue ? `Open ${browseContext?.label ?? ''} discover page` : 'Go to iHYPE home'}
     >
       <span className="nav-logo-mark">
-        <span className="nav-logo-word">iHYPE</span>
-        <span className="nav-logo-dot">.org</span>
+        <span className="nav-logo-word">I</span>
+        <span className="nav-logo-dot">HYPE</span>
       </span>
-      {showBrowseCue ? <span className="nav-logo-discover">{browseContext?.label}</span> : null}
+      {showBrowseCue ? <span className="sr-only">{browseContext?.label} discover</span> : null}
     </Link>
   );
 }

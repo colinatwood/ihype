@@ -7,11 +7,13 @@ import { buildArtistMediaCollection } from '@/lib/media';
 import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
+import { ContentReportControl } from '@/components/ContentReportControl';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
 import { detectRequestLocation } from '@/lib/request-location';
+import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 
 const artistSections = ['about', 'media', 'tour', 'merch'] as const;
 
@@ -52,40 +54,52 @@ export async function generateMetadata(
   const { slug } = await params;
   const profile = await db.profile.findUnique({
     where: { slug },
-    select: { name: true, headline: true, bio: true, genres: true, city: true, stateRegion: true, hypeCount: true, avatarImage: true }
+    select: {
+      name: true,
+      headline: true,
+      genres: true,
+      city: true,
+      stateRegion: true,
+      hypeCount: true,
+      avatarImage: true,
+      owner: { select: { email: true, username: true } }
+    }
   });
 
-  if (!profile) return { title: 'Artist · iHYPE' };
+  if (!profile || (shouldHideDemoContent() && isDemoUser(profile.owner))) {
+    return { title: 'Artist | iHYPE' };
+  }
 
-  const loc    = [profile.city, profile.stateRegion].filter(Boolean).join(', ');
+  const location = [profile.city, profile.stateRegion].filter(Boolean).join(', ');
   const genres = profile.genres.slice(0, 3).join(', ');
-  const title  = `${profile.name} · iHYPE`;
+  const title = `${profile.name} | iHYPE`;
   const description = [
     'Artist',
     genres || null,
-    loc || null,
+    location || null,
     profile.hypeCount ? `${profile.hypeCount} HYPE` : null,
-    profile.headline || null,
-  ].filter(Boolean).join(' · ');
-  const image = profile.avatarImage ?? undefined;
+    profile.headline || null
+  ]
+    .filter(Boolean)
+    .join(' | ');
 
   return {
     title,
     description,
     openGraph: {
-      type:        'profile',
-      siteName:    'iHYPE',
+      type: 'profile',
+      siteName: 'iHYPE',
       title,
       description,
-      url:         `/artists/${slug}`,
-      ...(image ? { images: [{ url: image }] } : {}),
+      url: `/artists/${slug}`,
+      ...(profile.avatarImage ? { images: [{ url: profile.avatarImage }] } : {})
     },
     twitter: {
-      card:        'summary',
+      card: 'summary',
       title,
       description,
-      ...(image ? { images: [image] } : {}),
-    },
+      ...(profile.avatarImage ? { images: [profile.avatarImage] } : {})
+    }
   };
 }
 
@@ -104,6 +118,12 @@ export default async function ArtistPage({
   const profile = await db.profile.findUnique({
     where: { slug },
     include: {
+      owner: {
+        select: {
+          email: true,
+          username: true
+        }
+      },
       mediaUploads: {
         select: {
           hexId: true,
@@ -118,12 +138,16 @@ export default async function ArtistPage({
     }
   });
   if (!profile || profile.type !== 'ARTIST') return notFound();
+  if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
   const profileSlug = profile.slug;
   const media = buildArtistMediaCollection(profile.mediaContent, profile.mediaUploads);
 
   const [shows, viewerLocation, venues, fanHypeCount] = await Promise.all([
     db.show.findMany({
-      where: { headlinerProfileId: profile.id },
+      where: {
+        headlinerProfileId: profile.id,
+        ...getDemoCreatorExclusion()
+      },
       include: { venueProfile: true, headlinerProfile: true },
       orderBy: { startsAt: 'asc' }
     }),
@@ -132,7 +156,8 @@ export default async function ArtistPage({
       where: {
         type: 'VENUE',
         latitude: { not: null },
-        longitude: { not: null }
+        longitude: { not: null },
+        ...getDemoOwnerExclusion()
       },
       orderBy: [{ verified: 'desc' }, { name: 'asc' }],
       select: {
@@ -335,6 +360,8 @@ export default async function ArtistPage({
           ) : null}
         </div>
       </section>
+
+      <ContentReportControl targetId={profile.id} targetType="profile" />
     </main>
   );
 }

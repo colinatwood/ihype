@@ -3,6 +3,7 @@ import { withDbRetry, db } from '@/lib/db';
 import type { DirectoryBrowserProfile, DirectoryMediaSearchEntry } from '@/components/ProfileDirectoryBrowser';
 import type { RequestLocation } from '@/lib/request-location';
 import { buildArtistMediaCollection } from '@/lib/media';
+import { demoUserEmails, shouldHideDemoContent } from '@/lib/runtime-flags';
 
 export type DiscoverSpotlightProfile = DirectoryBrowserProfile & {
   scopeLabel: string;
@@ -52,6 +53,13 @@ const spotlightProfileArgs = Prisma.validator<Prisma.ProfileDefaultArgs>()({
 });
 
 type SpotlightProfileRecord = Prisma.ProfileGetPayload<typeof spotlightProfileArgs>;
+
+function profileWhere(type: 'ARTIST' | 'DJ') {
+  return {
+    type,
+    ...(shouldHideDemoContent() ? { owner: { email: { notIn: demoUserEmails } } } : {})
+  };
+}
 
 function normalize(value?: string | null) {
   return value?.trim().toLowerCase() ?? '';
@@ -142,13 +150,13 @@ export async function getSharedDiscoverFeed(viewerLocation: RequestLocation | nu
   const [artistProfiles, promoterProfiles] = await withDbRetry(() =>
     db.$transaction([
       db.profile.findMany({
-        where: { type: 'ARTIST' },
+        where: profileWhere('ARTIST'),
         orderBy: [{ hypeCount: 'desc' }, { createdAt: 'desc' }],
         take: 40,
         ...spotlightProfileArgs
       }),
       db.profile.findMany({
-        where: { type: 'DJ' },
+        where: profileWhere('DJ'),
         orderBy: [{ createdAt: 'desc' }, { hypeCount: 'desc' }],
         take: 30,
         ...spotlightProfileArgs

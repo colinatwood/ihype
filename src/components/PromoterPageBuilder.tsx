@@ -1,7 +1,8 @@
 'use client';
 
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { VisualDropStudio, type VisualDropStudioSlot } from '@/components/VisualDropStudio';
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import {
   getProfileSetupPresets,
@@ -67,14 +68,7 @@ type PromoterBuilderValues = {
   fanShareEnabled: boolean;
 };
 
-async function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('Could not read file'));
-    reader.readAsDataURL(file);
-  });
-}
+type PromoterVisualSlot = 'heroImage' | 'logoImage' | 'galleryImage' | 'featureVideoUrl' | 'recommendContent';
 
 function getPreviewSnippet(value: string, fallback: string) {
   const trimmed = value.trim();
@@ -128,6 +122,57 @@ export function PromoterPageBuilder({
     formValues.recommendContent,
     'Shape the Events tab with the collaborations, rooms, and lineups you want fans to connect with this promoter.'
   );
+  const visualDropSlots = useMemo<VisualDropStudioSlot<PromoterVisualSlot>[]>(
+    () => [
+      {
+        id: 'heroImage',
+        label: 'Background',
+        description: 'Hero artwork for the promoter page.',
+        kind: 'image',
+        value: formValues.heroImage,
+        placeholder: 'Drop background'
+      },
+      {
+        id: 'logoImage',
+        label: 'Logo',
+        description: 'Promoter/DJ mark beside the page name.',
+        kind: 'image',
+        value: formValues.logoImage,
+        placeholder: 'Drop logo'
+      },
+      {
+        id: 'galleryImage',
+        label: 'Show image',
+        description: 'A visual for shows, events, or featured nights.',
+        kind: 'image',
+        value: formValues.galleryImage,
+        placeholder: 'Drop image'
+      },
+      {
+        id: 'featureVideoUrl',
+        label: 'Video',
+        description: 'Promo clip, recap, or show preview video.',
+        kind: 'video',
+        value: formValues.featureVideoUrl,
+        placeholder: 'Drop video'
+      },
+      {
+        id: 'recommendContent',
+        label: 'Event links',
+        description: 'Drop ticket, playlist, show, or partner links.',
+        kind: 'link',
+        value: formValues.recommendContent,
+        placeholder: 'Drop link'
+      }
+    ],
+    [
+      formValues.featureVideoUrl,
+      formValues.galleryImage,
+      formValues.heroImage,
+      formValues.logoImage,
+      formValues.recommendContent
+    ]
+  );
 
   function applyQuickPreset(presetId: string) {
     const preset = quickSetupPresets.find((entry) => entry.id === presetId);
@@ -144,47 +189,6 @@ export function PromoterPageBuilder({
       aboutContent: current.aboutContent || preset.starterAbout || current.aboutContent
     }));
     setMessage(`${preset.label} applied to the preview.`);
-  }
-
-  async function handleAssetSelection(
-    event: ChangeEvent<HTMLInputElement>,
-    field: 'heroImage' | 'logoImage' | 'galleryImage' | 'featureVideoUrl',
-    kind: 'image' | 'video'
-  ) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const maxSizeBytes = kind === 'video' ? 12 * 1024 * 1024 : 4 * 1024 * 1024;
-    const expectedPrefix = kind === 'video' ? 'video/' : 'image/';
-
-    if (!file.type.startsWith(expectedPrefix)) {
-      setMessage(`Choose a ${kind} file for this slot.`);
-      event.target.value = '';
-      return;
-    }
-
-    if (file.size > maxSizeBytes) {
-      setMessage(
-        kind === 'video'
-          ? 'Video uploads are capped at 12MB for this builder.'
-          : 'Image uploads are capped at 4MB for this builder.'
-      );
-      event.target.value = '';
-      return;
-    }
-
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setFormValues((current) => ({
-        ...current,
-        [field]: dataUrl
-      }));
-      setMessage(`${file.name} loaded into the preview.`);
-    } catch {
-      setMessage(`Could not load ${file.name}.`);
-    } finally {
-      event.target.value = '';
-    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -392,27 +396,18 @@ export function PromoterPageBuilder({
                 </label>
               </div>
 
-              <div className="artist-builder-upload-grid">
-                <label className="field artist-builder-upload-field">
-                  <span>Background upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'heroImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Logo upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'logoImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Picture upload</span>
-                  <input accept="image/*" onChange={(event) => handleAssetSelection(event, 'galleryImage', 'image')} type="file" />
-                </label>
-
-                <label className="field artist-builder-upload-field">
-                  <span>Video upload</span>
-                  <input accept="video/*" onChange={(event) => handleAssetSelection(event, 'featureVideoUrl', 'video')} type="file" />
-                </label>
-              </div>
+              <VisualDropStudio
+                description="Drag flyers, logos, recap clips, and ticket/show links straight into the page slots."
+                onChange={(slotId, value) =>
+                  setFormValues((current) => ({
+                    ...current,
+                    [slotId]: value
+                  }))
+                }
+                onStatus={setMessage}
+                slots={visualDropSlots}
+                title="Place promoter graphics, video, and links"
+              />
             </div>
 
             <div className="artist-page-builder-section">

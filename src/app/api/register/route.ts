@@ -3,12 +3,13 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { ProfileType } from '@prisma/client';
 import { getDiscoverPathForType, getProfilePathForType } from '@/lib/account-routing';
+import { recordAuditEvent } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { createHexId } from '@/lib/hex-id';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
-import { isReservedPlatformEmail } from '@/lib/runtime-flags';
+import { isInviteCodeRequired, isReservedPlatformEmail, isValidInviteCode } from '@/lib/runtime-flags';
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
 import { slugify } from '@/lib/utils';
 
@@ -43,7 +44,9 @@ const schema = z.object({
   previousShowHighlights: z.string().trim().max(5000).optional(),
   themePreset: z.enum(profileDesignPresetIds).optional(),
   themeAccentTone: z.enum(profileAccentToneIds).optional(),
-  themeBackdropTone: z.enum(profileBackdropToneIds).optional()
+  themeBackdropTone: z.enum(profileBackdropToneIds).optional(),
+  inviteCode: z.string().trim().max(80).optional(),
+  company: z.string().trim().max(120).optional()
 });
 
 function getProfileType(role: 'FAN' | 'ARTIST' | 'DJ' | 'VENUE'): ProfileType {
@@ -138,7 +141,7 @@ async function generateUniqueProfileHexId() {
 export async function POST(request: Request) {
   try {
     const clientAddress = readClientAddress(request);
-    const rateLimit = consumeRateLimit(`register:${clientAddress}`, {
+    const rateLimit = await consumeRateLimit(`register:${clientAddress}`, {
       limit: 8,
       windowMs: 15 * 60 * 1000
     });
@@ -157,9 +160,34 @@ export async function POST(request: Request) {
 
     const body = schema.parse(await request.json());
     const normalizedUsername = normalizeUsername(body.username);
+    const normalizedEmail = body.email.toLowerCase();
+    const trimmedName = body.name?.trim() ?? '';
+
+    if (body.company) {
+      await recordAuditEvent({
+        action: 'bot_trap_triggered',
+        entityType: 'register',
+        ipAddress: clientAddress,
+        metadata: { field: 'company' }
+      });
+      return NextResponse.json({ error: 'Invalid registration payload' }, { status: 400 });
+    }
 
     if (!isValidUsername(normalizedUsername)) {
       return NextResponse.json({ error: getUsernameValidationMessage() }, { status: 400 });
+    }
+
+    if (isInviteCodeRequired() && !isValidInviteCode(body.inviteCode)) {
+      await recordAuditEvent({
+        action: 'invite_code_rejected',
+        entityType: 'register',
+        ipAddress: clientAddress,
+        metadata: {
+          role: body.role,
+          emailDomain: normalizedEmail.split('@')[1] ?? null
+        }
+      });
+      return NextResponse.json({ error: 'A valid beta invite code is required to create an account.' }, { status: 403 });
     }
 
     if ((body.role === 'ARTIST' || body.role === 'DJ') && !body.acceptedArtistUploadPolicy) {
@@ -175,9 +203,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
-    const normalizedEmail = body.email.toLowerCase();
-    const trimmedName = body.name?.trim() ?? '';
 
     if (isReservedPlatformEmail(normalizedEmail)) {
       return NextResponse.json(
@@ -251,6 +276,19 @@ export async function POST(request: Request) {
           profileType === 'ARTIST' || profileType === 'VENUE' ? new Date() : null,
         ...getProfileCopy(profileType, profileCopyName),
         ...(profileType === 'VENUE' ? getVenueProfileOverrides(body) : {})
+      }
+    });
+
+    await recordAuditEvent({
+      actorUserId: user.id,
+      action: 'account_registered',
+      entityType: 'user',
+      entityId: user.id,
+      ipAddress: clientAddress,
+      metadata: {
+        role: user.role,
+        profileType: profile.type,
+        profileId: profile.id
       }
     });
 

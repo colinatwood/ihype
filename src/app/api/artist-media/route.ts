@@ -2,17 +2,18 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db, withDbRetry } from '@/lib/db';
 import { createHexId } from '@/lib/hex-id';
+import { validateArtistMediaUpload } from '@/lib/media-validation';
+import { isBlobMediaStorageConfigured, uploadArtistMediaToBlob } from '@/lib/media-storage';
 import { canManageOwnedResource } from '@/lib/permissions';
+import { areDatabaseMediaUploadsEnabled } from '@/lib/runtime-flags';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_AUDIO_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const MAX_VIDEO_FILE_SIZE_BYTES = 16 * 1024 * 1024;
 
-/**
- * GET /api/artist-media?profileId=xxx
- * Returns all tracks for the given artist profile (owner only).
- */
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -84,6 +85,7 @@ export async function POST(request: Request) {
     const profileId = String(formData.get('profileId') ?? '').trim();
     const requestedTitle = String(formData.get('title') ?? '').trim();
     const notesValue = String(formData.get('notes') ?? '').trim();
+    const freeUseEnabled = String(formData.get('freeUseEnabled') ?? '').toLowerCase() === 'true';
     const file = formData.get('file');
 
     if (!profileId) {
@@ -94,8 +96,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Choose an audio or video file to upload.' }, { status: 400 });
     }
 
-    if (!file.type.startsWith('audio/') && !file.type.startsWith('video/')) {
-      return NextResponse.json({ error: 'Only audio and video files can be uploaded.' }, { status: 400 });
+    const mediaValidationError = validateArtistMediaUpload(file);
+    if (mediaValidationError) {
+      return NextResponse.json({ error: mediaValidationError }, { status: 400 });
     }
 
     const maxFileSizeBytes = file.type.startsWith('video/')
@@ -133,8 +136,23 @@ export async function POST(request: Request) {
     }
 
     const title = (requestedTitle || deriveTitleFromFileName(file.name)).slice(0, 160);
-    const fileDataBase64 = Buffer.from(await file.arrayBuffer()).toString('base64');
     const hexId = createHexId();
+    const hasBlobStorage = isBlobMediaStorageConfigured();
+
+    if (!hasBlobStorage && !areDatabaseMediaUploadsEnabled()) {
+      return NextResponse.json(
+        {
+          error:
+            'Media uploads require object storage before production use. Configure Vercel Blob or enable the temporary database storage flag.'
+        },
+        { status: 501 }
+      );
+    }
+
+    const storedMedia = hasBlobStorage
+      ? await uploadArtistMediaToBlob({ file, hexId, profileId: profile.id })
+      : null;
+    const fileDataBase64 = storedMedia ? null : Buffer.from(await file.arrayBuffer()).toString('base64');
 
     const updatedProfile = await withDbRetry(() =>
       db.profile.update({
@@ -151,7 +169,11 @@ export async function POST(request: Request) {
               originalFileName: file.name || `${hexId}.audio`,
               mimeType: file.type,
               fileSizeBytes: file.size,
-              fileDataBase64
+              fileDataBase64,
+              storageProvider: storedMedia?.provider ?? 'database',
+              storageKey: storedMedia?.key ?? null,
+              storageUrl: storedMedia?.url ?? null,
+              freeUseEnabled
             }
           }
         },
@@ -164,6 +186,7 @@ export async function POST(request: Request) {
               notes: true,
               mimeType: true,
               fileSizeBytes: true,
+              freeUseEnabled: true,
               createdAt: true
             }
           }

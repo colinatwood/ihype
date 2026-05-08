@@ -55,8 +55,8 @@ export default async function IntegrityPage() {
         </div>
         <div className="launch-hero-meta">
           <div className="stat"><strong>{snapshot.heuristicsVersion}</strong>Feed heuristics version</div>
-          <div className="stat"><strong>{snapshot.counters.liveShows}</strong>Live shows now</div>
-          <div className="stat"><strong>{snapshot.counters.listenersLiveNow}</strong>Fans live now</div>
+            <div className="stat"><strong>{snapshot.counters.liveShows}</strong>Live shows in database</div>
+            <div className="stat"><strong>{snapshot.counters.listenersLiveNow}</strong>Fans tied to live shows</div>
           <div className="stat"><strong>{snapshot.counters.showHypes}</strong>Show hype events</div>
           <div className="stat"><strong>{snapshot.counters.profileHypes}</strong>Profile hype events</div>
         </div>
@@ -144,7 +144,7 @@ export default async function IntegrityPage() {
           <div className="badge">Transparency Snapshot</div>
           <h2>Current aggregate platform view.</h2>
           <p className="kicker">
-            This demo exposes a current snapshot. A production-grade version should publish delayed, thresholded reports
+            This beta page exposes the current aggregate snapshot. A production-grade version should publish delayed, thresholded reports
             with retention and anonymity rules layered in.
           </p>
         </div>
@@ -159,7 +159,7 @@ export default async function IntegrityPage() {
           <div className="stat"><strong>{snapshot.counters.totalPromoters}</strong>Promoters</div>
           <div className="stat"><strong>{snapshot.counters.totalVenues}</strong>Venues</div>
           <div className="stat"><strong>{snapshot.counters.totalListeners}</strong>Fans</div>
-          <div className="stat"><strong>{snapshot.counters.listenersLiveNow}</strong>Fans live now</div>
+              <div className="stat"><strong>{snapshot.counters.listenersLiveNow}</strong>Fans tied to live shows</div>
           <div className="stat"><strong>{snapshot.counters.totalTicketsSold}</strong>Tickets sold</div>
           <div className="stat"><strong>{snapshot.counters.totalSongsUploaded}</strong>Songs uploaded</div>
           <div className="stat"><strong>{snapshot.counters.totalRequests}</strong>Venue requests</div>

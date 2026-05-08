@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { sendIssuedTicketEmail } from '@/lib/mailer';
+import { isPaymentProcessingConfigured } from '@/lib/payments';
 import { detectLocationFromHeaders } from '@/lib/request-location';
 import {
   captureTicketPaymentIntent,
@@ -247,6 +248,16 @@ export async function POST(
     });
 
     const captureNow = shouldCaptureTicketsNow(show);
+
+    if (captureNow && !isPaymentProcessingConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            'Ticket payment capture is not configured yet. Add STRIPE_SECRET_KEY before selling live tickets.'
+        },
+        { status: 501 }
+      );
+    }
 
     const result = await db.$transaction(async (tx) => {
       const createdOrder = await tx.ticketOrder.create({

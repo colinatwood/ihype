@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { db } from '@/lib/db';
 import { normalizeHexId } from '@/lib/hex-id';
+import { isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 
 function getProfilePath(type: 'ARTIST' | 'DJ' | 'VENUE' | 'LISTENER', slug: string) {
   if (type === 'DJ') return `/promoters/${slug}`;
@@ -25,11 +26,21 @@ export default async function ProfileHexRedirectPage({
     where: { hexId: normalizedHexId },
     select: {
       slug: true,
-      type: true
+      type: true,
+      owner: {
+        select: {
+          email: true,
+          username: true
+        }
+      }
     }
   });
 
   if (!profile) {
+    return notFound();
+  }
+
+  if (shouldHideDemoContent() && isDemoUser(profile.owner)) {
     return notFound();
   }
 

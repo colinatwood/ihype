@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { buildArtistMediaCollection } from '@/lib/media';
+import { ContentReportControl } from '@/components/ContentReportControl';
 import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
@@ -11,6 +12,7 @@ import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { detectRequestLocation } from '@/lib/request-location';
+import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 
 const promoterSections = ['about', 'shows', 'events'] as const;
 
@@ -107,14 +109,28 @@ export default async function PromoterPage({
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeSection = getActiveSection(resolvedSearchParams.section);
 
-  const profile = await db.profile.findUnique({ where: { slug } });
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    include: {
+      owner: {
+        select: {
+          email: true,
+          username: true
+        }
+      }
+    }
+  });
   if (!profile || profile.type !== 'DJ') return notFound();
+  if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
   const profileSlug = profile.slug;
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
   const [shows, sentRecommendations, viewerLocation, venues, fanHypeCount] = await Promise.all([
     db.show.findMany({
-      where: { promoterProfileId: profile.id },
+      where: {
+        promoterProfileId: profile.id,
+        ...getDemoCreatorExclusion()
+      },
       include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
       orderBy: { startsAt: 'asc' }
     }),
@@ -128,7 +144,8 @@ export default async function PromoterPage({
       where: {
         type: 'VENUE',
         latitude: { not: null },
-        longitude: { not: null }
+        longitude: { not: null },
+        ...getDemoOwnerExclusion()
       },
       orderBy: [{ verified: 'desc' }, { name: 'asc' }],
       select: {
@@ -302,6 +319,8 @@ export default async function PromoterPage({
           ) : null}
         </div>
       </section>
+
+      <ContentReportControl targetId={profile.id} targetType="profile" />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import type { Prisma, ProfileType } from '@prisma/client';
 import { db } from '@/lib/db';
-import type { ProfileType } from '@prisma/client';
+import { getDemoOwnerExclusion } from '@/lib/runtime-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,31 +10,30 @@ const VALID_TYPES: ProfileType[] = ['ARTIST', 'DJ', 'VENUE', 'LISTENER'];
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const typeParam = searchParams.get('type')?.toUpperCase() as ProfileType | null;
-  const limitParam = parseInt(searchParams.get('limit') ?? '40', 10);
-  const limit = Math.min(Math.max(1, isNaN(limitParam) ? 40 : limitParam), 200);
+  const limitParam = Number.parseInt(searchParams.get('limit') ?? '40', 10);
+  const limit = Math.min(Math.max(1, Number.isNaN(limitParam) ? 40 : limitParam), 200);
   const q = searchParams.get('q')?.trim() ?? '';
 
-  const typeFilter = typeParam && VALID_TYPES.includes(typeParam)
-    ? { type: typeParam as ProfileType }
-    : {};
+  const typeFilter: Prisma.ProfileWhereInput =
+    typeParam && VALID_TYPES.includes(typeParam) ? { type: typeParam } : {};
 
-  const textFilter = q
+  const textFilter: Prisma.ProfileWhereInput = q
     ? {
         OR: [
-          { name:        { contains: q, mode: 'insensitive' as const } },
-          { headline:    { contains: q, mode: 'insensitive' as const } },
-          { city:        { contains: q, mode: 'insensitive' as const } },
-          { stateRegion: { contains: q, mode: 'insensitive' as const } },
+          { name: { contains: q, mode: 'insensitive' } },
+          { headline: { contains: q, mode: 'insensitive' } },
+          { city: { contains: q, mode: 'insensitive' } },
+          { stateRegion: { contains: q, mode: 'insensitive' } }
         ]
       }
     : {};
 
-  const where = Object.keys({ ...typeFilter, ...textFilter }).length
-    ? { ...typeFilter, ...textFilter }
-    : undefined;
-
   const profiles = await db.profile.findMany({
-    where,
+    where: {
+      ...typeFilter,
+      ...textFilter,
+      ...getDemoOwnerExclusion()
+    },
     orderBy: [{ hypeCount: 'desc' }, { verified: 'desc' }, { name: 'asc' }],
     take: limit,
     select: {

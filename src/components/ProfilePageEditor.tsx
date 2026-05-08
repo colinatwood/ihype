@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { VisualDropStudio, type VisualDropStudioSlot } from '@/components/VisualDropStudio';
 import { getSafeBackgroundImageStyle } from '@/lib/asset-safety';
 import {
   getProfileAccentTone,
@@ -29,6 +30,10 @@ export type EditableFieldKey =
   | 'headline'
   | 'bio'
   | 'heroImage'
+  | 'avatarImage'
+  | 'logoImage'
+  | 'galleryImage'
+  | 'featureVideoUrl'
   | 'aboutContent'
   | 'journalContent'
   | 'mediaContent'
@@ -95,6 +100,10 @@ const defaultFormValues: Record<EditableFieldKey, string> = {
   headline: '',
   bio: '',
   heroImage: '',
+  avatarImage: '',
+  logoImage: '',
+  galleryImage: '',
+  featureVideoUrl: '',
   aboutContent: '',
   journalContent: '',
   mediaContent: '',
@@ -121,15 +130,6 @@ function getPreviewSnippet(value: string, fallback: string) {
   const trimmed = value.trim();
   if (!trimmed) return fallback;
   return trimmed.length > 180 ? `${trimmed.slice(0, 177).trimEnd()}...` : trimmed;
-}
-
-async function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result ?? ''));
-    reader.onerror = () => reject(new Error('Could not read file'));
-    reader.readAsDataURL(file);
-  });
 }
 
 export function ProfilePageEditor({
@@ -165,7 +165,10 @@ export function ProfilePageEditor({
     () => (quickPresetRole ? getProfileSetupPresets(quickPresetRole) : []),
     [quickPresetRole]
   );
-  const supportsHeroImage = fields.some((field) => field.key === 'heroImage');
+  const editableFields = fields.filter(
+    (field) =>
+      !['heroImage', 'avatarImage', 'logoImage', 'galleryImage', 'featureVideoUrl'].includes(field.key)
+  );
   const selectedPreset = getProfileDesignPreset(formValues.themePreset);
   const selectedFontPreset = getProfileFontPreset(formValues.themeFontPreset);
   const selectedAccentTone = getProfileAccentTone(formValues.themeAccentTone);
@@ -187,6 +190,58 @@ export function ProfilePageEditor({
       formValues.previousShowHighlights,
     'Use the preset picker to try a few different moods before you save.'
   );
+  const visualDropSlots = useMemo<VisualDropStudioSlot<EditableFieldKey>[]>(
+    () => [
+      {
+        id: 'heroImage',
+        label: 'Background',
+        description: 'Hero/banner artwork behind the top of the page.',
+        kind: 'image',
+        value: formValues.heroImage,
+        placeholder: 'Drop background'
+      },
+      {
+        id: 'logoImage',
+        label: 'Logo / badge',
+        description: 'A mark that sits near the page title.',
+        kind: 'image',
+        value: formValues.logoImage || formValues.avatarImage,
+        placeholder: 'Drop logo'
+      },
+      {
+        id: 'galleryImage',
+        label: 'Feature image',
+        description: 'A supporting image for about, media, or event sections.',
+        kind: 'image',
+        value: formValues.galleryImage,
+        placeholder: 'Drop image'
+      },
+      {
+        id: 'featureVideoUrl',
+        label: 'Feature video',
+        description: 'Short video clip or safe video URL for the page.',
+        kind: 'video',
+        value: formValues.featureVideoUrl,
+        placeholder: 'Drop video'
+      },
+      {
+        id: 'mediaContent',
+        label: 'Links / media notes',
+        description: 'Drop a link or paste text that should live in the media area.',
+        kind: 'link',
+        value: formValues.mediaContent,
+        placeholder: 'Drop link'
+      }
+    ],
+    [
+      formValues.avatarImage,
+      formValues.featureVideoUrl,
+      formValues.galleryImage,
+      formValues.heroImage,
+      formValues.logoImage,
+      formValues.mediaContent
+    ]
+  );
 
   function applyQuickPreset(presetId: string) {
     const preset = quickSetupPresets.find((entry) => entry.id === presetId);
@@ -205,33 +260,6 @@ export function ProfilePageEditor({
     setMessage(`${preset.label} applied to the page preview.`);
   }
 
-  async function handleGraphicUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setMessage('Choose an image file for the page background.');
-      event.target.value = '';
-      return;
-    }
-
-    if (file.size > 4 * 1024 * 1024) {
-      setMessage('Background uploads are capped at 4MB.');
-      event.target.value = '';
-      return;
-    }
-
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setFormValues((current) => ({ ...current, heroImage: dataUrl }));
-      setMessage(`${file.name} loaded into the preview.`);
-    } catch {
-      setMessage(`Could not load ${file.name}.`);
-    } finally {
-      event.target.value = '';
-    }
-  }
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
@@ -241,6 +269,10 @@ export function ProfilePageEditor({
       headline: formValues.headline,
       bio: formValues.bio,
       heroImage: formValues.heroImage,
+      avatarImage: formValues.avatarImage,
+      logoImage: formValues.logoImage,
+      galleryImage: formValues.galleryImage,
+      featureVideoUrl: formValues.featureVideoUrl,
       aboutContent: formValues.aboutContent,
       journalContent: formValues.journalContent,
       mediaContent: formValues.mediaContent,
@@ -524,22 +556,21 @@ export function ProfilePageEditor({
                     </div>
                   </div>
 
-                  {supportsHeroImage ? (
-                    <div className="profile-design-asset-row profile-design-asset-row-compact">
-                      <label className="field profile-design-asset-upload">
-                        <span>Background graphic upload</span>
-                        <input accept="image/*" onChange={handleGraphicUpload} type="file" />
-                      </label>
-                      <div className="profile-design-asset-status">
-                        <strong>{formValues.heroImage ? 'Graphic loaded' : 'No graphic loaded yet'}</strong>
-                        <span className="meta">
-                          {formValues.heroImage
-                            ? 'Your uploaded graphic is active in the preview.'
-                            : 'Keep the cleaner preset-only look or add one custom graphic.'}
-                        </span>
-                      </div>
-                    </div>
-                  ) : null}
+                  <VisualDropStudio
+                    description="Drag files from your desktop, tap to upload from your phone, or drop links into the media slot."
+                    onChange={(slotId, value) =>
+                      setFormValues((current) => {
+                        if (slotId === 'logoImage') {
+                          return { ...current, logoImage: value, avatarImage: value };
+                        }
+
+                        return { ...current, [slotId]: value };
+                      })
+                    }
+                    onStatus={setMessage}
+                    slots={visualDropSlots}
+                    title="Place graphics, media, and links"
+                  />
 
                   {allowFanShareToggle ? (
                     <label className="profile-design-share-toggle">
@@ -560,7 +591,7 @@ export function ProfilePageEditor({
               </div>
 
               <div className="profile-design-field-grid">
-                {fields.map((field) => (
+                {editableFields.map((field) => (
                   <label className="field" key={field.key}>
                     <span>{field.label}</span>
                     {field.kind === 'textarea' ? (

@@ -174,6 +174,10 @@ function getProfileInitialValues(profile: DashboardProfile) {
     headline: profile.headline ?? '',
     bio: profile.bio ?? '',
     heroImage: profile.heroImage ?? '',
+    avatarImage: profile.avatarImage ?? '',
+    logoImage: profile.logoImage ?? '',
+    galleryImage: profile.galleryImage ?? '',
+    featureVideoUrl: profile.featureVideoUrl ?? '',
     aboutContent: profile.aboutContent ?? '',
     journalContent: profile.journalContent ?? '',
     mediaContent: profile.mediaContent ?? '',
@@ -306,7 +310,7 @@ function createEmptyVenueShowCollectionsMap(profiles: DashboardProfile[]) {
 }
 
 type FanDashboardEditState = 'menu' | 'my-scheme' | 'top-5' | 'event-history';
-type ArtistDashboardSetupState = 'artist-quickstart';
+type DashboardSetupState = 'fan-quickstart' | 'artist-quickstart' | 'promoter-quickstart' | 'venue-quickstart';
 
 function getFanDashboardEditState(value?: string | string[]): FanDashboardEditState | null {
   if (typeof value !== 'string') return null;
@@ -323,12 +327,121 @@ function getFanDashboardEditState(value?: string | string[]): FanDashboardEditSt
   return null;
 }
 
-function getArtistDashboardSetupState(value?: string | string[]): ArtistDashboardSetupState | null {
-  if (value === 'artist-quickstart') {
+function getDashboardSetupState(value?: string | string[]): DashboardSetupState | null {
+  if (
+    value === 'fan-quickstart' ||
+    value === 'artist-quickstart' ||
+    value === 'promoter-quickstart' ||
+    value === 'venue-quickstart'
+  ) {
     return value;
   }
 
   return null;
+}
+
+function getDashboardSetupLabel(setupState: DashboardSetupState | null, profileType: ProfileType) {
+  if (setupState === 'fan-quickstart' || profileType === 'LISTENER') return 'Fan quick start';
+  if (setupState === 'artist-quickstart' || profileType === 'ARTIST') return 'Artist quick start';
+  if (setupState === 'promoter-quickstart' || profileType === 'DJ') return 'Promoter quick start';
+  return 'Venue quick start';
+}
+
+function getProfileOnboardingSteps({
+  profile,
+  artistUploadedMediaCount,
+  fanActionCount,
+  promoterShowCount,
+  venueShowCount
+}: {
+  profile: DashboardProfile;
+  artistUploadedMediaCount: number;
+  fanActionCount: number;
+  promoterShowCount: number;
+  venueShowCount: number;
+}) {
+  if (profile.type === 'LISTENER') {
+    return [
+      {
+        title: 'Set your home signal',
+        done: Boolean(profile.postalCode || profile.city || profile.country),
+        detail: profile.postalCode || profile.city || profile.country ? 'Location signal is ready.' : 'Add ZIP, city, or country.'
+      },
+      {
+        title: 'Build your Top 5',
+        done: Boolean(profile.topFiveContent),
+        detail: profile.topFiveContent ? 'Top 5 is visible on your page.' : 'Add artists, venues, songs, or memories.'
+      },
+      {
+        title: 'Hype one thing',
+        done: fanActionCount > 0,
+        detail: fanActionCount > 0 ? `${fanActionCount} fan action${fanActionCount === 1 ? '' : 's'} recorded.` : 'Hype an artist, venue, promoter, or show.'
+      }
+    ];
+  }
+
+  if (profile.type === 'ARTIST') {
+    return [
+      {
+        title: 'Upload one song',
+        done: artistUploadedMediaCount > 0,
+        detail: artistUploadedMediaCount > 0 ? `${artistUploadedMediaCount} upload${artistUploadedMediaCount === 1 ? '' : 's'} ready.` : 'Add a song or video.'
+      },
+      {
+        title: 'Choose your page look',
+        done: Boolean(profile.heroImage || profile.logoImage || profile.galleryImage || profile.headline),
+        detail: profile.heroImage || profile.logoImage || profile.galleryImage || profile.headline ? 'Page identity is started.' : 'Pick a preset and add one visual.'
+      },
+      {
+        title: 'Publish your page',
+        done: profile.fanShareEnabled,
+        detail: profile.fanShareEnabled ? 'Public page is live.' : 'Launch when the first two steps feel right.'
+      }
+    ];
+  }
+
+  if (profile.type === 'DJ') {
+    return [
+      {
+        title: 'Shape your promoter page',
+        done: Boolean(profile.headline || profile.bio),
+        detail: profile.headline || profile.bio ? 'Public voice is started.' : 'Add a headline and short intro.'
+      },
+      {
+        title: 'Create one radio show',
+        done: promoterShowCount > 0,
+        detail: promoterShowCount > 0 ? `${promoterShowCount} show${promoterShowCount === 1 ? '' : 's'} saved.` : 'Use Show Creator to save a prerecorded show.'
+      },
+      {
+        title: 'Publish your page',
+        done: profile.fanShareEnabled,
+        detail: profile.fanShareEnabled ? 'Promoter page is live.' : 'Launch once your page and show are ready.'
+      }
+    ];
+  }
+
+  return [
+    {
+      title: 'Submit verification',
+      done: profile.verificationStatus === 'PENDING' || profile.verificationStatus === 'VERIFIED',
+      detail:
+        profile.verificationStatus === 'VERIFIED'
+          ? 'Venue ownership is verified.'
+          : profile.verificationStatus === 'PENDING'
+            ? 'Verification is waiting on admin review.'
+            : 'Add venue ownership details.'
+    },
+    {
+      title: 'Add operating details',
+      done: Boolean(profile.addressLine1 || profile.hoursText || profile.contactInfo),
+      detail: profile.addressLine1 || profile.hoursText || profile.contactInfo ? 'Venue basics are present.' : 'Add address, hours, or contact info.'
+    },
+    {
+      title: 'Create one event',
+      done: venueShowCount > 0,
+      detail: venueShowCount > 0 ? `${venueShowCount} event${venueShowCount === 1 ? '' : 's'} attached.` : 'Create a ticket-ready event.'
+    }
+  ];
 }
 
 function formatShowDateTime(value: Date) {
@@ -406,14 +519,19 @@ export default async function DashboardPage({
   const activeProfile =
     sortedProfiles.find((profile) => profile.id === requestedProfileId) ?? sortedProfiles[0] ?? null;
   const fanDashboardEditState = getFanDashboardEditState(resolvedSearchParams.edit);
-  const artistDashboardSetupState = getArtistDashboardSetupState(resolvedSearchParams.setup);
+  const dashboardSetupState = getDashboardSetupState(resolvedSearchParams.setup);
   const artistUploadedMediaCount =
     activeProfile?.type === 'ARTIST'
       ? await db.artistMediaAsset.count({
           where: { profileId: activeProfile.id }
         })
       : 0;
-  const isArtistQuickStart = activeProfile?.type === 'ARTIST' && artistDashboardSetupState === 'artist-quickstart';
+  const promoterShowCount =
+    activeProfile?.type === 'DJ'
+      ? await db.show.count({
+          where: { promoterProfileId: activeProfile.id }
+        })
+      : 0;
   const fanEventHistory =
     activeProfile?.type === 'LISTENER'
       ? await db.hypeEvent.findMany({
@@ -442,14 +560,14 @@ export default async function DashboardPage({
                 <div className="badge">
                   {isAdmin
                     ? 'ADMIN EDIT MODE'
-                    : isArtistQuickStart
-                      ? 'ARTIST QUICK START'
+                    : dashboardSetupState
+                      ? getDashboardSetupLabel(dashboardSetupState, activeProfile.type).toUpperCase()
                       : `${getProfileLabel(activeProfile.type)} EDIT STUDIO`}
                 </div>
-                <h1>{isArtistQuickStart ? `Launch ${activeProfile.name}` : activeProfile.name}</h1>
+                <h1>{dashboardSetupState ? `Launch ${activeProfile.name}` : activeProfile.name}</h1>
                 <p className="subtitle">
-                  {isArtistQuickStart
-                    ? 'Start with one song, one visual move, and one launch. You can come back for deeper page sections after your artist page is already live.'
+                  {dashboardSetupState
+                    ? 'Start with three practical moves, then come back for deeper customization once the page is live.'
                     : getProfileSummary(activeProfile)}
                 </p>
                 <div className="dashboard-editor-link-row">
@@ -540,8 +658,18 @@ export default async function DashboardPage({
             const locationLine = getProfileLocation(profile);
             const isFanProfile = profile.type === 'LISTENER';
             const isArtistQuickStartProfile =
-              profile.type === 'ARTIST' && artistDashboardSetupState === 'artist-quickstart';
+              profile.type === 'ARTIST' && dashboardSetupState === 'artist-quickstart';
+            const isQuickStartProfile =
+              dashboardSetupState === `${profile.type === 'LISTENER' ? 'fan' : profile.type === 'DJ' ? 'promoter' : profile.type.toLowerCase()}-quickstart`;
             const editorConfig = isFanProfile ? getProfileEditorConfig(profile) : null;
+            const venueShowCollection = venueShowsByProfile.get(profile.id);
+            const onboardingSteps = getProfileOnboardingSteps({
+              profile,
+              artistUploadedMediaCount,
+              fanActionCount: fanEventHistory.length,
+              promoterShowCount,
+              venueShowCount: (venueShowCollection?.upcoming.length ?? 0) + (venueShowCollection?.previous.length ?? 0)
+            });
             const fanEventHistoryItems = fanEventHistory
               .map((entry) => entry.show)
               .filter((show) => show.status === 'ENDED' || show.startsAt < now)
@@ -618,6 +746,31 @@ export default async function DashboardPage({
 
                 {isFanProfile ? (
                   <>
+                    {isQuickStartProfile ? (
+                      <section className="panel dashboard-editor-onboarding dashboard-editor-fan-panel">
+                        <div className="dashboard-editor-module-head">
+                          <div>
+                            <div className="badge">{getDashboardSetupLabel(dashboardSetupState, profile.type)}</div>
+                            <h2>Three moves to get started</h2>
+                          </div>
+                          <Link className="dashboard-editor-link" href={`/dashboard?profile=${profile.id}&edit=menu`}>
+                            Open page editor
+                          </Link>
+                        </div>
+                        <div className="dashboard-editor-onboarding-grid">
+                          {onboardingSteps.map((step) => (
+                            <article
+                              className={step.done ? 'dashboard-editor-onboarding-step done' : 'dashboard-editor-onboarding-step'}
+                              key={step.title}
+                            >
+                              <strong>{step.title}</strong>
+                              <span>{step.detail}</span>
+                            </article>
+                          ))}
+                        </div>
+                      </section>
+                    ) : null}
+
                     {fanDashboardEditState ? (
                       <div className="dashboard-editor-tool-pills">
                         <Link
@@ -715,47 +868,30 @@ export default async function DashboardPage({
                   </>
                 ) : (
                   <div className="dashboard-editor-toolstack">
-                    {isArtistQuickStartProfile ? (
+                    {isQuickStartProfile ? (
                       <section className="panel dashboard-editor-onboarding">
                         <div className="dashboard-editor-module-head">
                           <div>
-                            <div className="badge">Artist onboarding</div>
+                            <div className="badge">{getDashboardSetupLabel(dashboardSetupState, profile.type)}</div>
                             <h2>Three moves to get live</h2>
                           </div>
                           <Link className="dashboard-editor-link" href={`/dashboard?profile=${profile.id}`}>
-                            Open full artist editor
+                            Open full editor
                           </Link>
                         </div>
                         <div className="dashboard-editor-onboarding-grid">
-                          <article className={artistUploadedMediaCount > 0 ? 'dashboard-editor-onboarding-step done' : 'dashboard-editor-onboarding-step'}>
-                            <strong>Upload one song</strong>
-                            <span>{artistUploadedMediaCount > 0 ? `${artistUploadedMediaCount} upload${artistUploadedMediaCount === 1 ? '' : 's'} ready` : 'Start with a track or video.'}</span>
-                          </article>
-                          <article
-                            className={
-                              profile.heroImage || profile.logoImage || profile.galleryImage
-                                ? 'dashboard-editor-onboarding-step done'
-                                : 'dashboard-editor-onboarding-step'
-                            }
-                          >
-                            <strong>Add your visuals</strong>
-                            <span>
-                              {profile.heroImage || profile.logoImage || profile.galleryImage
-                                ? 'Visual identity is in place.'
-                                : 'Set a banner, logo, or image so the page already feels like you.'}
-                            </span>
-                          </article>
-                          <article className={profile.fanShareEnabled ? 'dashboard-editor-onboarding-step done' : 'dashboard-editor-onboarding-step'}>
-                            <strong>Launch your page</strong>
-                            <span>
-                              {profile.fanShareEnabled
-                                ? 'Fans can already see the page.'
-                                : 'Publish once the first two steps feel right.'}
-                            </span>
-                          </article>
+                          {onboardingSteps.map((step) => (
+                            <article
+                              className={step.done ? 'dashboard-editor-onboarding-step done' : 'dashboard-editor-onboarding-step'}
+                              key={step.title}
+                            >
+                              <strong>{step.title}</strong>
+                              <span>{step.detail}</span>
+                            </article>
+                          ))}
                         </div>
                         <p className="meta">
-                          Choose one of the starter looks, generate a bio from one sentence, and get the page live before you worry about verification, tour notes, or merch.
+                          Start with the smallest useful setup. You can return for deeper sections after the page is live.
                         </p>
                       </section>
                     ) : null}

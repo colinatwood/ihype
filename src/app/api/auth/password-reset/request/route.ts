@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { recordAuditEvent } from '@/lib/audit';
 import { db, withDbRetry } from '@/lib/db';
-import { isSmtpEmailConfigured, sendPasswordResetPasscodeEmail } from '@/lib/mailer';
+import { isEmailDeliveryConfigured, sendPasswordResetPasscodeEmail } from '@/lib/mailer';
 import {
   createPasswordResetCode,
   createPasswordResetExpiry,
@@ -13,7 +14,8 @@ import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 
 const requestSchema = z.object({
-  email: z.string().email()
+  email: z.string().email(),
+  company: z.string().trim().max(120).optional()
 });
 
 const GENERIC_SUCCESS_MESSAGE =
@@ -22,7 +24,7 @@ const GENERIC_SUCCESS_MESSAGE =
 export async function POST(request: Request) {
   try {
     const clientAddress = readClientAddress(request);
-    const ipRateLimit = consumeRateLimit(`password-reset-request:${clientAddress}`, {
+    const ipRateLimit = await consumeRateLimit(`password-reset-request:${clientAddress}`, {
       limit: 5,
       windowMs: 15 * 60 * 1000
     });
@@ -40,8 +42,18 @@ export async function POST(request: Request) {
     }
 
     const body = requestSchema.parse(await request.json());
+    if (body.company) {
+      await recordAuditEvent({
+        action: 'bot_trap_triggered',
+        entityType: 'password-reset',
+        ipAddress: clientAddress,
+        metadata: { field: 'company' }
+      });
+      return NextResponse.json({ error: 'Invalid password reset request.' }, { status: 400 });
+    }
+
     const email = normalizeEmailAddress(body.email);
-    const emailRateLimit = consumeRateLimit(`password-reset-request:${email}`, {
+    const emailRateLimit = await consumeRateLimit(`password-reset-request:${email}`, {
       limit: 3,
       windowMs: 15 * 60 * 1000
     });
@@ -50,7 +62,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: GENERIC_SUCCESS_MESSAGE });
     }
 
-    if (process.env.NODE_ENV === 'production' && !isSmtpEmailConfigured()) {
+    if (process.env.NODE_ENV === 'production' && !isEmailDeliveryConfigured()) {
       return NextResponse.json(
         { error: 'Password reset email delivery is not configured yet.' },
         { status: 503 }

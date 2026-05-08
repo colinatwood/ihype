@@ -3,11 +3,6 @@ import { auth } from '@/lib/auth';
 import { db, withDbRetry } from '@/lib/db';
 import { canManageOwnedResource } from '@/lib/permissions';
 
-/**
- * PATCH /api/artist-media/[hexId]
- * Toggle freeUseEnabled on a track (artist-owner only).
- * Body: { freeUseEnabled: boolean }
- */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ hexId: string }> }
@@ -25,7 +20,14 @@ export async function PATCH(
     const asset = await withDbRetry(() =>
       db.artistMediaAsset.findUnique({
         where: { hexId },
-        select: { id: true, profile: { select: { ownerId: true } } }
+        select: {
+          id: true,
+          profile: {
+            select: {
+              ownerId: true
+            }
+          }
+        }
       })
     );
 
@@ -34,7 +36,10 @@ export async function PATCH(
     }
 
     if (!canManageOwnedResource(session, asset.profile.ownerId)) {
-      return NextResponse.json({ error: 'Only the artist who owns this track can change its free-use status.' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Only the artist who owns this track can change its free-use status.' },
+        { status: 403 }
+      );
     }
 
     const updated = await withDbRetry(() =>

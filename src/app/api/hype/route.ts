@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { recordAuditEvent } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { z } from 'zod';
 import { consumeRateLimit, rateLimitHeaders, rateLimitKey } from '@/lib/rate-limit';
@@ -45,6 +46,13 @@ export async function POST(request: NextRequest) {
         db.show.update({ where: { id: payload.targetId }, data: { hypeCount: { increment: 1 } } })
       ]);
 
+      await recordAuditEvent({
+        actorUserId: session.user.id,
+        action: 'show_hyped',
+        entityType: 'show',
+        entityId: payload.targetId
+      });
+
       return NextResponse.json({ created: true, hypeCount: updatedShow.hypeCount });
     }
 
@@ -61,6 +69,13 @@ export async function POST(request: NextRequest) {
       db.profileHypeEvent.create({ data: { userId: session.user.id, profileId: payload.targetId } }),
       db.profile.update({ where: { id: payload.targetId }, data: { hypeCount: { increment: 1 } } })
     ]);
+
+    await recordAuditEvent({
+      actorUserId: session.user.id,
+      action: 'profile_hyped',
+      entityType: 'profile',
+      entityId: payload.targetId
+    });
 
     return NextResponse.json({ created: true, hypeCount: updatedProfile.hypeCount });
   } catch {

@@ -28,11 +28,11 @@ const AdminPerspectiveContext = createContext<AdminPerspectiveContextValue>({
 });
 
 export const adminPerspectiveOptions: Array<{ value: AdminPerspective; label: string; href: string }> = [
-  { value: 'ADMIN', label: 'Admin', href: '/dashboard' },
-  { value: 'LISTENER', label: 'Fan', href: '/fans' },
-  { value: 'ARTIST', label: 'Artist', href: '/artists' },
-  { value: 'PROMOTER', label: 'Promoter', href: '/promoters' },
-  { value: 'VENUE', label: 'Venue', href: '/venues' }
+  { value: 'ADMIN', label: 'Admin', href: '/admin' },
+  { value: 'LISTENER', label: 'Fan', href: '/fans?module=stats' },
+  { value: 'ARTIST', label: 'Artist', href: '/artists?module=stats' },
+  { value: 'PROMOTER', label: 'Promoter', href: '/promoters?module=stats' },
+  { value: 'VENUE', label: 'Venue', href: '/venues?module=stats' }
 ];
 
 const defaultNavItems: NavItem[] = [
@@ -74,8 +74,18 @@ const perspectiveNavItems: Record<AdminPerspective, NavItem[]> = {
   ]
 };
 
+function getPerspectiveForPathname(pathname: string): AdminPerspective | null {
+  if (pathname.startsWith('/admin')) return 'ADMIN';
+  if (pathname.startsWith('/fans')) return 'LISTENER';
+  if (pathname.startsWith('/artists')) return 'ARTIST';
+  if (pathname.startsWith('/promoters')) return 'PROMOTER';
+  if (pathname.startsWith('/venues')) return 'VENUE';
+  return null;
+}
+
 export function AdminPerspectiveProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const isAdmin = session?.user?.role === 'ADMIN';
   const [perspective, setPerspectiveState] = useState<AdminPerspective>('ADMIN');
 
@@ -93,6 +103,17 @@ export function AdminPerspectiveProvider({ children }: { children: ReactNode }) 
       setPerspectiveState(storedPerspective);
     }
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      return;
+    }
+
+    const pathPerspective = getPerspectiveForPathname(pathname);
+    if (pathPerspective) {
+      setPerspectiveState(pathPerspective);
+    }
+  }, [isAdmin, pathname]);
 
   useEffect(() => {
     if (!isAdmin) {
@@ -127,7 +148,7 @@ export function getSiteNavItemsForPerspective(
 }
 
 export function getPerspectiveHomeHref(perspective: AdminPerspective) {
-  return adminPerspectiveOptions.find((option) => option.value === perspective)?.href ?? '/dashboard';
+  return adminPerspectiveOptions.find((option) => option.value === perspective)?.href ?? '/admin';
 }
 
 type AdminPerspectiveHeaderSelectProps = {
@@ -165,6 +186,7 @@ export function AdminPerspectiveHeaderSelect({ className }: AdminPerspectiveHead
 
 export function AdminPerspectiveBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { isAdmin, perspective, setPerspective } = useAdminPerspective();
 
   if (!isAdmin || pathname.startsWith('/login') || pathname.startsWith('/register')) {
@@ -185,7 +207,14 @@ export function AdminPerspectiveBar() {
 
         <label className="admin-perspective-select">
           <span>View as</span>
-          <select onChange={(event) => setPerspective(event.target.value as AdminPerspective)} value={perspective}>
+          <select
+            onChange={(event) => {
+              const nextPerspective = event.target.value as AdminPerspective;
+              setPerspective(nextPerspective);
+              router.push(getPerspectiveHomeHref(nextPerspective));
+            }}
+            value={perspective}
+          >
             {adminPerspectiveOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}

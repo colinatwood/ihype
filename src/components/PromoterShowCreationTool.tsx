@@ -40,6 +40,17 @@ type PromoterIdentity = {
   slug: string;
 };
 
+type VenueOption = {
+  profileId: string;
+  slug: string;
+  name: string;
+  addressLine1?: string | null;
+  city?: string | null;
+  stateRegion?: string | null;
+  country?: string | null;
+  postalCode?: string | null;
+};
+
 type PendingVoiceRecording = {
   dataUrl: string;
   durationSeconds: number;
@@ -65,8 +76,15 @@ type PadAssignment = ShowSamplePad & {
   localOnly?: boolean;
 };
 
-type ShowSaveIntent = 'preview' | 'broadcast';
+type ShowSaveIntent = 'preview' | 'publish';
 type CreatorUtilityPanel = 'library' | 'voice' | 'queue';
+type CreatorMode = 'radio' | 'liveEvent';
+type TimelineLaneItem = {
+  id: string;
+  label: string;
+  meta: string;
+  kind: 'media' | 'voice' | 'sample' | 'ad';
+};
 
 const PAD_COLORS = ['#ff6b6b', '#f59e0b', '#f4d03f', '#22c55e', '#23d0d8', '#3b82f6', '#8f5bff', '#ec4899'];
 
@@ -74,6 +92,7 @@ type PromoterShowCreationToolProps = {
   artists: ArtistLibrary[];
   promoters: PromoterIdentity[];
   initialPromoterProfileId?: string;
+  venues?: VenueOption[];
   surface?: 'dashboard' | 'page';
 };
 
@@ -119,6 +138,37 @@ function isVideoMedia(mediaItem: { mediaType?: 'audio' | 'video'; mimeType?: str
   );
 }
 
+function buildTimelineClipStyle(index: number, total: number) {
+  const safeTotal = Math.max(total, 1);
+  const laneSegment = 100 / safeTotal;
+  const width = Math.max(10, Math.min(26, laneSegment - 2));
+  const left = Math.min(88, index * laneSegment + 1);
+
+  return {
+    left: `${left}%`,
+    width: `${width}%`
+  } satisfies CSSProperties;
+}
+
+function formatDurationLabel(seconds?: number) {
+  if (!seconds) {
+    return 'open';
+  }
+
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+  const remainder = Math.round(seconds % 60);
+  return `${minutes}:${String(remainder).padStart(2, '0')}`;
+}
+
+function formatVenueLabel(venue: VenueOption) {
+  const location = [venue.city, venue.stateRegion ?? venue.country, venue.postalCode].filter(Boolean).join(', ');
+  return location ? `${venue.name} - ${location}` : venue.name;
+}
+
 function getSupportedRecordingMimeType() {
   if (typeof MediaRecorder === 'undefined') {
     return undefined;
@@ -146,6 +196,7 @@ export function PromoterShowCreationTool({
   artists,
   promoters,
   initialPromoterProfileId,
+  venues = [],
   surface = 'page'
 }: PromoterShowCreationToolProps) {
   const router = useRouter();
@@ -158,10 +209,15 @@ export function PromoterShowCreationTool({
   const takePreviewAudioRef = useRef<HTMLAudioElement | null>(null);
   const recorderChunksRef = useRef<Blob[]>([]);
   const recordingStartedAtRef = useRef<number | null>(null);
+  const [creatorMode, setCreatorMode] = useState<CreatorMode>('radio');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedPromoterProfileId, setSelectedPromoterProfileId] = useState(initialPromoterProfileId ?? promoters[0]?.profileId ?? '');
   const [headlinerProfileId, setHeadlinerProfileId] = useState(artists[0]?.profileId ?? '');
+  const [selectedVenueProfileId, setSelectedVenueProfileId] = useState(venues[0]?.profileId ?? '');
+  const [liveStartsAt, setLiveStartsAt] = useState('');
+  const [liveEndsAt, setLiveEndsAt] = useState('');
+  const [liveTags, setLiveTags] = useState('live-event, venue-review');
   const [selectedMedia, setSelectedMedia] = useState<ShowMediaItem[]>([]);
   const [voiceOvers, setVoiceOvers] = useState<VoiceOverCue[]>([]);
   const [padAssignments, setPadAssignments] = useState<PadAssignment[]>([]);
@@ -199,6 +255,7 @@ export function PromoterShowCreationTool({
   );
   const selectedHeadliner = artists.find((artist) => artist.profileId === headlinerProfileId) ?? null;
   const selectedPromoter = promoters.find((promoter) => promoter.profileId === selectedPromoterProfileId) ?? promoters[0] ?? null;
+  const selectedLiveVenue = venues.find((venue) => venue.profileId === selectedVenueProfileId) ?? null;
   const recordedVoiceCount = voiceOvers.filter((voiceCue) => Boolean(voiceCue.recordingDataUrl)).length;
   const cueSequence = sequence.filter((sequenceItem) => sequenceItem.kind !== 'MEDIA');
   const advertisingClips = useMemo(() => getAdvertisingClipsForScope(advertisingScope), [advertisingScope]);
@@ -233,6 +290,12 @@ export function PromoterShowCreationTool({
       setSelectedPromoterProfileId(promoters[0].profileId);
     }
   }, [promoters, selectedPromoterProfileId]);
+
+  useEffect(() => {
+    if (!selectedVenueProfileId && venues[0]) {
+      setSelectedVenueProfileId(venues[0].profileId);
+    }
+  }, [selectedVenueProfileId, venues]);
 
   useEffect(() => {
     if (deckATrackId && !selectedMedia.some((mediaItem) => mediaItem.mediaId === deckATrackId)) {
@@ -880,7 +943,7 @@ export function PromoterShowCreationTool({
       setRecordedVoiceTake(null);
       setRecordingState('recording');
       recorder.start();
-      setMessage('Recording live. Stop when the take sounds right.');
+      setMessage('Recording take. Stop when it sounds right.');
     } catch {
       clearRecorderStream();
       recorderRef.current = null;
@@ -1009,8 +1072,114 @@ export function PromoterShowCreationTool({
     }
   }
 
+  function buildLiveEventLegalNotes() {
+    return [
+      'Promoter-created live event draft.',
+      selectedPromoter ? `Promoter: ${selectedPromoter.name}` : null,
+      selectedHeadliner ? `Headliner: ${selectedHeadliner.name}` : null,
+      selectedLiveVenue ? `Requested venue: ${formatVenueLabel(selectedLiveVenue)}` : null,
+      'Venue owner approval is required before ticketing opens or fan payment tokens are charged.'
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  async function handleLiveEventSubmit() {
+    setMessage(null);
+    setLastSavedShowHref(null);
+
+    if (!title.trim()) {
+      setMessage('Give the live event a title.');
+      return;
+    }
+
+    if (!selectedPromoterProfileId) {
+      setMessage('Choose which promoter profile is creating the live event draft.');
+      return;
+    }
+
+    if (!headlinerProfileId) {
+      setMessage('Choose an artist or act for the live event.');
+      return;
+    }
+
+    if (!selectedVenueProfileId) {
+      setMessage('Choose a venue for this live event draft.');
+      return;
+    }
+
+    if (!liveStartsAt) {
+      setMessage('Choose a start time for the live event.');
+      return;
+    }
+
+    const startsAt = new Date(liveStartsAt);
+    const endsAt = liveEndsAt ? new Date(liveEndsAt) : null;
+
+    if (Number.isNaN(startsAt.getTime()) || (endsAt && Number.isNaN(endsAt.getTime()))) {
+      setMessage('Choose valid date and time values.');
+      return;
+    }
+
+    if (endsAt && endsAt <= startsAt) {
+      setMessage('End time must be after the start time.');
+      return;
+    }
+
+    setPending(true);
+
+    const response = await fetch('/api/shows', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        status: 'DRAFT',
+        startsAt: startsAt.toISOString(),
+        endsAt: endsAt ? endsAt.toISOString() : undefined,
+        venueProfileId: selectedVenueProfileId,
+        headlinerProfileId,
+        promoterProfileId: selectedPromoterProfileId,
+        isTicketed: false,
+        bookingLegalNotes: buildLiveEventLegalNotes(),
+        tags: [
+          'live-event',
+          'venue-approval-required',
+          ...liveTags
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+        ]
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      const nextShowHref = `/shows/${data.slug}`;
+      setTitle('');
+      setDescription('');
+      setLiveStartsAt('');
+      setLiveEndsAt('');
+      setLiveTags('live-event, venue-review');
+      setLastSavedShowHref(nextShowHref);
+      setMessage(`Live event draft saved. ${data.title} is ready for venue review before ticketing opens.`);
+      router.refresh();
+    } else {
+      setMessage(data.error ?? 'Could not save the live event draft.');
+    }
+
+    setPending(false);
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (creatorMode === 'liveEvent') {
+      await handleLiveEventSubmit();
+      return;
+    }
+
     setMessage(null);
     setLastSavedShowHref(null);
 
@@ -1052,7 +1221,7 @@ export function PromoterShowCreationTool({
     };
 
     const startsAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-    const nextStatus = saveIntent === 'broadcast' ? 'LIVE' : 'DRAFT';
+    const nextStatus = saveIntent === 'publish' ? 'SCHEDULED' : 'DRAFT';
 
     setPending(true);
 
@@ -1067,7 +1236,12 @@ export function PromoterShowCreationTool({
         headlinerProfileId,
         promoterProfileId: selectedPromoterProfileId,
         isTicketed: false,
-        tags: ['streaming-only', 'promoter-curated', 'ad-supported', nextStatus === 'LIVE' ? 'broadcast-live' : 'preview-draft'],
+        tags: [
+          'prerecorded-show',
+          'promoter-curated',
+          'ad-supported',
+          nextStatus === 'SCHEDULED' ? 'playback-ready' : 'preview-draft'
+        ],
         productionPlan
       })
     });
@@ -1095,8 +1269,8 @@ export function PromoterShowCreationTool({
       setLastSavedShowHref(nextShowHref);
       setPending(false);
       setMessage(
-        nextStatus === 'LIVE'
-          ? `Broadcast live. ${data.title} is now playable for fans.`
+        nextStatus === 'SCHEDULED'
+          ? `Published for playback. ${data.title} is now ready for fans.`
           : `Preview saved. ${data.title} is ready for promoter-only review.`
       );
       router.refresh();
@@ -1134,7 +1308,7 @@ export function PromoterShowCreationTool({
       id: 'queue',
       label: 'Flow',
       count: cueSequence.length,
-      hint: 'Check the transitions, ads, pads, and non-song flow before you save or go live.'
+      hint: 'Check the transitions, ads, pads, and non-song flow before you save or publish.'
     }
   ];
   const activeUtilityTab = utilityTabs.find((tab) => tab.id === activeUtilityPanel) ?? utilityTabs[0];
@@ -1155,6 +1329,69 @@ export function PromoterShowCreationTool({
       value: selectedMedia.length ? `${selectedMedia.length} loaded` : 'Add media',
       ready: selectedMedia.length > 0
     }
+  ];
+  const setupReady = Boolean(title.trim() && selectedPromoterProfileId && headlinerProfileId);
+  const playlistReady = selectedMedia.length > 0;
+  const flowReady = Boolean(cueSequence.length || voiceOvers.length || padAssignments.length);
+  const voiceMinutes = voiceOvers.reduce((total, voiceCue) => total + (voiceCue.durationSeconds ?? 0), 0) / 60;
+  const estimatedShowMinutes = Math.max(0, Math.round(selectedMedia.length * 4 + voiceMinutes));
+  const workflowSteps = [
+    {
+      label: 'Setup',
+      detail: setupReady ? 'Ready' : 'Title, promoter, artist',
+      state: setupReady ? 'done' : 'active'
+    },
+    {
+      label: 'Playlist',
+      detail: playlistReady ? `${selectedMedia.length} loaded` : 'Add artist media',
+      state: playlistReady ? 'done' : setupReady ? 'active' : 'upcoming'
+    },
+    {
+      label: 'Record',
+      detail: flowReady ? `${cueSequence.length} cues` : 'Voice, pads, flow',
+      state: flowReady ? 'done' : playlistReady ? 'active' : 'upcoming'
+    },
+    {
+      label: 'Playback',
+      detail: lastSavedShowHref ? 'Saved' : 'Preview or publish',
+      state: lastSavedShowHref ? 'done' : playlistReady ? 'active' : 'upcoming'
+    }
+  ];
+  const mediaTimelineItems: TimelineLaneItem[] = selectedMedia.slice(0, 8).map((mediaItem) => ({
+    id: mediaItem.mediaId,
+    label: mediaItem.title,
+    meta: mediaItem.artistName,
+    kind: 'media'
+  }));
+  const voiceTimelineItems: TimelineLaneItem[] = voiceOvers.slice(0, 8).map((voiceCue) => ({
+    id: voiceCue.id,
+    label: voiceCue.title,
+    meta: `${formatDurationLabel(voiceCue.durationSeconds)} ${voiceCue.recordingDataUrl ? 'take' : 'script'}`,
+    kind: 'voice'
+  }));
+  const sampleTimelineItems: TimelineLaneItem[] = sequence
+    .filter((sequenceItem) => sequenceItem.kind === 'SAMPLE')
+    .slice(0, 8)
+    .map((sequenceItem) => ({
+      id: sequenceItem.id,
+      label: sequenceItem.label,
+      meta: 'Sampler cue',
+      kind: 'sample'
+    }));
+  const adSequenceItems = sequence.filter((sequenceItem) => sequenceItem.kind === 'AD');
+  const adTimelineItems: TimelineLaneItem[] = [
+    ...adSequenceItems.slice(0, 8).map((sequenceItem) => ({
+      id: sequenceItem.id,
+      label: sequenceItem.label,
+      meta: 'Ad cue',
+      kind: 'ad' as const
+    })),
+    ...advertisingClips.slice(0, Math.max(0, 8 - adSequenceItems.length)).map((clip) => ({
+      id: clip.clipId,
+      label: clip.title,
+      meta: `${clip.scope} ${formatDurationLabel(clip.durationSeconds)}`,
+      kind: 'ad' as const
+    }))
   ];
 
   function buildSuggestedShowTitle() {
@@ -1183,6 +1420,31 @@ export function PromoterShowCreationTool({
     starterEntries.forEach((entry) => addMedia(selectedHeadliner, entry));
     setActiveUtilityPanel('library');
     setMessage(`Loaded ${starterEntries.length} ${starterEntries.length === 1 ? 'item' : 'items'} from ${selectedHeadliner.name}.`);
+  }
+
+  function renderTimelineLane(label: string, emptyLabel: string, items: TimelineLaneItem[]) {
+    return (
+      <div className="composer-timeline-lane">
+        <div className="composer-timeline-label">{label}</div>
+        <div className="composer-timeline-track">
+          {items.length ? (
+            items.map((item, index) => (
+              <span
+                className={`composer-timeline-clip ${item.kind}`}
+                key={item.id}
+                style={buildTimelineClipStyle(index, items.length)}
+                title={`${item.label} - ${item.meta}`}
+              >
+                <strong>{item.label}</strong>
+                <small>{item.meta}</small>
+              </span>
+            ))
+          ) : (
+            <span className="composer-timeline-empty">{emptyLabel}</span>
+          )}
+        </div>
+      </div>
+    );
   }
 
   function renderDeckCard(deck: 'A' | 'B', track: ShowMediaItem | null, level: number) {
@@ -1236,29 +1498,95 @@ export function PromoterShowCreationTool({
         <div className={headerCopyClassName}>
           <div className={sectionBadgeClassName}>Show Creation</div>
           <h2>Build a show fast</h2>
-          <p className="meta">Pick the promoter and artist, load a starter playlist, shape the flow, then preview or go live.</p>
+          <p className="meta">Choose Radio Show for prerecorded playback or Live Event for venue/date drafts.</p>
         </div>
         <div className={summaryStripClassName}>
-          <div className="stat">
-            <strong>{selectedMedia.length}</strong>
-            Media
-          </div>
-          <div className="stat">
-            <strong>{cueSequence.length}</strong>
-            Cues
-          </div>
-          <div className="stat">
-            <strong>{recordedVoiceCount}</strong>
-            Takes
-          </div>
-          <div className="stat">
-            <strong>{advertisingClips.length}</strong>
-            Ad clips
-          </div>
+          {creatorMode === 'radio' ? (
+            <>
+              <div className="stat">
+                <strong>{selectedMedia.length}</strong>
+                Media
+              </div>
+              <div className="stat">
+                <strong>{cueSequence.length}</strong>
+                Cues
+              </div>
+              <div className="stat">
+                <strong>{recordedVoiceCount}</strong>
+                Takes
+              </div>
+              <div className="stat">
+                <strong>{advertisingClips.length}</strong>
+                Ad clips
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="stat">
+                <strong>{venues.length}</strong>
+                Venues
+              </div>
+              <div className="stat">
+                <strong>{artists.length}</strong>
+                Acts
+              </div>
+              <div className="stat">
+                <strong>DRAFT</strong>
+                Event
+              </div>
+              <div className="stat">
+                <strong>0</strong>
+                Tickets
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       <form className="form" onSubmit={handleSubmit}>
+        <div className="composer-mode-grid" role="radiogroup" aria-label="Promoter show format">
+          <button
+            aria-pressed={creatorMode === 'radio'}
+            className={creatorMode === 'radio' ? 'composer-mode-card active' : 'composer-mode-card'}
+            onClick={() => {
+              setCreatorMode('radio');
+              setMessage(null);
+            }}
+            type="button"
+          >
+            <span className="composer-mode-icon">Radio</span>
+            <strong>Radio Show</strong>
+            <small>Prerecorded DJ/radio-style episode using artist media, voice takes, sampler pads, and playback publishing.</small>
+          </button>
+          <button
+            aria-pressed={creatorMode === 'liveEvent'}
+            className={creatorMode === 'liveEvent' ? 'composer-mode-card active' : 'composer-mode-card'}
+            onClick={() => {
+              setCreatorMode('liveEvent');
+              setMessage(null);
+            }}
+            type="button"
+          >
+            <span className="composer-mode-icon live">Event</span>
+            <strong>Live Event</strong>
+            <small>Venue/date draft for a ticketed or free in-person show. Venue approval is required before ticketing opens.</small>
+          </button>
+        </div>
+
+        {creatorMode === 'radio' ? (
+          <>
+        <div className="composer-stepper" aria-label="Show creator progress">
+          {workflowSteps.map((step, index) => (
+            <div className={`composer-stepper-item ${step.state}`} key={step.label}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <div>
+                <strong>{step.label}</strong>
+                <small>{step.detail}</small>
+              </div>
+            </div>
+          ))}
+        </div>
+
         <div className="composer-quick-setup">
           <div className="composer-quick-setup-strip">
             {setupStatusItems.map((item) => (
@@ -1280,6 +1608,12 @@ export function PromoterShowCreationTool({
             </button>
             <button className="button small secondary" onClick={() => setActiveUtilityPanel('library')} type="button">
               Open media
+            </button>
+            <button className="button small secondary" onClick={() => setActiveUtilityPanel('voice')} type="button">
+              Record voice
+            </button>
+            <button className="button small secondary" onClick={() => setActiveUtilityPanel('queue')} type="button">
+              Review flow
             </button>
           </div>
         </div>
@@ -1305,10 +1639,10 @@ export function PromoterShowCreationTool({
             <button
               className="button"
               disabled={pending}
-              onClick={() => setSaveIntent('broadcast')}
+              onClick={() => setSaveIntent('publish')}
               type="submit"
             >
-              {pending && saveIntent === 'broadcast' ? 'Broadcasting...' : 'Broadcast live'}
+              {pending && saveIntent === 'publish' ? 'Publishing...' : 'Publish playback'}
             </button>
           </div>
         </div>
@@ -1352,6 +1686,24 @@ export function PromoterShowCreationTool({
           />
         </label>
 
+        <div className="composer-timeline-board" aria-label="Prerecorded show timeline">
+          <div className="composer-timeline-head">
+            <div>
+              <span className={sectionBadgeClassName}>Timeline</span>
+              <strong>{estimatedShowMinutes ? `${estimatedShowMinutes} min playback draft` : 'Playback draft'}</strong>
+            </div>
+            <p className="meta">
+              The board maps the prerecorded show before fans hear it. Drag songs in the playlist, add voice cues, and place sampler moments.
+            </p>
+          </div>
+          <div className="composer-timeline-lanes">
+            {renderTimelineLane('Songs / video', 'Add artist media to start the show map.', mediaTimelineItems)}
+            {renderTimelineLane('Voice', 'Record or script a voice cue from the Voice tab.', voiceTimelineItems)}
+            {renderTimelineLane('Sampler', 'Assign a pad, then add it to the show flow.', sampleTimelineItems)}
+            {renderTimelineLane('Ads', 'Approved ad clips appear here when real inventory is configured.', adTimelineItems)}
+          </div>
+        </div>
+
         <div className="composer-grid composer-workstation-grid">
           <div className="composer-column composer-deck-column composer-deck-a">
             {renderDeckCard('A', deckATrack, deckALevel)}
@@ -1372,7 +1724,7 @@ export function PromoterShowCreationTool({
                   <span className={sectionBadgeClassName}>Master Recording</span>
                   <span className="voice-recorder-status">
                     {recordingState === 'recording'
-                      ? 'Live'
+                      ? 'Rec'
                       : recordingState === 'processing'
                         ? 'Prep'
                         : recordedVoiceTake
@@ -1990,6 +2342,134 @@ export function PromoterShowCreationTool({
             </div>
           ) : null}
         </div>
+          </>
+        ) : (
+          <div className="composer-live-event-panel">
+            <div className="composer-live-event-head">
+              <div>
+                <div className={sectionBadgeClassName}>Live Event</div>
+                <h3>Draft a venue show</h3>
+              </div>
+              <p className="meta">
+                This saves a promoter-created live event draft. The venue still has to approve the event and open ticketing before fans can be charged.
+              </p>
+            </div>
+
+            <div className="composer-live-event-notice">
+              <strong>Radio shows and live events are separate.</strong>
+              <span>
+                Use Radio Show for prerecorded playback. Use Live Event when the idea needs a room, date, artist, and venue review.
+              </span>
+            </div>
+
+            <div className="grid grid-3 composer-setup-grid">
+              <label className="field">
+                <span>Event title</span>
+                <input
+                  onChange={(event) => setTitle(event.target.value)}
+                  placeholder="Friday Signal Room"
+                  required
+                  value={title}
+                />
+              </label>
+              <label className="field">
+                <span>Promoter profile</span>
+                <select onChange={(event) => setSelectedPromoterProfileId(event.target.value)} required value={selectedPromoterProfileId}>
+                  <option value="">Select a promoter profile</option>
+                  {promoters.map((promoter) => (
+                    <option key={promoter.profileId} value={promoter.profileId}>
+                      {promoter.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>Artist or act</span>
+                <select onChange={(event) => setHeadlinerProfileId(event.target.value)} required value={headlinerProfileId}>
+                  <option value="">Select an artist</option>
+                  {artists.map((artist) => (
+                    <option key={artist.profileId} value={artist.profileId}>
+                      {artist.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="grid grid-3 composer-setup-grid">
+              <label className="field">
+                <span>Venue</span>
+                <select
+                  disabled={!venues.length}
+                  onChange={(event) => setSelectedVenueProfileId(event.target.value)}
+                  required
+                  value={selectedVenueProfileId}
+                >
+                  <option value="">{venues.length ? 'Select a venue' : 'No venues available'}</option>
+                  {venues.map((venue) => (
+                    <option key={venue.profileId} value={venue.profileId}>
+                      {formatVenueLabel(venue)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span>Start time</span>
+                <input onChange={(event) => setLiveStartsAt(event.target.value)} required type="datetime-local" value={liveStartsAt} />
+              </label>
+              <label className="field">
+                <span>End time</span>
+                <input onChange={(event) => setLiveEndsAt(event.target.value)} type="datetime-local" value={liveEndsAt} />
+              </label>
+            </div>
+
+            <label className="field">
+              <span>Description</span>
+              <textarea
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Describe the room, lineup idea, audience fit, and what the venue needs to know."
+                rows={4}
+                value={description}
+              />
+            </label>
+
+            <label className="field">
+              <span>Tags</span>
+              <input onChange={(event) => setLiveTags(event.target.value)} placeholder="live-event, venue-review" value={liveTags} />
+            </label>
+
+            <div className="composer-live-event-summary">
+              <div>
+                <span>Format</span>
+                <strong>Live Event</strong>
+              </div>
+              <div>
+                <span>Venue</span>
+                <strong>{selectedLiveVenue ? selectedLiveVenue.name : 'Choose venue'}</strong>
+              </div>
+              <div>
+                <span>Ticketing</span>
+                <strong>Venue approval first</strong>
+              </div>
+            </div>
+
+            <div className="composer-action-bar">
+              <div className="composer-action-bar-copy">
+                <strong>{title.trim() || 'Untitled live event draft'}</strong>
+                <span className="meta">
+                  {selectedLiveVenue
+                    ? `${selectedLiveVenue.name} will be attached as a requested venue.`
+                    : 'Choose a venue to attach this live event draft.'}
+                </span>
+              </div>
+              <div className="cta-row composer-action-bar-buttons">
+                <button className="button" disabled={pending || !venues.length} type="submit">
+                  {pending ? 'Saving event draft...' : 'Save live event draft'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="cta-row composer-footer-bar">
           {lastSavedShowHref ? (
