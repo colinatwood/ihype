@@ -54,10 +54,10 @@ assertIncludes(
   'signed-landing-schema',
   'The signed-in role pages should keep the newer Claude-derived visual shell.'
 );
-assertIncludes(
+assertNotIncludes(
   'src/components/ProfileDirectoryPage.tsx',
-  'signed-role-signal-grid',
-  'The consolidated role signal cards are part of the current signed-in schema.'
+  'signed-landing-hero',
+  'The redundant signed-in role hero/signal overview should stay removed from all role lanes.'
 );
 assertIncludes(
   'src/app/globals.css',
@@ -69,10 +69,10 @@ assertIncludes(
   'Extend the current dark scheme through authenticated role landing pages.',
   'Signed-in pages should keep the current visual scheme instead of drifting back to obsolete light skins.'
 );
-assertIncludes(
+assertNotIncludes(
   'src/components/ProfileDirectoryPage.tsx',
   'signed-role-signal-grid',
-  'Role landing pages should use the consolidated signal-card schema instead of the older cross-lane grid.'
+  'The redundant signed-in signal cards should not render above selected modules.'
 );
 assertIncludes(
   'src/lib/role-landing-content.ts',

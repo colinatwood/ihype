@@ -10079,193 +10079,6 @@ body {
   background: rgba(216,58,22,0.1);
 }
 
-.signed-landing-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(340px, 0.95fr);
-  gap: clamp(1rem, 2.5vw, 2rem);
-  align-items: stretch;
-  margin-bottom: 1rem;
-  padding: clamp(1.1rem, 2.8vw, 2rem);
-  border: 1px solid var(--signed-line);
-  border-radius: 32px;
-  background:
-    radial-gradient(circle at 82% 18%, rgba(122,79,181,0.11), transparent 28%),
-    rgba(255,252,245,0.84);
-  box-shadow: 0 24px 70px rgba(23,18,15,0.08);
-}
-
-.signed-landing-copy {
-  display: grid;
-  gap: 0.9rem;
-  align-content: center;
-}
-
-.signed-landing-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: fit-content;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--signed-orange);
-}
-
-.signed-landing-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--signed-orange);
-}
-
-.signed-landing-copy h1 {
-  margin: 0;
-  max-width: 760px;
-  color: var(--signed-ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2.35rem, 6vw, 5.6rem);
-  line-height: 0.88;
-  letter-spacing: -0.07em;
-}
-
-.signed-landing-copy h1 em {
-  display: block;
-  color: var(--signed-orange);
-  font-style: normal;
-}
-
-.signed-landing-copy p {
-  max-width: 700px;
-  margin: 0;
-  color: var(--signed-muted);
-  font-size: clamp(0.98rem, 1.4vw, 1.12rem);
-  line-height: 1.65;
-}
-
-.signed-landing-module-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  padding-top: 0.2rem;
-}
-
-.signed-landing-module {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 38px;
-  padding: 0.52rem 0.82rem;
-  border: 1px solid var(--signed-line);
-  border-radius: 999px;
-  background: rgba(255,252,245,0.78);
-  color: var(--signed-ink);
-  font-size: 0.8rem;
-  font-weight: 800;
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-}
-
-.signed-landing-module:hover,
-.signed-landing-module.active {
-  transform: translateY(-1px);
-  border-color: rgba(216,58,22,0.34);
-  background: rgba(216,58,22,0.1);
-}
-
-.signed-role-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
-}
-
-.signed-role-card {
-  display: grid;
-  gap: 0.55rem;
-  min-height: 100%;
-  padding: 1rem;
-  border: 1px solid var(--signed-line);
-  border-radius: 22px;
-  background: rgba(255,252,245,0.78);
-  color: var(--signed-ink);
-  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
-}
-
-.signed-role-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--signed-line-strong);
-}
-
-.signed-role-card.active {
-  background: rgba(255,252,245,0.96);
-  box-shadow: inset 0 0 0 1px rgba(216,58,22,0.12), 0 18px 46px rgba(23,18,15,0.08);
-}
-
-.signed-role-card.fans.active,
-.signed-role-card.fans:hover {
-  border-color: rgba(122,79,181,0.3);
-}
-
-.signed-role-card.artists.active,
-.signed-role-card.artists:hover {
-  border-color: rgba(216,58,22,0.34);
-}
-
-.signed-role-card.venues.active,
-.signed-role-card.venues:hover {
-  border-color: rgba(31,135,130,0.34);
-}
-
-.signed-role-card.promoters.active,
-.signed-role-card.promoters:hover {
-  border-color: rgba(194,64,122,0.34);
-}
-
-.signed-role-swatch {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: var(--signed-purple);
-  color: #fff;
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 900;
-}
-
-.signed-role-card.artists .signed-role-swatch {
-  background: var(--signed-orange);
-}
-
-.signed-role-card.venues .signed-role-swatch {
-  background: var(--signed-teal);
-}
-
-.signed-role-card.promoters .signed-role-swatch {
-  background: var(--signed-pink);
-}
-
-.signed-role-card strong {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.02rem;
-}
-
-.signed-role-card span:not(.signed-role-swatch) {
-  color: var(--signed-muted);
-  font-size: 0.88rem;
-  line-height: 1.48;
-}
-
-.signed-role-card small {
-  margin-top: auto;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--signed-line);
-  color: var(--signed-muted);
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .signed-landing-schema .panel,
 .signed-landing-schema .card,
 .signed-landing-schema .discover-module-panel,
@@ -10348,26 +10161,9 @@ body {
     linear-gradient(180deg, rgba(9, 12, 20, 0.94), rgba(12, 16, 28, 0.98));
 }
 
-@media (max-width: 940px) {
-  .signed-landing-hero,
-  .signed-role-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 640px) {
   .signed-landing-schema .signed-landing-main {
     padding-top: 0.75rem;
-  }
-
-  .signed-landing-hero {
-    padding: 1rem;
-    border-radius: 24px;
-  }
-
-  .signed-landing-module-strip {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -10834,8 +10630,6 @@ html.high-contrast .nav,
 html.high-contrast .a11y-panel,
 html.high-contrast .auth-signal-card,
 html.high-contrast .signed-landing-schema,
-html.high-contrast .signed-landing-hero,
-html.high-contrast .signed-role-card,
 html.high-contrast .discover-module-panel,
 html.high-contrast .recommendation-engine-panel,
 html.high-contrast .stats-engine-panel,
@@ -10848,7 +10642,6 @@ html.high-contrast .visual-drop-studio {
 
 html.high-contrast .ihype-gradient-text,
 html.high-contrast .auth-signal-copy h1 span,
-html.high-contrast .signed-landing-title span,
 html.high-contrast .badge {
   background: none !important;
   color: #ffffff !important;
@@ -11387,7 +11180,6 @@ html.high-contrast p {
   color: #fff;
 }
 
-.signed-landing-schema .signed-landing-hero,
 .signed-landing-schema .directory-hero.panel,
 .signed-landing-schema .discover-module-panel,
 .signed-landing-schema .panel {
@@ -11398,14 +11190,12 @@ html.high-contrast p {
   box-shadow: 0 24px 90px rgba(0, 0, 0, 0.24);
 }
 
-.signed-landing-schema .signed-landing-copy h1,
 .signed-landing-schema .directory-title {
   color: #f7f4ff;
   font-family: "Avenir Next", Montserrat, "Segoe UI", sans-serif;
   letter-spacing: -0.07em;
 }
 
-.signed-landing-schema .signed-landing-copy h1 em,
 .signed-landing-schema .directory-title em {
   background: linear-gradient(105deg, #ff4732 0%, #ff3b8f 35%, #b879d6 62%, #35ded9 100%);
   -webkit-background-clip: text;
@@ -11413,29 +11203,11 @@ html.high-contrast p {
   color: transparent;
 }
 
-.signed-landing-schema .signed-role-card,
-.signed-landing-schema .signed-role-signal-card,
-.signed-landing-schema .signed-landing-module,
 .signed-landing-schema .directory-stat,
 .signed-landing-schema .profile-card {
   border-color: rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.035);
   color: #f7f4ff;
-}
-
-.signed-landing-schema .signed-role-card:hover,
-.signed-landing-schema .signed-role-card.active,
-.signed-landing-schema .signed-role-signal-card:hover,
-.signed-landing-schema .signed-landing-module:hover,
-.signed-landing-schema .signed-landing-module.active {
-  border-color: rgba(255, 255, 255, 0.17);
-  background: rgba(255, 255, 255, 0.075);
-  color: #fff;
-}
-
-.signed-landing-schema .signed-role-swatch {
-  background: linear-gradient(135deg, rgba(255, 70, 53, 0.88), rgba(124, 92, 255, 0.72));
-  color: #fff;
 }
 
 .signed-landing-schema .button,
@@ -11449,43 +11221,6 @@ html.high-contrast p {
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.04);
   color: #aeb8d3;
-}
-
-.signed-role-signal-grid {
-  display: grid;
-  align-content: end;
-  gap: 12px;
-}
-
-.signed-role-signal-card {
-  display: grid;
-  gap: 7px;
-  min-height: 118px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 18px;
-}
-
-.signed-role-signal-card span {
-  color: #ff5738;
-  font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.signed-role-signal-card strong {
-  color: #f7f4ff;
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  font-weight: 950;
-  letter-spacing: -0.055em;
-  line-height: 1;
-}
-
-.signed-role-signal-card small {
-  color: #8995b5;
-  font-weight: 750;
 }
 
 .signed-landing-schema .stats-engine-panel {

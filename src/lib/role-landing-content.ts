@@ -73,38 +73,3 @@ export const publicRoleCards: PublicRoleCard[] = [
     ],
   },
 ];
-
-export const signedRoleLandingCopy: Record<
-  DiscoverRoleKey,
-  {
-    eyebrow: string;
-    heading: string;
-    emphasis: string;
-    signalLabel: string;
-  }
-> = {
-  fans: {
-    eyebrow: 'Fan signal',
-    heading: 'Find the music worth',
-    emphasis: 'showing up for.',
-    signalLabel: 'Taste profile',
-  },
-  artists: {
-    eyebrow: 'Artist signal',
-    heading: 'Turn real attention into',
-    emphasis: 'the next market.',
-    signalLabel: 'Demand map',
-  },
-  promoters: {
-    eyebrow: 'Promoter signal',
-    heading: 'Build shows from',
-    emphasis: 'songs and rooms.',
-    signalLabel: 'Show pipeline',
-  },
-  venues: {
-    eyebrow: 'Venue signal',
-    heading: 'Book the signal before',
-    emphasis: 'everyone sees it.',
-    signalLabel: 'Room demand',
-  },
-};
