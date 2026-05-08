@@ -50,7 +50,7 @@ export default function PromiseHomePage() {
               <Link className="ihype-home-button ihype-home-button-ghost" href="/login">
                 Sign in
               </Link>
-              <span className="ihype-hero-note">Email or phone. Two fields. Done.</span>
+              <span className="ihype-hero-note">Pick a role. Verify by email. Start building.</span>
             </div>
           </div>
 

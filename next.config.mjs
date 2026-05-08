@@ -139,17 +139,17 @@ const nextConfig = {
       },
       {
         source: '/ihype-profile.html',
-        destination: '/fans',
+        destination: '/dashboard',
         permanent: false
       },
       {
         source: '/ihype-media.html',
-        destination: '/artists',
+        destination: '/artists?module=tour-creator',
         permanent: false
       },
       {
         source: '/ihype-show.html',
-        destination: '/shows',
+        destination: '/promoters?module=show-creator',
         permanent: false
       },
       {
@@ -159,12 +159,12 @@ const nextConfig = {
       },
       {
         source: '/ihype-governance.html',
-        destination: '/launch-readiness',
+        destination: '/trust',
         permanent: false
       },
       {
         source: '/ihype-investor.html',
-        destination: '/launch-readiness',
+        destination: '/promise',
         permanent: false
       },
       {

@@ -48,6 +48,30 @@ function DiscoverModuleShell({
   );
 }
 
+function DiscoverEmptyState({
+  title,
+  detail,
+  actionHref,
+  actionLabel
+}: {
+  title: string;
+  detail: string;
+  actionHref?: string;
+  actionLabel?: string;
+}) {
+  return (
+    <div className="discover-empty-state">
+      <strong>{title}</strong>
+      <p>{detail}</p>
+      {actionHref && actionLabel ? (
+        <Link className="button small secondary" href={actionHref}>
+          {actionLabel}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 export function DiscoverStatsPanel({
   badge,
   title,
@@ -142,7 +166,12 @@ export function DiscoverTicketHubPanel({
           ))}
         </div>
       ) : (
-        <div className="empty">No ticketed shows are open right now.</div>
+        <DiscoverEmptyState
+          actionHref="/auth/landing?module=recommendation-engine"
+          actionLabel="Open recommendations"
+          detail="When a venue opens verified ticketing, serialized QR tickets will appear here automatically."
+          title="No ticketed shows are open yet."
+        />
       )}
     </DiscoverModuleShell>
   );
@@ -170,7 +199,10 @@ export function DiscoverEventsPanel({
           ))}
         </div>
       ) : (
-        <div className="empty">{emptyLabel}</div>
+        <DiscoverEmptyState
+          detail={emptyLabel}
+          title="This event lane is ready."
+        />
       )}
     </DiscoverModuleShell>
   );
@@ -240,7 +272,10 @@ export function DiscoverExplorerPanel({
                   </article>
                 ))
               ) : (
-                <div className="empty">No nearby hype signals are available yet.</div>
+                <DiscoverEmptyState
+                  detail="Keep listening, hyping, and checking nearby markets as the signal grows."
+                  title="No nearby hype signals yet."
+                />
               )}
             </div>
           </section>
@@ -262,7 +297,12 @@ export function DiscoverExplorerPanel({
                   </article>
                 ))
               ) : (
-                <div className="empty">No new local artists are showing up yet.</div>
+                <DiscoverEmptyState
+                  actionHref="/register?role=ARTIST"
+                  actionLabel="Invite an artist"
+                  detail="New artist profiles will appear here as the local catalog starts filling in."
+                  title="No new local artists yet."
+                />
               )}
             </div>
           </section>
@@ -284,7 +324,12 @@ export function DiscoverExplorerPanel({
                   </article>
                 ))
               ) : (
-                <div className="empty">No new promoters are in the nearby lane yet.</div>
+                <DiscoverEmptyState
+                  actionHref="/register?role=DJ"
+                  actionLabel="Invite a promoter"
+                  detail="Promoter profiles will appear here once local curators start creating show lanes."
+                  title="No new nearby promoters yet."
+                />
               )}
             </div>
           </section>
@@ -488,7 +533,10 @@ export function VenueBookingRecommendationEngine({
                 ))}
               </div>
             ) : (
-              <div className="empty">No fan-requested artists are concentrated in this scope yet.</div>
+              <DiscoverEmptyState
+                detail="Fan requests will collect here by local, regional, national, and global scope as demand forms."
+                title="No concentrated booking signal yet."
+              />
             )}
           </section>
         ))}

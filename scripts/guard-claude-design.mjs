@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
@@ -20,6 +21,12 @@ function assertNotIncludes(relativePath, removedText, reason) {
 
   if (file.includes(removedText)) {
     throw new Error(`${relativePath} still includes "${removedText}". ${reason}`);
+  }
+}
+
+function assertMissing(relativePath, reason) {
+  if (existsSync(path.join(root, relativePath))) {
+    throw new Error(`${relativePath} should not exist. ${reason}`);
   }
 }
 
@@ -282,6 +289,39 @@ assertIncludes(
   '@media (prefers-reduced-motion: reduce)',
   'System-level reduced motion preferences should apply across the full app.'
 );
+assertIncludes(
+  'middleware.ts',
+  'legacyRouteRedirects',
+  'Legacy static pages should redirect into the maintained Next.js routes instead of showing obsolete schemas.'
+);
+assertIncludes(
+  'src/components/AuthScreens.tsx',
+  'auth-optional-details',
+  'Signup should keep optional profile fields tucked away so onboarding stays short.'
+);
+assertIncludes(
+  'src/components/DiscoverModulePanels.tsx',
+  'discover-empty-state',
+  'Empty modules need polished beta-ready empty states with clear next actions.'
+);
+assertIncludes(
+  'public/sw.js',
+  'ihype-v7-schema-lock',
+  'The service worker cache should evict older static schema pages after deployment.'
+);
+
+for (const legacyStaticPage of [
+  'public/ihype-forgot.html',
+  'public/ihype-governance.html',
+  'public/ihype-investor.html',
+  'public/ihype-media.html',
+  'public/ihype-show.html'
+]) {
+  assertMissing(
+    legacyStaticPage,
+    'Old static Claude/import pages caused live-site schema drift and should stay removed.'
+  );
+}
 
 assertRolePage('src/app/fans/page.tsx', 'fans');
 assertRolePage('src/app/artists/page.tsx', 'artists');

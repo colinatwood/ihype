@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'ihype-v6-recommendation-engine';
+const CACHE_VERSION = 'ihype-v7-schema-lock';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 
@@ -19,26 +19,6 @@ const NETWORK_ONLY_PATHS = [
   '/login',
   '/register',
   '/forgot',
-  '/discover',
-  '/ihype-login.html',
-  '/ihype-register.html',
-  '/ihype-forgot.html',
-  '/ihype-auth.html',
-  '/ihype-home.html',
-  '/ihype-homepage.html',
-  '/ihype-promise.html',
-  '/ihype-hype-engine.html',
-  '/ihype-rec-engine.html',
-  '/ihype-ticketing.html',
-  '/ihype-show-creator.html',
-  '/ihype-page-customizer.html',
-  '/ihype-profile.html',
-  '/ihype-media.html',
-  '/ihype-show.html',
-  '/ihype-search.html',
-  '/ihype-governance.html',
-  '/ihype-investor.html',
-  '/ihype-beta.html',
   '/index.html',
   '/api/auth',
   '/api/register'

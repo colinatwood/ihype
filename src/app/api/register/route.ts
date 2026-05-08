@@ -197,9 +197,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (body.role === 'FAN' && !body.isThirteenOrOlder) {
+    if (!body.isThirteenOrOlder) {
       return NextResponse.json(
-        { error: 'Fans must attest that they are 13 or older before creating an account.' },
+        { error: 'You must attest that you are 13 or older before creating an account.' },
         { status: 400 }
       );
     }
@@ -240,7 +240,7 @@ export async function POST(request: Request) {
         email: normalizedEmail,
         username: normalizedUsername,
         passwordHash,
-        isThirteenOrOlder: body.role === 'FAN' ? body.isThirteenOrOlder : true,
+        isThirteenOrOlder: body.isThirteenOrOlder,
         role: body.role
       }
     });

@@ -115,10 +115,9 @@ export function LoginScreen({
   const [website, setWebsite] = useState('');
   const isCodeStep = Boolean(challengeId);
 
-  async function requestCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function sendCode(statusMessage?: string) {
     setError('');
-    setMessage('');
+    setMessage(statusMessage ?? '');
     setIsSubmitting(true);
 
     try {
@@ -129,12 +128,17 @@ export function LoginScreen({
       });
       setChallengeId(payload.challengeId);
       setMaskedEmail(payload.email);
-      setMessage('We sent a 6-digit sign-in code to your email.');
+      setMessage('We sent a 6-digit sign-in code to your email. It expires in 10 minutes.');
     } catch (err) {
       setError(getErrorMessage(err, 'Could not request a sign-in code.'));
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function requestCode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await sendCode();
   }
 
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
@@ -162,7 +166,7 @@ export function LoginScreen({
       cardSubtitle={
         isCodeStep
           ? `Use the 6-digit code sent to ${maskedEmail || 'your email'}.`
-          : 'Use your email or username. iHYPE sends a short-lived code before opening your workspace.'
+          : 'Use your email or username. iHYPE sends a short-lived email code before opening your workspace.'
       }
       cardTitle={isCodeStep ? 'Enter your code' : 'Sign in to iHYPE'}
       description="Access your role lane without exposing account state. Codes are short-lived, email-first, and built for fast workspace entry."
@@ -229,17 +233,27 @@ export function LoginScreen({
           <button className="button" disabled={isSubmitting || otp.length !== 6} type="submit">
             {isSubmitting ? 'Verifying...' : 'Open my workspace'}
           </button>
-          <button
-            className="text-link"
-            onClick={() => {
-              setChallengeId('');
-              setOtp('');
-              setMessage('');
-            }}
-            type="button"
-          >
-            Use a different login
-          </button>
+          <div className="auth-inline-actions">
+            <button
+              className="text-link"
+              disabled={isSubmitting}
+              onClick={() => sendCode('Sending a fresh code to your email...')}
+              type="button"
+            >
+              Resend code
+            </button>
+            <button
+              className="text-link"
+              onClick={() => {
+                setChallengeId('');
+                setOtp('');
+                setMessage('');
+              }}
+              type="button"
+            >
+              Use a different login
+            </button>
+          </div>
         </form>
       )}
 
@@ -369,6 +383,7 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
           <label className="field">
             <span>Password</span>
             <input
+              aria-describedby="register-password-help"
               autoComplete="new-password"
               minLength={8}
               onChange={(event) => setPassword(event.target.value)}
@@ -376,6 +391,7 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
               type="password"
               value={password}
             />
+            <small id="register-password-help">Use at least 8 characters with a letter and a number.</small>
           </label>
 
           <label className="field">
@@ -389,44 +405,51 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
             />
           </label>
 
-          <div className="auth-field-grid">
-            <label className="field">
-              <span>City</span>
-              <input onChange={(event) => setCity(event.target.value)} type="text" value={city} />
-            </label>
-            <label className="field">
-              <span>State / province</span>
-              <input onChange={(event) => setStateRegion(event.target.value)} type="text" value={stateRegion} />
-            </label>
-            <label className="field">
-              <span>Country</span>
-              <input onChange={(event) => setCountry(event.target.value)} type="text" value={country} />
-            </label>
-            <label className="field">
-              <span>Home ZIP / postal code</span>
-              <input onChange={(event) => setPostalCode(event.target.value)} type="text" value={postalCode} />
-            </label>
-          </div>
+          <details className="auth-optional-details">
+            <summary>
+              <span>Optional profile details</span>
+              <small>Add location/contact now, or finish it later from your dashboard.</small>
+            </summary>
 
-          {role === 'VENUE' ? (
             <div className="auth-field-grid">
               <label className="field">
-                <span>Venue address</span>
-                <input onChange={(event) => setAddressLine1(event.target.value)} type="text" value={addressLine1} />
+                <span>City</span>
+                <input onChange={(event) => setCity(event.target.value)} type="text" value={city} />
               </label>
               <label className="field">
-                <span>Hours</span>
-                <input onChange={(event) => setHoursText(event.target.value)} type="text" value={hoursText} />
+                <span>State / province</span>
+                <input onChange={(event) => setStateRegion(event.target.value)} type="text" value={stateRegion} />
+              </label>
+              <label className="field">
+                <span>Country</span>
+                <input onChange={(event) => setCountry(event.target.value)} type="text" value={country} />
+              </label>
+              <label className="field">
+                <span>Home ZIP / postal code</span>
+                <input onChange={(event) => setPostalCode(event.target.value)} type="text" value={postalCode} />
               </label>
             </div>
-          ) : null}
 
-          {role !== 'FAN' ? (
-            <label className="field">
-              <span>Contact info</span>
-              <input onChange={(event) => setContactInfo(event.target.value)} type="text" value={contactInfo} />
-            </label>
-          ) : null}
+            {role === 'VENUE' ? (
+              <div className="auth-field-grid">
+                <label className="field">
+                  <span>Venue address</span>
+                  <input onChange={(event) => setAddressLine1(event.target.value)} type="text" value={addressLine1} />
+                </label>
+                <label className="field">
+                  <span>Hours</span>
+                  <input onChange={(event) => setHoursText(event.target.value)} type="text" value={hoursText} />
+                </label>
+              </div>
+            ) : null}
+
+            {role !== 'FAN' ? (
+              <label className="field">
+                <span>Contact info</span>
+                <input onChange={(event) => setContactInfo(event.target.value)} type="text" value={contactInfo} />
+              </label>
+            ) : null}
+          </details>
 
           <label className="check-row">
             <input checked={acceptedAge} onChange={(event) => setAcceptedAge(event.target.checked)} required type="checkbox" />
