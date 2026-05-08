@@ -21,6 +21,14 @@ type DiscoverOpportunity = {
   detail: string;
 };
 
+type DiscoverToolItem = {
+  title: string;
+  summary: string;
+  detail: string;
+  href: string;
+  badge: string;
+};
+
 function DiscoverModuleShell({
   badge,
   title,
@@ -123,6 +131,51 @@ export function DiscoverRecommendationPanel({
   );
 }
 
+export function DiscoverToolHubPanel({
+  badge,
+  title,
+  description,
+  tools,
+  stats = []
+}: {
+  badge: string;
+  title: string;
+  description: string;
+  tools: DiscoverToolItem[];
+  stats?: DiscoverStatItem[];
+}) {
+  return (
+    <DiscoverModuleShell
+      badge={badge}
+      className="tool-hub-panel"
+      description={description}
+      title={title}
+    >
+      {stats.length ? (
+        <div className="recommendation-stat-strip" aria-label="Landing stats">
+          {stats.map((stat) => (
+            <div className="recommendation-stat-card" key={stat.label}>
+              <span>{stat.label}</span>
+              <strong>{stat.value}</strong>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="tool-hub-grid">
+        {tools.map((tool) => (
+          <Link className="tool-hub-card" href={tool.href} key={tool.href}>
+            <span>{tool.badge}</span>
+            <strong>{tool.title}</strong>
+            <p>{tool.summary}</p>
+            <em>{tool.detail}</em>
+          </Link>
+        ))}
+      </div>
+    </DiscoverModuleShell>
+  );
+}
+
 export function DiscoverTicketHubPanel({
   shows
 }: {
@@ -142,8 +195,8 @@ export function DiscoverTicketHubPanel({
         </div>
       ) : (
         <DiscoverEmptyState
-          actionHref="/auth/landing?module=recommendation-engine"
-          actionLabel="Open recommendations"
+          actionHref="/auth/landing?module=tool-hub"
+          actionLabel="Open tool hub"
           detail="When a venue opens verified ticketing, serialized QR tickets will appear here automatically."
           title="No ticketed shows are open yet."
         />

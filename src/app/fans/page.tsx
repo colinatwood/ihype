@@ -6,7 +6,8 @@ import {
   DiscoverEventsPanel,
   DiscoverMyPagePanel,
   DiscoverRecommendationPanel,
-  DiscoverTicketHubPanel
+  DiscoverTicketHubPanel,
+  DiscoverToolHubPanel
 } from '@/components/DiscoverModulePanels';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
@@ -238,6 +239,36 @@ export default async function ListenersIndexPage({
       detail: 'Ticket Hub signal'
     }
   ];
+  const fanToolHubItems = [
+    {
+      badge: 'Page',
+      title: 'My Page',
+      summary: 'Preview and edit the fan identity other people see across iHYPE.',
+      detail: 'Profile + presets',
+      href: '/fans?module=my-page'
+    },
+    {
+      badge: 'Signal',
+      title: 'Recommendation Engine',
+      summary: 'See local artists, promoters, venues, tickets, and HYPE queues shaped by your activity.',
+      detail: 'Stats + discovery',
+      href: '/fans?module=recommendation-engine'
+    },
+    {
+      badge: 'Tickets',
+      title: 'Ticket Hub',
+      summary: 'Track verified ticketed shows that are open now or moving into your lane.',
+      detail: `${ticketedFanShows.length} open signal${ticketedFanShows.length === 1 ? '' : 's'}`,
+      href: '/fans?module=ticket-hub'
+    },
+    {
+      badge: 'History',
+      title: 'Events',
+      summary: 'Review the shows you have backed, attended, or saved for later.',
+      detail: `${myEvents.length} fan event${myEvents.length === 1 ? '' : 's'}`,
+      href: '/fans?module=events'
+    }
+  ];
 
   const discoverPanel = (
     <NetworkEarthGlobe
@@ -280,6 +311,14 @@ export default async function ListenersIndexPage({
 
   const modulePanel = !myFanProfile ? (
     lockedPanel
+  ) : activeModule === 'tool-hub' ? (
+    <DiscoverToolHubPanel
+      badge="Tool Hub"
+      description="One fan landing page for profile control, recommendations, ticketing, and event history."
+      stats={fanStats}
+      title="All fan tools"
+      tools={fanToolHubItems}
+    />
   ) : activeModule === 'my-page' ? (
     <DiscoverMyPagePanel
       description="Preview the public fan page other people see when they open your profile."

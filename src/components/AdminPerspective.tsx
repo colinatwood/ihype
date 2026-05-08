@@ -29,10 +29,10 @@ const AdminPerspectiveContext = createContext<AdminPerspectiveContextValue>({
 
 export const adminPerspectiveOptions: Array<{ value: AdminPerspective; label: string; href: string }> = [
   { value: 'ADMIN', label: 'Admin', href: '/admin' },
-  { value: 'LISTENER', label: 'Fan', href: '/fans?module=recommendation-engine' },
-  { value: 'ARTIST', label: 'Artist', href: '/artists?module=recommendation-engine' },
-  { value: 'PROMOTER', label: 'Promoter', href: '/promoters?module=recommendation-engine' },
-  { value: 'VENUE', label: 'Venue', href: '/venues?module=recommendation-engine' }
+  { value: 'LISTENER', label: 'Fan', href: '/fans?module=tool-hub' },
+  { value: 'ARTIST', label: 'Artist', href: '/artists?module=tool-hub' },
+  { value: 'PROMOTER', label: 'Promoter', href: '/promoters?module=tool-hub' },
+  { value: 'VENUE', label: 'Venue', href: '/venues?module=tool-hub' }
 ];
 
 const defaultNavItems: NavItem[] = [

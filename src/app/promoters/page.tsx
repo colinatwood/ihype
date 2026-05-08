@@ -7,7 +7,8 @@ import {
   DiscoverEventsPanel,
   DiscoverMyPagePanel,
   DiscoverRecommendationPanel,
-  DiscoverTicketHubPanel
+  DiscoverTicketHubPanel,
+  DiscoverToolHubPanel
 } from '@/components/DiscoverModulePanels';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
@@ -204,6 +205,36 @@ export default async function PromotersIndexPage({
       detail: 'Show Creator engine'
     }
   ];
+  const promoterToolHubItems = [
+    {
+      badge: 'Page',
+      title: 'My Page',
+      summary: 'Preview and tune the public promoter page artists, fans, and venues see.',
+      detail: 'Profile + identity',
+      href: '/promoters?module=my-page'
+    },
+    {
+      badge: 'Signal',
+      title: 'Recommendation Engine',
+      summary: 'Use artist momentum, venue routing, ticket signals, and HYPE to plan smarter shows.',
+      detail: 'Stats + demand',
+      href: '/promoters?module=recommendation-engine'
+    },
+    {
+      badge: 'Tickets',
+      title: 'Ticket Hub',
+      summary: 'Track ticketed promoter shows and the referral-ready events tied to your page.',
+      detail: `${ticketedPromoterShows.length} ticketed show${ticketedPromoterShows.length === 1 ? '' : 's'}`,
+      href: '/promoters?module=ticket-hub'
+    },
+    {
+      badge: 'Calendar',
+      title: 'Events',
+      summary: 'Review the nights already attached to your promoter page.',
+      detail: `${myPromoterShows.length} promoter event${myPromoterShows.length === 1 ? '' : 's'}`,
+      href: '/promoters?module=events'
+    }
+  ];
 
   const globeRouteStops = buildGlobeRouteStops(promoterShows, { includePastTiming: true, now });
 
@@ -249,7 +280,17 @@ export default async function PromotersIndexPage({
   let modulePanel = lockedPanel;
 
   if (myPromoterProfile) {
-    if (activeModule === 'my-page') {
+    if (activeModule === 'tool-hub') {
+      modulePanel = (
+        <DiscoverToolHubPanel
+          badge="Tool Hub"
+          description="One promoter landing page for page control, recommendations, ticketing, and event history. Show Creator stays separate for focused production."
+          stats={promoterStats}
+          title="All promoter tools"
+          tools={promoterToolHubItems}
+        />
+      );
+    } else if (activeModule === 'my-page') {
       modulePanel = (
         <DiscoverMyPagePanel
           description="Preview the public promoter page artists, fans, and venues see when they open your profile."

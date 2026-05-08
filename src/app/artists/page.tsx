@@ -6,7 +6,8 @@ import {
   DiscoverEventsPanel,
   DiscoverMyPagePanel,
   DiscoverRecommendationPanel,
-  DiscoverTicketHubPanel
+  DiscoverTicketHubPanel,
+  DiscoverToolHubPanel
 } from '@/components/DiscoverModulePanels';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { ProfileDirectoryPage } from '@/components/ProfileDirectoryPage';
@@ -198,6 +199,43 @@ export default async function ArtistsIndexPage({
       detail: `${discoverFeed.hypedNearMe.length} nearby HYPE signal${discoverFeed.hypedNearMe.length === 1 ? '' : 's'}`
     }
   ];
+  const artistToolHubItems = [
+    {
+      badge: 'Page',
+      title: 'My Page',
+      summary: 'Preview and tune the public artist page fans, venues, and promoters open first.',
+      detail: 'Profile + media look',
+      href: '/artists?module=my-page'
+    },
+    {
+      badge: 'Signal',
+      title: 'Recommendation Engine',
+      summary: 'Use HYPE, venue density, promoter activity, and route signals to decide the next move.',
+      detail: 'Stats + growth',
+      href: '/artists?module=recommendation-engine'
+    },
+    {
+      badge: 'Tickets',
+      title: 'Ticket Hub',
+      summary: 'Follow ticketed artist dates tied to your page and current event lane.',
+      detail: `${ticketedArtistShows.length} ticketed date${ticketedArtistShows.length === 1 ? '' : 's'}`,
+      href: '/artists?module=ticket-hub'
+    },
+    {
+      badge: 'Route',
+      title: 'Tour Creator',
+      summary: 'Shape your artist dates into a clearer route plan for booking and promotion.',
+      detail: `${myArtistShows.length} total date${myArtistShows.length === 1 ? '' : 's'}`,
+      href: '/artists?module=tour-creator'
+    },
+    {
+      badge: 'Calendar',
+      title: 'Events',
+      summary: 'Review every date already attached to your artist page.',
+      detail: `${liveOrUpcomingArtistShows.length} upcoming`,
+      href: '/artists?module=events'
+    }
+  ];
 
   const globeRouteStops = buildGlobeRouteStops(artistShows);
 
@@ -242,6 +280,14 @@ export default async function ArtistsIndexPage({
 
   const modulePanel = !myArtistProfile ? (
     lockedPanel
+  ) : activeModule === 'tool-hub' ? (
+    <DiscoverToolHubPanel
+      badge="Tool Hub"
+      description="One artist landing page for page setup, growth recommendations, ticketing, tour planning, and events."
+      stats={artistStats}
+      title="All artist tools"
+      tools={artistToolHubItems}
+    />
   ) : activeModule === 'my-page' ? (
     <DiscoverMyPagePanel
       description="Preview the public artist page listeners and bookers see when they open your profile."

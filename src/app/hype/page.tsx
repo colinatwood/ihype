@@ -10,7 +10,7 @@ export default function HypePage() {
     <PublicFeaturePage
       actions={[
         { href: '/register', label: 'Join free' },
-        { href: '/auth/landing?module=recommendation-engine', label: 'Open recommendations', variant: 'ghost' }
+        { href: '/auth/landing?module=tool-hub', label: 'Open tool hub', variant: 'ghost' }
       ]}
       cards={[
         {

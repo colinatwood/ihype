@@ -1,6 +1,7 @@
 export type DiscoverRoleKey = 'fans' | 'artists' | 'promoters' | 'venues';
 
 export type DiscoverModuleId =
+  | 'tool-hub'
   | 'my-page'
   | 'events'
   | 'recommendation-engine'
@@ -16,23 +17,35 @@ export type DiscoverModuleOption = {
 
 const discoverModuleOptions: Record<DiscoverRoleKey, DiscoverModuleOption[]> = {
   fans: [
+    { id: 'tool-hub', label: 'Tool Hub' },
+    { id: 'my-page', label: 'My Page' },
     { id: 'recommendation-engine', label: 'Recommendation Engine' },
-    { id: 'ticket-hub', label: 'Ticket Hub' }
+    { id: 'ticket-hub', label: 'Ticket Hub' },
+    { id: 'events', label: 'Events' }
   ],
   artists: [
+    { id: 'tool-hub', label: 'Tool Hub' },
+    { id: 'my-page', label: 'My Page' },
     { id: 'recommendation-engine', label: 'Recommendation Engine' },
     { id: 'ticket-hub', label: 'Ticket Hub' },
-    { id: 'tour-creator', label: 'Tour Creator' }
+    { id: 'tour-creator', label: 'Tour Creator' },
+    { id: 'events', label: 'Events' }
   ],
   promoters: [
+    { id: 'tool-hub', label: 'Tool Hub' },
+    { id: 'my-page', label: 'My Page' },
     { id: 'recommendation-engine', label: 'Recommendation Engine' },
     { id: 'ticket-hub', label: 'Ticket Hub' },
+    { id: 'events', label: 'Events' },
     { id: 'show-creator', label: 'Show Creator' }
   ],
   venues: [
+    { id: 'tool-hub', label: 'Tool Hub' },
+    { id: 'my-page', label: 'My Page' },
     { id: 'recommendation-engine', label: 'Recommendation Engine' },
     { id: 'ticket-hub', label: 'Ticket Hub' },
-    { id: 'event-creator', label: 'Event Creator' }
+    { id: 'event-creator', label: 'Event Creator' },
+    { id: 'events', label: 'Events' }
   ]
 };
 

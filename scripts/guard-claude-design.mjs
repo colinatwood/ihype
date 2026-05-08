@@ -87,7 +87,7 @@ assertIncludes(
 assertIncludes(
   'src/app/auth/landing/page.tsx',
   'resolveRequestedModule',
-  'Old discovery/search URLs should be able to route signed-in users into their role Recommendation Engine.'
+  'Old discovery/search URLs should be able to route signed-in users into their role tool hub.'
 );
 assertIncludes(
   'src/lib/account-routing.ts',
@@ -96,13 +96,13 @@ assertIncludes(
 );
 assertIncludes(
   'src/lib/account-routing.ts',
-  "module: DiscoverModuleId = 'recommendation-engine'",
-  'Post-login role lanes should open on the merged Recommendation Engine by default.'
+  "module: DiscoverModuleId = 'tool-hub'",
+  'Post-login role lanes should open on the consolidated Tool Hub by default.'
 );
 assertIncludes(
   'src/components/AdminPerspective.tsx',
-  '/fans?module=recommendation-engine',
-  'Admin QA mode should open role lanes on the merged Recommendation Engine instead of a redundant Stats page.'
+  '/fans?module=tool-hub',
+  'Admin QA mode should open role lanes on the consolidated Tool Hub.'
 );
 assertIncludes(
   'src/components/AdminPerspective.tsx',
@@ -118,6 +118,16 @@ assertIncludes(
   'src/components/DiscoverModulePanels.tsx',
   'recommendation-stat-strip',
   'Stats should be merged into Recommendation Engine instead of staying as a separate role module.'
+);
+assertIncludes(
+  'src/components/DiscoverModulePanels.tsx',
+  'DiscoverToolHubPanel',
+  'Signed-in landing should have a consolidated Tool Hub for all role tools.'
+);
+assertIncludes(
+  'src/app/promoters/page.tsx',
+  'Show Creator stays separate',
+  'Promoter landing Tool Hub should consolidate tools without absorbing Show Creator.'
 );
 assertIncludes(
   'src/components/VisualDropStudio.tsx',
@@ -175,6 +185,11 @@ assertIncludes(
   'src/lib/account-routing.ts',
   "return '/promoters';",
   'Promoter users should land in the promoter lane.'
+);
+assertIncludes(
+  'src/lib/discover-modules.ts',
+  "id: 'tool-hub'",
+  'Each role lane should expose the consolidated Tool Hub in the subheader.'
 );
 assertIncludes(
   'src/lib/discover-modules.ts',

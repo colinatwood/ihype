@@ -6,6 +6,7 @@ import {
   DiscoverEventsPanel,
   DiscoverMyPagePanel,
   DiscoverTicketHubPanel,
+  DiscoverToolHubPanel,
   VenueBookingRecommendationEngine
 } from '@/components/DiscoverModulePanels';
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
@@ -337,6 +338,43 @@ export default async function VenuesIndexPage({
       venueName: show.venueProfile?.name
     }))
   });
+  const venueToolHubItems = [
+    {
+      badge: 'Page',
+      title: 'My Page',
+      summary: 'Preview and tune the public venue page artists and fans open before booking or attending.',
+      detail: 'Room identity',
+      href: '/venues?module=my-page'
+    },
+    {
+      badge: 'Signal',
+      title: 'Recommendation Engine',
+      summary: 'Use requests, HYPE, ticket movement, and nearby artist signals to shape better bookings.',
+      detail: 'Stats + booking',
+      href: '/venues?module=recommendation-engine'
+    },
+    {
+      badge: 'Tickets',
+      title: 'Ticket Hub',
+      summary: 'Track ticketed venue shows and verified ticket activity tied to your room.',
+      detail: `${ticketedVenueShows.length} ticketed event${ticketedVenueShows.length === 1 ? '' : 's'}`,
+      href: '/venues?module=ticket-hub'
+    },
+    {
+      badge: 'Create',
+      title: 'Event Creator',
+      summary: 'Create events, select artists, set ticket terms, and prepare the booking package.',
+      detail: `${recommendedActs.length} recommended act${recommendedActs.length === 1 ? '' : 's'}`,
+      href: '/venues?module=event-creator'
+    },
+    {
+      badge: 'Calendar',
+      title: 'Events',
+      summary: 'Review ticketed and non-ticketed events attached to your venue page.',
+      detail: `${myVenueShows.length} venue event${myVenueShows.length === 1 ? '' : 's'}`,
+      href: '/venues?module=events'
+    }
+  ];
 
   const globeRouteStops = buildGlobeRouteStops(venueShows, { includePastTiming: true, now });
 
@@ -381,6 +419,14 @@ export default async function VenuesIndexPage({
 
   const modulePanel = !myVenueProfile ? (
     lockedPanel
+  ) : activeModule === 'tool-hub' ? (
+    <DiscoverToolHubPanel
+      badge="Tool Hub"
+      description="One venue landing page for page control, recommendations, ticketing, event creation, and event history."
+      stats={venueStats}
+      title="All venue tools"
+      tools={venueToolHubItems}
+    />
   ) : activeModule === 'my-page' ? (
     <DiscoverMyPagePanel
       description="Preview the public venue page artists and fans see when they open your room."

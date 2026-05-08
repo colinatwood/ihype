@@ -150,16 +150,16 @@ export default async function AdminPage() {
           </div>
         </div>
         <div className="admin-export-row" aria-label="Admin QA role views">
-          <Link className="button small secondary" href="/fans?module=recommendation-engine">
+          <Link className="button small secondary" href="/fans?module=tool-hub">
             Fan QA
           </Link>
-          <Link className="button small secondary" href="/artists?module=recommendation-engine">
+          <Link className="button small secondary" href="/artists?module=tool-hub">
             Artist QA
           </Link>
-          <Link className="button small secondary" href="/promoters?module=recommendation-engine">
+          <Link className="button small secondary" href="/promoters?module=tool-hub">
             Promoter QA
           </Link>
-          <Link className="button small secondary" href="/venues?module=recommendation-engine">
+          <Link className="button small secondary" href="/venues?module=tool-hub">
             Venue QA
           </Link>
         </div>

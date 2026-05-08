@@ -16,7 +16,7 @@ export function getDiscoverPathForType(type: ProfileType) {
   return '/artists';
 }
 
-export function getRoleLandingPathForType(type: ProfileType, module: DiscoverModuleId = 'recommendation-engine') {
+export function getRoleLandingPathForType(type: ProfileType, module: DiscoverModuleId = 'tool-hub') {
   return `${getDiscoverPathForType(type)}?module=${module}`;
 }
 
