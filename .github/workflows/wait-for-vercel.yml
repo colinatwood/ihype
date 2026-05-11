@@ -8,6 +8,9 @@ jobs:
   wait-for-vercel:
     name: Wait for Vercel preview
     runs-on: ubuntu-latest
+    permissions:
+      deployments: read
+      statuses: read
     steps:
       - name: Wait for Vercel deployment
         uses: patrickedqvist/wait-for-vercel-preview@v1.3.2
