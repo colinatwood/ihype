@@ -36,12 +36,13 @@ const NAV = [
 ];
 
 const S = {
-  wrap: { width: '100%', height: '100vh', display: 'grid', gridTemplateColumns: '56px 1fr 320px', gridTemplateRows: '40px 1fr 64px', background: 'var(--bg)', fontFamily: 'var(--f-m, monospace)', overflow: 'hidden' } as React.CSSProperties,
-  sidebar: { gridRow: '1 / span 3', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '12px 0', gap: 6 } as React.CSSProperties,
+  wrap: { position: 'fixed' as const, top: 106, left: 0, right: 0, bottom: 0, display: 'grid', gridTemplateColumns: '56px 1fr 320px', gridTemplateRows: '40px 1fr 64px', background: 'var(--bg)', fontFamily: 'var(--f-m, monospace)', overflow: 'hidden' },
+  sidebar: { gridRow: '1 / span 3', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', padding: '12px 0', gap: 6, background: 'var(--bg)' } as React.CSSProperties,
   sbLogo: { width: 32, height: 32, borderRadius: 6, background: 'linear-gradient(135deg,#ff5029,#ff3e9a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 14, color: 'var(--bg)', marginBottom: 14, textDecoration: 'none' } as React.CSSProperties,
-  sbIcon: { width: 36, height: 36, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 14, position: 'relative', transition: 'background .15s' } as React.CSSProperties,
+  sbIcon: { width: 36, height: 36, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 14, position: 'relative' as const, transition: 'background .15s', border: 'none', background: 'transparent' },
   sbIconActive: { background: 'rgba(255,80,41,.1)', color: '#ff5029' } as React.CSSProperties,
-  sbIndicator: { position: 'absolute', left: -7, top: '25%', bottom: '25%', width: 2, background: '#ff5029', borderRadius: 2 } as React.CSSProperties,
+  sbIndicator: { position: 'absolute' as const, left: -7, top: '25%', bottom: '25%', width: 2, background: '#ff5029', borderRadius: 2 },
+  sbTooltip: { position: 'absolute' as const, left: 46, top: '50%', transform: 'translateY(-50%)', background: '#161310', border: '1px solid rgba(255,255,255,.12)', borderRadius: 6, padding: '4px 10px', fontSize: 11, color: '#f2ede8', whiteSpace: 'nowrap' as const, pointerEvents: 'none' as const, letterSpacing: '.06em', zIndex: 300 },
   topbar: { gridColumn: '2 / span 2', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', padding: '0 18px', gap: 14, fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.06em' } as React.CSSProperties,
   search: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 6, fontSize: 11, color: 'var(--ink-3)', minWidth: 280 } as React.CSSProperties,
   searchKbd: { padding: '1px 5px', background: 'var(--bg-3)', borderRadius: 3, fontSize: 9 } as React.CSSProperties,
@@ -86,6 +87,7 @@ const S = {
 
 export default function LandingPage() {
   const [idx, setIdx] = useState(0);
+  const [hovered, setHovered] = useState<string | null>(null);
   const track = TRACKS[idx];
 
   return (
@@ -94,13 +96,21 @@ export default function LandingPage() {
       <div style={S.sidebar}>
         <Link href="/" style={S.sbLogo}>iH</Link>
         {NAV.map((n, i) => (
-          <div key={n.label} style={{ ...S.sbIcon, ...(i === 0 ? S.sbIconActive : {}) }} title={n.label}>
+          <button
+            key={n.label}
+            style={{ ...S.sbIcon, ...(i === 0 ? S.sbIconActive : {}) }}
+            onMouseEnter={() => setHovered(n.label)}
+            onMouseLeave={() => setHovered(null)}
+            title={n.label}
+            type="button"
+          >
             {i === 0 && <div style={S.sbIndicator} />}
             <span style={{ fontSize: 16 }}>{n.icon}</span>
-          </div>
+            {hovered === n.label && <span style={S.sbTooltip}>{n.label}</span>}
+          </button>
         ))}
         <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <Link href="/login" style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.08em', textDecoration: 'none' }}>IN</Link>
+          <Link href="/login" style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.08em', textDecoration: 'none' }}>Sign in</Link>
         </div>
       </div>
 
