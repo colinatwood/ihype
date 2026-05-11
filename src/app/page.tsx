@@ -128,8 +128,6 @@ function ViewDiscover({ idx, setIdx }: { idx: number; setIdx: (i: number) => voi
           <div style={S.statLabel}>CITIES</div>
           <div style={S.statNum}>41</div>
           <div style={{ ...S.statDelta, color: '#b983ff' }}>and growing</div>
-        </div>
-      </div>
       <div style={S.panelRow}>
         <div style={S.panel}>
           <div style={S.panelHead}><span>TONIGHT IN CHICAGO</span><span>3 SHOWS</span></div>
