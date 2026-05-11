@@ -9,11 +9,14 @@ import {
   DiscoverMyPagePanel,
   DiscoverRecommendationPanel
 } from '@/components/DiscoverModulePanels';
-import { PromoterShowCreationTool } from '@/components/PromoterShowCreationTool';
+import dynamic from 'next/dynamic';
+const PromoterShowCreationTool = dynamic(() => import('@/components/PromoterShowCreationTool').then(m => ({ default: m.PromoterShowCreationTool })), { ssr: false });
 import { PromoterAffiliateLinks } from '@/components/PromoterAffiliateLinks';
 import { getProfileDesignStyleVars } from '@/lib/profile-design';
 
 export const dynamic = 'force-dynamic';
+import type { Metadata } from 'next';
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 type LandingModule = 'my-page' | 'recommendation-engine' | 'events' | 'show-creator' | 'affiliate-links';
 
