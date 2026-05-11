@@ -30,7 +30,7 @@ button, input, select, textarea { font: inherit; }
   position: relative;
   isolation: isolate;
   min-height: 100vh;
-  padding-top: 106px; /* fixed nav (70px) + topbar (36px) */
+  padding-top: 70px;
 }
 .site-background {
   position: fixed;
@@ -147,10 +147,40 @@ button, input, select, textarea { font: inherit; }
 }
 .nav-inner {
   display: grid;
-  grid-template-columns: auto minmax(280px, 460px) auto;
+  grid-template-columns: minmax(200px, 320px) auto 1fr auto;
   align-items: center;
   gap: 0.85rem;
   padding: 0.6rem 0;
+}
+.nav-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 0;
+}
+.nav-search svg { flex-shrink: 0; opacity: 0.6; }
+.nav-search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 12px;
+  min-width: 0;
+}
+.nav-search-input::placeholder { color: var(--muted); }
+.nav-search-kbd {
+  padding: 1px 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  font-size: 10px;
+  flex-shrink: 0;
 }
 .nav-player-slot {
   min-width: 0;

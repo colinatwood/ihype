@@ -5,8 +5,8 @@ import { SitePlayerDock } from '@/components/GlobalMediaPlayer';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderLogo } from '@/components/HeaderLogo';
+import { HeaderSearch } from '@/components/HeaderSearch';
 import { NavPrimaryLinks } from '@/components/NavPrimaryLinks';
-import { SiteTopbar } from '@/components/SiteTopbar';
 
 export const metadata: Metadata = {
   title: {
@@ -43,11 +43,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="site-shell">
             <header aria-label="Primary site header" className="nav">
               <div className="container nav-inner">
-                <HeaderLogo />
+                <HeaderSearch />
                 <NavPrimaryLinks />
                 <HeaderAuthLinks />
+                <HeaderLogo />
               </div>
-              <SiteTopbar />
             </header>
             {children}
             <SitePlayerDock />
