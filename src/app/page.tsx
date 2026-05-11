@@ -47,7 +47,7 @@ const NAV = [
 type View = 'discover' | 'library' | 'shows' | 'radio' | 'studio';
 
 const S = {
-  wrap: { position: 'fixed' as const, top: 106, left: 0, right: 0, bottom: 0, display: 'grid', gridTemplateColumns: '56px 1fr 320px', gridTemplateRows: '40px 1fr 64px', background: 'var(--bg)', fontFamily: 'var(--f-m, monospace)', overflow: 'hidden' },
+  wrap: { position: 'fixed' as const, top: 70, left: 0, right: 0, bottom: 0, display: 'grid', gridTemplateColumns: '56px 1fr 320px', gridTemplateRows: '40px 1fr 64px', background: 'var(--bg)', fontFamily: 'var(--f-m, monospace)', overflow: 'hidden' },
   sidebar: { gridRow: '1 / span 3', borderRight: '1px solid var(--line)', display: 'flex', flexDirection: 'column' as const, alignItems: 'center', padding: '12px 0', gap: 6, background: 'var(--bg)' } as React.CSSProperties,
   sbLogo: { width: 32, height: 32, borderRadius: 6, background: 'linear-gradient(135deg,#ff5029,#ff3e9a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 14, color: 'var(--bg)', marginBottom: 14, textDecoration: 'none' } as React.CSSProperties,
   sbIcon: { width: 36, height: 36, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 14, position: 'relative' as const, transition: 'background .15s', border: 'none', background: 'transparent' },
