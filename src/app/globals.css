@@ -30,6 +30,7 @@ button, input, select, textarea { font: inherit; }
   position: relative;
   isolation: isolate;
   min-height: 100vh;
+  padding-top: 106px; /* fixed nav (70px) + topbar (36px) */
 }
 .site-background {
   position: fixed;
@@ -69,7 +70,7 @@ button, input, select, textarea { font: inherit; }
   mask-image: radial-gradient(circle at top, rgba(0,0,0,1), rgba(0,0,0,0.22) 68%, transparent 100%);
 }
 .nav {
-  position: sticky; top: 0; z-index: 90; backdrop-filter: blur(18px);
+  position: fixed; top: 0; left: 0; right: 0; z-index: 90; backdrop-filter: blur(18px);
   background:
     linear-gradient(180deg, rgba(10, 14, 26, 0.9), rgba(8, 12, 22, 0.82));
   border-bottom: 1px solid rgba(255,255,255,0.08);
