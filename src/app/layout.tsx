@@ -1,11 +1,9 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { ReactNode } from 'react';
-import { SitePlayerDock } from '@/components/GlobalMediaPlayer';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderLogo } from '@/components/HeaderLogo';
-import { HeaderSearch } from '@/components/HeaderSearch';
 import { NavPrimaryLinks } from '@/components/NavPrimaryLinks';
 
 export const metadata: Metadata = {
@@ -40,17 +38,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <span className="site-background-orb site-background-orb-b" />
             <span className="site-background-grid" />
           </div>
+          {/* Marketing nav — hidden when .wb-shell is present via CSS */}
+          <header aria-label="Primary site header" className="nav site-nav">
+            <div className="container nav-inner-marketing">
+              <HeaderLogo />
+              <NavPrimaryLinks />
+              <HeaderAuthLinks />
+            </div>
+          </header>
           <div className="site-shell">
-            <header aria-label="Primary site header" className="nav">
-              <div className="container nav-inner">
-                <HeaderSearch />
-                <NavPrimaryLinks />
-                <HeaderAuthLinks />
-                <HeaderLogo />
-              </div>
-            </header>
             {children}
-            <SitePlayerDock />
           </div>
         </AppProviders>
       </body>
