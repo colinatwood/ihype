@@ -418,6 +418,138 @@ body:has(.wb-shell) .site-nav { display: none; }
   .lp-promise-grid, .lp-how-grid { grid-template-columns: 1fr; }
   .lp-transparency-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Landing page v2 additions ───────────────────────────── */
+.lp-section-eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted);
+  margin: 0 0 12px;
+}
+.lp-hero--v2 { padding-top: 60px; gap: 24px; }
+.lp-hero-h--v2 {
+  font-size: clamp(2.6rem, 7vw, 5rem);
+}
+.lp-hero-sub--v2 {
+  font-size: 1.05rem; max-width: 640px;
+  color: var(--ink-2);
+  line-height: 1.75;
+}
+
+/* Zero-fee callout */
+.lp-zero-fee {
+  border: 1px solid rgba(34,229,212,.25);
+  border-radius: 14px;
+  background: rgba(34,229,212,.04);
+  padding: 32px 36px;
+}
+.lp-zero-fee-inner {
+  display: flex; align-items: center; gap: 32px; flex-wrap: wrap;
+}
+.lp-zero-fee-num {
+  font-size: clamp(3.5rem, 8vw, 6rem);
+  font-weight: 900; letter-spacing: -.04em;
+  color: #22e5d4; line-height: 1; flex-shrink: 0;
+}
+.lp-zero-fee-text {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.lp-zero-fee-text strong {
+  font-size: 1.1rem; font-weight: 800; color: var(--text);
+}
+.lp-zero-fee-text span {
+  font-size: 14px; color: var(--muted); line-height: 1.65;
+  max-width: 520px;
+}
+
+/* How it works */
+.lp-how { display: flex; flex-direction: column; gap: 0; }
+.lp-how-steps {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 24px;
+}
+.lp-how-step {
+  display: flex; gap: 20px; align-items: flex-start;
+  padding: 28px 28px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  border-right: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.02);
+}
+.lp-how-step:nth-child(even) { border-right: none; }
+.lp-how-step:nth-last-child(-n+2) { border-bottom: none; }
+.lp-how-n {
+  font-family: var(--f-m, monospace);
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  color: var(--muted); padding-top: 3px; flex-shrink: 0;
+}
+.lp-how-head { font-size: 15px; font-weight: 700; color: var(--text); margin: 0 0 6px; }
+.lp-how-body { font-size: 13px; color: var(--muted); line-height: 1.65; margin: 0; }
+
+/* Hype compare v2 */
+.lp-hype-explainer--v2 { padding-top: 0; border-top: none; }
+.lp-hype-compare {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px;
+}
+.lp-hype-col {
+  padding: 28px 28px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.lp-hype-col--bad { background: rgba(255,255,255,.02); }
+.lp-hype-col--good {
+  background: rgba(255,80,41,.05);
+  border-color: rgba(255,80,41,.2);
+}
+.lp-hype-col-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); margin: 0 0 16px;
+}
+.lp-hype-col ul {
+  margin: 0; padding: 0 0 0 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.lp-hype-col ul li { font-size: 14px; color: var(--muted); line-height: 1.5; }
+.lp-hype-col--good ul li { color: var(--ink-2); }
+.lp-hype-col--bad .lp-hype-col-label { color: var(--muted); }
+.lp-hype-col--good .lp-hype-col-label { color: #ff5029; }
+
+/* Role cards v2 */
+.lp-role-grid--v2 { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.lp-role-card--v2 { padding: 28px 24px; gap: 10px; }
+.lp-role-sub--v2 { font-size: 13px; line-height: 1.6; }
+
+/* Footer CTA v2 */
+.lp-footer-cta--v2 {
+  padding: 80px 0 40px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px; text-align: center;
+}
+.lp-footer-cta-h {
+  font-size: clamp(1.8rem, 5vw, 3.4rem);
+  font-weight: 900; letter-spacing: -.03em;
+  line-height: 1.1; margin: 0; color: var(--text);
+}
+.lp-footer-cta-sub {
+  font-size: 15px; color: var(--muted); line-height: 1.7;
+  max-width: 500px; margin: 0;
+}
+.lp-btn-primary--lg { padding: 15px 30px; font-size: 15px; }
+
+/* Responsive */
+@media (max-width: 640px) {
+  .lp-how-steps { grid-template-columns: 1fr; }
+  .lp-how-step { border-right: none !important; }
+  .lp-how-step:nth-last-child(-n+2) { border-bottom: 1px solid rgba(255,255,255,.07); }
+  .lp-how-step:last-child { border-bottom: none; }
+  .lp-hype-compare { grid-template-columns: 1fr; }
+  .lp-role-grid--v2 { grid-template-columns: 1fr; }
+  .lp-zero-fee-inner { gap: 16px; }
+}
+
 .lp-footer-cta .lp-hero-actions { justify-content: center; }
 .nav-stats {
   display: flex;

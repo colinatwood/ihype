@@ -3,39 +3,60 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 
 const ROLES = [
-  { k: 'fan', label: 'Fan', sub: 'Hype tracks · Build top-5 lists · Follow artists', c: '#b983ff', icon: '♡' },
-  { k: 'artist', label: 'Artist', sub: 'Upload music · List shows · Track hype', c: '#ff5029', icon: '◐' },
-  { k: 'venue', label: 'Venue', sub: 'Host shows · Verify capacity · Issue tickets', c: '#22e5d4', icon: '◇' },
-  { k: 'promoter', label: 'Promoter / DJ', sub: 'Book talent · Affiliate · Run radio shows', c: '#ff3e9a', icon: '◉' },
-];
-
-const STATS = [
-  { label: 'Tracks hyped', val: '1,247', c: '#ff5029' },
-  { label: 'Shows listed', val: '184', c: '#22e5d4' },
-  { label: 'Radio shows live', val: '23', c: '#ff3e9a' },
-  { label: 'Cities', val: '41', c: '#b983ff' },
-];
-
-const REASONS = [
   {
-    icon: '◐',
-    head: 'Not-for-profit, free forever',
-    body: 'No streaming cuts. No paywalls. No algorithmic gatekeeping. iHYPE is built for the scene, by the scene.',
-  },
-  {
+    k: 'fan',
+    label: 'Fan',
+    sub: 'Discover artists before they blow up. Build your top-5 lists. Hype the tracks that deserve it.',
+    c: '#b983ff',
     icon: '♡',
-    head: 'Hype is the currency',
-    body: 'Fans vote with hypes instead of plays. Artists see real signal — not inflated stream counts from bots.',
+    cta: 'Join as Fan',
   },
   {
+    k: 'artist',
+    label: 'Artist',
+    sub: 'Upload your music. List your shows. See real demand signal — not bot-inflated stream counts.',
+    c: '#ff5029',
+    icon: '◐',
+    cta: 'Join as Artist',
+  },
+  {
+    k: 'venue',
+    label: 'Venue',
+    sub: 'List shows for free. Issue tickets with zero platform fees. Every dollar stays in the scene.',
+    c: '#22e5d4',
     icon: '◇',
-    head: 'Shows first',
-    body: 'Every artist page links to upcoming shows. Venues list for free. Fans buy tickets without a middleman.',
+    cta: 'Join as Venue',
   },
   {
+    k: 'promoter',
+    label: 'DJ / Promoter',
+    sub: 'Book talent. Run live or recorded radio sets directly on the platform. Build your affiliate network.',
+    c: '#ff3e9a',
     icon: '◉',
-    head: 'Radio lives here',
-    body: 'DJs and promoters run live and recorded sets directly on the platform. No third-party embeds needed.',
+    cta: 'Join as DJ / Promoter',
+  },
+];
+
+const HOW = [
+  {
+    n: '01',
+    head: 'Upload or discover',
+    body: 'Artists upload tracks. Fans browse by city, genre, or mood — no algorithm deciding what you hear first.',
+  },
+  {
+    n: '02',
+    head: 'Hype what hits',
+    body: 'A Hype is earned by finishing a track or deliberately backing an artist. It\'s a demand signal, not a like.',
+  },
+  {
+    n: '03',
+    head: 'Shows follow the signal',
+    body: 'Promoters and venues watch the hype charts to book talent. Artists with real fan demand get booked.',
+  },
+  {
+    n: '04',
+    head: 'Tickets, zero fees',
+    body: 'Buy tickets on iHYPE. The artist and venue keep 100% of the revenue. No Ticketmaster. No cuts.',
   },
 ];
 
@@ -47,101 +68,123 @@ export default async function MarketingPage() {
 
   return (
     <main className="lp-wrap">
-      {/* 0% fee banner */}
-      <section className="lp-fee-banner">
-        <span className="lp-fee-banner-text">
-          iHYPE takes 0% of ticket revenue — forever. Artists and venues keep everything.
-        </span>
-        <Link href="/about" className="lp-fee-banner-link">→ See how it works</Link>
-      </section>
 
       {/* Hero */}
-      <section className="lp-hero">
+      <section className="lp-hero lp-hero--v2">
         <div className="lp-hero-eyebrow">
           <span className="lp-live-dot" />
-          {STATS[0].val} tracks hyped this week
+          Not-for-profit · Free forever · 0% ticket fees
         </div>
-        <h1 className="lp-hero-h">
-          Independent music,<br />
-          <span className="lp-hero-gradient">found by humans.</span>
+        <h1 className="lp-hero-h lp-hero-h--v2">
+          The music scene<br />
+          <span className="lp-hero-gradient">deserves better.</span>
         </h1>
-        <p className="lp-hero-sub">
-          iHYPE is a streaming-first discovery platform for artists, promoters, venues, and fans.
-          It is not-for-profit, free forever, and built entirely for the independent music scene.
+        <p className="lp-hero-sub lp-hero-sub--v2">
+          Spotify takes 70% and buries indie artists in algorithm debt.
+          Ticketmaster adds 30% fees and keeps the money.
+          iHYPE is the alternative — a not-for-profit platform where discovery is driven
+          by real fans, and every ticket dollar goes to the artist and venue.
         </p>
         <div className="lp-hero-actions">
-          <Link href="/register" className="lp-btn-primary">Join free — pick your role</Link>
+          <Link href="/register" className="lp-btn-primary">Join free — it takes 60 seconds</Link>
           <Link href="/login" className="lp-btn-ghost">Sign in</Link>
         </div>
       </section>
 
-      {/* Stats bar */}
-      <section className="lp-stats">
-        {STATS.map((s) => (
-          <div key={s.label} className="lp-stat">
-            <span className="lp-stat-val" style={{ color: s.c }}>{s.val}</span>
-            <span className="lp-stat-label">{s.label}</span>
+      {/* Zero-fee callout */}
+      <section className="lp-zero-fee">
+        <div className="lp-zero-fee-inner">
+          <div className="lp-zero-fee-num">0%</div>
+          <div className="lp-zero-fee-text">
+            <strong>iHYPE takes nothing from ticket sales. Ever.</strong>
+            <span>Artists and venues keep 100% of every ticket sold on this platform.
+            That's not a promotional offer — it's written into how iHYPE works.</span>
           </div>
-        ))}
+        </div>
       </section>
 
-      {/* Hype explainer */}
-      <section className="lp-hype-explainer">
-        <p className="lp-hype-eyebrow">DEMAND SIGNAL · NOT A LIKE</p>
-        <h2 className="lp-section-head">What is a Hype?</h2>
-        <p className="lp-hype-body">
-          A Hype is registered when a fan listens all the way through a track, or manually hypes an artist they believe in.
-          Unlike a stream count or a like, a Hype is a deliberate signal of real demand — it tells artists and promoters
-          which music is actually resonating. The more Hypes a track earns, the higher it surfaces in discovery feeds,
-          with no pay-to-play and no algorithmic shortcuts.
-        </p>
-      </section>
-
-      {/* Reasons why */}
-      <section className="lp-reasons">
-        <h2 className="lp-section-head">Why we built this</h2>
-        <div className="lp-reason-grid">
-          {REASONS.map((r) => (
-            <div key={r.icon} className="lp-reason-card">
-              <div className="lp-reason-icon">{r.icon}</div>
-              <h3 className="lp-reason-head">{r.head}</h3>
-              <p className="lp-reason-body">{r.body}</p>
+      {/* How it works */}
+      <section className="lp-how">
+        <p className="lp-section-eyebrow">HOW IT WORKS</p>
+        <h2 className="lp-section-head">Simple. Transparent. Theirs.</h2>
+        <div className="lp-how-steps">
+          {HOW.map((h) => (
+            <div key={h.n} className="lp-how-step">
+              <span className="lp-how-n">{h.n}</span>
+              <div>
+                <h3 className="lp-how-head">{h.head}</h3>
+                <p className="lp-how-body">{h.body}</p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
+      {/* Hype explainer */}
+      <section className="lp-hype-explainer lp-hype-explainer--v2">
+        <p className="lp-section-eyebrow">THE CURRENCY OF THE SCENE</p>
+        <h2 className="lp-section-head">What makes a Hype different</h2>
+        <div className="lp-hype-compare">
+          <div className="lp-hype-col lp-hype-col--bad">
+            <p className="lp-hype-col-label">Everywhere else</p>
+            <ul>
+              <li>Stream counts gamed by bots and playlisting services</li>
+              <li>Likes cost nothing — one tap, no attention required</li>
+              <li>Algorithms reward what's already popular</li>
+              <li>Artists pay for promotion to reach their own fans</li>
+            </ul>
+          </div>
+          <div className="lp-hype-col lp-hype-col--good">
+            <p className="lp-hype-col-label">iHYPE</p>
+            <ul>
+              <li>A Hype is logged only when a fan finishes a track</li>
+              <li>Or explicitly backs an artist they believe in</li>
+              <li>Hype charts surface rising artists, not promoted ones</li>
+              <li>Zero pay-to-play. No algorithmic shortcuts for sale</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
       {/* Role picker */}
       <section className="lp-roles">
-        <h2 className="lp-section-head">Pick your role</h2>
-        <p className="lp-section-sub">You can hold multiple roles — start with the one that fits best.</p>
-        <div className="lp-role-grid">
+        <p className="lp-section-eyebrow">WHO IS THIS FOR</p>
+        <h2 className="lp-section-head">Built for every part of the scene</h2>
+        <p className="lp-section-sub">One account, multiple roles. Start with the one that fits today.</p>
+        <div className="lp-role-grid lp-role-grid--v2">
           {ROLES.map((r) => (
             <Link
               key={r.k}
               href={`/register?role=${r.k}`}
-              className="lp-role-card"
+              className="lp-role-card lp-role-card--v2"
               style={{ '--role-c': r.c } as React.CSSProperties}
             >
               <span className="lp-role-icon" style={{ color: r.c }}>{r.icon}</span>
               <strong className="lp-role-label">{r.label}</strong>
-              <span className="lp-role-sub">{r.sub}</span>
-              <span className="lp-role-cta" style={{ color: r.c }}>Join as {r.label} →</span>
+              <span className="lp-role-sub lp-role-sub--v2">{r.sub}</span>
+              <span className="lp-role-cta" style={{ color: r.c }}>{r.cta} →</span>
             </Link>
           ))}
         </div>
       </section>
 
       {/* Footer CTA */}
-      <section className="lp-footer-cta">
-        <h2 className="lp-hero-h" style={{ fontSize: 'clamp(1.6rem, 4vw, 3rem)', marginBottom: '1rem' }}>
-          Ready to find your sound?
+      <section className="lp-footer-cta lp-footer-cta--v2">
+        <p className="lp-section-eyebrow">FREE FOREVER</p>
+        <h2 className="lp-footer-cta-h">
+          Stop feeding the machine.<br />
+          <span className="lp-hero-gradient">Start building the scene.</span>
         </h2>
-        <div className="lp-hero-actions">
-          <Link href="/register" className="lp-btn-primary">Get started free</Link>
-          <Link href="/artists" className="lp-btn-ghost">Browse artists →</Link>
+        <p className="lp-footer-cta-sub">
+          No subscription. No fees. No algorithm telling you what you're allowed to hear.
+          iHYPE is run as a not-for-profit and always will be.
+        </p>
+        <div className="lp-hero-actions" style={{ justifyContent: 'center' }}>
+          <Link href="/register" className="lp-btn-primary lp-btn-primary--lg">Join iHYPE free</Link>
+          <Link href="/login" className="lp-btn-ghost">Already a member? Sign in</Link>
         </div>
       </section>
+
     </main>
   );
 }
