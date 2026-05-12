@@ -1,7 +1,95 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, createContext, useContext } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
+
+// ── Drag context ───────────────────────────────────────────────
+const DragTrackCtx = createContext<{
+  dragging: MediaTrack | null;
+  setDragging: (t: MediaTrack | null) => void;
+} | null>(null);
+
+function useDragTrack() {
+  return useContext(DragTrackCtx)!;
+}
+
+function DragTrackProvider({ children }: { children: React.ReactNode }) {
+  const [dragging, setDragging] = useState<MediaTrack | null>(null);
+  return <DragTrackCtx.Provider value={{ dragging, setDragging }}>{children}</DragTrackCtx.Provider>;
+}
+
+function DraggableTrack({ track, children, className, style, onClick }: {
+  track: MediaTrack;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: () => void;
+}) {
+  const { setDragging } = useDragTrack();
+  return (
+    <div
+      draggable
+      className={className}
+      style={{ ...style, cursor: 'grab' }}
+      onClick={onClick}
+      onDragStart={e => {
+        setDragging(track);
+        e.dataTransfer.setData('application/ihype-track', JSON.stringify(track));
+        e.dataTransfer.effectAllowed = 'copy';
+      }}
+      onDragEnd={() => setDragging(null)}
+    >
+      {children}
+    </div>
+  );
+}
+
+function QueueDropZone({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const { addToQueue } = useMediaPlayer();
+  const [over, setOver] = useState(false);
+  return (
+    <div
+      className={className}
+      style={{ ...style, outline: over ? '2px solid var(--wb-accent)' : undefined, borderRadius: over ? 8 : undefined, transition: 'outline 0.1s' }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault();
+        setOver(false);
+        try {
+          const track: MediaTrack = JSON.parse(e.dataTransfer.getData('application/ihype-track'));
+          addToQueue(track);
+        } catch { /* ignore */ }
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function PlaylistDropZone({ name, children, className, style, onClick }: { name: string; children: React.ReactNode; className?: string; style?: React.CSSProperties; onClick?: () => void }) {
+  const [over, setOver] = useState(false);
+  const [flash, setFlash] = useState(false);
+  return (
+    <div
+      className={className}
+      style={{ ...style, outline: over ? '2px solid #b983ff' : undefined, borderRadius: over ? 10 : undefined, transition: 'outline 0.1s' }}
+      onClick={onClick}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault();
+        setOver(false);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 1200);
+        // In production this would POST to /api/playlists
+        void name; void flash;
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 // ── Types ──────────────────────────────────────────────────────
 export type WbTrack = {
@@ -241,24 +329,25 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="wb-root">
-      {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
-      {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-      <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={data.isVerified} />
-      <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} />
-      <main className="wb-main">
-        {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
-        {view === 'radio'    && <ViewRadio data={data} setView={setView} />}
-        {view === 'tickets'  && <ViewTicketing data={data} activeProfileTypes={data.activeProfileTypes} />}
-        {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
-        {view === 'library'  && <ViewLibrary data={data} />}
-
-        {view === 'studio'   && <ViewRadioStudio />}
-        {view === 'venue'    && <ViewVenue data={data} />}
-      </main>
-      {showQueue && <WbQueueRail data={data} />}
-      <WbPlayerDock />
-    </div>
+    <DragTrackProvider>
+      <div className="wb-root">
+        {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
+        {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
+        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={data.isVerified} />
+        <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} />
+        <main className="wb-main">
+          {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
+          {view === 'radio'    && <ViewRadio data={data} setView={setView} />}
+          {view === 'tickets'  && <ViewTicketing data={data} activeProfileTypes={data.activeProfileTypes} />}
+          {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
+          {view === 'library'  && <ViewLibrary data={data} />}
+          {view === 'studio'   && <ViewRadioStudio />}
+          {view === 'venue'    && <ViewVenue data={data} />}
+        </main>
+        {showQueue && <WbQueueRail data={data} />}
+        <WbPlayerDock />
+      </div>
+    </DragTrackProvider>
   );
 }
 
@@ -418,11 +507,11 @@ function WbPlayerDock() {
 function WbQueueRail({ data }: { data: WorkbenchData }) {
   const { currentTrack, playTrack } = useMediaPlayer();
   return (
-    <aside className="wb-queue">
+    <QueueDropZone className="wb-queue">
       <div className="wb-queue-head">
         <div>
           <div className="wb-queue-title">Queue</div>
-          <div className="wb-queue-sub">{data.tracks.length} tracks · this week</div>
+          <div className="wb-queue-sub">{data.tracks.length} tracks · drag tracks here</div>
         </div>
         <button className="wb-link-btn">Edit</button>
       </div>
@@ -431,7 +520,7 @@ function WbQueueRail({ data }: { data: WorkbenchData }) {
           const active = currentTrack?.id === t.id;
           const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
           return (
-            <button key={t.id} onClick={() => playTrack(mt)} className={`wb-q-item${active ? ' wb-q-item-active' : ''}`}>
+            <DraggableTrack key={t.id} track={mt} className={`wb-q-item${active ? ' wb-q-item-active' : ''}`} onClick={() => playTrack(mt)}>
               <div className="wb-q-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}>
                 {active && <span className="wb-q-playing"><IcDot c={t.color} s={6} /></span>}
               </div>
@@ -441,7 +530,7 @@ function WbQueueRail({ data }: { data: WorkbenchData }) {
               </div>
               <div className="wb-q-hype"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
               <div className="wb-q-dur">{t.duration}</div>
-            </button>
+            </DraggableTrack>
           );
         })}
       </div>
@@ -449,7 +538,7 @@ function WbQueueRail({ data }: { data: WorkbenchData }) {
         <span className="wb-eyebrow-xs">CURATED BY</span>
         <div style={{ fontStyle: 'italic', fontSize: 16, marginTop: 4, color: 'var(--wb-ink)' }}>iHYPE · {data.city}</div>
       </div>
-    </aside>
+    </QueueDropZone>
   );
 }
 
@@ -663,7 +752,7 @@ function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) 
               {data.tracks.slice(0, 6).map((t, i) => {
                 const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
                 return (
-                  <button key={t.id} onClick={() => playTrack(mt)} className="wb-q-row">
+                  <DraggableTrack key={t.id} track={mt} className="wb-q-row" onClick={() => playTrack(mt)}>
                     <div className="wb-q-idx">{String(i + 1).padStart(2, '0')}</div>
                     <div className="wb-q-art-sm" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }} />
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
@@ -672,7 +761,7 @@ function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) 
                     </div>
                     <div className="wb-q-chip">{i === 0 && show.live ? 'NOW' : i < 2 ? 'JUST PLAYED' : `-${i * 4}m`}</div>
                     <div className="wb-q-hype-sm"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
-                  </button>
+                  </DraggableTrack>
                 );
               })}
             </div>
@@ -1225,7 +1314,7 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
         <>
           <div className="wb-tracks-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 16 }}>
             {playlists.map(p => (
-              <div key={p.n} style={{ position: 'relative', padding: 14, border: '1px solid var(--wb-line)', borderRadius: 10, background: 'var(--wb-bg-2)', cursor: 'pointer' }}
+              <PlaylistDropZone key={p.n} name={p.n} style={{ position: 'relative', padding: 14, border: '1px solid var(--wb-line)', borderRadius: 10, background: 'var(--wb-bg-2)', cursor: 'pointer' }}
                 onClick={() => setOpenMenuId(openMenuId === p.n ? null : p.n)}>
                 <div style={{ aspectRatio: '1', borderRadius: 6, background: `linear-gradient(135deg, ${p.color}, ${p.color}80)`, marginBottom: 10 }} />
                 <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)' }}>{p.n}</div>
@@ -1240,7 +1329,7 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
                     ))}
                   </div>
                 )}
-              </div>
+              </PlaylistDropZone>
             ))}
           </div>
           <div className="wb-panel">
@@ -1250,13 +1339,13 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
                 const active = currentTrack?.id === t.id;
                 const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
                 return (
-                  <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)' }}>
+                  <DraggableTrack key={t.id} track={mt} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)' }} onClick={() => playTrack(mt)}>
                     <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}>
                       <div className="wb-track-play"><IcPlay s={12} /></div>
                     </div>
                     <div className="wb-track-name">{t.title}</div>
                     <div className="wb-track-artist">{t.artistName}</div>
-                  </button>
+                  </DraggableTrack>
                 );
               })}
             </div>
@@ -1275,14 +1364,14 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
               const active = currentTrack?.id === t.id;
               const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
               return (
-                <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)', padding: 12, borderRadius: 10 }}>
+                <DraggableTrack key={t.id} track={mt} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)', padding: 12, borderRadius: 10 }} onClick={() => playTrack(mt)}>
                   <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, borderRadius: 7 }}>
                     <div className="wb-track-play"><IcPlay s={12} /></div>
                     <div className="wb-track-hype"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
                   </div>
                   <div className="wb-track-name" style={{ fontSize: 14 }}>{t.title}</div>
                   <div className="wb-track-artist">{t.artistName} · {t.duration}</div>
-                </button>
+                </DraggableTrack>
               );
             })}
           </div>
@@ -1422,7 +1511,150 @@ function ViewStub({ name, eyebrow, accent, sub }: { name: string; eyebrow: strin
 }
 
 // ── View: Settings ─────────────────────────────────────────────
+// ── Page builder types ──────────────────────────────────────────
+type PageWidget = { id: string; label: string; desc: string; wide: boolean; locked?: boolean };
+const DEFAULT_WIDGETS: PageWidget[] = [
+  { id: 'bio',      label: 'Bio',              desc: 'Your story in your words',          wide: true,  locked: true },
+  { id: 'featured', label: 'Featured track',   desc: 'One track pinned at the top',       wide: false },
+  { id: 'shows',    label: 'Upcoming shows',   desc: 'Next 3 events with ticket links',   wide: false },
+  { id: 'radio',    label: 'Radio shows',      desc: 'Your channels + archive',           wide: false },
+  { id: 'photos',   label: 'Photo grid',       desc: '3×2 grid of uploaded images',       wide: true  },
+  { id: 'links',    label: 'Links',            desc: 'Social, website, press kit',        wide: false },
+];
+
+function PageBuilder() {
+  const [widgets, setWidgets] = useState<PageWidget[]>(DEFAULT_WIDGETS);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [profileImg, setProfileImg] = useState<string | null>(null);
+  const [bannerImg, setBannerImg] = useState<string | null>(null);
+  const profileRef = useRef<HTMLInputElement>(null);
+  const bannerRef = useRef<HTMLInputElement>(null);
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setter(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function onDragStart(id: string) { setDragId(id); }
+  function onDragOver(e: React.DragEvent, id: string) { e.preventDefault(); setOverId(id); }
+  function onDrop(targetId: string) {
+    if (!dragId || dragId === targetId) { setDragId(null); setOverId(null); return; }
+    setWidgets(prev => {
+      const from = prev.findIndex(w => w.id === dragId);
+      const to = prev.findIndex(w => w.id === targetId);
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setDragId(null);
+    setOverId(null);
+  }
+
+  const fieldStyle: React.CSSProperties = { display: 'none' };
+  const uploadZone: React.CSSProperties = { border: '1.5px dashed var(--wb-line-2)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: 'var(--wb-bg-3)', transition: 'border-color 0.15s' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Media uploads */}
+      <div className="wb-sett-section" style={{ gridColumn: 'span 2' }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15 }}>Media</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 4 }}>Upload your profile photo and banner. PNG or JPG, max 5 MB each.</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12, alignItems: 'start' }}>
+          {/* Profile photo */}
+          <div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.1em', color: 'var(--wb-ink-3)', marginBottom: 6 }}>PROFILE PHOTO</div>
+            <div
+              style={{ ...uploadZone, width: 120, height: 120, borderRadius: '50%', overflow: 'hidden', position: 'relative' }}
+              onClick={() => profileRef.current?.click()}
+            >
+              {profileImg
+                ? <img src={profileImg} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <><div style={{ fontSize: 24, color: 'var(--wb-ink-3)' }}>+</div><div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)' }}>Upload</div></>
+              }
+            </div>
+            <input ref={profileRef} type="file" accept="image/*" style={fieldStyle} onChange={e => handleFile(e, setProfileImg)} />
+          </div>
+          {/* Banner */}
+          <div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.1em', color: 'var(--wb-ink-3)', marginBottom: 6 }}>BANNER IMAGE</div>
+            <div
+              style={{ ...uploadZone, height: 120, borderRadius: 8, position: 'relative', overflow: 'hidden' }}
+              onClick={() => bannerRef.current?.click()}
+            >
+              {bannerImg
+                ? <img src={bannerImg} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <><div style={{ fontSize: 24, color: 'var(--wb-ink-3)' }}>+</div><div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)' }}>Upload banner · 3:1 recommended</div></>
+              }
+            </div>
+            <input ref={bannerRef} type="file" accept="image/*" style={fieldStyle} onChange={e => handleFile(e, setBannerImg)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Widget layout */}
+      <div className="wb-sett-section" style={{ gridColumn: 'span 2' }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15 }}>Page layout</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 4 }}>Drag widgets to reorder. Wide widgets span the full row. Locked widgets stay fixed.</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {widgets.map((w, i) => (
+            <div
+              key={w.id}
+              draggable={!w.locked}
+              onDragStart={() => !w.locked && onDragStart(w.id)}
+              onDragOver={e => onDragOver(e, w.id)}
+              onDragLeave={() => setOverId(null)}
+              onDrop={() => onDrop(w.id)}
+              onDragEnd={() => { setDragId(null); setOverId(null); }}
+              style={{
+                gridColumn: w.wide ? 'span 2' : undefined,
+                padding: '12px 14px',
+                border: `1.5px solid ${overId === w.id && dragId !== w.id ? 'var(--wb-accent)' : dragId === w.id ? 'var(--wb-line-2)' : 'var(--wb-line)'}`,
+                borderRadius: 8,
+                background: dragId === w.id ? 'var(--wb-bg-3)' : 'var(--wb-bg-2)',
+                cursor: w.locked ? 'default' : 'grab',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                opacity: dragId === w.id ? 0.4 : 1,
+                transition: 'border-color 0.1s, opacity 0.1s',
+                userSelect: 'none',
+              }}
+            >
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 18, color: w.locked ? 'var(--wb-line-2)' : 'var(--wb-ink-3)', flexShrink: 0 }}>
+                {w.locked ? '⊞' : '⠿'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--wb-ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {w.label}
+                  {w.wide && <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-ink-3)', border: '1px solid var(--wb-line-2)', borderRadius: 3, padding: '1px 5px' }}>FULL WIDTH</span>}
+                  {w.locked && <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-ink-3)', border: '1px solid var(--wb-line-2)', borderRadius: 3, padding: '1px 5px' }}>LOCKED</span>}
+                </div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{w.desc}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', flexShrink: 0 }}>#{i + 1}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+          <button className="wb-btn-prime" style={{ flex: 1 }}>Save page layout →</button>
+          <button className="wb-btn-ghost" onClick={() => setWidgets(DEFAULT_WIDGETS)}>Reset</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v: unknown) => void }) {
+  const [settTab, setSettTab] = useState<'workbench' | 'page'>('workbench');
   const ACCENTS = [
     { v: '#ff5029', label: 'Ember' }, { v: '#ff3e9a', label: 'Hot pink' },
     { v: '#b983ff', label: 'Lilac' }, { v: '#22e5d4', label: 'Aqua' },
@@ -1443,10 +1675,17 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
           <h1 className="wb-page-title">Settings <span style={{ color: 'var(--wb-ink-2)', fontWeight: 400 }}>· page customization</span></h1>
           <p className="wb-page-sub">Make iHYPE feel like yours. Changes apply live.</p>
         </div>
-        <button className="wb-btn-ghost" onClick={() => setPref('__reset__', null)}>Reset to defaults</button>
+        {settTab === 'workbench' && <button className="wb-btn-ghost" onClick={() => setPref('__reset__', null)}>Reset to defaults</button>}
       </div>
 
-      <div className="wb-settings-grid">
+      <div className="wb-tabs" style={{ marginBottom: 24 }}>
+        <button onClick={() => setSettTab('workbench')} className={`wb-tab${settTab === 'workbench' ? ' wb-tab-active' : ''}`}>Workbench</button>
+        <button onClick={() => setSettTab('page')} className={`wb-tab${settTab === 'page' ? ' wb-tab-active' : ''}`}>Profile page</button>
+      </div>
+
+      {settTab === 'page' && <PageBuilder />}
+
+      {settTab === 'workbench' && <div className="wb-settings-grid">
         <SettSection title="Accent color" sub="Used for highlights, the player, and active nav.">
           <div className="wb-swatch-row">
             {ACCENTS.map(c => (
@@ -1531,7 +1770,7 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
             ))}
           </div>
         </SettSection>
-      </div>
+      </div>}
 
       <div className="wb-footnote">
         Preferences live in this browser's localStorage. Your data stays on your device — keys never leave your control.
