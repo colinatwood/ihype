@@ -1,7 +1,95 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, createContext, useContext } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
+
+// ── Drag context ───────────────────────────────────────────────
+const DragTrackCtx = createContext<{
+  dragging: MediaTrack | null;
+  setDragging: (t: MediaTrack | null) => void;
+} | null>(null);
+
+function useDragTrack() {
+  return useContext(DragTrackCtx)!;
+}
+
+function DragTrackProvider({ children }: { children: React.ReactNode }) {
+  const [dragging, setDragging] = useState<MediaTrack | null>(null);
+  return <DragTrackCtx.Provider value={{ dragging, setDragging }}>{children}</DragTrackCtx.Provider>;
+}
+
+function DraggableTrack({ track, children, className, style, onClick }: {
+  track: MediaTrack;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: () => void;
+}) {
+  const { setDragging } = useDragTrack();
+  return (
+    <div
+      draggable
+      className={className}
+      style={{ ...style, cursor: 'grab' }}
+      onClick={onClick}
+      onDragStart={e => {
+        setDragging(track);
+        e.dataTransfer.setData('application/ihype-track', JSON.stringify(track));
+        e.dataTransfer.effectAllowed = 'copy';
+      }}
+      onDragEnd={() => setDragging(null)}
+    >
+      {children}
+    </div>
+  );
+}
+
+function QueueDropZone({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const { addToQueue } = useMediaPlayer();
+  const [over, setOver] = useState(false);
+  return (
+    <div
+      className={className}
+      style={{ ...style, outline: over ? '2px solid var(--wb-accent)' : undefined, borderRadius: over ? 8 : undefined, transition: 'outline 0.1s' }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault();
+        setOver(false);
+        try {
+          const track: MediaTrack = JSON.parse(e.dataTransfer.getData('application/ihype-track'));
+          addToQueue(track);
+        } catch { /* ignore */ }
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function PlaylistDropZone({ name, children, className, style, onClick }: { name: string; children: React.ReactNode; className?: string; style?: React.CSSProperties; onClick?: () => void }) {
+  const [over, setOver] = useState(false);
+  const [flash, setFlash] = useState(false);
+  return (
+    <div
+      className={className}
+      style={{ ...style, outline: over ? '2px solid #b983ff' : undefined, borderRadius: over ? 10 : undefined, transition: 'outline 0.1s' }}
+      onClick={onClick}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault();
+        setOver(false);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 1200);
+        // In production this would POST to /api/playlists
+        void name; void flash;
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 // ── Types ──────────────────────────────────────────────────────
 export type WbTrack = {
@@ -241,24 +329,25 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="wb-root">
-      {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
-      {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-      <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={data.isVerified} />
-      <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} />
-      <main className="wb-main">
-        {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
-        {view === 'radio'    && <ViewRadio data={data} setView={setView} />}
-        {view === 'tickets'  && <ViewTicketing data={data} activeProfileTypes={data.activeProfileTypes} />}
-        {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
-        {view === 'library'  && <ViewLibrary data={data} />}
-
-        {view === 'studio'   && <ViewRadioStudio />}
-        {view === 'venue'    && <ViewVenue data={data} />}
-      </main>
-      {showQueue && <WbQueueRail data={data} />}
-      <WbPlayerDock />
-    </div>
+    <DragTrackProvider>
+      <div className="wb-root">
+        {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
+        {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
+        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={data.isVerified} />
+        <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} />
+        <main className="wb-main">
+          {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
+          {view === 'radio'    && <ViewRadio data={data} setView={setView} />}
+          {view === 'tickets'  && <ViewTicketing data={data} activeProfileTypes={data.activeProfileTypes} />}
+          {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
+          {view === 'library'  && <ViewLibrary data={data} />}
+          {view === 'studio'   && <ViewRadioStudio />}
+          {view === 'venue'    && <ViewVenue data={data} />}
+        </main>
+        {showQueue && <WbQueueRail data={data} />}
+        <WbPlayerDock />
+      </div>
+    </DragTrackProvider>
   );
 }
 
@@ -418,11 +507,11 @@ function WbPlayerDock() {
 function WbQueueRail({ data }: { data: WorkbenchData }) {
   const { currentTrack, playTrack } = useMediaPlayer();
   return (
-    <aside className="wb-queue">
+    <QueueDropZone className="wb-queue">
       <div className="wb-queue-head">
         <div>
           <div className="wb-queue-title">Queue</div>
-          <div className="wb-queue-sub">{data.tracks.length} tracks · this week</div>
+          <div className="wb-queue-sub">{data.tracks.length} tracks · drag tracks here</div>
         </div>
         <button className="wb-link-btn">Edit</button>
       </div>
@@ -431,7 +520,7 @@ function WbQueueRail({ data }: { data: WorkbenchData }) {
           const active = currentTrack?.id === t.id;
           const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
           return (
-            <button key={t.id} onClick={() => playTrack(mt)} className={`wb-q-item${active ? ' wb-q-item-active' : ''}`}>
+            <DraggableTrack key={t.id} track={mt} className={`wb-q-item${active ? ' wb-q-item-active' : ''}`} onClick={() => playTrack(mt)}>
               <div className="wb-q-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}>
                 {active && <span className="wb-q-playing"><IcDot c={t.color} s={6} /></span>}
               </div>
@@ -441,7 +530,7 @@ function WbQueueRail({ data }: { data: WorkbenchData }) {
               </div>
               <div className="wb-q-hype"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
               <div className="wb-q-dur">{t.duration}</div>
-            </button>
+            </DraggableTrack>
           );
         })}
       </div>
@@ -449,7 +538,7 @@ function WbQueueRail({ data }: { data: WorkbenchData }) {
         <span className="wb-eyebrow-xs">CURATED BY</span>
         <div style={{ fontStyle: 'italic', fontSize: 16, marginTop: 4, color: 'var(--wb-ink)' }}>iHYPE · {data.city}</div>
       </div>
-    </aside>
+    </QueueDropZone>
   );
 }
 
@@ -663,7 +752,7 @@ function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) 
               {data.tracks.slice(0, 6).map((t, i) => {
                 const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
                 return (
-                  <button key={t.id} onClick={() => playTrack(mt)} className="wb-q-row">
+                  <DraggableTrack key={t.id} track={mt} className="wb-q-row" onClick={() => playTrack(mt)}>
                     <div className="wb-q-idx">{String(i + 1).padStart(2, '0')}</div>
                     <div className="wb-q-art-sm" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }} />
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
@@ -672,7 +761,7 @@ function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) 
                     </div>
                     <div className="wb-q-chip">{i === 0 && show.live ? 'NOW' : i < 2 ? 'JUST PLAYED' : `-${i * 4}m`}</div>
                     <div className="wb-q-hype-sm"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
-                  </button>
+                  </DraggableTrack>
                 );
               })}
             </div>
@@ -1225,7 +1314,7 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
         <>
           <div className="wb-tracks-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 16 }}>
             {playlists.map(p => (
-              <div key={p.n} style={{ position: 'relative', padding: 14, border: '1px solid var(--wb-line)', borderRadius: 10, background: 'var(--wb-bg-2)', cursor: 'pointer' }}
+              <PlaylistDropZone key={p.n} name={p.n} style={{ position: 'relative', padding: 14, border: '1px solid var(--wb-line)', borderRadius: 10, background: 'var(--wb-bg-2)', cursor: 'pointer' }}
                 onClick={() => setOpenMenuId(openMenuId === p.n ? null : p.n)}>
                 <div style={{ aspectRatio: '1', borderRadius: 6, background: `linear-gradient(135deg, ${p.color}, ${p.color}80)`, marginBottom: 10 }} />
                 <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)' }}>{p.n}</div>
@@ -1240,7 +1329,7 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
                     ))}
                   </div>
                 )}
-              </div>
+              </PlaylistDropZone>
             ))}
           </div>
           <div className="wb-panel">
@@ -1250,13 +1339,13 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
                 const active = currentTrack?.id === t.id;
                 const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
                 return (
-                  <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)' }}>
+                  <DraggableTrack key={t.id} track={mt} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)' }} onClick={() => playTrack(mt)}>
                     <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}>
                       <div className="wb-track-play"><IcPlay s={12} /></div>
                     </div>
                     <div className="wb-track-name">{t.title}</div>
                     <div className="wb-track-artist">{t.artistName}</div>
-                  </button>
+                  </DraggableTrack>
                 );
               })}
             </div>
@@ -1275,14 +1364,14 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
               const active = currentTrack?.id === t.id;
               const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
               return (
-                <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)', padding: 12, borderRadius: 10 }}>
+                <DraggableTrack key={t.id} track={mt} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)', padding: 12, borderRadius: 10 }} onClick={() => playTrack(mt)}>
                   <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, borderRadius: 7 }}>
                     <div className="wb-track-play"><IcPlay s={12} /></div>
                     <div className="wb-track-hype"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
                   </div>
                   <div className="wb-track-name" style={{ fontSize: 14 }}>{t.title}</div>
                   <div className="wb-track-artist">{t.artistName} · {t.duration}</div>
-                </button>
+                </DraggableTrack>
               );
             })}
           </div>
