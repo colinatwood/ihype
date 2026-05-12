@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -89,7 +89,7 @@ const DEFAULT_PREFS = {
   density: 'cozy' as 'compact' | 'cozy' | 'comfy',
   queueRail: true,
   stickyDock: true,
-  pinned: ['library', 'radio', 'tickets', 'discover', 'shows'] as string[],
+  pinned: ['library', 'radio', 'tickets', 'events', 'studio'] as string[],
   panel_stats: true,
   panel_tonight: true,
   panel_activity: true,
@@ -137,7 +137,7 @@ const IcCheck    = (p: {s?:number}) => <Ic {...p}><polyline points="20 6 9 17 4 
 const IcArrow    = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
 const IcDot      = ({ c = 'currentColor', s = 8 }: {c?:string; s?:number}) => <svg width={s} height={s} viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill={c}/></svg>;
 
-type View = 'home' | 'library' | 'radio' | 'tickets' | 'discover' | 'shows' | 'studio' | 'venue' | 'settings';
+type View = 'home' | 'library' | 'radio' | 'tickets' | 'events' | 'studio' | 'venue' | 'settings';
 
 // ── Main shell ─────────────────────────────────────────────────
 export function WorkbenchShell({ data }: { data: WorkbenchData }) {
@@ -181,10 +181,9 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
         {view === 'radio'    && <ViewRadio data={data} />}
         {view === 'tickets'  && <ViewTicketing data={data} />}
         {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
-        {view === 'library'  && <ViewStub name="Library" eyebrow="YOUR SAVED TRACKS · PLAYLISTS" accent="#b983ff" sub="Everything you've hyped, saved, or curated. Your library is yours." />}
-        {view === 'discover' && <ViewStub name="Discover" eyebrow="HYPED THIS WEEK · TRENDING" accent="#ff5029" sub="Trending tracks from artists, venues, and DJs in your scene." />}
-        {view === 'shows'    && <ViewShows data={data} />}
-        {view === 'studio'   && <ViewStudio data={data} />}
+        {view === 'library'  && <ViewLibrary data={data} />}
+        {view === 'events'   && <ViewEvents data={data} />}
+        {view === 'studio'   && <ViewEventCreator />}
         {view === 'venue'    && <ViewStub name="Venue" eyebrow="VENUE DASHBOARD" accent="#22e5d4" sub="Manage your venue, host shows, verify tickets, and settle payouts." />}
       </main>
       {showQueue && <WbQueueRail data={data} />}
@@ -199,13 +198,12 @@ const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
   { k: 'library',  label: 'Library',   Icon: IcLibrary },
   { k: 'radio',    label: 'Radio',     Icon: IcRadio },
   { k: 'tickets',  label: 'Ticketing', Icon: IcTicket },
-  { k: 'discover', label: 'Discover',  Icon: IcDiscover },
-  { k: 'shows',    label: 'Shows',     Icon: IcShows },
+  { k: 'events',   label: 'Events',    Icon: IcShows },
+  { k: 'studio',   label: 'Create',    Icon: IcStudio },
 ];
 
 function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[] }) {
-  const isArtist = activeProfileTypes.includes('ARTIST');
-  const isVenue  = activeProfileTypes.includes('VENUE');
+  const isVenue = activeProfileTypes.includes('VENUE');
   return (
     <aside className="wb-sidebar">
       <div className="wb-sb-logo">iH</div>
@@ -215,12 +213,6 @@ function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes
             <Icon s={18} />
           </SidebarBtn>
         ))}
-        {/* Role-conditional items — always shown for the matching profile type */}
-        {isArtist && (
-          <SidebarBtn active={view === 'studio'} onClick={() => setView('studio')} label="Artist studio" accent="#ff5029">
-            <IcStudio s={18} />
-          </SidebarBtn>
-        )}
         {isVenue && (
           <SidebarBtn active={view === 'venue'} onClick={() => setView('venue')} label="Venue dashboard" accent="#22e5d4">
             <IcShows s={18} />
@@ -260,7 +252,7 @@ function SidebarBtn({ active, onClick, label, children, accent }: { active: bool
 // ── Topbar ─────────────────────────────────────────────────────
 const VIEW_TITLES: Record<View, string> = {
   home: 'Home', library: 'Library', radio: 'Radio', tickets: 'Ticketing',
-  discover: 'Discover', shows: 'Shows', studio: 'Studio', settings: 'Settings · page customization',
+  events: 'Events', studio: 'Create an event', venue: 'Venue dashboard', settings: 'Settings · page customization',
 };
 
 function WbTopbar({ view, data }: { view: View; data: WorkbenchData }) {
@@ -401,8 +393,8 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
           {data.greeting && <p className="wb-page-sub">{data.greeting}</p>}
         </div>
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-          <button className="wb-btn-prime" onClick={() => setView('studio')}><IcBolt s={12} /> Upload a track</button>
-          <button className="wb-btn-ghost" onClick={() => setView('shows')}>Plan a show →</button>
+          <button className="wb-btn-prime" onClick={() => setView('studio')}><IcBolt s={12} /> Create an event</button>
+          <button className="wb-btn-ghost" onClick={() => setView('events')}>Browse events →</button>
         </div>
       </div>
 
@@ -426,7 +418,7 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
             <section className="wb-panel">
               <div className="wb-panel-head">
                 <div className="wb-panel-title">Tonight in {prefs.city || data.city}</div>
-                <button className="wb-link-btn" onClick={() => setView('shows')}>All shows →</button>
+                <button className="wb-link-btn" onClick={() => setView('events')}>All events →</button>
               </div>
               <div>
                 {data.shows.slice(0, 3).map(s => (
@@ -476,7 +468,7 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
         <section className="wb-panel" style={{ marginTop: 14 }}>
           <div className="wb-panel-head">
             <div className="wb-panel-title">Hyped this week</div>
-            <button className="wb-link-btn" onClick={() => setView('discover')}>Discover all →</button>
+            <button className="wb-link-btn" onClick={() => setView('library')}>Discover all →</button>
           </div>
           <div className="wb-tracks-grid">
             {data.tracks.slice(0, 6).map(t => {
@@ -772,12 +764,12 @@ function ViewTicketing({ data }: { data: WorkbenchData }) {
   );
 }
 
-// ── View: Shows ────────────────────────────────────────────────
-function ViewShows({ data }: { data: WorkbenchData }) {
+// ── View: Events ───────────────────────────────────────────────
+function ViewEvents({ data }: { data: WorkbenchData }) {
   return (
     <div className="wb-view-pad">
       <div className="wb-eyebrow" style={{ color: '#22e5d4' }}>● {data.showsTonight} TONIGHT · {data.city.toUpperCase()}</div>
-      <h1 className="wb-page-title">Shows</h1>
+      <h1 className="wb-page-title">Events</h1>
       <p className="wb-page-sub">Live events in your city. No platform fee on tickets — every dollar settles directly to artists and venues.</p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
         {data.shows.map(s => (
@@ -799,44 +791,176 @@ function ViewShows({ data }: { data: WorkbenchData }) {
   );
 }
 
-// ── View: Studio ───────────────────────────────────────────────
-function ViewStudio({ data }: { data: WorkbenchData }) {
-  const payout = data.stats.find(s => s.label.includes('PAYOUT'));
+// ── View: Event creator ────────────────────────────────────────
+function ViewEventCreator() {
+  const field: React.CSSProperties = { width: '100%', padding: '9px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--wb-ink)', outline: 'none', boxSizing: 'border-box' as const };
+  const lbl: React.CSSProperties = { fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.12em', color: 'var(--wb-ink-3)', marginBottom: 6, display: 'block' };
+  const grp: React.CSSProperties = { display: 'flex', flexDirection: 'column' as const };
   return (
     <div className="wb-view-pad">
-      <div className="wb-eyebrow" style={{ color: '#ff5029' }}>● STUDIO · {data.tracks.length} TRACKS</div>
-      <h1 className="wb-page-title">Studio</h1>
-      <p className="wb-page-sub">Upload tracks, manage releases, and cash out — no label, no platform fee.</p>
-      <div className="wb-col-row" style={{ marginTop: 20 }}>
-        <div className="wb-panel">
-          <div className="wb-panel-head"><div className="wb-panel-title">Your uploads</div><button className="wb-btn-prime"><IcBolt s={11} /> Upload</button></div>
-          {data.tracks.slice(0, 6).map(t => (
-            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid var(--wb-line)' }}>
-              <div style={{ width: 28, height: 28, borderRadius: 4, background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13 }}>{t.title}</div>
-                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{t.album}</div>
+      <div className="wb-eyebrow" style={{ color: '#ff5029' }}>● CREATE · YOUR SCENE · NO PLATFORM FEE</div>
+      <h1 className="wb-page-title">Create an event</h1>
+      <p className="wb-page-sub">Publish a show, set your ticket price, and sell directly to fans. iHYPE takes nothing.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, alignItems: 'start', marginTop: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="wb-panel">
+            <div className="wb-panel-head"><div className="wb-panel-title">Event details</div></div>
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={grp}><label style={lbl}>EVENT NAME</label><input style={field} placeholder="e.g. Maya Reyes — Halflight Release Show" /></div>
+              <div style={grp}><label style={lbl}>VENUE</label><input style={field} placeholder="Empty Bottle, Chicago IL" /></div>
+              <div style={grp}><label style={lbl}>CO-HEADLINER</label><input style={field} placeholder="Supporting artist (optional)" /></div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={grp}><label style={lbl}>DATE</label><input type="date" style={field} /></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div style={grp}><label style={lbl}>DOORS</label><input type="time" style={field} /></div>
+                  <div style={grp}><label style={lbl}>START</label><input type="time" style={field} /></div>
+                </div>
               </div>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff3e9a' }}>♡ {t.hypeCount}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={grp}><label style={lbl}>TICKET PRICE ($)</label><input type="number" min="0" style={field} placeholder="0 = free" /></div>
+                <div style={grp}><label style={lbl}>CAPACITY</label><input type="number" min="1" style={field} placeholder="200" /></div>
+              </div>
+              <div style={grp}><label style={lbl}>DESCRIPTION</label><textarea rows={4} style={{ ...field, resize: 'vertical' as const }} placeholder="What should fans know? Vibe, lineup notes, age restriction, parking…" /></div>
             </div>
-          ))}
-          {data.tracks.length === 0 && (
-            <div className="wb-act-row" style={{ color: 'var(--wb-ink-3)', fontSize: 13 }}>No tracks yet — upload your first.</div>
-          )}
-        </div>
-        <div className="wb-panel">
-          <div className="wb-panel-head"><div className="wb-panel-title">Payouts</div></div>
-          <div style={{ padding: '18px 16px' }}>
-            <div style={{ fontFamily: 'var(--f-d)', fontSize: 38, fontWeight: 800, letterSpacing: '-.025em' }}>{payout?.value ?? '$0'}</div>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ffb84a', marginTop: 6 }}>{payout?.delta ?? 'no pending payout'}</div>
-            {payout && (
-              <div style={{ marginTop: 18, padding: '10px 14px', background: 'var(--wb-bg-3)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)' }}>
-                Platform fee: $0 · iHYPE takes nothing
-              </div>
-            )}
           </div>
         </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="wb-panel" style={{ padding: '18px 16px' }}>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', color: 'var(--wb-ink-3)', marginBottom: 12 }}>PREVIEW</div>
+            <div style={{ aspectRatio: '16/9', borderRadius: 8, background: 'linear-gradient(135deg, var(--wb-accent), #ff3e9a80)', marginBottom: 14 }} />
+            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--wb-ink)' }}>Your event name</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', marginTop: 4 }}>Venue · Date · Time</div>
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--wb-line)', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)' }}>0 / — capacity</span>
+              <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, color: 'var(--wb-ink)' }}>Free</span>
+            </div>
+          </div>
+          <button type="button" className="wb-btn-prime" style={{ width: '100%', padding: '12px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <IcBolt s={13} /> Publish event →
+          </button>
+          <p style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', textAlign: 'center', lineHeight: 1.6 }}>
+            iHYPE takes 0% of ticket revenue. Fans pay face value, you keep everything.
+          </p>
+        </div>
       </div>
+    </div>
+  );
+}
+
+// ── View: Library ──────────────────────────────────────────────
+function ViewLibrary({ data }: { data: WorkbenchData }) {
+  const [tab, setTab] = useState<'saved' | 'discover'>('saved');
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const { playTrack, currentTrack } = useMediaPlayer();
+
+  const playlists = [
+    { n: 'Hyped tracks',      color: '#ff3e9a', count: 247 },
+    { n: 'Top 5 — this week', color: '#ff5029', count: 5 },
+    { n: 'Writing room',      color: '#b983ff', count: 42 },
+    { n: 'Tour van',          color: '#22e5d4', count: 88 },
+  ];
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpenMenuId(null);
+    }
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [openMenuId]);
+
+  const MENU_ITEMS = ['Play', 'Shuffle', 'Add to queue', 'Share', 'Rename', 'Delete'];
+
+  return (
+    <div className="wb-view-pad">
+      <div style={{ marginBottom: 18 }}>
+        <div className="wb-eyebrow" style={{ color: '#b983ff' }}>● YOUR SAVED TRACKS · {data.tracks.length} SONGS · PLAYLISTS</div>
+        <h1 className="wb-page-title">Library</h1>
+        <p className="wb-page-sub">Everything you've hyped, saved, or curated. Your library is yours.</p>
+      </div>
+      <div className="wb-tabs" style={{ marginBottom: 20 }}>
+        {(['saved', 'discover'] as const).map(k => (
+          <button key={k} onClick={() => setTab(k)} className={`wb-tab${tab === k ? ' wb-tab-active' : ''}`}>
+            {k === 'saved' ? 'Saved' : 'Discover'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'saved' && (
+        <>
+          <div className="wb-tracks-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 16 }}>
+            {playlists.map(p => (
+              <div key={p.n} style={{ position: 'relative', padding: 14, border: '1px solid var(--wb-line)', borderRadius: 10, background: 'var(--wb-bg-2)', cursor: 'pointer' }}
+                onClick={() => setOpenMenuId(openMenuId === p.n ? null : p.n)}>
+                <div style={{ aspectRatio: '1', borderRadius: 6, background: `linear-gradient(135deg, ${p.color}, ${p.color}80)`, marginBottom: 10 }} />
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)' }}>{p.n}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 3 }}>{p.count} tracks</div>
+                {openMenuId === p.n && (
+                  <div ref={menuRef} style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 20, background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 8, minWidth: 160, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,.4)' }}>
+                    {MENU_ITEMS.map(item => (
+                      <button key={item} type="button" onClick={e => { e.stopPropagation(); setOpenMenuId(null); }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', fontFamily: 'var(--f-m)', fontSize: 12, color: item === 'Delete' ? '#ff5029' : 'var(--wb-ink)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '.02em' }}>
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="wb-panel">
+            <div className="wb-panel-head"><div className="wb-panel-title">Recently played</div><button className="wb-link-btn">See all</button></div>
+            <div className="wb-tracks-grid" style={{ padding: '14px 16px' }}>
+              {data.tracks.slice(0, 4).map(t => {
+                const active = currentTrack?.id === t.id;
+                const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
+                return (
+                  <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)' }}>
+                    <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}>
+                      <div className="wb-track-play"><IcPlay s={12} /></div>
+                    </div>
+                    <div className="wb-track-name">{t.title}</div>
+                    <div className="wb-track-artist">{t.artistName}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === 'discover' && (
+        <div>
+          <div style={{ marginBottom: 16 }}>
+            <div className="wb-eyebrow" style={{ color: '#ff5029' }}>● HYPED THIS WEEK · CHICAGO IS HOT</div>
+            <p className="wb-page-sub">Trending tracks from the artists, venues, and DJs in your scene.</p>
+          </div>
+          <div className="wb-tracks-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+            {data.tracks.map(t => {
+              const active = currentTrack?.id === t.id;
+              const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
+              return (
+                <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)', padding: 12, borderRadius: 10 }}>
+                  <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, borderRadius: 7 }}>
+                    <div className="wb-track-play"><IcPlay s={12} /></div>
+                    <div className="wb-track-hype"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
+                  </div>
+                  <div className="wb-track-name" style={{ fontSize: 14 }}>{t.title}</div>
+                  <div className="wb-track-artist">{t.artistName} · {t.duration}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -864,8 +988,8 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
     { k: 'library',  label: 'Library',   sub: 'Saved playlists + tracks',    Icon: IcLibrary },
     { k: 'radio',    label: 'Radio',     sub: 'Channels + your own shows',   Icon: IcRadio },
     { k: 'tickets',  label: 'Ticketing', sub: 'Hold, sell, scan',            Icon: IcTicket },
-    { k: 'discover', label: 'Discover',  sub: 'Hyped this week',             Icon: IcDiscover },
-    { k: 'shows',    label: 'Shows',     sub: 'Live events + your tour',     Icon: IcShows },
+    { k: 'events',   label: 'Events',    sub: 'Live events + your tour',     Icon: IcShows },
+    { k: 'studio',   label: 'Create',    sub: 'Publish an event',            Icon: IcStudio },
   ];
 
   return (

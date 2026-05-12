@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 
@@ -88,16 +88,15 @@ const ACTIVITY = [
 const ACT_COLORS: Record<string,string> = { hype:'#ff3e9a', show:'#22e5d4', radio:'#b983ff', payout:'#ffb84a' };
 
 const NAV_ITEMS = [
-  { id:'home',     label:'Home',      icon: <IcHome s={16}/> },
-  { id:'library',  label:'Library',   icon: <IcLibrary s={16}/> },
-  { id:'radio',    label:'Radio',     icon: <IcRadio s={16}/> },
-  { id:'tickets',  label:'Ticketing', icon: <IcTicket s={16}/> },
-  { id:'discover', label:'Discover',  icon: <IcDisco s={16}/> },
-  { id:'shows',    label:'Shows',     icon: <IcShows s={16}/> },
-  { id:'studio',   label:'Studio',    icon: <IcStudio s={16}/> },
+  { id:'home',    label:'Home',      icon: <IcHome s={16}/> },
+  { id:'library', label:'Library',   icon: <IcLibrary s={16}/> },
+  { id:'radio',   label:'Radio',     icon: <IcRadio s={16}/> },
+  { id:'tickets', label:'Ticketing', icon: <IcTicket s={16}/> },
+  { id:'events',  label:'Events',    icon: <IcShows s={16}/> },
+  { id:'studio',  label:'Create',    icon: <IcStudio s={16}/> },
 ];
 
-type View = 'home'|'library'|'radio'|'tickets'|'discover'|'shows'|'studio'|'settings';
+type View = 'home'|'library'|'radio'|'tickets'|'events'|'studio'|'settings';
 
 // ── Shared utils ──────────────────────────────────────────────────
 
@@ -155,9 +154,9 @@ function ViewHome({ session, onPickTrack, currentId, setView }:
         <div style={{ display:'flex', gap:10, flexShrink:0 }}>
           <button onClick={()=>setView('studio')} type="button"
             style={{ padding:'9px 16px', background:'var(--accent)', color:'var(--bg)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:12, fontWeight:600, letterSpacing:'.04em', display:'flex', alignItems:'center', gap:6, border:'none', cursor:'pointer' }}>
-            <IcBolt s={12}/> Upload a track
+            <IcBolt s={12}/> Create an event
           </button>
-          <button onClick={()=>setView('shows')} type="button" style={btnGhost}>Plan a tour →</button>
+          <button onClick={()=>setView('events')} type="button" style={btnGhost}>Browse events →</button>
         </div>
       </div>
 
@@ -182,7 +181,7 @@ function ViewHome({ session, onPickTrack, currentId, setView }:
         <section style={panel}>
           <div style={panelHead}>
             <div style={panelTitle}>Tonight in Chicago</div>
-            <button onClick={()=>setView('shows')} type="button" style={linkBtn}>All shows →</button>
+            <button onClick={()=>setView('events')} type="button" style={linkBtn}>All events →</button>
           </div>
           {SHOWS.slice(0,3).map((s,i)=>{
             const sc = s.status==='TONIGHT'?'#22e5d4':s.status==='NEAR SOLD'?'#ffb84a':'var(--ink-3)';
@@ -224,7 +223,7 @@ function ViewHome({ session, onPickTrack, currentId, setView }:
       <section style={{ ...panel, marginTop:14 }}>
         <div style={panelHead}>
           <div style={panelTitle}>Hyped this week</div>
-          <button onClick={()=>setView('discover')} type="button" style={linkBtn}>Discover all →</button>
+          <button onClick={()=>setView('library')} type="button" style={linkBtn}>Discover all →</button>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, padding:'14px 16px' }}>
           {TRACKS.slice(0,6).map(t=>(
@@ -246,30 +245,118 @@ function ViewHome({ session, onPickTrack, currentId, setView }:
   );
 }
 
-// ── Discover view ─────────────────────────────────────────────────
+// ── Library view ──────────────────────────────────────────────────
 
-function ViewDiscover({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void; currentId:string|null }) {
+function ViewLibrary({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void; currentId:string|null }) {
+  const [tab, setTab] = useState<'saved'|'discover'>('saved');
+  const [openMenuId, setOpenMenuId] = useState<string|null>(null);
+  const menuRef = useRef<HTMLDivElement|null>(null);
+
+  const playlists = [
+    { n:'Hyped tracks',      c:'#ff3e9a', count:247 },
+    { n:'Top 5 — this week', c:'#ff5029', count:5 },
+    { n:'Writing room',      c:'#b983ff', count:42 },
+    { n:'Tour van',          c:'#22e5d4', count:88 },
+  ];
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpenMenuId(null);
+    }
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [openMenuId]);
+
+  const MENU_ITEMS = ['Play', 'Shuffle', 'Add to queue', 'Share', 'Rename', 'Delete'];
+
   return (
-    <div style={{ padding:'24px 32px' }}>
-      <div style={{ marginBottom:22 }}>
-        <div style={eyebrow('#ff5029')}>● HYPED THIS WEEK · 432 NEW TRACKS · CHICAGO IS HOT</div>
-        <h1 style={pageTitle}>Discover</h1>
-        <p style={pageSub}>Trending tracks from the artists, venues, and DJs in your scene.</p>
+    <div style={{ padding:'24px 32px 32px' }}>
+      <div style={{ marginBottom:18 }}>
+        <div style={eyebrow('#b983ff')}>● YOUR SAVED TRACKS · 247 SONGS · 18 PLAYLISTS</div>
+        <h1 style={pageTitle}>Library</h1>
+        <p style={pageSub}>Everything you've hyped, saved, or curated. Your library is yours.</p>
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
-        {TRACKS.map(t=>(
-          <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
-            style={{ padding:12, border:`1px solid ${t.id===currentId?t.c:'var(--line)'}`, borderRadius:10, background:'var(--bg-2)', textAlign:'left', cursor:'pointer', transition:'border-color .2s' }}>
-            <div style={{ width:'100%', aspectRatio:'1', borderRadius:7, marginBottom:10, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}>
-              <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 25% 25%, rgba(255,255,255,.25), transparent 65%)' }}/>
-              <div style={{ position:'absolute', left:10, bottom:10, width:28, height:28, borderRadius:'50%', background:'var(--ink)', color:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center' }}><IcPlay s={12}/></div>
-              <div style={{ position:'absolute', right:8, top:8, padding:'2px 7px', background:'rgba(0,0,0,.5)', borderRadius:99, fontFamily:'var(--f-m)', fontSize:9, color:'#ff3e9a', display:'flex', alignItems:'center', gap:3 }}><IcHeart s={10} c="#ff3e9a"/> {t.h}</div>
-            </div>
-            <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{t.t}</div>
-            <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{t.a} · {t.d}</div>
+      <div style={{ display:'flex', gap:4, padding:4, background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:8, marginBottom:20, width:'fit-content' }}>
+        {(['saved','discover'] as const).map(k=>(
+          <button key={k} onClick={()=>setTab(k)} type="button"
+            style={{ padding:'7px 16px', borderRadius:5, fontFamily:'var(--f-m)', fontSize:11, letterSpacing:'.04em', border:'none', cursor:'pointer', background:tab===k?'var(--bg-3)':'transparent', color:tab===k?'var(--ink)':'var(--ink-3)' }}>
+            {k==='saved'?'Saved':'Discover'}
           </button>
         ))}
       </div>
+
+      {tab==='saved' && (
+        <>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:16 }}>
+            {playlists.map(p=>(
+              <div key={p.n} style={{ position:'relative', padding:14, border:'1px solid var(--line)', borderRadius:10, background:'var(--bg-2)', cursor:'pointer' }}
+                onClick={()=>setOpenMenuId(openMenuId===p.n ? null : p.n)}>
+                <div style={{ aspectRatio:'1', borderRadius:6, background:`linear-gradient(135deg, ${p.c}, ${p.c}80)`, marginBottom:10 }}/>
+                <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{p.n}</div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{p.count} tracks</div>
+                {openMenuId===p.n && (
+                  <div ref={menuRef} style={{ position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:20, background:'var(--bg-3)', border:'1px solid var(--line-2)', borderRadius:8, minWidth:160, overflow:'hidden', boxShadow:'0 8px 24px rgba(0,0,0,.4)' }}>
+                    {MENU_ITEMS.map(item=>(
+                      <button key={item} type="button" onClick={(e)=>{e.stopPropagation();setOpenMenuId(null);}}
+                        style={{ display:'block', width:'100%', textAlign:'left', padding:'9px 14px', fontFamily:'var(--f-m)', fontSize:12, color:item==='Delete'?'#ff5029':'var(--ink)', background:'none', border:'none', cursor:'pointer', letterSpacing:'.02em' }}>
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          <div style={panel}>
+            <div style={panelHead}><div style={panelTitle}>Recently played</div><button type="button" style={linkBtn}>See all</button></div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, padding:'14px 16px' }}>
+              {TRACKS.slice(0,4).map(t=>(
+                <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
+                  style={{ padding:8, border:`1px solid ${t.id===currentId?t.c:'var(--line)'}`, borderRadius:8, background:'var(--bg-3)', textAlign:'left', cursor:'pointer', transition:'border-color .2s' }}>
+                  <div style={{ width:'100%', aspectRatio:'1', borderRadius:5, marginBottom:8, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}>
+                    <div style={{ position:'absolute', left:10, bottom:10, width:26, height:26, borderRadius:'50%', background:'var(--ink)', color:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center' }}><IcPlay s={12}/></div>
+                  </div>
+                  <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:13, color:'var(--ink)' }}>{t.t}</div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{t.a}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab==='discover' && (
+        <div>
+          <div style={{ marginBottom:16 }}>
+            <div style={eyebrow('#ff5029')}>● HYPED THIS WEEK · 432 NEW TRACKS · CHICAGO IS HOT</div>
+            <p style={pageSub}>Trending tracks from the artists, venues, and DJs in your scene.</p>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+            {TRACKS.map(t=>(
+              <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
+                style={{ padding:12, border:`1px solid ${t.id===currentId?t.c:'var(--line)'}`, borderRadius:10, background:'var(--bg-2)', textAlign:'left', cursor:'pointer', transition:'border-color .2s' }}>
+                <div style={{ width:'100%', aspectRatio:'1', borderRadius:7, marginBottom:10, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}>
+                  <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 25% 25%, rgba(255,255,255,.25), transparent 65%)' }}/>
+                  <div style={{ position:'absolute', left:10, bottom:10, width:28, height:28, borderRadius:'50%', background:'var(--ink)', color:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center' }}><IcPlay s={12}/></div>
+                  <div style={{ position:'absolute', right:8, top:8, padding:'2px 7px', background:'rgba(0,0,0,.5)', borderRadius:99, fontFamily:'var(--f-m)', fontSize:9, color:'#ff3e9a', display:'flex', alignItems:'center', gap:3 }}><IcHeart s={10} c="#ff3e9a"/> {t.h}</div>
+                </div>
+                <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{t.t}</div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{t.a} · {t.d}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -544,14 +631,14 @@ function ViewTicketing() {
   );
 }
 
-// ── Shows view ────────────────────────────────────────────────────
+// ── Events view ───────────────────────────────────────────────────
 
-function ViewShows() {
+function ViewEvents() {
   return (
     <div style={{ padding:'24px 32px 32px' }}>
       <div style={{ marginBottom:22 }}>
         <div style={eyebrow('#22e5d4')}>● 7 TONIGHT · 23 THIS WEEK · CHICAGO</div>
-        <h1 style={pageTitle}>Shows</h1>
+        <h1 style={pageTitle}>Events</h1>
         <p style={pageSub}>Live events in your city. No platform fee. Tickets settle at the door.</p>
       </div>
       <div style={panel}>
@@ -580,85 +667,59 @@ function ViewShows() {
   );
 }
 
-// ── Library view ──────────────────────────────────────────────────
-
-function ViewLibrary({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void; currentId:string|null }) {
-  const playlists = [
-    { n:'Hyped tracks',      c:'#ff3e9a', count:247 },
-    { n:'Top 5 — this week', c:'#ff5029', count:5 },
-    { n:'Writing room',      c:'#b983ff', count:42 },
-    { n:'Tour van',          c:'#22e5d4', count:88 },
-  ];
-  return (
-    <div style={{ padding:'24px 32px 32px' }}>
-      <div style={{ marginBottom:22 }}>
-        <div style={eyebrow('#b983ff')}>● YOUR SAVED TRACKS · 247 SONGS · 18 PLAYLISTS</div>
-        <h1 style={pageTitle}>Library</h1>
-        <p style={pageSub}>Everything you've hyped, saved, or curated. Your library is yours.</p>
-      </div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:16 }}>
-        {playlists.map(p=>(
-          <div key={p.n} style={{ padding:14, border:'1px solid var(--line)', borderRadius:10, background:'var(--bg-2)', cursor:'pointer' }}>
-            <div style={{ aspectRatio:'1', borderRadius:6, background:`linear-gradient(135deg, ${p.c}, ${p.c}80)`, marginBottom:10 }}/>
-            <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{p.n}</div>
-            <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{p.count} tracks</div>
-          </div>
-        ))}
-      </div>
-      <div style={panel}>
-        <div style={panelHead}><div style={panelTitle}>Recently played</div><button type="button" style={linkBtn}>See all</button></div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, padding:'14px 16px' }}>
-          {TRACKS.slice(0,4).map(t=>(
-            <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
-              style={{ padding:8, border:`1px solid ${t.id===currentId?t.c:'var(--line)'}`, borderRadius:8, background:'var(--bg-3)', textAlign:'left', cursor:'pointer', transition:'border-color .2s' }}>
-              <div style={{ width:'100%', aspectRatio:'1', borderRadius:5, marginBottom:8, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}>
-                <div style={{ position:'absolute', left:10, bottom:10, width:26, height:26, borderRadius:'50%', background:'var(--ink)', color:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center' }}><IcPlay s={12}/></div>
-              </div>
-              <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:13, color:'var(--ink)' }}>{t.t}</div>
-              <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{t.a}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Studio view ───────────────────────────────────────────────────
+// ── Studio / Create event view ────────────────────────────────────
 
 function ViewStudio() {
+  const field: React.CSSProperties = { width:'100%', padding:'9px 12px', background:'var(--bg-3)', border:'1px solid var(--line-2)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:13, color:'var(--ink)', outline:'none', boxSizing:'border-box' as const };
+  const label: React.CSSProperties = { fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.12em', color:'var(--ink-3)', marginBottom:6, display:'block' };
+  const group: React.CSSProperties = { display:'flex', flexDirection:'column' as const };
   return (
     <div style={{ padding:'24px 32px 32px' }}>
       <div style={{ marginBottom:22 }}>
-        <div style={eyebrow('#ff5029')}>● ARTIST MODE · 8 TRACKS · $2,460 PENDING</div>
-        <h1 style={pageTitle}>Studio</h1>
-        <p style={pageSub}>Upload tracks, release singles, manage merch, see who's hyping you, and cash out. No labels, no fee.</p>
+        <div style={eyebrow('#ff5029')}>● CREATE · YOUR SCENE · NO PLATFORM FEE</div>
+        <h1 style={pageTitle}>Create an event</h1>
+        <p style={pageSub}>Publish a show, set your ticket price, and sell directly to fans. iHYPE takes nothing.</p>
       </div>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-        <div style={panel}>
-          <div style={panelHead}><div style={panelTitle}>Uploads</div><button type="button" style={{ ...btnPrime, padding:'7px 14px', fontSize:11 }}>+ Upload track</button></div>
-          <div style={{ padding:'4px 0' }}>
-            {TRACKS.slice(0,5).map(t=>(
-              <div key={t.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 16px', borderBottom:'1px solid var(--line)' }}>
-                <div style={{ width:28, height:28, borderRadius:4, background:`linear-gradient(135deg, ${t.c}, ${t.c}80)`, flexShrink:0 }}/>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontFamily:'var(--f-d)', fontWeight:600, fontSize:13, color:'var(--ink)' }}>{t.t}</div>
-                  <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:2 }}>{t.album} · {t.d}</div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 380px', gap:16, alignItems:'start' }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          <div style={panel}>
+            <div style={panelHead}><div style={panelTitle}>Event details</div></div>
+            <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:14 }}>
+              <div style={group}><label style={label}>EVENT NAME</label><input style={field} placeholder="e.g. Maya Reyes — Halflight Release Show" /></div>
+              <div style={group}><label style={label}>VENUE</label><input style={field} placeholder="Empty Bottle, Chicago IL" /></div>
+              <div style={group}><label style={label}>CO-HEADLINER</label><input style={field} placeholder="Supporting artist (optional)" /></div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div style={group}><label style={label}>DATE</label><input type="date" style={field} /></div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  <div style={group}><label style={label}>DOORS</label><input type="time" style={field} /></div>
+                  <div style={group}><label style={label}>START</label><input type="time" style={field} /></div>
                 </div>
-                <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'#ff3e9a' }}>♡ {t.h}</div>
               </div>
-            ))}
-          </div>
-        </div>
-        <div style={panel}>
-          <div style={panelHead}><div style={panelTitle}>Payouts</div></div>
-          <div style={{ padding:'20px 16px' }}>
-            <div style={{ fontFamily:'var(--f-d)', fontSize:42, fontWeight:800, letterSpacing:'-.025em', color:'var(--ink)' }}>$2,460</div>
-            <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'#ffb84a', marginTop:6 }}>pending · releases Jun 24</div>
-            <div style={{ marginTop:18, padding:'10px 14px', background:'var(--bg-3)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)' }}>
-              $1,820 tickets · $640 merch · $0 platform fee
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div style={group}><label style={label}>TICKET PRICE ($)</label><input type="number" min="0" style={field} placeholder="0 = free" /></div>
+                <div style={group}><label style={label}>CAPACITY</label><input type="number" min="1" style={field} placeholder="200" /></div>
+              </div>
+              <div style={group}><label style={label}>DESCRIPTION</label><textarea rows={4} style={{ ...field, resize:'vertical' as const }} placeholder="What should fans know? Vibe, lineup notes, age restriction, parking…" /></div>
             </div>
           </div>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          <div style={{ ...panel, padding:'18px 16px' }}>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.14em', color:'var(--ink-3)', marginBottom:12 }}>PREVIEW</div>
+            <div style={{ aspectRatio:'16/9', borderRadius:8, background:'linear-gradient(135deg, #ff5029, #ff3e9a80)', marginBottom:14 }}/>
+            <div style={{ fontFamily:'var(--f-d)', fontWeight:800, fontSize:18, color:'var(--ink)' }}>Your event name</div>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-3)', marginTop:4 }}>Venue · Date · Time</div>
+            <div style={{ marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)', display:'flex', justifyContent:'space-between' }}>
+              <span style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)' }}>0 / — capacity</span>
+              <span style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:16, color:'var(--ink)' }}>Free</span>
+            </div>
+          </div>
+          <button type="button" style={{ ...btnPrime, width:'100%', padding:'12px', fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+            <IcBolt s={13}/> Publish event →
+          </button>
+          <p style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', textAlign:'center', lineHeight:1.6 }}>
+            iHYPE takes 0% of ticket revenue. Fans pay face value, you keep everything.
+          </p>
         </div>
       </div>
     </div>
@@ -832,11 +893,10 @@ export default function WorkbenchPage() {
         {/* Main */}
         <main key={view} className="wb-main">
           {view==='home'     && <ViewHome session={session} onPickTrack={handlePickTrack} currentId={currentId} setView={setView}/>}
-          {view==='discover' && <ViewDiscover onPickTrack={handlePickTrack} currentId={currentId}/>}
           {view==='library'  && <ViewLibrary onPickTrack={handlePickTrack} currentId={currentId}/>}
           {view==='radio'    && <ViewRadio onPickTrack={handlePickTrack}/>}
           {view==='tickets'  && <ViewTicketing/>}
-          {view==='shows'    && <ViewShows/>}
+          {view==='events'   && <ViewEvents/>}
           {view==='studio'   && <ViewStudio/>}
           {view==='settings' && <ViewSettings accent={accent} setAccent={setAccent} density={density} setDensity={setDensity} queueRail={queueRail} setQueueRail={setQueueRail}/>}
         </main>
