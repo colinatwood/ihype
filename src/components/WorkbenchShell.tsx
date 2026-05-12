@@ -336,6 +336,7 @@ function WbTopbar({ view, data, onHamburger }: { view: View; data: WorkbenchData
       <button className="wb-hamburger" onClick={onHamburger} aria-label="Toggle navigation">
         <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
+
       <div className="wb-top-logo">
         <span className="wb-top-logo-mark">
           <span style={{ color: 'var(--wb-ink)' }}>i</span>
