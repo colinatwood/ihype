@@ -137,7 +137,7 @@ export function HomeInlineSearch() {
 
       {!open && (
         <p className="home-search-hint meta">
-          <Link href="/search">Advanced search →</Link>
+          <Link href="/artists">Browse all artists →</Link>
         </p>
       )}
     </div>

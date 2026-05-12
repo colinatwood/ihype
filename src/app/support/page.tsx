@@ -18,7 +18,7 @@ export default function SupportPage() {
           and safety concerns.
         </p>
         <div className="trust-policy-links">
-          <Link className="text-link" href="/trust">Trust Center</Link>
+          <Link className="text-link" href="/about">About iHYPE</Link>
           <Link className="text-link" href="/community-rules">Community Rules</Link>
           <Link className="text-link" href="/ticket-policy">Ticket Policy</Link>
           <Link className="text-link" href="/copyright">Copyright</Link>
