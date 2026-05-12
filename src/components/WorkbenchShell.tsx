@@ -171,11 +171,13 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
   }, []);
 
   const showQueue = prefs.queueRail;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="wb-root">
-      <WbSidebar view={view} setView={setView} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} />
-      <WbTopbar view={view} data={data} />
+      {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
+      <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
+      <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} />
       <main className="wb-main">
         {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
         {view === 'radio'    && <ViewRadio data={data} />}
@@ -184,7 +186,7 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
         {view === 'library'  && <ViewLibrary data={data} />}
         {view === 'events'   && <ViewEvents data={data} />}
         {view === 'studio'   && <ViewEventCreator />}
-        {view === 'venue'    && <ViewStub name="Venue" eyebrow="VENUE DASHBOARD" accent="#22e5d4" sub="Manage your venue, host shows, verify tickets, and settle payouts." />}
+        {view === 'venue'    && <ViewVenue data={data} />}
       </main>
       {showQueue && <WbQueueRail data={data} />}
       <WbPlayerDock />
@@ -202,10 +204,10 @@ const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
   { k: 'studio',   label: 'Create',    Icon: IcStudio },
 ];
 
-function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[] }) {
+function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes, mobileOpen, onMobileClose }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void }) {
   const isVenue = activeProfileTypes.includes('VENUE');
   return (
-    <aside className="wb-sidebar">
+    <aside className={`wb-sidebar${mobileOpen ? ' wb-sidebar-mobile-open' : ''}`}>
       <div className="wb-sb-logo">iH</div>
       <div className="wb-sb-stack">
         {NAV_ITEMS.filter(i => pinned.includes(i.k)).map(({ k, label, Icon }) => (
@@ -255,9 +257,12 @@ const VIEW_TITLES: Record<View, string> = {
   events: 'Events', studio: 'Create an event', venue: 'Venue dashboard', settings: 'Settings · page customization',
 };
 
-function WbTopbar({ view, data }: { view: View; data: WorkbenchData }) {
+function WbTopbar({ view, data, onHamburger }: { view: View; data: WorkbenchData; onHamburger: () => void }) {
   return (
     <header className="wb-topbar">
+      <button className="wb-hamburger" onClick={onHamburger} aria-label="Toggle navigation">
+        <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div className="wb-crumbs">
         <span style={{ color: 'var(--wb-ink-3)' }}>iHYPE</span>
         <span style={{ color: 'var(--wb-ink-4)' }}>/</span>
@@ -793,9 +798,66 @@ function ViewEvents({ data }: { data: WorkbenchData }) {
 
 // ── View: Event creator ────────────────────────────────────────
 function ViewEventCreator() {
+  const [name, setName] = useState('');
+  const [venue, setVenue] = useState('');
+  const [date, setDate] = useState('');
+  const [doorsTime, setDoorsTime] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [price, setPrice] = useState('');
+  const [capacity, setCapacity] = useState('');
+  const [desc, setDesc] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errMsg, setErrMsg] = useState('');
+
+  const previewDate = date && startTime
+    ? new Date(`${date}T${startTime}`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : 'Date · Time';
+  const previewPrice = price && Number(price) > 0 ? `$${Number(price).toFixed(2)}` : 'Free';
+  const previewCap = capacity ? `0 / ${capacity} capacity` : '0 / — capacity';
+
+  async function handleSubmit() {
+    if (!name.trim()) { setErrMsg('Event name is required.'); return; }
+    if (!date) { setErrMsg('Date is required.'); return; }
+    setErrMsg('');
+    setStatus('loading');
+    try {
+      const startsAt = startTime ? new Date(`${date}T${startTime}`).toISOString() : new Date(`${date}T20:00`).toISOString();
+      const body: Record<string, unknown> = {
+        title: name.trim(),
+        description: desc.trim() || undefined,
+        startsAt,
+        isTicketed: Number(price) > 0,
+        ticketPriceCents: Number(price) > 0 ? Math.round(Number(price) * 100) : 0,
+        ticketCapacity: capacity ? Number(capacity) : 200,
+        status: 'SCHEDULED',
+      };
+      const res = await fetch('/api/shows', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error ?? `HTTP ${res.status}`);
+      }
+      setStatus('success');
+    } catch (e: unknown) {
+      setErrMsg(e instanceof Error ? e.message : 'Something went wrong.');
+      setStatus('error');
+    }
+  }
+
   const field: React.CSSProperties = { width: '100%', padding: '9px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--wb-ink)', outline: 'none', boxSizing: 'border-box' as const };
   const lbl: React.CSSProperties = { fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.12em', color: 'var(--wb-ink-3)', marginBottom: 6, display: 'block' };
   const grp: React.CSSProperties = { display: 'flex', flexDirection: 'column' as const };
+
+  if (status === 'success') return (
+    <div className="wb-view-pad" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 16, textAlign: 'center' }}>
+      <div style={{ fontSize: 40 }}>🎉</div>
+      <h2 className="wb-page-title" style={{ fontSize: 28 }}>{name}</h2>
+      <p className="wb-page-sub">Your event is live. Fans can now find and ticket it.</p>
+      <button className="wb-btn-prime" onClick={() => { setStatus('idle'); setName(''); setVenue(''); setDate(''); setStartTime(''); setPrice(''); setCapacity(''); setDesc(''); }}>
+        Create another event
+      </button>
+    </div>
+  );
+
   return (
     <div className="wb-view-pad">
       <div className="wb-eyebrow" style={{ color: '#ff5029' }}>● CREATE · YOUR SCENE · NO PLATFORM FEE</div>
@@ -806,21 +868,20 @@ function ViewEventCreator() {
           <div className="wb-panel">
             <div className="wb-panel-head"><div className="wb-panel-title">Event details</div></div>
             <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={grp}><label style={lbl}>EVENT NAME</label><input style={field} placeholder="e.g. Maya Reyes — Halflight Release Show" /></div>
-              <div style={grp}><label style={lbl}>VENUE</label><input style={field} placeholder="Empty Bottle, Chicago IL" /></div>
-              <div style={grp}><label style={lbl}>CO-HEADLINER</label><input style={field} placeholder="Supporting artist (optional)" /></div>
+              <div style={grp}><label style={lbl}>EVENT NAME</label><input style={field} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Maya Reyes — Halflight Release Show" /></div>
+              <div style={grp}><label style={lbl}>VENUE</label><input style={field} value={venue} onChange={e => setVenue(e.target.value)} placeholder="Empty Bottle, Chicago IL" /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div style={grp}><label style={lbl}>DATE</label><input type="date" style={field} /></div>
+                <div style={grp}><label style={lbl}>DATE</label><input type="date" style={field} value={date} onChange={e => setDate(e.target.value)} /></div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  <div style={grp}><label style={lbl}>DOORS</label><input type="time" style={field} /></div>
-                  <div style={grp}><label style={lbl}>START</label><input type="time" style={field} /></div>
+                  <div style={grp}><label style={lbl}>DOORS</label><input type="time" style={field} value={doorsTime} onChange={e => setDoorsTime(e.target.value)} /></div>
+                  <div style={grp}><label style={lbl}>START</label><input type="time" style={field} value={startTime} onChange={e => setStartTime(e.target.value)} /></div>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div style={grp}><label style={lbl}>TICKET PRICE ($)</label><input type="number" min="0" style={field} placeholder="0 = free" /></div>
-                <div style={grp}><label style={lbl}>CAPACITY</label><input type="number" min="1" style={field} placeholder="200" /></div>
+                <div style={grp}><label style={lbl}>TICKET PRICE ($)</label><input type="number" min="0" style={field} value={price} onChange={e => setPrice(e.target.value)} placeholder="0 = free" /></div>
+                <div style={grp}><label style={lbl}>CAPACITY</label><input type="number" min="1" style={field} value={capacity} onChange={e => setCapacity(e.target.value)} placeholder="200" /></div>
               </div>
-              <div style={grp}><label style={lbl}>DESCRIPTION</label><textarea rows={4} style={{ ...field, resize: 'vertical' as const }} placeholder="What should fans know? Vibe, lineup notes, age restriction, parking…" /></div>
+              <div style={grp}><label style={lbl}>DESCRIPTION</label><textarea rows={4} style={{ ...field, resize: 'vertical' as const }} value={desc} onChange={e => setDesc(e.target.value)} placeholder="What should fans know? Vibe, lineup notes, age restriction, parking…" /></div>
             </div>
           </div>
         </div>
@@ -828,15 +889,16 @@ function ViewEventCreator() {
           <div className="wb-panel" style={{ padding: '18px 16px' }}>
             <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', color: 'var(--wb-ink-3)', marginBottom: 12 }}>PREVIEW</div>
             <div style={{ aspectRatio: '16/9', borderRadius: 8, background: 'linear-gradient(135deg, var(--wb-accent), #ff3e9a80)', marginBottom: 14 }} />
-            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--wb-ink)' }}>Your event name</div>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', marginTop: 4 }}>Venue · Date · Time</div>
+            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--wb-ink)' }}>{name || 'Your event name'}</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', marginTop: 4 }}>{venue || 'Venue'} · {previewDate}</div>
             <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--wb-line)', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)' }}>0 / — capacity</span>
-              <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, color: 'var(--wb-ink)' }}>Free</span>
+              <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)' }}>{previewCap}</span>
+              <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, color: 'var(--wb-ink)' }}>{previewPrice}</span>
             </div>
           </div>
-          <button type="button" className="wb-btn-prime" style={{ width: '100%', padding: '12px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <IcBolt s={13} /> Publish event →
+          {errMsg && <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff5029', padding: '8px 12px', border: '1px solid rgba(255,80,41,.3)', borderRadius: 6 }}>{errMsg}</div>}
+          <button type="button" onClick={handleSubmit} disabled={status === 'loading'} className="wb-btn-prime" style={{ width: '100%', padding: '12px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: status === 'loading' ? 0.6 : 1 }}>
+            <IcBolt s={13} /> {status === 'loading' ? 'Publishing…' : 'Publish event →'}
           </button>
           <p style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', textAlign: 'center', lineHeight: 1.6 }}>
             iHYPE takes 0% of ticket revenue. Fans pay face value, you keep everything.
@@ -879,6 +941,16 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
 
   const MENU_ITEMS = ['Play', 'Shuffle', 'Add to queue', 'Share', 'Rename', 'Delete'];
 
+  function handleMenuItem(item: string) {
+    setOpenMenuId(null);
+    if ((item === 'Play' || item === 'Shuffle') && data.tracks.length > 0) {
+      const tracks = item === 'Shuffle' ? [...data.tracks].sort(() => Math.random() - 0.5) : data.tracks;
+      const mt: MediaTrack = { id: tracks[0].id, title: tracks[0].title, artistName: tracks[0].artistName, url: tracks[0].mediaUrl, artistProfileSlug: tracks[0].artistSlug };
+      const queue = tracks.map(t => ({ id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug }));
+      playTrack(mt, queue);
+    }
+  }
+
   return (
     <div className="wb-view-pad">
       <div style={{ marginBottom: 18 }}>
@@ -906,7 +978,7 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
                 {openMenuId === p.n && (
                   <div ref={menuRef} style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 20, background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 8, minWidth: 160, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,.4)' }}>
                     {MENU_ITEMS.map(item => (
-                      <button key={item} type="button" onClick={e => { e.stopPropagation(); setOpenMenuId(null); }}
+                      <button key={item} type="button" onClick={e => { e.stopPropagation(); handleMenuItem(item); }}
                         style={{ display: 'block', width: '100%', textAlign: 'left', padding: '9px 14px', fontFamily: 'var(--f-m)', fontSize: 12, color: item === 'Delete' ? '#ff5029' : 'var(--wb-ink)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '.02em' }}>
                         {item}
                       </button>
@@ -958,6 +1030,123 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
                 </button>
               );
             })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── View: Venue dashboard ──────────────────────────────────────
+function ViewVenue({ data }: { data: WorkbenchData }) {
+  const [tab, setTab] = useState<'overview' | 'shows' | 'scan'>('overview');
+  const totalSold = data.shows.reduce((a, s) => a + s.sold, 0);
+  const totalGross = data.shows.reduce((a, s) => a + s.sold * s.price, 0);
+  const venueStats: WbStat[] = [
+    { label: 'SHOWS HOSTED', value: String(data.shows.length), delta: 'this season', color: '#22e5d4' },
+    { label: 'TICKETS SOLD', value: String(totalSold), delta: 'across all shows', color: '#22e5d4' },
+    { label: 'GROSS REVENUE', value: `$${totalGross.toLocaleString()}`, delta: 'at face value', color: '#ffb84a' },
+    { label: 'PLATFORM FEE', value: '0%', delta: 'always', color: '#b983ff' },
+  ];
+  return (
+    <div className="wb-view-pad">
+      <div className="wb-greet">
+        <div>
+          <div className="wb-eyebrow" style={{ color: '#22e5d4' }}>● VENUE DASHBOARD · {data.city.toUpperCase()}</div>
+          <h1 className="wb-page-title">Venue</h1>
+          <p className="wb-page-sub">Manage your shows, verify tickets at the door, and settle payouts — all without leaving iHYPE.</p>
+        </div>
+        <div className="wb-tabs">
+          {(['overview', 'shows', 'scan'] as const).map(k => (
+            <button key={k} onClick={() => setTab(k)} className={`wb-tab${tab === k ? ' wb-tab-active' : ''}`}>
+              {k === 'overview' ? 'Overview' : k === 'shows' ? 'Shows' : 'Scan'}
+            </button>
+          ))}
+        </div>
+      </div>
+      {tab === 'overview' && (
+        <>
+          <div className="wb-stat-row">
+            {venueStats.map(s => (
+              <div key={s.label} className="wb-stat-card">
+                <div className="wb-stat-l">{s.label}</div>
+                <div className="wb-stat-v">{s.value}</div>
+                <div className="wb-stat-d" style={{ color: s.color }}>{s.delta}</div>
+              </div>
+            ))}
+          </div>
+          <div className="wb-panel">
+            <div className="wb-panel-head">
+              <div className="wb-panel-title">Upcoming shows</div>
+              <button className="wb-link-btn" onClick={() => setTab('shows')}>All shows →</button>
+            </div>
+            {data.shows.filter(s => s.status !== 'NEAR SOLD' || true).slice(0, 5).map(s => (
+              <div key={s.id} className="wb-show-row">
+                <div className="wb-show-stripe" style={{ background: s.status === 'TONIGHT' ? '#22e5d4' : s.status === 'NEAR SOLD' ? '#ffb84a' : 'var(--wb-ink-3)' }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="wb-show-name">{s.name}</div>
+                  <div className="wb-show-meta">{s.date} · {s.time}</div>
+                </div>
+                <div className="wb-cap">
+                  <div className="wb-cap-bar"><div className="wb-cap-fill" style={{ width: `${(s.sold / s.capacity) * 100}%`, background: s.sold / s.capacity > 0.85 ? '#ffb84a' : '#22e5d4' }} /></div>
+                  <div className="wb-cap-txt">{s.sold}/{s.capacity}</div>
+                </div>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, color: 'var(--wb-ink)', minWidth: 60, textAlign: 'right' }}>${(s.sold * s.price).toLocaleString()}</div>
+              </div>
+            ))}
+            {data.shows.length === 0 && (
+              <div className="wb-empty">No shows yet — create your first event.</div>
+            )}
+          </div>
+        </>
+      )}
+      {tab === 'shows' && (
+        <div className="wb-panel">
+          <div className="wb-panel-head">
+            <div className="wb-panel-title">All shows</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>{data.shows.length} total</div>
+          </div>
+          {data.shows.map(s => (
+            <div key={s.id} className="wb-ticket-row">
+              <div className="wb-show-stripe" style={{ background: '#22e5d4' }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="wb-show-name">{s.name}</div>
+                <div className="wb-show-meta">{s.date} · {s.time}</div>
+              </div>
+              <div className="wb-ticket-col"><div className="wb-fact-l">SOLD</div><div className="wb-fact-v">{s.sold}/{s.capacity}</div></div>
+              <div className="wb-ticket-col"><div className="wb-fact-l">GROSS</div><div className="wb-fact-v">${(s.sold * s.price).toLocaleString()}</div></div>
+              <div className="wb-status-pill" style={{ color: s.status === 'TONIGHT' ? '#22e5d4' : '#ffb84a', borderColor: s.status === 'TONIGHT' ? 'rgba(34,229,212,.3)' : 'rgba(255,184,74,.3)' }}>{s.status}</div>
+            </div>
+          ))}
+          {data.shows.length === 0 && <div className="wb-empty">No shows yet.</div>}
+        </div>
+      )}
+      {tab === 'scan' && (
+        <div className="wb-scan-card">
+          <div>
+            <div className="wb-eyebrow" style={{ color: '#22e5d4' }}>● VENUE MODE · DOOR SCANNER</div>
+            <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 30, letterSpacing: '-.025em', margin: '8px 0' }}>Door scanner</h2>
+            <p className="wb-page-sub">Point a phone camera at the QR. Valid tickets show green; replays are blocked at the protocol layer.</p>
+            <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                { code: 'iH-MR18-K3X9', meta: 'GA · admitted 21:04', valid: true },
+                { code: 'iH-MR18-7QQR', meta: 'Transferred 14m ago · GA · admitted 21:06', valid: true },
+                { code: 'iH-MR18-9BLN', meta: 'Already scanned at 20:51 · blocked', valid: false },
+              ].map((r, i) => (
+                <div key={i} className="wb-scan-row" style={{ borderLeft: `2px solid ${r.valid ? '#22e5d4' : '#ff5029'}` }}>
+                  <span aria-label={r.valid ? 'Valid' : 'Invalid'} style={{ color: r.valid ? '#22e5d4' : '#ff5029', fontWeight: 700 }}>{r.valid ? '✓' : '✗'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink)' }}>{r.code}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{r.meta}</div>
+                  </div>
+                  <div style={{ color: r.valid ? '#22e5d4' : '#ff5029', fontFamily: 'var(--f-m)', fontSize: 11 }}>{r.valid ? 'VALID' : 'REPLAY'}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="wb-scan-viewport">
+            <div className="wb-scan-laser" />
+            <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18, textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', letterSpacing: '.1em' }}>Ready for QR…</div>
           </div>
         </div>
       )}
