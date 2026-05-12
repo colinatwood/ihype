@@ -5,7 +5,7 @@ import { getSharedDiscoverFeed } from '@/lib/discover-feed';
 import { detectRequestLocation } from '@/lib/request-location';
 import { buildArtistMediaCollection } from '@/lib/media';
 import type { ProfileType } from '@prisma/client';
-import { WorkbenchShell, type WorkbenchData, type WbStat, type WbTrack, type WbShow, type WbActivity, type WbRole } from '@/components/WorkbenchShell';
+import { WorkbenchShell, type WorkbenchData, type WbStat, type WbTrack, type WbShow, type WbActivity } from '@/components/WorkbenchShell';
 
 export const dynamic = 'force-dynamic';
 
@@ -116,19 +116,12 @@ export default async function HomePage() {
     wbActivity.push({ text: 'No recent activity — start hyping tracks!', time: 'now', kind: 'hype' });
   }
 
-  // ── Build WbRoles ──
-  const allProfileTypes = await db.profile.findMany({
+  // ── Determine active profile types for role-conditional sidebar items ──
+  const allProfileRows = await db.profile.findMany({
     where: { ownerId: userId },
     select: { type: true }
   });
-  const activeTypes = new Set(allProfileTypes.map(p => p.type));
-
-  const wbRoles: WbRole[] = [
-    { key: 'fan',      label: 'Fan',          sub: 'Hype tracks, top 5, playlists',   color: '#b983ff', active: activeTypes.has('LISTENER'), href: '/fans' },
-    { key: 'artist',   label: 'Artist',       sub: 'Upload, tour, merch, payouts',    color: '#ff5029', active: activeTypes.has('ARTIST'),   href: '/artists' },
-    { key: 'venue',    label: 'Venue',        sub: 'Host shows, verify, settle',      color: '#22e5d4', active: activeTypes.has('VENUE'),    href: '/venues' },
-    { key: 'promoter', label: 'Promoter/DJ',  sub: 'Book bills, radio shows, splits', color: '#ff3e9a', active: activeTypes.has('DJ'),       href: '/promoters' },
-  ];
+  const activeProfileTypes = allProfileRows.map(p => p.type);
 
   // ── User name / initials ──
   const userName = profile.name ?? session.user.name ?? 'there';
@@ -187,7 +180,7 @@ export default async function HomePage() {
     tickets: wbTickets,
     activity: wbActivity,
     radioShows,
-    roles: wbRoles,
+    activeProfileTypes,
     listeningNow: discoverFeed.mediaEntries.reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
     hypedToday: discoverFeed.mediaEntries.slice(0, 10).reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
     showsTonight: eventsResult.upcoming.filter(s => {

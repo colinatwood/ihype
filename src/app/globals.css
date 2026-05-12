@@ -186,6 +186,15 @@ button, input, select, textarea { font: inherit; }
 }
 /* Hide public marketing nav when workbench shell is active */
 body:has(.wb-shell) .site-nav { display: none; }
+/* Dark scrollbars inside the workbench */
+.wb-shell *::-webkit-scrollbar,
+.wb-root  *::-webkit-scrollbar { width: 6px; height: 6px; }
+.wb-shell *::-webkit-scrollbar-track,
+.wb-root  *::-webkit-scrollbar-track { background: #0f0d0a; }
+.wb-shell *::-webkit-scrollbar-thumb,
+.wb-root  *::-webkit-scrollbar-thumb { background: #2a2520; border-radius: 3px; }
+.wb-shell *::-webkit-scrollbar-thumb:hover,
+.wb-root  *::-webkit-scrollbar-thumb:hover { background: #3a332c; }
 /* Workbench header bar */
 .wb-header {
   height: 48px;

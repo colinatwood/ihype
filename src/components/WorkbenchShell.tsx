@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 
 // ── Types ──────────────────────────────────────────────────────
@@ -66,15 +65,6 @@ export type WbRadioShow = {
   desc: string;
 };
 
-export type WbRole = {
-  key: string;
-  label: string;
-  sub: string;
-  color: string;
-  active: boolean;
-  href: string;
-};
-
 export type WorkbenchData = {
   userName: string;
   userInitials: string;
@@ -86,7 +76,8 @@ export type WorkbenchData = {
   tickets: WbTicket[];
   activity: WbActivity[];
   radioShows: WbRadioShow[];
-  roles: WbRole[];
+  /** Profile types the logged-in user has: 'ARTIST' | 'VENUE' | 'LISTENER' | 'DJ' */
+  activeProfileTypes: string[];
   listeningNow: number;
   hypedToday: number;
   showsTonight: number;
@@ -98,12 +89,11 @@ const DEFAULT_PREFS = {
   density: 'cozy' as 'compact' | 'cozy' | 'comfy',
   queueRail: true,
   stickyDock: true,
-  pinned: ['library', 'radio', 'tickets', 'discover', 'shows', 'studio'] as string[],
+  pinned: ['library', 'radio', 'tickets', 'discover', 'shows'] as string[],
   panel_stats: true,
   panel_tonight: true,
   panel_activity: true,
   panel_hyped: true,
-  panel_roles: true,
   city: 'Chicago, IL',
   greeting: 'warm' as 'warm' | 'minimal' | 'data',
 };
@@ -147,7 +137,7 @@ const IcCheck    = (p: {s?:number}) => <Ic {...p}><polyline points="20 6 9 17 4 
 const IcArrow    = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
 const IcDot      = ({ c = 'currentColor', s = 8 }: {c?:string; s?:number}) => <svg width={s} height={s} viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill={c}/></svg>;
 
-type View = 'home' | 'library' | 'radio' | 'tickets' | 'discover' | 'shows' | 'studio' | 'settings';
+type View = 'home' | 'library' | 'radio' | 'tickets' | 'discover' | 'shows' | 'studio' | 'venue' | 'settings';
 
 // ── Main shell ─────────────────────────────────────────────────
 export function WorkbenchShell({ data }: { data: WorkbenchData }) {
@@ -184,7 +174,7 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
 
   return (
     <div className="wb-root">
-      <WbSidebar view={view} setView={setView} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} />
+      <WbSidebar view={view} setView={setView} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} />
       <WbTopbar view={view} data={data} />
       <main className="wb-main">
         {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
@@ -195,6 +185,7 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
         {view === 'discover' && <ViewStub name="Discover" eyebrow="HYPED THIS WEEK · TRENDING" accent="#ff5029" sub="Trending tracks from artists, venues, and DJs in your scene." />}
         {view === 'shows'    && <ViewShows data={data} />}
         {view === 'studio'   && <ViewStudio data={data} />}
+        {view === 'venue'    && <ViewStub name="Venue" eyebrow="VENUE DASHBOARD" accent="#22e5d4" sub="Manage your venue, host shows, verify tickets, and settle payouts." />}
       </main>
       {showQueue && <WbQueueRail data={data} />}
       <WbPlayerDock />
@@ -210,10 +201,11 @@ const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
   { k: 'tickets',  label: 'Ticketing', Icon: IcTicket },
   { k: 'discover', label: 'Discover',  Icon: IcDiscover },
   { k: 'shows',    label: 'Shows',     Icon: IcShows },
-  { k: 'studio',   label: 'Studio',    Icon: IcStudio },
 ];
 
-function WbSidebar({ view, setView, pinned, initials, accent }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string }) {
+function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[] }) {
+  const isArtist = activeProfileTypes.includes('ARTIST');
+  const isVenue  = activeProfileTypes.includes('VENUE');
   return (
     <aside className="wb-sidebar">
       <div className="wb-sb-logo">iH</div>
@@ -223,6 +215,17 @@ function WbSidebar({ view, setView, pinned, initials, accent }: { view: View; se
             <Icon s={18} />
           </SidebarBtn>
         ))}
+        {/* Role-conditional items — always shown for the matching profile type */}
+        {isArtist && (
+          <SidebarBtn active={view === 'studio'} onClick={() => setView('studio')} label="Artist studio" accent="#ff5029">
+            <IcStudio s={18} />
+          </SidebarBtn>
+        )}
+        {isVenue && (
+          <SidebarBtn active={view === 'venue'} onClick={() => setView('venue')} label="Venue dashboard" accent="#22e5d4">
+            <IcShows s={18} />
+          </SidebarBtn>
+        )}
       </div>
       <div className="wb-sb-foot">
         <SidebarBtn active={view === 'settings'} onClick={() => setView('settings')} label="Settings" accent="rgba(255,255,255,.4)">
@@ -494,30 +497,6 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
         </section>
       )}
 
-      {/* Roles */}
-      {prefs.panel_roles && (
-        <section className="wb-panel" style={{ marginTop: 14, marginBottom: 24 }}>
-          <div className="wb-panel-head">
-            <div className="wb-panel-title">Your roles</div>
-            <span className="wb-link-btn" style={{ cursor: 'default' }}>{data.roles.filter(r => r.active).length} active</span>
-          </div>
-          <div className="wb-role-grid">
-            {data.roles.map(r => (
-              <div key={r.key} className="wb-role-card" style={{ borderColor: r.active ? r.color : 'var(--wb-line)', background: r.active ? `${r.color}08` : 'var(--wb-bg-2)' }}>
-                <div className="wb-role-dot" style={{ background: r.color }} />
-                <div style={{ flex: 1 }}>
-                  <div className="wb-role-name">{r.label}</div>
-                  <div className="wb-role-sub">{r.sub}</div>
-                </div>
-                {r.active
-                  ? <span className="wb-role-pill" style={{ color: r.color, borderColor: `${r.color}40` }}><IcCheck s={11} /> active</span>
-                  : <Link href={r.href} className="wb-role-pill" style={{ color: 'var(--wb-ink-2)', borderColor: 'var(--wb-line-2)' }}>add →</Link>
-                }
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
@@ -887,7 +866,6 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
     { k: 'tickets',  label: 'Ticketing', sub: 'Hold, sell, scan',            Icon: IcTicket },
     { k: 'discover', label: 'Discover',  sub: 'Hyped this week',             Icon: IcDiscover },
     { k: 'shows',    label: 'Shows',     sub: 'Live events + your tour',     Icon: IcShows },
-    { k: 'studio',   label: 'Studio',    sub: 'Upload, releases, payouts',   Icon: IcStudio },
   ];
 
   return (
@@ -959,7 +937,6 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
               { k: 'panel_tonight', l: 'Tonight', d: 'Local shows + capacity bars' },
               { k: 'panel_activity', l: 'Activity feed', d: 'Hypes, payouts, bookings' },
               { k: 'panel_hyped', l: 'Hyped this week', d: '6-up grid of trending tracks' },
-              { k: 'panel_roles', l: 'Your roles', d: 'Active + add new' },
             ].map(p => (
               <label key={p.k} className="wb-check-row" style={{ borderColor: prefs[p.k as keyof Prefs] ? `${prefs.accent}40` : 'var(--wb-line)' }}>
                 <Toggle on={!!prefs[p.k as keyof Prefs]} onChange={v => setPref(p.k, v)} small />
