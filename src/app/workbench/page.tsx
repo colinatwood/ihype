@@ -667,15 +667,60 @@ function ViewStudio() {
 
 // ── Settings view ─────────────────────────────────────────────────
 
-function ViewSettings() {
+const ACCENTS = [
+  { v:'#ff5029', label:'Ember' }, { v:'#ff3e9a', label:'Hot pink' },
+  { v:'#b983ff', label:'Lilac' }, { v:'#22e5d4', label:'Aqua' },
+  { v:'#ffb84a', label:'Amber' }, { v:'#7fb3ff', label:'Sky' },
+];
+
+function ViewSettings({ accent, setAccent, density, setDensity, queueRail, setQueueRail }:{
+  accent:string; setAccent:(v:string)=>void;
+  density:string; setDensity:(v:string)=>void;
+  queueRail:boolean; setQueueRail:(v:boolean)=>void;
+}) {
+  const sec: React.CSSProperties = { padding:'18px 20px', border:'1px solid var(--line)', borderRadius:10, background:'var(--bg-2)', display:'flex', flexDirection:'column', gap:14 };
+  const secTitle: React.CSSProperties = { fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)', marginBottom:2 };
+  const secSub: React.CSSProperties = { fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.08em' };
+  const seg = (k:string): React.CSSProperties => ({ padding:'7px 14px', border:'none', borderRadius:5, fontFamily:'var(--f-m)', fontSize:11, cursor:'pointer', background: density===k?'var(--bg-3)':'transparent', color: density===k?'var(--ink)':'var(--ink-3)' });
+  const toggle: React.CSSProperties = { width:36, height:20, borderRadius:99, border:'none', cursor:'pointer', position:'relative', background: queueRail?'var(--accent)':'rgba(255,255,255,.1)', transition:'background .2s', flexShrink:0 };
   return (
-    <div style={{ padding:'24px 32px 32px' }}>
-      <div style={{ marginBottom:22 }}>
-        <h1 style={pageTitle}>Settings <span style={{ color:'var(--ink-2)', fontWeight:500 }}>· page customization</span></h1>
+    <div style={{ padding:'24px 32px 32px', maxWidth:900 }}>
+      <div style={{ marginBottom:28 }}>
+        <div style={eyebrow()}>● PERSONAL · THIS BROWSER</div>
+        <h1 style={pageTitle}>Settings <span style={{ color:'var(--ink-2)', fontWeight:400 }}>· page customization</span></h1>
         <p style={pageSub}>Make iHYPE feel like yours. Changes apply live.</p>
       </div>
-      <div style={{ padding:'14px 18px', border:'1px dashed var(--line-2)', borderRadius:8, fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-3)' }}>
-        Preferences live in this browser. Sign in to sync across devices — keys never leave your control.
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+        <div style={sec}>
+          <div><div style={secTitle}>Accent colour</div><div style={secSub}>Highlights, player, active nav</div></div>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+            {ACCENTS.map(c=>(
+              <button key={c.v} onClick={()=>setAccent(c.v)} type="button"
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:5, padding:'8px 10px', border:`1px solid ${accent===c.v?c.v:'var(--line)'}`, borderRadius:8, background:'var(--bg-3)', cursor:'pointer', position:'relative' }}>
+                <div style={{ width:26, height:26, borderRadius:'50%', background:c.v }}/>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink)' }}>{c.label}</div>
+                {accent===c.v && <IcCheck s={11}/>}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={sec}>
+          <div><div style={secTitle}>Density</div><div style={secSub}>Tighter = more on screen</div></div>
+          <div style={{ display:'flex', gap:4, padding:4, background:'var(--bg-3)', border:'1px solid var(--line)', borderRadius:7 }}>
+            {(['compact','cozy','comfy'] as const).map(k=>(
+              <button key={k} onClick={()=>setDensity(k)} type="button" style={seg(k)}>
+                {k==='compact'?'Compact':k==='cozy'?'Cozy':'Comfortable'}
+              </button>
+            ))}
+          </div>
+          <div><div style={secTitle}>Queue rail</div><div style={secSub}>Right-hand track list</div></div>
+          <button onClick={()=>setQueueRail(!queueRail)} type="button" style={toggle}>
+            <div style={{ position:'absolute', top:3, left:queueRail?18:3, width:14, height:14, borderRadius:'50%', background:'var(--ink)', transition:'left .2s' }}/>
+          </button>
+        </div>
+      </div>
+      <div style={{ marginTop:16, fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em' }}>
+        Preferences live in this browser's localStorage. Sign in to sync across devices.
       </div>
     </div>
   );
@@ -722,10 +767,39 @@ function QueueRail({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void; c
 
 // ── Root ──────────────────────────────────────────────────────────
 
+const LS = 'ihype-wb-demo-prefs';
+
 export default function WorkbenchPage() {
   const [view, setView] = useState<View>('home');
   const { data: session } = useSession();
   const { playTrack, currentTrack } = useMediaPlayer();
+
+  const [accent, setAccentRaw] = useState('#ff5029');
+  const [density, setDensityRaw] = useState('cozy');
+  const [queueRail, setQueueRailRaw] = useState(true);
+
+  // Load from localStorage on mount
+  React.useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(LS) ?? '{}');
+      if (stored.accent) setAccentRaw(stored.accent);
+      if (stored.density) setDensityRaw(stored.density);
+      if (stored.queueRail !== undefined) setQueueRailRaw(stored.queueRail);
+    } catch {}
+  }, []);
+
+  // Persist and apply CSS vars whenever prefs change
+  React.useEffect(() => {
+    try { localStorage.setItem(LS, JSON.stringify({ accent, density, queueRail })); } catch {}
+    document.documentElement.style.setProperty('--accent', accent);
+    const dm = density === 'compact' ? 0.85 : density === 'comfy' ? 1.15 : 1;
+    document.documentElement.style.setProperty('--density', String(dm));
+    document.documentElement.style.setProperty('--queue-w', queueRail ? '300px' : '0px');
+  }, [accent, density, queueRail]);
+
+  const setAccent = (v: string) => setAccentRaw(v);
+  const setDensity = (v: string) => setDensityRaw(v);
+  const setQueueRail = (v: boolean) => setQueueRailRaw(v);
 
   const handlePickTrack = useCallback((id: string) => {
     const t = TRACKS.find(x=>x.id===id);
@@ -764,11 +838,11 @@ export default function WorkbenchPage() {
           {view==='tickets'  && <ViewTicketing/>}
           {view==='shows'    && <ViewShows/>}
           {view==='studio'   && <ViewStudio/>}
-          {view==='settings' && <ViewSettings/>}
+          {view==='settings' && <ViewSettings accent={accent} setAccent={setAccent} density={density} setDensity={setDensity} queueRail={queueRail} setQueueRail={setQueueRail}/>}
         </main>
 
         {/* Queue */}
-        <QueueRail onPickTrack={handlePickTrack} currentId={currentId}/>
+        {queueRail && <QueueRail onPickTrack={handlePickTrack} currentId={currentId}/>}
       </div>
     </>
   );
