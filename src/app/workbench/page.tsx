@@ -387,7 +387,7 @@ function ViewRadio({ onPickTrack }:{ onPickTrack:(id:string)=>void }) {
             <div>
               {TRACKS.slice(0,6).map((t,i)=>(
                 <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
-                  style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'10px 18px', borderBottom:'1px solid var(--line)', textAlign:'left', background:'transparent', border:'none', cursor:'pointer', borderBottom2:'1px solid var(--line)' as never }}>
+                  style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'10px 18px', textAlign:'left', background:'transparent', border:'none', cursor:'pointer', borderBottom:'1px solid var(--line)' }}>
                   <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-3)', width:22 }}>{String(i+1).padStart(2,'0')}</div>
                   <div style={{ width:34, height:34, borderRadius:4, flexShrink:0, background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}/>
                   <div style={{ flex:1, minWidth:0 }}>
