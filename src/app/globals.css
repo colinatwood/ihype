@@ -13406,6 +13406,9 @@ html.high-contrast p {
   background: var(--wb-bg); flex-shrink: 0;
 }
 .wb-crumbs { display: flex; align-items: center; gap: 8px; font-family: var(--f-m, monospace); font-size: 11px; letter-spacing: .04em; }
+.wb-top-logo { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.wb-top-logo-mark { font-family: var(--f-d, 'Syne', sans-serif); font-weight: 800; font-size: 17px; letter-spacing: -.02em; line-height: 1; }
+.wb-top-beta { font-family: var(--f-m, monospace); font-size: 8px; letter-spacing: .14em; color: var(--wb-accent); border: 1px solid var(--wb-accent); border-radius: 3px; padding: 1px 5px; opacity: .8; }
 .wb-top-mid { display: flex; align-items: center; gap: 12px; font-family: var(--f-m, monospace); }
 .wb-top-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--wb-ink-4); }
 .wb-search {

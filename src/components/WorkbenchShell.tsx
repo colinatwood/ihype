@@ -336,17 +336,21 @@ function WbTopbar({ view, data, onHamburger }: { view: View; data: WorkbenchData
       <button className="wb-hamburger" onClick={onHamburger} aria-label="Toggle navigation">
         <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-      <div className="wb-crumbs">
-        <span style={{ color: 'var(--wb-ink-3)' }}>iHYPE</span>
-        <span style={{ color: 'var(--wb-ink-4)' }}>/</span>
-        <span style={{ color: 'var(--wb-ink)', fontWeight: 600 }}>{VIEW_TITLES[view]}</span>
+      <div className="wb-top-logo">
+        <span className="wb-top-logo-mark">
+          <span style={{ color: 'var(--wb-ink)' }}>i</span>
+          <span style={{ color: 'var(--wb-accent)' }}>HYPE</span>
+        </span>
+        <span className="wb-top-beta">BETA</span>
       </div>
       <div className="wb-top-mid">
-        <span style={{ color: '#22e5d4', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
-          <IcDot c="#22e5d4" s={7} /> {data.listeningNow.toLocaleString()} listening
+        <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', letterSpacing: '.04em' }}>{VIEW_TITLES[view]}</span>
+        <span className="wb-top-dot" />
+        <span style={{ color: '#22e5d4', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
+          <IcDot c="#22e5d4" s={6} /> {data.listeningNow.toLocaleString()} listening
         </span>
         <span className="wb-top-dot" />
-        <span style={{ fontSize: 11, color: 'var(--wb-ink-3)' }}>{data.hypedToday} hyped today · {data.showsTonight} shows tonight</span>
+        <span style={{ fontSize: 11, color: 'var(--wb-ink-3)' }}>{data.hypedToday} hyped today</span>
       </div>
       <div className="wb-search">
         <IcSearch s={13} />
