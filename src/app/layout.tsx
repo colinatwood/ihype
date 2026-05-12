@@ -1,7 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { ReactNode } from 'react';
-import { HeaderMediaPlayer } from '@/components/GlobalMediaPlayer';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderLogo } from '@/components/HeaderLogo';
@@ -39,29 +38,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <span className="site-background-orb site-background-orb-b" />
             <span className="site-background-grid" />
           </div>
+          {/* Marketing nav — hidden when .wb-shell is present via CSS */}
+          <header aria-label="Primary site header" className="nav site-nav">
+            <div className="container nav-inner-marketing">
+              <HeaderLogo />
+              <NavPrimaryLinks />
+              <HeaderAuthLinks />
+            </div>
+          </header>
           <div className="site-shell">
-            <header aria-label="Primary site header" className="nav">
-              <div className="container nav-inner">
-                <HeaderLogo />
-                <NavPrimaryLinks />
-                <div className="nav-player-slot nav-player-slot-centered">
-                  <HeaderMediaPlayer />
-                </div>
-                <HeaderAuthLinks />
-              </div>
-            </header>
             {children}
-            <footer className="site-footer">
-              <div className="container">
-                <nav className="site-footer-nav">
-                  <a href="/integrity">Integrity & Transparency</a>
-                  <a href="/shows">Shows</a>
-                  <a href="/artists">Artists</a>
-                  <a href="/venues">Venues</a>
-                </nav>
-                <p className="meta">© {new Date().getFullYear()} iHYPE.org · Streaming-first music discovery</p>
-              </div>
-            </footer>
           </div>
         </AppProviders>
       </body>

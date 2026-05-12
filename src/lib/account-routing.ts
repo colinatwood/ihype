@@ -52,13 +52,5 @@ export async function getDefaultLandingPathForUser({
     orderBy: { createdAt: 'asc' }
   });
 
-  if (hasProfile) {
-    return '/home';
-  }
-
-  if (preferredProfileType) {
-    return getRoleLandingPathForType(preferredProfileType, module);
-  }
-
-  return '/dashboard';
+  return '/workbench';
 }
