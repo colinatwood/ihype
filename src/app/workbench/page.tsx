@@ -85,13 +85,6 @@ const ACTIVITY = [
   { txt:'Sleeping Village wants a date in August',    t:'today',   kind:'show'   as const },
 ];
 
-const ROLES = [
-  { k:'fan',     label:'Fan',          sub:'Hype · Top 5 · Playlists',  c:'#b983ff', active:true },
-  { k:'artist',  label:'Artist',       sub:'Upload · Tour · Merch',     c:'#ff5029', active:true },
-  { k:'venue',   label:'Venue',        sub:'Host · Verify · Tickets',   c:'#22e5d4', active:false },
-  { k:'promoter',label:'Promoter / DJ',sub:'Book · Affiliate · Radio',  c:'#ff3e9a', active:false },
-];
-
 const ACT_COLORS: Record<string,string> = { hype:'#ff3e9a', show:'#22e5d4', radio:'#b983ff', payout:'#ffb84a' };
 
 const NAV_ITEMS = [
@@ -249,27 +242,6 @@ function ViewHome({ session, onPickTrack, currentId, setView }:
         </div>
       </section>
 
-      {/* Roles */}
-      <section style={{ ...panel, marginTop:14, marginBottom:24 }}>
-        <div style={panelHead}>
-          <div style={panelTitle}>Your roles</div>
-          <span style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em' }}>2 active · 2 available</span>
-        </div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, padding:'14px 16px' }}>
-          {ROLES.map(r=>(
-            <div key={r.k} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', border:`1px solid ${r.active?r.c:'var(--line)'}`, borderRadius:8, background:r.active?`${r.c}08`:'var(--bg-2)' }}>
-              <div style={{ width:8, height:8, borderRadius:2, flexShrink:0, background:r.c }}/>
-              <div style={{ flex:1 }}>
-                <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:13, color:'var(--ink)' }}>{r.label}</div>
-                <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:2 }}>{r.sub}</div>
-              </div>
-              <button type="button" style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 8px', border:`1px solid ${r.active?`${r.c}40`:'var(--line-2)'}`, borderRadius:99, fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.04em', color:r.active?r.c:'var(--ink-2)', background:'transparent', cursor:'pointer' }}>
-                {r.active ? <><IcCheck s={11}/> active</> : 'add →'}
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
