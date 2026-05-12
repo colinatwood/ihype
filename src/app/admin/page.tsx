@@ -114,11 +114,11 @@ export default async function AdminPage() {
           </p>
         </div>
         <div className="cta-row">
-          <Link className="button secondary" href="/launch-readiness">
-            Launch readiness
+          <Link className="button secondary" href="/transparency">
+            Transparency
           </Link>
-          <Link className="button secondary" href="/integrity">
-            Integrity page
+          <Link className="button secondary" href="/about">
+            About iHYPE
           </Link>
         </div>
       </section>

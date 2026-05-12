@@ -36,3 +36,45 @@ login flow silently if the types still compile.
    callbacks in `src/lib/auth.config.ts`.
 7. Deploy to a preview environment and confirm Prisma adapter migrations are
    not needed for the `Account`, `Session`, or `VerificationToken` models.
+
+## Deployment guardrails
+
+### Before every commit that touches pages or routes
+
+1. **Run `npx next build` locally** — catches TypeScript errors, missing imports,
+   and invalid `next.config.mjs` options before Vercel sees them.
+2. **When deleting a page**, do all of the following in the same commit:
+   - Search `next.config.mjs` for the path in `source:` or `destination:` and
+     update/remove those entries.
+   - Search the whole `src/` tree for hardcoded `href` values pointing to that
+     path and update them.
+   - Remove it from `public/manifest.json` shortcuts if present.
+3. **Never point a redirect `destination:` at a path that has no page.**
+   `next build` does not validate redirect destinations; broken ones silently
+   404 in production.
+
+### Merge conflict rule
+
+When resolving a merge conflict in a large component file
+(`WorkbenchShell.tsx`, `workbench/page.tsx`, etc.) **never take one side
+wholesale**. Manually merge both sets of changes. If uncertain, list the
+commits that would be lost from each side and ask before proceeding.
+
+### `next.config.mjs` redirect hygiene
+
+- A `source` that matches an existing `src/app/.../page.tsx` route causes a
+  build error (redirect conflicts with the page). Always remove the redirect
+  when the page is created.
+- Keep redirects pointing to deleted pages updated in the same PR that deletes
+  the page.
+
+### Vercel build script
+
+`vercel-build` uses a semicolon before `prisma generate` so a DB-connectivity
+failure during `prisma migrate deploy` does not block `next build`:
+
+```
+"vercel-build": "prisma migrate deploy; prisma generate && next build"
+```
+
+Do not change this back to `&&`.

@@ -23,7 +23,7 @@ export function TrustPolicyPage({ badge, title, intro, sections }: TrustPolicyPa
           <Link className="text-link" href="/copyright">Copyright</Link>
           <Link className="text-link" href="/ticket-policy">Ticket policy</Link>
           <Link className="text-link" href="/community-rules">Community rules</Link>
-          <Link className="text-link" href="/trust">Trust center</Link>
+          <Link className="text-link" href="/about">About iHYPE</Link>
           <Link className="text-link" href="/support">Support</Link>
         </div>
       </section>
