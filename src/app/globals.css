@@ -1,26 +1,39 @@
 :root {
-  --bg: #05070d;
-  --panel: rgba(12, 17, 28, 0.84);
-  --panel-2: rgba(17, 24, 38, 0.9);
-  --text: #f6fbff;
-  --muted: #8fa0b5;
-  --line: rgba(255,255,255,0.09);
-  --accent: linear-gradient(135deg, #71d9ff 0%, #d8fbff 42%, #ffd07a 100%);
-  --shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
-  --cream: #f2eadc;
-  --cream-2: #e5d7c1;
-  --ink: #17120f;
-  --ink-muted: #65584b;
-  --outline: #1c1712;
-  --gold: #d6aa67;
-  --clean-surface-radius: 18px;
-  --clean-surface-radius-lg: 22px;
-  --clean-chip-radius: 12px;
-  --clean-input-radius: 14px;
+  /* Workbench design tokens */
+  --bg: #0a0805;
+  --bg-2: #100d09;
+  --bg-3: #1a1612;
+  --bg-4: #221c16;
+  --ink: #f0ebe5;
+  --ink-2: #9e9080;
+  --ink-3: #5a5048;
+  --ink-4: #3a342e;
+  --line: rgba(255,255,255,.06);
+  --line-2: rgba(255,255,255,.14);
+  --accent: #ff5029;
+  --accent-2: #ff3e9a;
+  --r-fan: #b983ff;
+  --r-artist: #ff5029;
+  --r-venue: #22e5d4;
+  --r-promoter: #ff3e9a;
+  --f-d: var(--font-syne, 'Syne', sans-serif);
+  --f-b: var(--font-dm, 'DM Sans', sans-serif);
+  --f-m: var(--font-jb, 'JetBrains Mono', monospace);
+  --f-s: var(--font-serif, 'Instrument Serif', serif);
+  --rail-w: 56px;
+  --queue-w: 300px;
+  --player-h: 64px;
+  --top-h: 42px;
+  /* Legacy compat */
+  --text: #f0ebe5;
+  --muted: #5a5048;
+  --panel: rgba(16,13,9,.84);
+  --panel-2: rgba(26,22,18,.9);
+  --shadow: 0 18px 42px rgba(0,0,0,.35);
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: radial-gradient(circle at top, rgba(96, 142, 255, 0.2), transparent 28%), radial-gradient(circle at 80% 18%, rgba(113, 217, 255, 0.16), transparent 24%), linear-gradient(180deg, #09111d 0%, #06090f 38%, #04060b 100%); color: var(--text); font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--f-b, 'DM Sans', 'Segoe UI', sans-serif); }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 button, input, select, textarea { font: inherit; }
