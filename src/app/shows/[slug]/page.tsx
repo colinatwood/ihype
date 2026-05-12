@@ -177,7 +177,40 @@ export default async function ShowDetailPage({
       : `https://stream.mux.com/${show.streamPlaybackId}.m3u8`;
   }
 
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org';
+  const jsonLd = show.isRadioShow ? {
+    '@context': 'https://schema.org',
+    '@type': 'RadioEpisode',
+    name: show.title,
+    url: `${base}/shows/${slug}`,
+    ...(show.description ? { description: show.description } : {}),
+    ...(show.posterImage ? { image: show.posterImage } : {}),
+    ...(show.headlinerProfile ? { byArtist: { '@type': 'MusicGroup', name: show.headlinerProfile.name } } : {}),
+  } : {
+    '@context': 'https://schema.org',
+    '@type': 'MusicEvent',
+    name: show.title,
+    url: `${base}/shows/${slug}`,
+    ...(show.description ? { description: show.description } : {}),
+    ...(show.posterImage ? { image: show.posterImage } : {}),
+    eventStatus: show.status === 'LIVE' ? 'https://schema.org/EventScheduled'
+      : show.status === 'ENDED' ? 'https://schema.org/EventPast'
+      : 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/MixedEventAttendanceMode',
+    ...(show.startsAt ? { startDate: show.startsAt.toISOString() } : {}),
+    ...(show.venueProfile ? {
+      location: {
+        '@type': 'Place',
+        name: show.venueProfile.name,
+        address: { '@type': 'PostalAddress', addressLocality: show.venueProfile.city ?? '', addressRegion: show.venueProfile.stateRegion ?? '' },
+      },
+    } : {}),
+    ...(show.headlinerProfile ? { performer: { '@type': 'MusicGroup', name: show.headlinerProfile.name } } : {}),
+  };
+
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     <main className="container section">
       <div className="profile-header">
         <div className="badge">{show.status}</div>
@@ -621,5 +654,6 @@ export default async function ShowDetailPage({
         );
       })()}
     </main>
+    </>
   );
 }

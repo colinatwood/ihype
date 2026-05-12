@@ -95,7 +95,7 @@ export async function generateMetadata(
       ...(profile.avatarImage ? { images: [{ url: profile.avatarImage }] } : {})
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
       ...(profile.avatarImage ? { images: [profile.avatarImage] } : {})
@@ -229,7 +229,21 @@ export default async function ArtistPage({
             : ('past' as const)
     }));
 
+  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org';
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'MusicGroup',
+    name: profile.name,
+    url: `${base}/artists/${profile.slug}`,
+    ...(profile.headline ? { description: profile.headline } : {}),
+    ...(profile.avatarImage ? { image: profile.avatarImage } : {}),
+    ...(profile.city ? { foundingLocation: { '@type': 'Place', name: [profile.city, profile.stateRegion].filter(Boolean).join(', ') } } : {}),
+    ...(profile.genres?.length ? { genre: profile.genres } : {}),
+  };
+
   return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
     <main className="container section profile-design-shell" style={pageDesignStyle}>
       <header className="artist-banner panel" style={bannerStyle}>
         <div className="profile-banner-row">
@@ -363,5 +377,6 @@ export default async function ArtistPage({
 
       <ContentReportControl targetId={profile.id} targetType="profile" />
     </main>
+    </>
   );
 }

@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+export const metadata: Metadata = {
+  title: 'Fans',
+  description: 'Music fans on iHYPE — discover artists, build top-5 lists, and hype the tracks that deserve it.',
+  openGraph: { title: 'Fans · iHYPE', description: 'Discover artists, build lists, and hype the tracks that deserve it.' },
+  twitter: { card: 'summary_large_image', title: 'Fans · iHYPE', description: 'Discover artists, build lists, and hype the tracks that deserve it.' },
+};
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import {
