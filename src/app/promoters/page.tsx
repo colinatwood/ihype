@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+export const metadata: Metadata = {
+  title: 'Promoters & DJs',
+  description: 'Promoters and DJs on iHYPE — book talent, run live or recorded radio sets, and grow your affiliate network.',
+  openGraph: { title: 'Promoters & DJs · iHYPE', description: 'Book talent, run radio sets, and grow your network.' },
+  twitter: { card: 'summary_large_image', title: 'Promoters & DJs · iHYPE', description: 'Book talent, run radio sets, and grow your network.' },
+};
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { buildArtistMediaCollection } from '@/lib/media';

@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+export const metadata: Metadata = {
+  title: 'Venues',
+  description: 'Independent music venues on iHYPE. List shows for free and sell tickets with zero platform fees.',
+  openGraph: { title: 'Venues · iHYPE', description: 'Independent music venues — list shows free, zero ticket fees.' },
+  twitter: { card: 'summary_large_image', title: 'Venues · iHYPE', description: 'Independent music venues — list shows free, zero ticket fees.' },
+};
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import {

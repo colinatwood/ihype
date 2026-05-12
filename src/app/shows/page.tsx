@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+export const metadata: Metadata = {
+  title: 'Shows',
+  description: 'Live, upcoming, and archived independent music shows. Browse by city, artist, or genre on iHYPE.',
+  openGraph: { title: 'Shows · iHYPE', description: 'Live, upcoming, and archived independent music shows.' },
+  twitter: { card: 'summary_large_image', title: 'Shows · iHYPE', description: 'Live, upcoming, and archived independent music shows.' },
+};
 import { ShowCard } from '@/components/ShowCard';
 import { getShowsDirectoryData } from '@/lib/public-data';
 import { sortShowsForFeed } from '@/lib/integrity';
