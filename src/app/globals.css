@@ -346,6 +346,53 @@ body:has(.wb-shell) .site-nav { display: none; }
 .lp-role-sub { font-size: 11px; color: var(--muted); line-height: 1.5; }
 .lp-role-cta { font-size: 11px; font-weight: 700; letter-spacing: .05em; margin-top: 8px; }
 /* Footer CTA */
+/* 0% fee banner */
+.lp-fee-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #22e5d4;
+  color: #0a0a0a;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  margin-bottom: 8px;
+}
+.lp-fee-banner-text { flex: 1; min-width: 200px; text-align: center; }
+.lp-fee-banner-link {
+  white-space: nowrap;
+  font-weight: 800;
+  color: #0a0a0a;
+  text-decoration: none;
+  border-bottom: 2px solid rgba(0,0,0,.25);
+  padding-bottom: 1px;
+}
+.lp-fee-banner-link:hover { border-color: #0a0a0a; }
+
+/* Hype explainer */
+.lp-hype-explainer {
+  padding: 40px 0 20px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.lp-hype-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: #22e5d4;
+  margin: 0 0 10px;
+}
+.lp-hype-body {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.75;
+  max-width: 680px;
+  margin: 0;
+}
+
 .lp-footer-cta {
   text-align: center;
   padding: 60px 0;

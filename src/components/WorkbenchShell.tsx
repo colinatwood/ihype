@@ -81,6 +81,7 @@ export type WorkbenchData = {
   listeningNow: number;
   hypedToday: number;
   showsTonight: number;
+  isVerified?: boolean;
 };
 
 // ── Default prefs ──────────────────────────────────────────────
@@ -139,9 +140,65 @@ const IcDot      = ({ c = 'currentColor', s = 8 }: {c?:string; s?:number}) => <s
 
 type View = 'home' | 'library' | 'radio' | 'tickets' | 'events' | 'studio' | 'venue' | 'settings';
 
+// ── Onboarding modal ───────────────────────────────────────────
+function OnboardingModal({ onDone }: { onDone: () => void }) {
+  const [step, setStep] = useState(0);
+  const steps = [
+    {
+      title: 'Welcome to iHYPE',
+      body: 'Your workbench is ready. iHYPE is a nonprofit music platform — 0% ticket fees, real fan demand, no algorithms.',
+      cta: 'Next →',
+    },
+    {
+      title: 'Create your first event',
+      body: 'List a show, set your ticket price, and sell directly to fans. We take nothing.',
+      cta: 'Got it →',
+    },
+    {
+      title: 'Invite your fans',
+      body: 'Share your iHYPE profile link with your audience. Every hype they give you is a real signal of demand.',
+      cta: "Let's go →",
+    },
+  ];
+  const current = steps[step];
+
+  function handleCta() {
+    if (step < steps.length - 1) {
+      setStep(s => s + 1);
+    } else {
+      try { localStorage.setItem('ihype-onboarded', '1'); } catch {}
+      onDone();
+    }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}>
+      <div style={{ background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line-2)', borderRadius: 14, padding: '36px 40px', maxWidth: 460, width: '90%', boxShadow: '0 24px 64px rgba(0,0,0,.5)', textAlign: 'center' }}>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.16em', color: 'var(--wb-accent)', marginBottom: 12 }}>
+          STEP {step + 1} OF {steps.length}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 24 }}>
+          {steps.map((_, i) => (
+            <div key={i} style={{ width: 28, height: 3, borderRadius: 2, background: i <= step ? 'var(--wb-accent)' : 'var(--wb-line-2)' }} />
+          ))}
+        </div>
+        <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 26, letterSpacing: '-.02em', color: 'var(--wb-ink)', margin: '0 0 14px' }}>{current.title}</h2>
+        <p style={{ fontFamily: 'var(--f-m)', fontSize: 14, color: 'var(--wb-ink-2)', lineHeight: 1.65, margin: '0 0 28px' }}>{current.body}</p>
+        <button
+          onClick={handleCta}
+          style={{ background: 'var(--wb-accent)', color: '#fff', border: 'none', borderRadius: 8, padding: '12px 28px', fontFamily: 'var(--f-m)', fontSize: 13, letterSpacing: '.04em', cursor: 'pointer', width: '100%' }}
+        >
+          {current.cta}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Main shell ─────────────────────────────────────────────────
 export function WorkbenchShell({ data }: { data: WorkbenchData }) {
   const [view, setView] = useState<View>('home');
+  const [onboarded, setOnboarded] = useState(true); // true until mount check
   const [prefs, setPrefs] = useState<Prefs>(() => {
     if (typeof window === 'undefined') return DEFAULT_PREFS;
     try {
@@ -157,6 +214,16 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
 
   // Apply on mount
   useEffect(() => { applyPrefs(prefs); }, []); // eslint-disable-line
+
+  // Check onboarding state on mount
+  useEffect(() => {
+    try {
+      const done = localStorage.getItem('ihype-onboarded');
+      setOnboarded(!!done);
+    } catch {
+      setOnboarded(true);
+    }
+  }, []);
 
   const setPref = useCallback((key: string, val: unknown) => {
     setPrefs(p => {
@@ -175,12 +242,13 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
 
   return (
     <div className="wb-root">
+      {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
       {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-      <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} />
+      <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={data.isVerified} />
       <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} />
       <main className="wb-main">
         {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
-        {view === 'radio'    && <ViewRadio data={data} />}
+        {view === 'radio'    && <ViewRadio data={data} setView={setView} />}
         {view === 'tickets'  && <ViewTicketing data={data} />}
         {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
         {view === 'library'  && <ViewLibrary data={data} />}
@@ -204,7 +272,7 @@ const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
   { k: 'studio',   label: 'Create',    Icon: IcStudio },
 ];
 
-function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes, mobileOpen, onMobileClose }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void }) {
+function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes, mobileOpen, onMobileClose, isVerified }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean }) {
   const isVenue = activeProfileTypes.includes('VENUE');
   return (
     <aside className={`wb-sidebar${mobileOpen ? ' wb-sidebar-mobile-open' : ''}`}>
@@ -225,7 +293,12 @@ function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes
         <SidebarBtn active={view === 'settings'} onClick={() => setView('settings')} label="Settings" accent="rgba(255,255,255,.4)">
           <IcSettings s={18} />
         </SidebarBtn>
-        <div className="wb-sb-avatar" title={`${initials}`}>{initials}</div>
+        <div style={{ position: 'relative', display: 'inline-flex' }}>
+          <div className="wb-sb-avatar" title={`${initials}`}>{initials}</div>
+          {isVerified && (
+            <span style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: '#22c55e', border: '2px solid var(--wb-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 6, color: '#fff', fontWeight: 700 }}>✓</span>
+          )}
+        </div>
       </div>
     </aside>
   );
@@ -379,6 +452,7 @@ function WbQueueRail({ data }: { data: WorkbenchData }) {
 // ── View: Home ─────────────────────────────────────────────────
 function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs; setView: (v: View) => void }) {
   const { playTrack, currentTrack } = useMediaPlayer();
+  const [copied, setCopied] = useState(false);
   const now = new Date();
   const hour = now.getHours();
   const tod = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
@@ -400,6 +474,11 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
           <button className="wb-btn-prime" onClick={() => setView('studio')}><IcBolt s={12} /> Create an event</button>
           <button className="wb-btn-ghost" onClick={() => setView('events')}>Browse events →</button>
+          <button className="wb-btn-ghost" onClick={() => {
+            navigator.clipboard.writeText(`${window.location.origin}/home`).catch(() => {});
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}>{copied ? 'Copied!' : 'Share your profile →'}</button>
         </div>
       </div>
 
@@ -499,7 +578,7 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
 }
 
 // ── View: Radio ────────────────────────────────────────────────
-function ViewRadio({ data }: { data: WorkbenchData }) {
+function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) => void }) {
   const [activeId, setActiveId] = useState(data.radioShows[0]?.id ?? '');
   const { playTrack } = useMediaPlayer();
   const show = data.radioShows.find(r => r.id === activeId) ?? data.radioShows[0];
@@ -523,7 +602,7 @@ function ViewRadio({ data }: { data: WorkbenchData }) {
           <h1 className="wb-page-title">Radio</h1>
           <p className="wb-page-sub">Curated shows from promoters, DJs, and artists. No ads, no algorithm — just real people picking music.</p>
         </div>
-        <button className="wb-btn-outline" style={{ borderColor: 'var(--wb-accent)', color: 'var(--wb-accent)' }}>
+        <button className="wb-btn-outline" style={{ borderColor: 'var(--wb-accent)', color: 'var(--wb-accent)' }} onClick={() => setView('studio')}>
           <IcBolt s={12} /> Start your show →
         </button>
       </div>
@@ -604,6 +683,9 @@ function ViewRadio({ data }: { data: WorkbenchData }) {
 function ViewTicketing({ data }: { data: WorkbenchData }) {
   const [tab, setTab] = useState<'mine' | 'selling' | 'scan'>('mine');
   const upcoming = data.tickets[0];
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [transferEmail, setTransferEmail] = useState('');
+  const [transferSent, setTransferSent] = useState(false);
 
   return (
     <div className="wb-view-pad">
@@ -641,7 +723,7 @@ function ViewTicketing({ data }: { data: WorkbenchData }) {
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 22, flexWrap: 'wrap' }}>
                     <button className="wb-btn-prime">Show at door →</button>
-                    <button className="wb-btn-ghost">Transfer</button>
+                    <button className="wb-btn-ghost" onClick={() => { setShowTransfer(true); setTransferSent(false); setTransferEmail(''); }}>Transfer</button>
                     <button className="wb-btn-ghost">Add to Wallet</button>
                     <button className="wb-btn-danger">Request refund</button>
                   </div>
