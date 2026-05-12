@@ -1,484 +1,802 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 
-// ── Demo data ────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────
 
-const DEMO_TRACKS: MediaTrack[] = [
-  { id: '1', title: 'Sundown', artistName: 'Maya Reyes', url: '', artworkUrl: null, mediaId: null },
-  { id: '2', title: 'Westline', artistName: 'Cobalt Hour', url: '', artworkUrl: null, mediaId: null },
-  { id: '3', title: 'Gold Teeth', artistName: 'Vela', url: '', artworkUrl: null, mediaId: null },
-  { id: '4', title: 'Slow Burn', artistName: 'The Lowriders', url: '', artworkUrl: null, mediaId: null },
-  { id: '5', title: 'Cassette Heart', artistName: 'Juno North', url: '', artworkUrl: null, mediaId: null },
-  { id: '6', title: 'Underpass', artistName: 'Saint Hex', url: '', artworkUrl: null, mediaId: null },
+function Ic({ s = 16, sw = 1.6, children }: { s?: number; sw?: number; children: React.ReactNode }) {
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+  );
+}
+const IcHome     = (p: {s?:number}) => <Ic {...p}><path d="M3 11l9-8 9 8"/><path d="M5 9v12h14V9"/></Ic>;
+const IcLibrary  = (p: {s?:number}) => <Ic {...p}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M14 3v18M19 7l-3 3"/></Ic>;
+const IcRadio    = (p: {s?:number}) => <Ic {...p}><circle cx="12" cy="12" r="3"/><path d="M5.5 8.5a8 8 0 0 1 13 0M3 6a11 11 0 0 1 18 0M5.5 15.5a8 8 0 0 0 13 0M3 18a11 11 0 0 0 18 0"/></Ic>;
+const IcTicket   = (p: {s?:number}) => <Ic {...p}><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" strokeDasharray="2 2"/></Ic>;
+const IcDisco    = (p: {s?:number}) => <Ic {...p}><circle cx="12" cy="12" r="9"/><polygon points="15 9 13 13 9 15 11 11" fill="currentColor" stroke="none"/></Ic>;
+const IcShows    = (p: {s?:number}) => <Ic {...p}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></Ic>;
+const IcStudio   = (p: {s?:number}) => <Ic {...p}><path d="M6 3v18M18 3v18M3 6h18M3 12h18M3 18h18"/></Ic>;
+const IcSettings = (p: {s?:number}) => <Ic {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></Ic>;
+const IcPlay  = ({s=14}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20"/></svg>;
+const IcHeart = ({s=14,c='currentColor'}:{s?:number;c?:string}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
+const IcCheck = ({s=11}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>;
+const IcBolt  = ({s=12}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10"/></svg>;
+const IcDot   = ({c='currentColor',s=8}:{c?:string;s?:number}) => <svg width={s} height={s} viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill={c}/></svg>;
+const IcArrow = ({s=12}:{s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M9 18l6-6-6-6"/></svg>;
+const IcQR = ({s=140}:{s?:number}) => (
+  <svg width={s} height={s} viewBox="0 0 80 80">
+    <rect width="80" height="80" fill="currentColor" opacity="0.06"/>
+    {([[0,0],[60,0],[0,60]] as [number,number][]).map(([x,y],i)=>(
+      <g key={i}><rect x={x} y={y} width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3"/><rect x={x+6} y={y+6} width="8" height="8" fill="currentColor"/></g>
+    ))}
+    {Array.from({length:36}).map((_,i) => {
+      const x=24+(i%6)*4, y=24+Math.floor(i/6)*4, on=(i*13+7)%3===0;
+      return on ? <rect key={i} x={x} y={y} width="3" height="3" fill="currentColor"/> : null;
+    })}
+  </svg>
+);
+
+// ── Data ──────────────────────────────────────────────────────────
+
+const TRACKS = [
+  { id:'1', t:'Sundown',        a:'Maya Reyes',    d:'3:24', h:142, c:'#ff5029', dSec:204, album:'Halflight EP' },
+  { id:'2', t:'Westline',       a:'Cobalt Hour',   d:'4:11', h:89,  c:'#b983ff', dSec:251, album:'Westline' },
+  { id:'3', t:'Gold Teeth',     a:'Vela',          d:'2:58', h:67,  c:'#22e5d4', dSec:178, album:'Demo' },
+  { id:'4', t:'Slow Burn',      a:'The Lowriders', d:'3:42', h:211, c:'#ff3e9a', dSec:222, album:'Road Tape' },
+  { id:'5', t:'Cassette Heart', a:'Juno North',    d:'3:09', h:54,  c:'#ffb84a', dSec:189, album:'Cassette Heart' },
+  { id:'6', t:'Underpass',      a:'Saint Hex',     d:'4:36', h:128, c:'#7fb3ff', dSec:276, album:'Underpass' },
+  { id:'7', t:'Halflight',      a:'Maya Reyes',    d:'3:51', h:76,  c:'#ff5029', dSec:231, album:'Halflight EP' },
+  { id:'8', t:'Brass City',     a:'Cobalt Hour',   d:'3:18', h:33,  c:'#b983ff', dSec:198, album:'Westline' },
 ];
 
-const TRACK_META: Record<string, { dur: string; hype: number; c: string }> = {
-  '1': { dur: '3:24', hype: 142, c: '#ff5029' },
-  '2': { dur: '4:11', hype: 89, c: '#b983ff' },
-  '3': { dur: '2:58', hype: 67, c: '#22e5d4' },
-  '4': { dur: '3:42', hype: 211, c: '#ff3e9a' },
-  '5': { dur: '3:09', hype: 54, c: '#ffb84a' },
-  '6': { dur: '4:36', hype: 128, c: '#7fb3ff' },
-};
+const MEDIA_TRACKS: MediaTrack[] = TRACKS.map(t => ({
+  id: t.id, title: t.t, artistName: t.a, url: '', artworkUrl: null, mediaId: null,
+}));
 
 const SHOWS = [
-  { name: 'Maya Reyes', venue: 'Empty Bottle', date: 'Thu Jun 18', time: '9PM', hype: 412, status: 'LIVE' as const },
-  { name: 'Cobalt Hour', venue: 'Sleeping Village', date: 'Sat Jun 20', time: '8PM', hype: 287, status: 'SOON' as const },
-  { name: 'Vela', venue: 'Subterranean', date: 'Tue Jun 23', time: '8PM', hype: 156, status: 'OPEN' as const },
-  { name: 'Saint Hex', venue: 'Schubas', date: 'Fri Jun 26', time: '10PM', hype: 98, status: 'OPEN' as const },
-  { name: 'Juno North', venue: 'The Hideout', date: 'Sat Jun 27', time: '9PM', hype: 74, status: 'OPEN' as const },
+  { id:'s1', name:'Maya Reyes',    venue:'Empty Bottle',    date:'Thu Jun 18', time:'9:00 PM', hype:412, sold:148, cap:200, price:18, status:'TONIGHT' as const },
+  { id:'s2', name:'Cobalt Hour',   venue:'Sleeping Village',date:'Sat Jun 20', time:'8:00 PM', hype:287, sold:91,  cap:150, price:15, status:'THIS WEEK' as const },
+  { id:'s3', name:'Vela',          venue:'Subterranean',    date:'Tue Jun 23', time:'8:00 PM', hype:156, sold:42,  cap:180, price:12, status:'UPCOMING' as const },
+  { id:'s4', name:'The Lowriders', venue:'Hideout',         date:'Fri Jun 26', time:'10:00 PM',hype:331, sold:201, cap:225, price:20, status:'NEAR SOLD' as const },
+];
+
+const RADIO_SHOWS = [
+  { id:'r1', name:'Chicago Underground', host:'DJ Vex',        time:'Thu 9PM',    next:'in 2h',      live:true,  listeners:412, c:'#ff3e9a', desc:'Chicago indie + post-punk. Live tonight from the Empty Bottle basement.' },
+  { id:'r2', name:'After Hours',         host:'Saint Hex',     time:'Daily 11PM', next:'tonight 11PM',live:false, listeners:128, c:'#7fb3ff', desc:'Slow-burn ambient and downtempo. One hour, no talking.' },
+  { id:'r3', name:'New Tape Tuesday',    host:'Juno North',    time:'Tue 7PM',    next:'next Tue',   live:false, listeners:67,  c:'#ffb84a', desc:'Cassette-only releases from the Midwest underground. Submissions open.' },
+  { id:'r4', name:'Halflight FM',        host:'Maya Reyes',    time:'Sun 10AM',   next:'Sunday',     live:false, listeners:289, c:'#ff5029', desc:'Maya plays her writing-room playlist, plus one new track from the EP each week.' },
+  { id:'r5', name:'Side Roads',          host:'The Lowriders', time:'Fri 8PM',    next:'Friday',     live:false, listeners:184, c:'#22e5d4', desc:'Country-fried Americana with a left turn. Listener requests welcome.' },
+];
+
+const MY_TICKETS = [
+  { id:'tk1', show:'Cobalt Hour @ Sleeping Village', date:'Sat Jun 20 · 8PM', seat:'GA',        price:15, status:'CONFIRMED' as const, qr:'iH-AX91-CB20' },
+  { id:'tk2', show:'Vela @ Subterranean',            date:'Tue Jun 23 · 8PM', seat:'GA',        price:12, status:'CONFIRMED' as const, qr:'iH-VE23-7K4M' },
+  { id:'tk3', show:'Saint Hex @ Lincoln Hall',       date:'Sat Jul 11 · 9PM', seat:'BALCONY 4', price:24, status:'WAITLIST' as const,  qr:'' },
 ];
 
 const ACTIVITY = [
-  { text: '3 new hypes on Sundown', time: '2m ago', c: '#ff5029' },
-  { text: 'Cobalt Hour confirmed for Sat Jun 20', time: '14m ago', c: '#22e5d4' },
-  { text: 'DJ Vex spun Sundown on Chicago Underground', time: '1h ago', c: '#b983ff' },
-  { text: 'Payout $2,460 scheduled for Jun 24', time: '3h ago', c: '#ffb84a' },
-  { text: 'Sleeping Village wants a date in August', time: 'today', c: '#ff3e9a' },
+  { txt:'3 new hypes on Sundown',                    t:'2m ago',  kind:'hype'   as const },
+  { txt:'Cobalt Hour confirmed for Sat Jun 20',       t:'14m ago', kind:'show'   as const },
+  { txt:'DJ Vex spun Sundown on Chicago Underground', t:'1h ago',  kind:'radio'  as const },
+  { txt:'Payout $2,460 scheduled for Jun 24',         t:'3h ago',  kind:'payout' as const },
+  { txt:'Sleeping Village wants a date in August',    t:'today',   kind:'show'   as const },
 ];
 
 const ROLES = [
-  { k: 'fan', label: 'Fan', sub: 'Hype · Top 5 · Playlists', c: '#b983ff', active: true },
-  { k: 'artist', label: 'Artist', sub: 'Upload · Tour · Merch', c: '#ff5029', active: true },
-  { k: 'venue', label: 'Venue', sub: 'Host · Verify · Issue tickets', c: '#22e5d4', active: false },
-  { k: 'promoter', label: 'Promoter / DJ', sub: 'Book · Affiliate · Radio shows', c: '#ff3e9a', active: false },
+  { k:'fan',     label:'Fan',          sub:'Hype · Top 5 · Playlists',  c:'#b983ff', active:true },
+  { k:'artist',  label:'Artist',       sub:'Upload · Tour · Merch',     c:'#ff5029', active:true },
+  { k:'venue',   label:'Venue',        sub:'Host · Verify · Tickets',   c:'#22e5d4', active:false },
+  { k:'promoter',label:'Promoter / DJ',sub:'Book · Affiliate · Radio',  c:'#ff3e9a', active:false },
 ];
 
-const RADIO = [
-  { name: 'Late Night Locals', host: 'DJ Ramona', listeners: 84, c: '#ff3e9a' },
-  { name: 'Crate Digger Hour', host: 'Saint Hex', listeners: 62, c: '#7fb3ff' },
-  { name: 'Midwest Frequencies', host: 'Cobalt Hour', listeners: 48, c: '#b983ff' },
-  { name: 'Underground Dispatch', host: 'Vela', listeners: 31, c: '#22e5d4' },
-];
+const ACT_COLORS: Record<string,string> = { hype:'#ff3e9a', show:'#22e5d4', radio:'#b983ff', payout:'#ffb84a' };
 
 const NAV_ITEMS = [
-  { id: 'discover', icon: '⌕', label: 'Discover' },
-  { id: 'library', icon: '☰', label: 'Library' },
-  { id: 'shows', icon: '◇', label: 'Shows' },
-  { id: 'radio', icon: '◉', label: 'Radio' },
-  { id: 'studio', icon: '◐', label: 'Studio' },
+  { id:'home',     label:'Home',      icon: <IcHome s={16}/> },
+  { id:'library',  label:'Library',   icon: <IcLibrary s={16}/> },
+  { id:'radio',    label:'Radio',     icon: <IcRadio s={16}/> },
+  { id:'tickets',  label:'Ticketing', icon: <IcTicket s={16}/> },
+  { id:'discover', label:'Discover',  icon: <IcDisco s={16}/> },
+  { id:'shows',    label:'Shows',     icon: <IcShows s={16}/> },
+  { id:'studio',   label:'Studio',    icon: <IcStudio s={16}/> },
 ];
 
-type View = 'discover' | 'library' | 'shows' | 'radio' | 'studio';
+type View = 'home'|'library'|'radio'|'tickets'|'discover'|'shows'|'studio'|'settings';
 
-// ── Sub-components ───────────────────────────────────────────────
+// ── Shared utils ──────────────────────────────────────────────────
 
-function TrackCard({ track, onPlay, isActive }: { track: MediaTrack; onPlay: () => void; isActive: boolean }) {
-  const meta = TRACK_META[track.id];
-  if (!meta) return null;
+const panel: React.CSSProperties = { border:'1px solid var(--line)', borderRadius:10, background:'var(--bg-2)', overflow:'hidden' };
+const panelHead: React.CSSProperties = { padding:'12px 16px', borderBottom:'1px solid var(--line)', display:'flex', justifyContent:'space-between', alignItems:'center' };
+const panelTitle: React.CSSProperties = { fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, letterSpacing:'-.005em', color:'var(--ink)' };
+const linkBtn: React.CSSProperties = { fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-2)', letterSpacing:'.1em', textTransform:'uppercase' as const, background:'none', border:'none', cursor:'pointer' };
+const eyebrow = (c='var(--ink-3)'): React.CSSProperties => ({ fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.18em', color:c, marginBottom:10 });
+const pageTitle: React.CSSProperties = { fontFamily:'var(--f-d)', fontWeight:800, fontSize:42, letterSpacing:'-.03em', lineHeight:1, margin:0, color:'var(--ink)' };
+const pageSub: React.CSSProperties = { fontFamily:'var(--f-b)', fontSize:14, color:'var(--ink-2)', marginTop:10, maxWidth:560, lineHeight:1.5 };
+const btnPrime: React.CSSProperties = { padding:'9px 16px', background:'var(--ink)', color:'var(--bg)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:12, fontWeight:600, letterSpacing:'.04em', border:'none', cursor:'pointer' };
+const btnGhost: React.CSSProperties = { padding:'9px 14px', border:'1px solid var(--line-2)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:12, letterSpacing:'.04em', color:'var(--ink)', background:'transparent', cursor:'pointer' };
+
+// ── Sidebar button ────────────────────────────────────────────────
+
+function SidebarBtn({ active, onClick, label, children, accent='var(--accent)' }:
+  { active:boolean; onClick:()=>void; label:string; children:React.ReactNode; accent?:string }) {
+  const [hover, setHover] = useState(false);
   return (
-    <div className="wb-track-card" data-active={isActive} onClick={onPlay} role="button" tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && onPlay()}
-      style={{ '--card-c': meta.c } as React.CSSProperties}
-    >
-      <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${meta.c}, ${meta.c}66)` }}>
-        {isActive && <div className="wb-track-art-playing"><span /><span /><span /></div>}
-        <button className="wb-track-play-btn" aria-label={`Play ${track.title}`} type="button">
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20"/></svg>
+    <button onClick={onClick} onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+      aria-label={label} type="button"
+      style={{ width:38, height:38, borderRadius:8, border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', transition:'color .15s, background .15s',
+        color: active ? accent : hover ? 'var(--ink)' : 'var(--ink-3)',
+        background: active ? (accent==='var(--accent)' ? 'rgba(255,80,41,.10)' : 'rgba(255,255,255,.05)') : hover ? 'rgba(255,255,255,.04)' : 'transparent',
+      }}>
+      {active && <span style={{ position:'absolute', left:-9, top:8, bottom:8, width:2, borderRadius:2, background:accent }}/>}
+      {children}
+      {hover && <span style={{ position:'absolute', left:50, top:'50%', transform:'translateY(-50%)', padding:'4px 10px', background:'var(--bg-3)', border:'1px solid var(--line-2)', borderRadius:5, fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink)', letterSpacing:'.06em', whiteSpace:'nowrap', zIndex:10, pointerEvents:'none' }}>{label}</span>}
+    </button>
+  );
+}
+
+// ── Home view ─────────────────────────────────────────────────────
+
+function ViewHome({ session, onPickTrack, currentId, setView }:
+  { session: ReturnType<typeof useSession>['data']; onPickTrack:(id:string)=>void; currentId:string|null; setView:(v:View)=>void }) {
+  const hour = new Date().getHours();
+  const greeting = hour<12 ? 'Good morning' : hour<18 ? 'Good afternoon' : 'Good evening';
+  const firstName = session?.user?.name?.split(' ')[0] ?? 'friend';
+  const days = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const now = new Date();
+  const eb = `${days[now.getDay()]} · CHICAGO · ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+  return (
+    <div style={{ padding:'24px 32px 8px' }}>
+      {/* Greeting */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:24, gap:24 }}>
+        <div>
+          <div style={eyebrow()}>● {eb}</div>
+          <h1 style={{ fontFamily:'var(--f-d)', fontWeight:800, fontSize:38, letterSpacing:'-.025em', lineHeight:1, margin:0, color:'var(--ink)' }}>{greeting}, {firstName}.</h1>
+          <p style={{ fontFamily:'var(--f-b)', fontSize:14, color:'var(--ink-2)', marginTop:10, maxWidth:560, lineHeight:1.5 }}>
+            3 new hypes on <strong style={{ color:'var(--ink)' }}>Sundown</strong>. Cobalt Hour opens for you Saturday at Sleeping Village. Two venues asked about August.
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:10, flexShrink:0 }}>
+          <button onClick={()=>setView('studio')} type="button"
+            style={{ padding:'9px 16px', background:'var(--accent)', color:'var(--bg)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:12, fontWeight:600, letterSpacing:'.04em', display:'flex', alignItems:'center', gap:6, border:'none', cursor:'pointer' }}>
+            <IcBolt s={12}/> Upload a track
+          </button>
+          <button onClick={()=>setView('shows')} type="button" style={btnGhost}>Plan a tour →</button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:18 }}>
+        {[
+          { l:'HYPE THIS WEEK', v:'1,247', d:'↑ 23% vs last wk', c:'#ff3e9a' },
+          { l:'TICKETS SOLD',   v:'184',   d:'↑ 12 today',        c:'#22e5d4' },
+          { l:'RADIO PLAYS',    v:'3,891', d:'across 8 shows',     c:'#b983ff' },
+          { l:'PAYOUT PENDING', v:'$2,460',d:'releases Jun 24',    c:'#ffb84a' },
+        ].map(s=>(
+          <div key={s.l} style={{ padding:'14px 16px', border:'1px solid var(--line)', borderRadius:10, background:'var(--bg-2)' }}>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:9, letterSpacing:'.16em', color:'var(--ink-3)', textTransform:'uppercase', marginBottom:8 }}>{s.l}</div>
+            <div style={{ fontFamily:'var(--f-d)', fontSize:26, fontWeight:700, letterSpacing:'-.015em', color:'var(--ink)' }}>{s.v}</div>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.02em', marginTop:6, color:s.c }}>{s.d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Shows + Activity */}
+      <div style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:12 }}>
+        <section style={panel}>
+          <div style={panelHead}>
+            <div style={panelTitle}>Tonight in Chicago</div>
+            <button onClick={()=>setView('shows')} type="button" style={linkBtn}>All shows →</button>
+          </div>
+          {SHOWS.slice(0,3).map((s,i)=>{
+            const sc = s.status==='TONIGHT'?'#22e5d4':s.status==='NEAR SOLD'?'#ffb84a':'var(--ink-3)';
+            const fc = s.sold/s.cap>0.85?'#ffb84a':'#22e5d4';
+            return (
+              <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', borderBottom:'1px solid var(--line)' }}>
+                <div style={{ width:3, height:36, borderRadius:2, flexShrink:0, background:sc }}/>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{s.name} <span style={{ color:'var(--ink-3)', fontWeight:500 }}>· {s.venue}</span></div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:3 }}>{s.date} · {s.time} · ♡ {s.hype}</div>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4, minWidth:80 }}>
+                  <div style={{ width:70, height:3, background:'rgba(255,255,255,.06)', borderRadius:2, position:'relative', overflow:'hidden' }}>
+                    <div style={{ position:'absolute', inset:0, width:`${s.sold/s.cap*100}%`, background:fc, borderRadius:2 }}/>
+                  </div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)' }}>{s.sold}/{s.cap}</div>
+                </div>
+                <button type="button" style={{ color:'var(--ink-3)', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center' }}><IcArrow s={12}/></button>
+              </div>
+            );
+          })}
+        </section>
+        <section style={panel}>
+          <div style={panelHead}>
+            <div style={panelTitle}>Activity</div>
+            <button type="button" style={linkBtn}>Mark read</button>
+          </div>
+          {ACTIVITY.map((a,i)=>(
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 16px', borderBottom:'1px solid var(--line)' }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', flexShrink:0, background:ACT_COLORS[a.kind] }}/>
+              <div style={{ flex:1, fontFamily:'var(--f-b)', fontSize:13, color:'var(--ink)' }}>{a.txt}</div>
+              <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em' }}>{a.t}</div>
+            </div>
+          ))}
+        </section>
+      </div>
+
+      {/* Track grid */}
+      <section style={{ ...panel, marginTop:14 }}>
+        <div style={panelHead}>
+          <div style={panelTitle}>Hyped this week</div>
+          <button onClick={()=>setView('discover')} type="button" style={linkBtn}>Discover all →</button>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:10, padding:'14px 16px' }}>
+          {TRACKS.slice(0,6).map(t=>(
+            <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
+              style={{ padding:8, border:`1px solid ${t.id===currentId?t.c:'var(--line)'}`, borderRadius:8, background:'var(--bg-3)', textAlign:'left', cursor:'pointer', transition:'border-color .2s' }}>
+              <div style={{ width:'100%', aspectRatio:'1', borderRadius:5, marginBottom:8, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}>
+                <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 25% 25%, rgba(255,255,255,.25), transparent 65%)' }}/>
+                <div style={{ position:'absolute', left:10, bottom:10, width:26, height:26, borderRadius:'50%', background:'var(--ink)', color:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center' }}><IcPlay s={12}/></div>
+                <div style={{ position:'absolute', right:8, top:8, padding:'2px 7px', background:'rgba(0,0,0,.5)', borderRadius:99, fontFamily:'var(--f-m)', fontSize:9, color:'#ff3e9a', display:'flex', alignItems:'center', gap:3 }}><IcHeart s={10} c="#ff3e9a"/> {t.h}</div>
+              </div>
+              <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:13, color:'var(--ink)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.t}</div>
+              <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:3 }}>{t.a} · {t.d}</div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Roles */}
+      <section style={{ ...panel, marginTop:14, marginBottom:24 }}>
+        <div style={panelHead}>
+          <div style={panelTitle}>Your roles</div>
+          <span style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em' }}>2 active · 2 available</span>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, padding:'14px 16px' }}>
+          {ROLES.map(r=>(
+            <div key={r.k} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', border:`1px solid ${r.active?r.c:'var(--line)'}`, borderRadius:8, background:r.active?`${r.c}08`:'var(--bg-2)' }}>
+              <div style={{ width:8, height:8, borderRadius:2, flexShrink:0, background:r.c }}/>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:13, color:'var(--ink)' }}>{r.label}</div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:2 }}>{r.sub}</div>
+              </div>
+              <button type="button" style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 8px', border:`1px solid ${r.active?`${r.c}40`:'var(--line-2)'}`, borderRadius:99, fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.04em', color:r.active?r.c:'var(--ink-2)', background:'transparent', cursor:'pointer' }}>
+                {r.active ? <><IcCheck s={11}/> active</> : 'add →'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ── Discover view ─────────────────────────────────────────────────
+
+function ViewDiscover({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void; currentId:string|null }) {
+  return (
+    <div style={{ padding:'24px 32px' }}>
+      <div style={{ marginBottom:22 }}>
+        <div style={eyebrow('#ff5029')}>● HYPED THIS WEEK · 432 NEW TRACKS · CHICAGO IS HOT</div>
+        <h1 style={pageTitle}>Discover</h1>
+        <p style={pageSub}>Trending tracks from the artists, venues, and DJs in your scene.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+        {TRACKS.map(t=>(
+          <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
+            style={{ padding:12, border:`1px solid ${t.id===currentId?t.c:'var(--line)'}`, borderRadius:10, background:'var(--bg-2)', textAlign:'left', cursor:'pointer', transition:'border-color .2s' }}>
+            <div style={{ width:'100%', aspectRatio:'1', borderRadius:7, marginBottom:10, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}>
+              <div style={{ position:'absolute', inset:0, background:'radial-gradient(circle at 25% 25%, rgba(255,255,255,.25), transparent 65%)' }}/>
+              <div style={{ position:'absolute', left:10, bottom:10, width:28, height:28, borderRadius:'50%', background:'var(--ink)', color:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center' }}><IcPlay s={12}/></div>
+              <div style={{ position:'absolute', right:8, top:8, padding:'2px 7px', background:'rgba(0,0,0,.5)', borderRadius:99, fontFamily:'var(--f-m)', fontSize:9, color:'#ff3e9a', display:'flex', alignItems:'center', gap:3 }}><IcHeart s={10} c="#ff3e9a"/> {t.h}</div>
+            </div>
+            <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{t.t}</div>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{t.a} · {t.d}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Radio view ────────────────────────────────────────────────────
+
+function ViewRadio({ onPickTrack }:{ onPickTrack:(id:string)=>void }) {
+  const [active, setActive] = useState('r1');
+  const show = RADIO_SHOWS.find(r=>r.id===active)!;
+  const freqs = ['88.3','94.1','101.7','107.9','104.5'];
+  const idx = RADIO_SHOWS.findIndex(r=>r.id===active);
+
+  return (
+    <div style={{ padding:'24px 32px 32px' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:24 }}>
+        <div>
+          <div style={eyebrow('#ff3e9a')}>● ON AIR · 5 CHANNELS · 1,080 LISTENING NOW</div>
+          <h1 style={pageTitle}>Radio</h1>
+          <p style={pageSub}>Curated shows from promoters, DJs, and artists. No ads, no algorithm — just real people picking music.</p>
+        </div>
+        <button type="button" style={{ padding:'9px 16px', border:'1px solid rgba(255,62,154,.4)', color:'#ff3e9a', borderRadius:6, fontFamily:'var(--f-m)', fontSize:12, fontWeight:600, letterSpacing:'.04em', display:'flex', alignItems:'center', gap:6, background:'transparent', cursor:'pointer' }}>
+          <IcBolt s={12}/> Start your show →
         </button>
       </div>
-      <div className="wb-track-meta">
-        <div className="wb-track-title">{track.title}</div>
-        <div className="wb-track-artist">{track.artistName}</div>
-        <div className="wb-track-info">
-          <span className="wb-hype-badge" style={{ color: meta.c }}>♡ {meta.hype}</span>
-          <span className="wb-track-dur">{meta.dur}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatusDot({ status }: { status: 'LIVE' | 'SOON' | 'OPEN' }) {
-  const colors = { LIVE: '#22e5d4', SOON: '#ffb84a', OPEN: 'var(--muted)' };
-  return <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: colors[status], flexShrink: 0 }} />;
-}
-
-function ViewDiscover({ session }: { session: ReturnType<typeof useSession>['data'] }) {
-  const { playTrack, currentTrack } = useMediaPlayer();
-  const playAll = useCallback((track: MediaTrack) => {
-    playTrack(track, DEMO_TRACKS);
-  }, [playTrack]);
-
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const firstName = session?.user?.name?.split(' ')[0] ?? null;
-
-  return (
-    <div className="wb-discover">
-      {/* Greeting */}
-      <div className="wb-greeting">
-        <h1 className="wb-greeting-h">
-          {firstName ? `${greeting}, ${firstName}.` : 'Independent music, found by humans.'}
-        </h1>
-        <p className="wb-greeting-sub">
-          {firstName
-            ? '3 new hypes on Sundown. Cobalt Hour opens for you Saturday at Sleeping Village.\nTwo venues asked about August.'
-            : 'Not-for-profit · free forever · built for the scene. '}
-          {!firstName && <Link href="/register" className="wb-link-ember">Join free →</Link>}
-        </p>
-        {firstName && (
-          <div className="wb-greeting-actions">
-            <Link href="/artists/upload" className="wb-btn-primary">+ Upload a track</Link>
-            <Link href="/shows/plan" className="wb-btn-ghost">Plan a tour ›</Link>
-          </div>
-        )}
-      </div>
-
-      {/* Stats row */}
-      <div className="wb-stat-row">
-        {[
-          { label: 'ALL TIME PLAYS', val: '1,247', delta: '+12% vs last wk', dc: '#22e5d4' },
-          { label: 'SHOWS SOON', val: '184', delta: '↑ 12 today', dc: '#ffb84a' },
-          { label: 'MUSIC PLAYS', val: '3,891', delta: 'across 6 shows', dc: '#22e5d4' },
-          { label: 'PAYOUT PENDING', val: '$2,460', delta: 'releases Jun 24', dc: '#b983ff' },
-        ].map((s) => (
-          <div key={s.label} className="wb-stat">
-            <div className="wb-stat-label">{s.label}</div>
-            <div className="wb-stat-val">{s.val}</div>
-            <div className="wb-stat-delta" style={{ color: s.dc }}>{s.delta}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Shows + Activity row */}
-      <div className="wb-panel-row">
-        <div className="wb-panel">
-          <div className="wb-panel-head">
-            <span>Tonight in Chicago</span>
-            <Link href="/shows" className="wb-panel-link">ALL SHOWS →</Link>
-          </div>
-          <div className="wb-panel-body">
-            {SHOWS.slice(0, 3).map((s, i) => (
-              <div key={i} className="wb-show-row">
-                <StatusDot status={s.status} />
-                <div className="wb-show-info">
-                  <span className="wb-show-name">{s.name}</span>
-                  <span className="wb-show-venue">{s.venue}</span>
-                </div>
-                <div className="wb-show-right">
-                  <span className="wb-show-time">{s.date} · {s.time}</span>
-                  <span className="wb-show-hype">♡ {s.hype}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="wb-panel">
-          <div className="wb-panel-head">
-            <span>Activity</span>
-            <button className="wb-panel-link" type="button">MARK READ</button>
-          </div>
-          <div className="wb-panel-body">
-            {ACTIVITY.map((a, i) => (
-              <div key={i} className="wb-activity-row">
-                <span className="wb-activity-dot" style={{ background: a.c }} />
-                <span className="wb-activity-text">{a.text}</span>
-                <span className="wb-activity-time">{a.time}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Hyped this week — large card grid */}
-      <div className="wb-section">
-        <div className="wb-section-head">
-          <span>Hyped this week</span>
-          <Link href="/artists" className="wb-panel-link">DISCOVER ALL →</Link>
-        </div>
-        <div className="wb-card-grid">
-          {DEMO_TRACKS.map((t) => (
-            <TrackCard
-              key={t.id}
-              track={t}
-              isActive={currentTrack?.id === t.id}
-              onPlay={() => playAll(t)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Your roles */}
-      <div className="wb-section">
-        <div className="wb-section-head">
-          <span>Your roles</span>
-          <span className="wb-panel-link">{ROLES.filter(r => r.active).length} ACTIVE · {ROLES.filter(r => !r.active).length} AVAILABLE</span>
-        </div>
-        <div className="wb-role-row">
-          {ROLES.map((r) => (
-            <div key={r.k} className="wb-role-card" style={{ '--role-c': r.c } as React.CSSProperties}>
-              <div className="wb-role-top">
-                <span className="wb-role-label">{r.label}</span>
-                {r.active
-                  ? <span className="wb-role-badge active">✓ active</span>
-                  : <Link href={`/register?role=${r.k}`} className="wb-role-badge add">add →</Link>
-                }
-              </div>
-              <div className="wb-role-sub">{r.sub}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ViewLibrary() {
-  const { playTrack, currentTrack } = useMediaPlayer();
-  return (
-    <div className="wb-discover">
-      <div className="wb-greeting">
-        <h1 className="wb-greeting-h">Your Library</h1>
-        <p className="wb-greeting-sub">Playlists, hyped tracks, and saved shows live here once you sign in.</p>
-        <div className="wb-greeting-actions">
-          <Link href="/register" className="wb-btn-primary">Create account</Link>
-          <Link href="/login" className="wb-btn-ghost">Sign in</Link>
-        </div>
-      </div>
-      <div className="wb-section">
-        <div className="wb-section-head"><span>Popular playlists</span><span className="wb-panel-link">PREVIEW</span></div>
-        <div className="wb-panel">
-          <div className="wb-panel-body">
-            {[
-              { name: 'Chicago Locals 2026', tracks: 24, curator: 'iHYPE Staff', c: '#ff5029' },
-              { name: 'Late Night Hypno', tracks: 18, curator: 'DJ Ramona', c: '#b983ff' },
-              { name: 'Midwest Emerging', tracks: 31, curator: 'Saint Hex', c: '#22e5d4' },
-            ].map((pl, i) => (
-              <div key={i} className="wb-show-row">
-                <div style={{ width: 28, height: 28, borderRadius: 4, background: `linear-gradient(135deg,${pl.c},${pl.c}66)`, flexShrink: 0 }} />
-                <div className="wb-show-info">
-                  <span className="wb-show-name">{pl.name}</span>
-                  <span className="wb-show-venue">by {pl.curator}</span>
-                </div>
-                <span className="wb-show-hype">{pl.tracks} tracks</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="wb-section">
-        <div className="wb-section-head"><span>Recently played</span></div>
-        <div className="wb-card-grid">
-          {DEMO_TRACKS.slice(0, 4).map((t) => (
-            <TrackCard key={t.id} track={t} isActive={currentTrack?.id === t.id} onPlay={() => playTrack(t, DEMO_TRACKS)} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ViewShows() {
-  return (
-    <div className="wb-discover">
-      <div className="wb-greeting">
-        <h1 className="wb-greeting-h">Shows</h1>
-        <p className="wb-greeting-sub">Upcoming and live events near you.</p>
-        <div className="wb-greeting-actions">
-          <Link href="/register?role=venue" className="wb-btn-primary">List a show</Link>
-          <Link href="/shows" className="wb-btn-ghost">Browse all cities</Link>
-        </div>
-      </div>
-      <div className="wb-panel">
-        <div className="wb-panel-head"><span>ALL UPCOMING</span><span className="wb-panel-link">{SHOWS.length} SHOWS</span></div>
-        <div className="wb-panel-body">
-          {SHOWS.map((s, i) => (
-            <div key={i} className="wb-show-row">
-              <StatusDot status={s.status} />
-              <div className="wb-show-info">
-                <span className="wb-show-name">{s.name}</span>
-                <span className="wb-show-venue">{s.venue}</span>
-              </div>
-              <div className="wb-show-right">
-                <span className={`wb-status-badge wb-status-${s.status.toLowerCase()}`}>{s.status}</span>
-                <span className="wb-show-time">{s.date} · {s.time}</span>
-                <span className="wb-show-hype">♡ {s.hype}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ViewRadio() {
-  return (
-    <div className="wb-discover">
-      <div className="wb-greeting">
-        <h1 className="wb-greeting-h">Radio</h1>
-        <p className="wb-greeting-sub">Live and recorded sets from local artists and DJs.</p>
-      </div>
-      <div className="wb-stat-row">
-        {RADIO.map((r, i) => (
-          <div key={i} className="wb-stat wb-radio-card" style={{ '--card-c': r.c, cursor: 'pointer' } as React.CSSProperties}>
-            <div className="wb-radio-bar" style={{ background: r.c }} />
-            <div className="wb-stat-label">LIVE</div>
-            <div className="wb-radio-name">{r.name}</div>
-            <div className="wb-radio-host">with {r.host}</div>
-            <div className="wb-radio-listeners" style={{ color: r.c }}>● {r.listeners} listening</div>
-          </div>
-        ))}
-      </div>
-      <div className="wb-section">
-        <div className="wb-section-head"><span>Recent sets</span><span className="wb-panel-link">ARCHIVE</span></div>
-        <div className="wb-panel">
-          <div className="wb-panel-body">
-            {DEMO_TRACKS.slice(0, 3).map((t, i) => (
-              <div key={i} className="wb-show-row">
-                <span className="wb-activity-dot" style={{ background: TRACK_META[t.id]?.c }} />
-                <div className="wb-show-info">
-                  <span className="wb-show-name">{t.artistName} — Live Set</span>
-                  <span className="wb-show-venue">{TRACK_META[t.id]?.dur}</span>
-                </div>
-                <span className="wb-show-time">May {10 + i}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ViewStudio() {
-  return (
-    <div className="wb-discover">
-      <div className="wb-greeting">
-        <h1 className="wb-greeting-h">Studio</h1>
-        <p className="wb-greeting-sub">Upload tracks, manage your shows, and track hype as an artist.</p>
-      </div>
-      <div className="wb-role-row" style={{ marginBottom: 24 }}>
-        {[
-          { icon: '◐', label: 'Upload Track', sub: 'Stream-quality audio, no limits', c: '#ff5029', href: '/register?role=artist' },
-          { icon: '◇', label: 'List a Show', sub: 'Tickets, RSVP, or free entry', c: '#22e5d4', href: '/register?role=venue' },
-          { icon: '◉', label: 'Start Radio', sub: 'Live or recorded DJ sets', c: '#ff3e9a', href: '/register?role=promoter' },
-          { icon: '☰', label: 'Artist Profile', sub: 'Bio, links, press kit', c: '#b983ff', href: '/register?role=artist' },
-        ].map((item, i) => (
-          <Link key={i} href={item.href} className="wb-role-card" style={{ '--role-c': item.c, textDecoration: 'none' } as React.CSSProperties}>
-            <div className="wb-role-top">
-              <span style={{ fontSize: 20, color: item.c }}>{item.icon}</span>
-            </div>
-            <div className="wb-role-label">{item.label}</div>
-            <div className="wb-role-sub">{item.sub}</div>
-          </Link>
-        ))}
-      </div>
-      <div className="wb-cta-banner">
-        <div className="wb-cta-banner-text">
-          <strong>iHYPE is free for artists.</strong>
-          <span>No streaming cuts. No paywalls. Built by and for the independent music scene.</span>
-        </div>
-        <Link href="/register?role=artist" className="wb-btn-primary">Get started free →</Link>
-      </div>
-    </div>
-  );
-}
-
-// ── Right panel: queue ───────────────────────────────────────────
-
-function RightPanel() {
-  const { currentTrack, playTrack, isPlaying } = useMediaPlayer();
-  return (
-    <div className="wb-right">
-      <div className="wb-right-head">Queue</div>
-      {currentTrack && (
-        <div className="wb-right-now">
-          <div className="wb-right-now-art" style={{ background: `linear-gradient(135deg,${TRACK_META[currentTrack.id]?.c ?? '#ff5029'},${TRACK_META[currentTrack.id]?.c ?? '#ff5029'}66)` }} />
-          <div>
-            <div className="wb-right-now-title">{currentTrack.title}</div>
-            <div className="wb-right-now-artist">{currentTrack.artistName}</div>
-          </div>
-        </div>
-      )}
-      <div className="wb-right-label">UP NEXT · {DEMO_TRACKS.length} TRACKS</div>
-      {DEMO_TRACKS.map((t) => {
-        const meta = TRACK_META[t.id];
-        const active = currentTrack?.id === t.id;
-        return (
-          <button
-            key={t.id}
-            className="wb-queue-item"
-            data-active={active}
-            onClick={() => playTrack(t, DEMO_TRACKS)}
-            type="button"
-          >
-            <div className="wb-queue-art" style={{ background: `linear-gradient(135deg,${meta?.c},${meta?.c}66)` }} />
-            <div className="wb-queue-info">
-              <div className="wb-queue-title">{t.title}</div>
-              <div className="wb-queue-artist">{t.artistName}</div>
-            </div>
-            <div className="wb-queue-dur">{meta?.dur}</div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ── Root component ───────────────────────────────────────────────
-
-export default function LandingPage() {
-  const [view, setView] = useState<View>('discover');
-  const [hovered, setHovered] = useState<string | null>(null);
-  const { data: session } = useSession();
-
-  return (
-    <>
-      <style>{`
-        @keyframes lp-fadein { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes bars { 0%,100%{height:4px} 50%{height:12px} }
-        .wb-track-art-playing span { display:inline-block; width:3px; border-radius:2px; background:currentColor; animation:bars .8s ease-in-out infinite; }
-        .wb-track-art-playing span:nth-child(2) { animation-delay:.15s; }
-        .wb-track-art-playing span:nth-child(3) { animation-delay:.3s; }
-      `}</style>
-
-      <div className="wb-wrap">
-        {/* ── Sidebar ─────────────────────────────────────────── */}
-        <aside className="wb-sidebar">
-          {NAV_ITEMS.map((n) => {
-            const active = view === n.id;
+      <div style={{ display:'grid', gridTemplateColumns:'280px 1fr', gap:16 }}>
+        {/* Channel list */}
+        <div style={{ ...panel, alignSelf:'start' }}>
+          <div style={{ padding:'12px 16px', borderBottom:'1px solid var(--line)', fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.14em' }}>CHANNELS</div>
+          {RADIO_SHOWS.map(r=>{
+            const isActive = r.id===active;
             return (
-              <button
-                key={n.id}
-                className="wb-nav-btn"
-                data-active={active}
-                onMouseEnter={() => setHovered(n.id)}
-                onMouseLeave={() => setHovered(null)}
-                onClick={() => setView(n.id as View)}
-                type="button"
-                aria-label={n.label}
-              >
-                {active && <span className="wb-nav-indicator" />}
-                <span className="wb-nav-icon">{n.icon}</span>
-                {hovered === n.id && <span className="wb-nav-tooltip">{n.label}</span>}
+              <button key={r.id} onClick={()=>setActive(r.id)} type="button"
+                style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'12px 14px', borderBottom:'1px solid var(--line)', textAlign:'left', cursor:'pointer', transition:'background .15s', background:isActive?`${r.c}10`:'transparent', borderLeft:`2px solid ${isActive?`${r.c}50`:'transparent'}` }}>
+                <div style={{ width:3, height:32, borderRadius:2, flexShrink:0, background:r.c, opacity:r.live?1:.3 }}/>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:13, color:'var(--ink)', display:'flex', alignItems:'center', gap:8 }}>
+                    {r.name}
+                    {r.live && <span style={{ fontFamily:'var(--f-m)', fontSize:8, color:'#ff3e9a', letterSpacing:'.16em', padding:'1px 5px', border:'1px solid rgba(255,62,154,.4)', borderRadius:3 }}>LIVE</span>}
+                  </div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:3 }}>{r.host} · {r.time}</div>
+                </div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)' }}>{r.listeners}</div>
               </button>
             );
           })}
-          <div className="wb-sidebar-foot">
-            {!session?.user && (
-              <Link href="/login" className="wb-sidebar-signin">↑<br />in</Link>
-            )}
+          <div style={{ padding:'10px 14px', textAlign:'center' }}>
+            <span style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.06em', cursor:'pointer' }}>+ Add station</span>
+          </div>
+        </div>
+
+        {/* Detail panel */}
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          <div style={{ ...panel, padding:'24px 28px', background:`linear-gradient(135deg, ${show.c}30 0%, transparent 60%), var(--bg-2)` }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+              {show.live ? (
+                <span style={{ fontFamily:'var(--f-m)', fontSize:10, color:'#ff3e9a', letterSpacing:'.14em', display:'flex', alignItems:'center', gap:6, padding:'4px 10px', border:'1px solid rgba(255,62,154,.3)', borderRadius:99 }}>
+                  <IcDot c="#ff3e9a" s={8}/> ON AIR · {show.listeners} listening
+                </span>
+              ) : (
+                <span style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.14em' }}>NEXT BROADCAST · {show.next}</span>
+              )}
+              <span style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:18, color:'var(--ink-2)' }}>{freqs[idx]} MHz</span>
+            </div>
+            <h2 style={{ fontFamily:'var(--f-d)', fontWeight:800, fontSize:34, letterSpacing:'-.025em', lineHeight:1, margin:0, color:'var(--ink)' }}>{show.name}</h2>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)', letterSpacing:'.06em', marginTop:8 }}>Hosted by <strong>{show.host}</strong> · {show.time}</div>
+            <p style={{ fontFamily:'var(--f-b)', fontSize:14, color:'var(--ink-2)', marginTop:14, maxWidth:540, lineHeight:1.55 }}>{show.desc}</p>
+            <div style={{ display:'flex', gap:8, marginTop:20 }}>
+              {show.live ? (
+                <button type="button" style={{ ...btnPrime, display:'flex', alignItems:'center', gap:6, background:show.c, color:'var(--bg)' }}><IcPlay s={12}/> Tune in</button>
+              ) : (
+                <button type="button" style={{ ...btnPrime, display:'flex', alignItems:'center', gap:6 }}><IcPlay s={12}/> Pre-roll archive</button>
+              )}
+              <button type="button" style={btnGhost}>♡ Subscribe</button>
+              <button type="button" style={{ ...btnGhost, display:'flex', alignItems:'center', gap:6 }}><IcHeart s={12} c="#ff3e9a"/> Hype show</button>
+            </div>
+          </div>
+
+          {/* Set list */}
+          <div style={panel}>
+            <div style={panelHead}>
+              <div>
+                <div style={panelTitle}>Set list · this broadcast</div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:3 }}>{show.live?'Played in the last hour':'Played last show'}</div>
+              </div>
+              <button type="button" style={linkBtn}>Save all to playlist →</button>
+            </div>
+            <div>
+              {TRACKS.slice(0,6).map((t,i)=>(
+                <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
+                  style={{ width:'100%', display:'flex', alignItems:'center', gap:14, padding:'10px 18px', borderBottom:'1px solid var(--line)', textAlign:'left', background:'transparent', border:'none', cursor:'pointer', borderBottom2:'1px solid var(--line)' as never }}>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-3)', width:22 }}>{String(i+1).padStart(2,'0')}</div>
+                  <div style={{ width:34, height:34, borderRadius:4, flexShrink:0, background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}/>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontFamily:'var(--f-d)', fontWeight:600, fontSize:13, color:'var(--ink)' }}>{t.t}</div>
+                    <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:2 }}>{t.a} · {t.album}</div>
+                  </div>
+                  <div style={{ padding:'2px 8px', background:'var(--bg-3)', borderRadius:3, fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-2)', letterSpacing:'.08em' }}>
+                    {i===0&&show.live?'NOW':i<2?'JUST PLAYED':`-${i*4}m`}
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:4, fontFamily:'var(--f-m)', fontSize:11, color:'#ff3e9a', width:50, justifyContent:'flex-end' }}>
+                    <IcHeart s={10} c="#ff3e9a"/> {t.h}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Ticketing view ────────────────────────────────────────────────
+
+function ViewTicketing() {
+  const [tab, setTab] = useState<'mine'|'selling'|'scan'>('mine');
+  return (
+    <div style={{ padding:'24px 32px 32px' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:22, gap:24 }}>
+        <div>
+          <div style={eyebrow('#22e5d4')}>● 3 TICKETS · 1 TONIGHT · NO QUEUES, NO SCALPERS</div>
+          <h1 style={pageTitle}>Ticketing</h1>
+          <p style={pageSub}>Buy, hold, transfer, and verify tickets — all without leaving iHYPE. Wallet entries are signed to your account; venues scan QR at the door.</p>
+        </div>
+        <div style={{ display:'flex', gap:4, padding:4, background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:8, flexShrink:0 }}>
+          {(['mine','selling','scan'] as const).map((k,i)=>(
+            <button key={k} onClick={()=>setTab(k)} type="button"
+              style={{ padding:'7px 12px', borderRadius:5, fontFamily:'var(--f-m)', fontSize:11, letterSpacing:'.04em', border:'none', cursor:'pointer', background:tab===k?'var(--bg-3)':'transparent', color:tab===k?'var(--ink)':'var(--ink-3)' }}>
+              {['My tickets','Selling','Scan / verify'][i]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab==='mine' && (
+        <>
+          {/* Hero ticket */}
+          <div style={{ marginBottom:18 }}>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.16em', marginBottom:10 }}>NEXT UP</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 200px', gap:32, padding:'24px 28px', border:'1px solid var(--line)', borderRadius:12, background:`linear-gradient(135deg, rgba(255,80,41,.15) 0%, transparent 60%), var(--bg-2)` }}>
+              <div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'#22e5d4', letterSpacing:'.14em', display:'flex', alignItems:'center', gap:6 }}>
+                  <IcDot c="#22e5d4" s={7}/> CONFIRMED · DOORS 7:30 PM
+                </div>
+                <h2 style={{ fontFamily:'var(--f-d)', fontWeight:800, fontSize:32, letterSpacing:'-.025em', margin:'10px 0 4px', color:'var(--ink)' }}>
+                  Maya Reyes <span style={{ color:'var(--ink-2)', fontWeight:500 }}>@ Empty Bottle</span>
+                </h2>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:12, color:'var(--ink-2)', letterSpacing:'.06em' }}>Thursday, June 18 · 9:00 PM</div>
+                <div style={{ display:'flex', gap:30, marginTop:20, paddingTop:20, borderTop:'1px solid var(--line)' }}>
+                  {[['SEAT','General Admission'],['PAID','$18.00'],['ENTRY CODE','iH-MR18-K3X9']].map(([l,v])=>(
+                    <div key={l}><div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.16em', marginBottom:6 }}>{l}</div><div style={{ fontFamily:'var(--f-d)', fontWeight:600, fontSize:14, color:'var(--ink)' }}>{v}</div></div>
+                  ))}
+                </div>
+                <div style={{ display:'flex', gap:8, marginTop:22, flexWrap:'wrap' }}>
+                  <button type="button" style={btnPrime}>Show at door →</button>
+                  <button type="button" style={btnGhost}>Transfer</button>
+                  <button type="button" style={btnGhost}>Add to Wallet</button>
+                  <button type="button" style={{ ...btnGhost, borderColor:'rgba(255,80,41,.3)', color:'#ff5029' }}>Request refund</button>
+                </div>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:10 }}>
+                <div style={{ padding:14, background:'var(--ink)', color:'var(--bg)', borderRadius:8 }}><IcQR s={140}/></div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.06em', textAlign:'center', maxWidth:140 }}>Signed by iHYPE · scan with venue app</div>
+              </div>
+            </div>
+          </div>
+          {/* Ticket list */}
+          <div style={panel}>
+            <div style={panelHead}><div style={panelTitle}>All my tickets</div><div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em' }}>3 active</div></div>
+            {MY_TICKETS.map(tk=>(
+              <div key={tk.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 18px', borderBottom:'1px solid var(--line)' }}>
+                <div style={{ width:3, height:40, background:'var(--accent)', borderRadius:2 }}/>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{tk.show}</div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:3 }}>{tk.date}</div>
+                </div>
+                <div style={{ minWidth:80 }}><div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.14em', marginBottom:3 }}>SEAT</div><div style={{ fontFamily:'var(--f-d)', fontWeight:600, fontSize:13, color:'var(--ink)' }}>{tk.seat}</div></div>
+                <div style={{ minWidth:80 }}><div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.14em', marginBottom:3 }}>PAID</div><div style={{ fontFamily:'var(--f-d)', fontWeight:600, fontSize:13, color:'var(--ink)' }}>${tk.price}</div></div>
+                {tk.qr && <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)', letterSpacing:'.05em' }}>{tk.qr}</div>}
+                <div style={{ padding:'4px 10px', border:`1px solid ${tk.status==='CONFIRMED'?'rgba(34,229,212,.3)':'rgba(255,184,74,.3)'}`, borderRadius:99, fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.08em', color:tk.status==='CONFIRMED'?'#22e5d4':'#ffb84a' }}>{tk.status}</div>
+                <button type="button" style={{ color:'var(--ink-3)', background:'none', border:'none', cursor:'pointer', display:'flex', alignItems:'center' }}><IcArrow s={12}/></button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {tab==='selling' && (
+        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+            {[
+              { l:'TICKETS SOLD',   v:'184',    d:'across 4 shows',  c:'#22e5d4' },
+              { l:'GROSS',          v:'$3,128',  d:'this month',      c:'#22e5d4' },
+              { l:'PLATFORM FEE',   v:'0%',      d:'always',          c:'#b983ff' },
+              { l:'PAYOUT PENDING', v:'$2,460',  d:'releases Jun 24', c:'#ffb84a' },
+            ].map(s=>(
+              <div key={s.l} style={{ padding:'14px 16px', border:'1px solid var(--line)', borderRadius:10, background:'var(--bg-2)' }}>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:9, letterSpacing:'.16em', color:'var(--ink-3)', textTransform:'uppercase', marginBottom:8 }}>{s.l}</div>
+                <div style={{ fontFamily:'var(--f-d)', fontSize:26, fontWeight:700, color:'var(--ink)' }}>{s.v}</div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:10, marginTop:6, color:s.c }}>{s.d}</div>
+              </div>
+            ))}
+          </div>
+          <div style={panel}>
+            <div style={panelHead}><div style={panelTitle}>Shows on sale</div><button type="button" style={btnPrime}>+ New show</button></div>
+            {SHOWS.map(s=>(
+              <div key={s.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 18px', borderBottom:'1px solid var(--line)' }}>
+                <div style={{ width:3, height:40, background:'var(--accent)', borderRadius:2 }}/>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{s.name} <span style={{ color:'var(--ink-3)' }}>· {s.venue}</span></div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:3 }}>{s.date} · {s.time}</div>
+                </div>
+                <div style={{ minWidth:120 }}>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.14em', marginBottom:4 }}>SOLD</div>
+                  <div style={{ width:80, height:3, background:'rgba(255,255,255,.06)', borderRadius:2, position:'relative', overflow:'hidden', marginBottom:4 }}>
+                    <div style={{ position:'absolute', inset:0, width:`${s.sold/s.cap*100}%`, background:s.sold/s.cap>0.85?'#ffb84a':'#22e5d4', borderRadius:2 }}/>
+                  </div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)' }}>{s.sold} / {s.cap}</div>
+                </div>
+                <div style={{ minWidth:60 }}><div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.14em', marginBottom:3 }}>PRICE</div><div style={{ fontFamily:'var(--f-d)', fontWeight:600, fontSize:13, color:'var(--ink)' }}>${s.price}</div></div>
+                <div style={{ minWidth:70 }}><div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.14em', marginBottom:3 }}>GROSS</div><div style={{ fontFamily:'var(--f-d)', fontWeight:600, fontSize:13, color:'var(--ink)' }}>${(s.sold*s.price).toLocaleString()}</div></div>
+                <button type="button" style={{ padding:'7px 12px', border:'1px solid var(--line-2)', borderRadius:5, fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)', background:'transparent', cursor:'pointer' }}>Manage →</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab==='scan' && (
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 280px', gap:24, border:'1px solid var(--line)', borderRadius:12, padding:'28px', background:'var(--bg-2)' }}>
+          <div>
+            <div style={eyebrow('#22e5d4')}>● VENUE MODE · EMPTY BOTTLE · GATE 1</div>
+            <h2 style={{ fontFamily:'var(--f-d)', fontWeight:800, fontSize:28, letterSpacing:'-.025em', margin:'0 0 12px', color:'var(--ink)' }}>Door scanner</h2>
+            <p style={pageSub}>Point a phone camera at the QR. Valid tickets show a green check; transferred tickets reveal the original buyer. Replays are blocked at the protocol layer.</p>
+            <div style={{ marginTop:20, display:'flex', flexDirection:'column', gap:8 }}>
+              {[
+                { code:'iH-MR18-K3X9', meta:'Maya Reyes · GA · admitted 21:04', status:'VALID', c:'#22e5d4' },
+                { code:'iH-MR18-7QQR', meta:'Transferred from J.Park 14m ago · GA · admitted 21:06', status:'VALID', c:'#22e5d4' },
+                { code:'iH-MR18-9BLN', meta:'Already scanned at 20:51 · blocked', status:'REPLAY', c:'#ff5029' },
+              ].map((row,i)=>(
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', border:'1px solid var(--line)', borderRadius:8, background:'var(--bg-3)', borderLeft:`2px solid ${row.c}` }}>
+                  <span style={{ color:row.c }}>{row.status==='VALID'?'✓':'✗'}</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontFamily:'var(--f-m)', fontSize:12, color:'var(--ink)', letterSpacing:'.04em' }}>{row.code}</div>
+                    <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:2 }}>{row.meta}</div>
+                  </div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:row.c, letterSpacing:'.08em' }}>{row.status}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:16, alignItems:'center' }}>
+            <div style={{ width:200, height:200, border:'2px solid var(--line-2)', borderRadius:12, background:'var(--bg-3)', display:'flex', alignItems:'center', justifyContent:'center', position:'relative', flexDirection:'column', gap:8 }}>
+              <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.1em' }}>Ready for QR</div>
+              <div style={{ position:'absolute', top:8, left:8, width:20, height:20, borderTop:'2px solid var(--accent)', borderLeft:'2px solid var(--accent)', borderRadius:'4px 0 0 0' }}/>
+              <div style={{ position:'absolute', top:8, right:8, width:20, height:20, borderTop:'2px solid var(--accent)', borderRight:'2px solid var(--accent)', borderRadius:'0 4px 0 0' }}/>
+              <div style={{ position:'absolute', bottom:8, left:8, width:20, height:20, borderBottom:'2px solid var(--accent)', borderLeft:'2px solid var(--accent)', borderRadius:'0 0 0 4px' }}/>
+              <div style={{ position:'absolute', bottom:8, right:8, width:20, height:20, borderBottom:'2px solid var(--accent)', borderRight:'2px solid var(--accent)', borderRadius:'0 0 4px 0' }}/>
+            </div>
+            <div style={{ display:'flex', gap:20 }}>
+              {[['ADMITTED','148'],['WAITING','23'],['BLOCKED','2']].map(([l,v])=>(
+                <div key={l} style={{ textAlign:'center' }}>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.14em', marginBottom:3 }}>{l}</div>
+                  <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:18, color:l==='BLOCKED'?'#ff5029':'var(--ink)' }}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Shows view ────────────────────────────────────────────────────
+
+function ViewShows() {
+  return (
+    <div style={{ padding:'24px 32px 32px' }}>
+      <div style={{ marginBottom:22 }}>
+        <div style={eyebrow('#22e5d4')}>● 7 TONIGHT · 23 THIS WEEK · CHICAGO</div>
+        <h1 style={pageTitle}>Shows</h1>
+        <p style={pageSub}>Live events in your city. No platform fee. Tickets settle at the door.</p>
+      </div>
+      <div style={panel}>
+        {SHOWS.map((s,i)=>{
+          const sc = s.status==='TONIGHT'?'#22e5d4':s.status==='NEAR SOLD'?'#ffb84a':'var(--ink-3)';
+          return (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 20px', borderBottom:'1px solid var(--line)' }}>
+              <div style={{ width:3, height:48, borderRadius:2, flexShrink:0, background:sc }}/>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:16, color:'var(--ink)' }}>{s.name} <span style={{ color:'var(--ink-3)', fontWeight:500 }}>· {s.venue}</span></div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{s.date} · {s.time} · ♡ {s.hype}</div>
+              </div>
+              <div style={{ minWidth:100 }}>
+                <div style={{ width:80, height:3, background:'rgba(255,255,255,.06)', borderRadius:2, overflow:'hidden', marginBottom:4 }}>
+                  <div style={{ height:'100%', width:`${s.sold/s.cap*100}%`, background:s.sold/s.cap>0.85?'#ffb84a':'#22e5d4', borderRadius:2 }}/>
+                </div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)' }}>{s.sold}/{s.cap} capacity</div>
+              </div>
+              <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:18, color:'var(--ink)' }}>${s.price}</div>
+              <button type="button" style={btnPrime}>Get ticket</button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Library view ──────────────────────────────────────────────────
+
+function ViewLibrary({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void; currentId:string|null }) {
+  const playlists = [
+    { n:'Hyped tracks',      c:'#ff3e9a', count:247 },
+    { n:'Top 5 — this week', c:'#ff5029', count:5 },
+    { n:'Writing room',      c:'#b983ff', count:42 },
+    { n:'Tour van',          c:'#22e5d4', count:88 },
+  ];
+  return (
+    <div style={{ padding:'24px 32px 32px' }}>
+      <div style={{ marginBottom:22 }}>
+        <div style={eyebrow('#b983ff')}>● YOUR SAVED TRACKS · 247 SONGS · 18 PLAYLISTS</div>
+        <h1 style={pageTitle}>Library</h1>
+        <p style={pageSub}>Everything you've hyped, saved, or curated. Your library is yours.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:16 }}>
+        {playlists.map(p=>(
+          <div key={p.n} style={{ padding:14, border:'1px solid var(--line)', borderRadius:10, background:'var(--bg-2)', cursor:'pointer' }}>
+            <div style={{ aspectRatio:'1', borderRadius:6, background:`linear-gradient(135deg, ${p.c}, ${p.c}80)`, marginBottom:10 }}/>
+            <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:14, color:'var(--ink)' }}>{p.n}</div>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{p.count} tracks</div>
+          </div>
+        ))}
+      </div>
+      <div style={panel}>
+        <div style={panelHead}><div style={panelTitle}>Recently played</div><button type="button" style={linkBtn}>See all</button></div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, padding:'14px 16px' }}>
+          {TRACKS.slice(0,4).map(t=>(
+            <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
+              style={{ padding:8, border:`1px solid ${t.id===currentId?t.c:'var(--line)'}`, borderRadius:8, background:'var(--bg-3)', textAlign:'left', cursor:'pointer', transition:'border-color .2s' }}>
+              <div style={{ width:'100%', aspectRatio:'1', borderRadius:5, marginBottom:8, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}>
+                <div style={{ position:'absolute', left:10, bottom:10, width:26, height:26, borderRadius:'50%', background:'var(--ink)', color:'var(--bg)', display:'flex', alignItems:'center', justifyContent:'center' }}><IcPlay s={12}/></div>
+              </div>
+              <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:13, color:'var(--ink)' }}>{t.t}</div>
+              <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{t.a}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Studio view ───────────────────────────────────────────────────
+
+function ViewStudio() {
+  return (
+    <div style={{ padding:'24px 32px 32px' }}>
+      <div style={{ marginBottom:22 }}>
+        <div style={eyebrow('#ff5029')}>● ARTIST MODE · 8 TRACKS · $2,460 PENDING</div>
+        <h1 style={pageTitle}>Studio</h1>
+        <p style={pageSub}>Upload tracks, release singles, manage merch, see who's hyping you, and cash out. No labels, no fee.</p>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+        <div style={panel}>
+          <div style={panelHead}><div style={panelTitle}>Uploads</div><button type="button" style={{ ...btnPrime, padding:'7px 14px', fontSize:11 }}>+ Upload track</button></div>
+          <div style={{ padding:'4px 0' }}>
+            {TRACKS.slice(0,5).map(t=>(
+              <div key={t.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 16px', borderBottom:'1px solid var(--line)' }}>
+                <div style={{ width:28, height:28, borderRadius:4, background:`linear-gradient(135deg, ${t.c}, ${t.c}80)`, flexShrink:0 }}/>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontFamily:'var(--f-d)', fontWeight:600, fontSize:13, color:'var(--ink)' }}>{t.t}</div>
+                  <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:2 }}>{t.album} · {t.d}</div>
+                </div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'#ff3e9a' }}>♡ {t.h}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={panel}>
+          <div style={panelHead}><div style={panelTitle}>Payouts</div></div>
+          <div style={{ padding:'20px 16px' }}>
+            <div style={{ fontFamily:'var(--f-d)', fontSize:42, fontWeight:800, letterSpacing:'-.025em', color:'var(--ink)' }}>$2,460</div>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'#ffb84a', marginTop:6 }}>pending · releases Jun 24</div>
+            <div style={{ marginTop:18, padding:'10px 14px', background:'var(--bg-3)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)' }}>
+              $1,820 tickets · $640 merch · $0 platform fee
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Settings view ─────────────────────────────────────────────────
+
+function ViewSettings() {
+  return (
+    <div style={{ padding:'24px 32px 32px' }}>
+      <div style={{ marginBottom:22 }}>
+        <h1 style={pageTitle}>Settings <span style={{ color:'var(--ink-2)', fontWeight:500 }}>· page customization</span></h1>
+        <p style={pageSub}>Make iHYPE feel like yours. Changes apply live.</p>
+      </div>
+      <div style={{ padding:'14px 18px', border:'1px dashed var(--line-2)', borderRadius:8, fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-3)' }}>
+        Preferences live in this browser. Sign in to sync across devices — keys never leave your control.
+      </div>
+    </div>
+  );
+}
+
+// ── Queue rail ────────────────────────────────────────────────────
+
+function QueueRail({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void; currentId:string|null }) {
+  return (
+    <aside style={{ width:'var(--queue-w)', borderLeft:'1px solid var(--line)', display:'flex', flexDirection:'column', background:'var(--bg)', overflow:'hidden', flexShrink:0 }}>
+      <div style={{ padding:'18px 20px 12px', display:'flex', justifyContent:'space-between', alignItems:'flex-end', borderBottom:'1px solid var(--line)', flexShrink:0 }}>
+        <div>
+          <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:15, letterSpacing:'-.005em', color:'var(--ink)' }}>Queue</div>
+          <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:3 }}>This week's playlist · 8 tracks · 28 min</div>
+        </div>
+        <button type="button" style={linkBtn}>Edit</button>
+      </div>
+      <div style={{ flex:1, overflowY:'auto', padding:'8px' }}>
+        {TRACKS.map(t=>{
+          const active = t.id===currentId;
+          return (
+            <button key={t.id} onClick={()=>onPickTrack(t.id)} type="button"
+              style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'8px 10px', borderRadius:6, border:'none', cursor:'pointer', transition:'background .15s', background:active?'rgba(255,255,255,.04)':'transparent' }}>
+              <div style={{ width:34, height:34, borderRadius:4, flexShrink:0, position:'relative', overflow:'hidden', background:`linear-gradient(135deg, ${t.c}, ${t.c}80)` }}>
+                {active && <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,.4)' }}><div style={{ width:6, height:6, borderRadius:'50%', background:t.c }}/></div>}
+              </div>
+              <div style={{ minWidth:0, flex:1, textAlign:'left' }}>
+                <div style={{ fontFamily:'var(--f-b)', fontWeight:600, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'var(--ink)' }}>{t.t}</div>
+                <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', letterSpacing:'.04em', marginTop:2 }}>{t.a}</div>
+              </div>
+              <div style={{ display:'flex', alignItems:'center', gap:3, fontFamily:'var(--f-m)', fontSize:10, color:'#ff3e9a' }}><IcHeart s={10} c="#ff3e9a"/> {t.h}</div>
+              <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', width:30, textAlign:'right' }}>{t.d}</div>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ padding:'14px 20px 18px', borderTop:'1px solid var(--line)', flexShrink:0 }}>
+        <span style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)', letterSpacing:'.14em' }}>CURATED BY</span>
+        <div style={{ fontFamily:'var(--f-s)', fontStyle:'italic', fontSize:18, marginTop:4, color:'var(--ink)' }}>DJ Vex · Chicago Underground</div>
+      </div>
+    </aside>
+  );
+}
+
+// ── Root ──────────────────────────────────────────────────────────
+
+export default function WorkbenchPage() {
+  const [view, setView] = useState<View>('home');
+  const { data: session } = useSession();
+  const { playTrack, currentTrack } = useMediaPlayer();
+
+  const handlePickTrack = useCallback((id: string) => {
+    const t = TRACKS.find(x=>x.id===id);
+    if (!t) return;
+    playTrack({ id:t.id, title:t.t, artistName:t.a, url:'', artworkUrl:null, mediaId:null }, MEDIA_TRACKS);
+  }, [playTrack]);
+
+  const currentId = currentTrack?.id ?? null;
+
+  return (
+    <>
+      <style>{`@keyframes wb-fadein { from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)} } .wb-main{animation:wb-fadein .18s ease;}`}</style>
+      <div className="wb-wrap">
+        {/* Sidebar */}
+        <aside style={{ width:'var(--rail-w)', borderRight:'1px solid var(--line)', display:'flex', flexDirection:'column', alignItems:'center', padding:'12px 0', gap:8, background:'var(--bg)', flexShrink:0 }}>
+          <div style={{ width:34, height:34, borderRadius:8, background:'linear-gradient(135deg,#ff5029,#ff3e9a)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--f-d)', fontWeight:800, fontSize:13, color:'var(--bg)', marginBottom:6 }}>iH</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'center', marginTop:8 }}>
+            {NAV_ITEMS.map(n=>(
+              <SidebarBtn key={n.id} active={view===n.id} onClick={()=>setView(n.id as View)} label={n.label}>{n.icon}</SidebarBtn>
+            ))}
+          </div>
+          <div style={{ marginTop:'auto', display:'flex', flexDirection:'column', gap:8, alignItems:'center' }}>
+            <SidebarBtn active={view==='settings'} onClick={()=>setView('settings')} label="Settings" accent="var(--ink-2)"><IcSettings s={16}/></SidebarBtn>
+            <div style={{ width:32, height:32, borderRadius:'50%', background:'#b983ff', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'var(--f-d)', fontWeight:700, fontSize:11, color:'var(--bg)' }} title={session?.user?.name??'Profile'}>
+              {session?.user?.name?.charAt(0).toUpperCase()??'U'}
+            </div>
           </div>
         </aside>
 
-        {/* ── Main ────────────────────────────────────────────── */}
+        {/* Main */}
         <main key={view} className="wb-main">
-          {view === 'discover' && <ViewDiscover session={session} />}
-          {view === 'library' && <ViewLibrary />}
-          {view === 'shows' && <ViewShows />}
-          {view === 'radio' && <ViewRadio />}
-          {view === 'studio' && <ViewStudio />}
+          {view==='home'     && <ViewHome session={session} onPickTrack={handlePickTrack} currentId={currentId} setView={setView}/>}
+          {view==='discover' && <ViewDiscover onPickTrack={handlePickTrack} currentId={currentId}/>}
+          {view==='library'  && <ViewLibrary onPickTrack={handlePickTrack} currentId={currentId}/>}
+          {view==='radio'    && <ViewRadio onPickTrack={handlePickTrack}/>}
+          {view==='tickets'  && <ViewTicketing/>}
+          {view==='shows'    && <ViewShows/>}
+          {view==='studio'   && <ViewStudio/>}
+          {view==='settings' && <ViewSettings/>}
         </main>
 
-        {/* ── Right panel ─────────────────────────────────────── */}
-        <RightPanel />
+        {/* Queue */}
+        <QueueRail onPickTrack={handlePickTrack} currentId={currentId}/>
       </div>
     </>
   );

@@ -1,10 +1,16 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { ReactNode } from 'react';
+import { Syne, DM_Sans, JetBrains_Mono, Instrument_Serif } from 'next/font/google';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { NavPrimaryLinks } from '@/components/NavPrimaryLinks';
+
+const syne = Syne({ subsets: ['latin'], weight: ['600','700','800'], variable: '--font-syne', display: 'swap' });
+const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400','500','600','700'], variable: '--font-dm', display: 'swap' });
+const jbMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400','500','600'], variable: '--font-jb', display: 'swap' });
+const instrumentSerif = Instrument_Serif({ subsets: ['latin'], weight: ['400'], style: ['normal','italic'], variable: '--font-serif', display: 'swap' });
 
 export const metadata: Metadata = {
   title: {
@@ -30,7 +36,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={`${syne.variable} ${dmSans.variable} ${jbMono.variable} ${instrumentSerif.variable}`}>
       <body>
         <AppProviders>
           <div aria-hidden="true" className="site-background">
