@@ -13360,7 +13360,7 @@ html.high-contrast p {
   padding: 12px 0;
   gap: 8px;
   background: var(--wb-bg);
-  overflow: hidden;
+  overflow: visible;
 }
 .wb-sb-logo {
   width: 34px; height: 34px; border-radius: 8px;
@@ -13375,7 +13375,7 @@ html.high-contrast p {
   width: 38px; height: 38px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   position: relative; transition: color .15s, background .15s;
-  border: none; cursor: pointer;
+  border: none; cursor: pointer; overflow: visible;
 }
 .wb-sb-indicator {
   position: absolute; left: -9px; top: 8px; bottom: 8px;
