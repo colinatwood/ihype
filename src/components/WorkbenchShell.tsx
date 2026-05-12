@@ -1511,7 +1511,150 @@ function ViewStub({ name, eyebrow, accent, sub }: { name: string; eyebrow: strin
 }
 
 // ── View: Settings ─────────────────────────────────────────────
+// ── Page builder types ──────────────────────────────────────────
+type PageWidget = { id: string; label: string; desc: string; wide: boolean; locked?: boolean };
+const DEFAULT_WIDGETS: PageWidget[] = [
+  { id: 'bio',      label: 'Bio',              desc: 'Your story in your words',          wide: true,  locked: true },
+  { id: 'featured', label: 'Featured track',   desc: 'One track pinned at the top',       wide: false },
+  { id: 'shows',    label: 'Upcoming shows',   desc: 'Next 3 events with ticket links',   wide: false },
+  { id: 'radio',    label: 'Radio shows',      desc: 'Your channels + archive',           wide: false },
+  { id: 'photos',   label: 'Photo grid',       desc: '3×2 grid of uploaded images',       wide: true  },
+  { id: 'links',    label: 'Links',            desc: 'Social, website, press kit',        wide: false },
+];
+
+function PageBuilder() {
+  const [widgets, setWidgets] = useState<PageWidget[]>(DEFAULT_WIDGETS);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [profileImg, setProfileImg] = useState<string | null>(null);
+  const [bannerImg, setBannerImg] = useState<string | null>(null);
+  const profileRef = useRef<HTMLInputElement>(null);
+  const bannerRef = useRef<HTMLInputElement>(null);
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setter(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function onDragStart(id: string) { setDragId(id); }
+  function onDragOver(e: React.DragEvent, id: string) { e.preventDefault(); setOverId(id); }
+  function onDrop(targetId: string) {
+    if (!dragId || dragId === targetId) { setDragId(null); setOverId(null); return; }
+    setWidgets(prev => {
+      const from = prev.findIndex(w => w.id === dragId);
+      const to = prev.findIndex(w => w.id === targetId);
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setDragId(null);
+    setOverId(null);
+  }
+
+  const fieldStyle: React.CSSProperties = { display: 'none' };
+  const uploadZone: React.CSSProperties = { border: '1.5px dashed var(--wb-line-2)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: 'var(--wb-bg-3)', transition: 'border-color 0.15s' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Media uploads */}
+      <div className="wb-sett-section" style={{ gridColumn: 'span 2' }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15 }}>Media</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 4 }}>Upload your profile photo and banner. PNG or JPG, max 5 MB each.</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12, alignItems: 'start' }}>
+          {/* Profile photo */}
+          <div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.1em', color: 'var(--wb-ink-3)', marginBottom: 6 }}>PROFILE PHOTO</div>
+            <div
+              style={{ ...uploadZone, width: 120, height: 120, borderRadius: '50%', overflow: 'hidden', position: 'relative' }}
+              onClick={() => profileRef.current?.click()}
+            >
+              {profileImg
+                ? <img src={profileImg} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <><div style={{ fontSize: 24, color: 'var(--wb-ink-3)' }}>+</div><div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)' }}>Upload</div></>
+              }
+            </div>
+            <input ref={profileRef} type="file" accept="image/*" style={fieldStyle} onChange={e => handleFile(e, setProfileImg)} />
+          </div>
+          {/* Banner */}
+          <div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.1em', color: 'var(--wb-ink-3)', marginBottom: 6 }}>BANNER IMAGE</div>
+            <div
+              style={{ ...uploadZone, height: 120, borderRadius: 8, position: 'relative', overflow: 'hidden' }}
+              onClick={() => bannerRef.current?.click()}
+            >
+              {bannerImg
+                ? <img src={bannerImg} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <><div style={{ fontSize: 24, color: 'var(--wb-ink-3)' }}>+</div><div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)' }}>Upload banner · 3:1 recommended</div></>
+              }
+            </div>
+            <input ref={bannerRef} type="file" accept="image/*" style={fieldStyle} onChange={e => handleFile(e, setBannerImg)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Widget layout */}
+      <div className="wb-sett-section" style={{ gridColumn: 'span 2' }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15 }}>Page layout</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 4 }}>Drag widgets to reorder. Wide widgets span the full row. Locked widgets stay fixed.</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {widgets.map((w, i) => (
+            <div
+              key={w.id}
+              draggable={!w.locked}
+              onDragStart={() => !w.locked && onDragStart(w.id)}
+              onDragOver={e => onDragOver(e, w.id)}
+              onDragLeave={() => setOverId(null)}
+              onDrop={() => onDrop(w.id)}
+              onDragEnd={() => { setDragId(null); setOverId(null); }}
+              style={{
+                gridColumn: w.wide ? 'span 2' : undefined,
+                padding: '12px 14px',
+                border: `1.5px solid ${overId === w.id && dragId !== w.id ? 'var(--wb-accent)' : dragId === w.id ? 'var(--wb-line-2)' : 'var(--wb-line)'}`,
+                borderRadius: 8,
+                background: dragId === w.id ? 'var(--wb-bg-3)' : 'var(--wb-bg-2)',
+                cursor: w.locked ? 'default' : 'grab',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                opacity: dragId === w.id ? 0.4 : 1,
+                transition: 'border-color 0.1s, opacity 0.1s',
+                userSelect: 'none',
+              }}
+            >
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 18, color: w.locked ? 'var(--wb-line-2)' : 'var(--wb-ink-3)', flexShrink: 0 }}>
+                {w.locked ? '⊞' : '⠿'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--wb-ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {w.label}
+                  {w.wide && <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-ink-3)', border: '1px solid var(--wb-line-2)', borderRadius: 3, padding: '1px 5px' }}>FULL WIDTH</span>}
+                  {w.locked && <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-ink-3)', border: '1px solid var(--wb-line-2)', borderRadius: 3, padding: '1px 5px' }}>LOCKED</span>}
+                </div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{w.desc}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', flexShrink: 0 }}>#{i + 1}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+          <button className="wb-btn-prime" style={{ flex: 1 }}>Save page layout →</button>
+          <button className="wb-btn-ghost" onClick={() => setWidgets(DEFAULT_WIDGETS)}>Reset</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v: unknown) => void }) {
+  const [settTab, setSettTab] = useState<'workbench' | 'page'>('workbench');
   const ACCENTS = [
     { v: '#ff5029', label: 'Ember' }, { v: '#ff3e9a', label: 'Hot pink' },
     { v: '#b983ff', label: 'Lilac' }, { v: '#22e5d4', label: 'Aqua' },
@@ -1532,10 +1675,17 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
           <h1 className="wb-page-title">Settings <span style={{ color: 'var(--wb-ink-2)', fontWeight: 400 }}>· page customization</span></h1>
           <p className="wb-page-sub">Make iHYPE feel like yours. Changes apply live.</p>
         </div>
-        <button className="wb-btn-ghost" onClick={() => setPref('__reset__', null)}>Reset to defaults</button>
+        {settTab === 'workbench' && <button className="wb-btn-ghost" onClick={() => setPref('__reset__', null)}>Reset to defaults</button>}
       </div>
 
-      <div className="wb-settings-grid">
+      <div className="wb-tabs" style={{ marginBottom: 24 }}>
+        <button onClick={() => setSettTab('workbench')} className={`wb-tab${settTab === 'workbench' ? ' wb-tab-active' : ''}`}>Workbench</button>
+        <button onClick={() => setSettTab('page')} className={`wb-tab${settTab === 'page' ? ' wb-tab-active' : ''}`}>Profile page</button>
+      </div>
+
+      {settTab === 'page' && <PageBuilder />}
+
+      {settTab === 'workbench' && <div className="wb-settings-grid">
         <SettSection title="Accent color" sub="Used for highlights, the player, and active nav.">
           <div className="wb-swatch-row">
             {ACCENTS.map(c => (
@@ -1620,7 +1770,7 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
             ))}
           </div>
         </SettSection>
-      </div>
+      </div>}
 
       <div className="wb-footnote">
         Preferences live in this browser's localStorage. Your data stays on your device — keys never leave your control.
