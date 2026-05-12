@@ -184,6 +184,8 @@ button, input, select, textarea { font: inherit; }
   background: #090806;
   overflow: hidden;
 }
+/* Hide public marketing nav when workbench shell is active */
+body:has(.wb-shell) .site-nav { display: none; }
 /* Workbench header bar */
 .wb-header {
   height: 48px;
@@ -13340,8 +13342,8 @@ html.high-contrast p {
   font-size: 9px; font-family: var(--f-m, monospace); color: var(--wb-ink-3);
 }
 
-/* Main content */
-.wb-main {
+/* Main content — scoped to wb-root to avoid interfering with wb-wrap grid */
+.wb-root .wb-main {
   grid-column: 2; grid-row: 2;
   overflow-y: auto; background: var(--wb-bg); min-height: 0;
   font-size: calc(14px * var(--wb-density));
