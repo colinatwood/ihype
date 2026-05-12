@@ -689,6 +689,35 @@ function ViewTicketing({ data }: { data: WorkbenchData }) {
 
   return (
     <div className="wb-view-pad">
+      {showTransfer && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line-2)', borderRadius: 14, padding: '32px 36px', maxWidth: 420, width: '90%', boxShadow: '0 24px 64px rgba(0,0,0,.5)' }}>
+            <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 22, letterSpacing: '-.02em', color: 'var(--wb-ink)', margin: '0 0 6px' }}>Transfer ticket</h2>
+            {transferSent ? (
+              <>
+                <p style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: '#22e5d4', lineHeight: 1.6, margin: '16px 0 24px' }}>Transfer sent — the recipient will get an email to claim their ticket.</p>
+                <button onClick={() => setShowTransfer(false)} className="wb-btn-prime" style={{ width: '100%' }}>Close</button>
+              </>
+            ) : (
+              <>
+                <p style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--wb-ink-3)', lineHeight: 1.6, margin: '6px 0 20px' }}>The recipient will receive an email to claim this ticket. Your ticket will be invalidated immediately.</p>
+                <label style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.12em', color: 'var(--wb-ink-3)', display: 'block', marginBottom: 6 }}>RECIPIENT'S EMAIL ADDRESS</label>
+                <input
+                  type="email"
+                  value={transferEmail}
+                  onChange={e => setTransferEmail(e.target.value)}
+                  placeholder="fan@example.com"
+                  style={{ width: '100%', padding: '9px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--wb-ink)', outline: 'none', boxSizing: 'border-box' }}
+                />
+                <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+                  <button className="wb-btn-prime" style={{ flex: 1 }} onClick={() => setTransferSent(true)}>Send transfer →</button>
+                  <button className="wb-btn-ghost" onClick={() => setShowTransfer(false)}>Cancel</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <div className="wb-greet">
         <div>
           <div className="wb-eyebrow" style={{ color: '#22e5d4' }}>● {data.tickets.length} TICKETS · NO QUEUES, NO SCALPERS</div>
