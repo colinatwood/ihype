@@ -259,6 +259,15 @@ function ViewLibrary({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void;
     { n:'Tour van',          c:'#22e5d4', count:88 },
   ];
 
+  function handleMenuItem(item: string) {
+    setOpenMenuId(null);
+    if (item === 'Play' && TRACKS.length > 0) onPickTrack(TRACKS[0].id);
+    if (item === 'Shuffle' && TRACKS.length > 0) {
+      const shuffled = [...TRACKS].sort(() => Math.random() - 0.5);
+      onPickTrack(shuffled[0].id);
+    }
+  }
+
   useEffect(() => {
     if (!openMenuId) return;
     function handleClick(e: MouseEvent) {
@@ -307,7 +316,7 @@ function ViewLibrary({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void;
                 {openMenuId===p.n && (
                   <div ref={menuRef} style={{ position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:20, background:'var(--bg-3)', border:'1px solid var(--line-2)', borderRadius:8, minWidth:160, overflow:'hidden', boxShadow:'0 8px 24px rgba(0,0,0,.4)' }}>
                     {MENU_ITEMS.map(item=>(
-                      <button key={item} type="button" onClick={(e)=>{e.stopPropagation();setOpenMenuId(null);}}
+                      <button key={item} type="button" onClick={(e)=>{e.stopPropagation();handleMenuItem(item);}}
                         style={{ display:'block', width:'100%', textAlign:'left', padding:'9px 14px', fontFamily:'var(--f-m)', fontSize:12, color:item==='Delete'?'#ff5029':'var(--ink)', background:'none', border:'none', cursor:'pointer', letterSpacing:'.02em' }}>
                         {item}
                       </button>
@@ -670,9 +679,37 @@ function ViewEvents() {
 // ── Studio / Create event view ────────────────────────────────────
 
 function ViewStudio() {
+  const [name, setName] = useState('');
+  const [venue, setVenue] = useState('');
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [doorsTime, setDoorsTime] = useState('');
+  const [price, setPrice] = useState('');
+  const [capacity, setCapacity] = useState('');
+  const [desc, setDesc] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const previewDate = date && startTime
+    ? new Date(`${date}T${startTime}`).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })
+    : 'Date · Time';
+  const previewPrice = price && Number(price) > 0 ? `$${Number(price).toFixed(2)}` : 'Free';
+  const previewCap = capacity ? `0 / ${capacity} capacity` : '0 / — capacity';
+
   const field: React.CSSProperties = { width:'100%', padding:'9px 12px', background:'var(--bg-3)', border:'1px solid var(--line-2)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:13, color:'var(--ink)', outline:'none', boxSizing:'border-box' as const };
   const label: React.CSSProperties = { fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.12em', color:'var(--ink-3)', marginBottom:6, display:'block' };
   const group: React.CSSProperties = { display:'flex', flexDirection:'column' as const };
+
+  if (submitted) return (
+    <div style={{ padding:'24px 32px', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:400, gap:16, textAlign:'center' }}>
+      <div style={{ fontSize:40 }}>🎉</div>
+      <h2 style={pageTitle}>{name || 'Your event'}</h2>
+      <p style={pageSub}>Your event would be published here. Sign in to go live.</p>
+      <button type="button" style={btnPrime} onClick={() => { setSubmitted(false); setName(''); setVenue(''); setDate(''); setStartTime(''); setPrice(''); setCapacity(''); setDesc(''); }}>
+        Create another
+      </button>
+    </div>
+  );
+
   return (
     <div style={{ padding:'24px 32px 32px' }}>
       <div style={{ marginBottom:22 }}>
@@ -685,21 +722,20 @@ function ViewStudio() {
           <div style={panel}>
             <div style={panelHead}><div style={panelTitle}>Event details</div></div>
             <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:14 }}>
-              <div style={group}><label style={label}>EVENT NAME</label><input style={field} placeholder="e.g. Maya Reyes — Halflight Release Show" /></div>
-              <div style={group}><label style={label}>VENUE</label><input style={field} placeholder="Empty Bottle, Chicago IL" /></div>
-              <div style={group}><label style={label}>CO-HEADLINER</label><input style={field} placeholder="Supporting artist (optional)" /></div>
+              <div style={group}><label style={label}>EVENT NAME</label><input style={field} value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Maya Reyes — Halflight Release Show" /></div>
+              <div style={group}><label style={label}>VENUE</label><input style={field} value={venue} onChange={e=>setVenue(e.target.value)} placeholder="Empty Bottle, Chicago IL" /></div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                <div style={group}><label style={label}>DATE</label><input type="date" style={field} /></div>
+                <div style={group}><label style={label}>DATE</label><input type="date" style={field} value={date} onChange={e=>setDate(e.target.value)} /></div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                  <div style={group}><label style={label}>DOORS</label><input type="time" style={field} /></div>
-                  <div style={group}><label style={label}>START</label><input type="time" style={field} /></div>
+                  <div style={group}><label style={label}>DOORS</label><input type="time" style={field} value={doorsTime} onChange={e=>setDoorsTime(e.target.value)} /></div>
+                  <div style={group}><label style={label}>START</label><input type="time" style={field} value={startTime} onChange={e=>setStartTime(e.target.value)} /></div>
                 </div>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                <div style={group}><label style={label}>TICKET PRICE ($)</label><input type="number" min="0" style={field} placeholder="0 = free" /></div>
-                <div style={group}><label style={label}>CAPACITY</label><input type="number" min="1" style={field} placeholder="200" /></div>
+                <div style={group}><label style={label}>TICKET PRICE ($)</label><input type="number" min="0" style={field} value={price} onChange={e=>setPrice(e.target.value)} placeholder="0 = free" /></div>
+                <div style={group}><label style={label}>CAPACITY</label><input type="number" min="1" style={field} value={capacity} onChange={e=>setCapacity(e.target.value)} placeholder="200" /></div>
               </div>
-              <div style={group}><label style={label}>DESCRIPTION</label><textarea rows={4} style={{ ...field, resize:'vertical' as const }} placeholder="What should fans know? Vibe, lineup notes, age restriction, parking…" /></div>
+              <div style={group}><label style={label}>DESCRIPTION</label><textarea rows={4} style={{ ...field, resize:'vertical' as const }} value={desc} onChange={e=>setDesc(e.target.value)} placeholder="What should fans know? Vibe, lineup notes, age restriction, parking…" /></div>
             </div>
           </div>
         </div>
@@ -707,14 +743,14 @@ function ViewStudio() {
           <div style={{ ...panel, padding:'18px 16px' }}>
             <div style={{ fontFamily:'var(--f-m)', fontSize:10, letterSpacing:'.14em', color:'var(--ink-3)', marginBottom:12 }}>PREVIEW</div>
             <div style={{ aspectRatio:'16/9', borderRadius:8, background:'linear-gradient(135deg, #ff5029, #ff3e9a80)', marginBottom:14 }}/>
-            <div style={{ fontFamily:'var(--f-d)', fontWeight:800, fontSize:18, color:'var(--ink)' }}>Your event name</div>
-            <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-3)', marginTop:4 }}>Venue · Date · Time</div>
+            <div style={{ fontFamily:'var(--f-d)', fontWeight:800, fontSize:18, color:'var(--ink)' }}>{name || 'Your event name'}</div>
+            <div style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-3)', marginTop:4 }}>{venue || 'Venue'} · {previewDate}</div>
             <div style={{ marginTop:14, paddingTop:14, borderTop:'1px solid var(--line)', display:'flex', justifyContent:'space-between' }}>
-              <span style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)' }}>0 / — capacity</span>
-              <span style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:16, color:'var(--ink)' }}>Free</span>
+              <span style={{ fontFamily:'var(--f-m)', fontSize:11, color:'var(--ink-2)' }}>{previewCap}</span>
+              <span style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:16, color:'var(--ink)' }}>{previewPrice}</span>
             </div>
           </div>
-          <button type="button" style={{ ...btnPrime, width:'100%', padding:'12px', fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+          <button type="button" onClick={() => name.trim() && setSubmitted(true)} style={{ ...btnPrime, width:'100%', padding:'12px', fontSize:13, display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
             <IcBolt s={13}/> Publish event →
           </button>
           <p style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', textAlign:'center', lineHeight:1.6 }}>
