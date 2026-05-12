@@ -42,11 +42,19 @@ const REASONS = [
 export default async function MarketingPage() {
   const session = await auth();
   if (session?.user) {
-    redirect('/workbench');
+    redirect('/home');
   }
 
   return (
     <main className="lp-wrap">
+      {/* 0% fee banner */}
+      <section className="lp-fee-banner">
+        <span className="lp-fee-banner-text">
+          iHYPE takes 0% of ticket revenue — forever. Artists and venues keep everything.
+        </span>
+        <Link href="/about" className="lp-fee-banner-link">→ See how it works</Link>
+      </section>
+
       {/* Hero */}
       <section className="lp-hero">
         <div className="lp-hero-eyebrow">
@@ -75,6 +83,18 @@ export default async function MarketingPage() {
             <span className="lp-stat-label">{s.label}</span>
           </div>
         ))}
+      </section>
+
+      {/* Hype explainer */}
+      <section className="lp-hype-explainer">
+        <p className="lp-hype-eyebrow">DEMAND SIGNAL · NOT A LIKE</p>
+        <h2 className="lp-section-head">What is a Hype?</h2>
+        <p className="lp-hype-body">
+          A Hype is registered when a fan listens all the way through a track, or manually hypes an artist they believe in.
+          Unlike a stream count or a like, a Hype is a deliberate signal of real demand — it tells artists and promoters
+          which music is actually resonating. The more Hypes a track earns, the higher it surfaces in discovery feeds,
+          with no pay-to-play and no algorithmic shortcuts.
+        </p>
       </section>
 
       {/* Reasons why */}
