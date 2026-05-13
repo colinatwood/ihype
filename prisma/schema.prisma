@@ -7,3 +7,651 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum Role {
+  FAN
+  ARTIST
+  DJ
+  VENUE
+  ADMIN
+}
+
+enum ShowStatus {
+  DRAFT
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELED
+}
+
+enum ProfileType {
+  ARTIST
+  DJ
+  VENUE
+  LISTENER
+}
+
+enum ConnectionRequestType {
+  LISTENER
+  PROMOTER
+}
+
+enum ConnectionRequestStatus {
+  PENDING
+  BOOKED
+  DISMISSED
+}
+
+enum OwnershipVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum TicketStatus {
+  VALID
+  SCANNED
+  VOID
+}
+
+enum TicketOrderStatus {
+  RESERVED
+  CAPTURED
+  VOID
+}
+
+enum AccountsPayableCategory {
+  TAX_LOCAL
+  TAX_STATE
+  TAX_COUNTRY
+  TAX_INTERNATIONAL
+  VENUE_PAYOUT
+  ARTIST_PAYOUT
+  PROMOTER_AFFILIATE
+}
+
+enum AccountsPayableStatus {
+  PENDING
+  RELEASED
+  VOID
+}
+
+model User {
+  id                      String                   @id @default(cuid())
+  name                    String?
+  email                   String                   @unique
+  username                String                   @unique
+  passwordHash            String?
+  isThirteenOrOlder       Boolean                  @default(true)
+  emailVerified           DateTime?
+  mfaSecret               String?
+  mfaEnabledAt            DateTime?
+  mfaBackupCodes          String?
+  image                   String?
+  storedPaymentTokenRef   String?
+  storedPaymentTokenBrand String?
+  storedPaymentTokenLast4 String?
+  stripeCustomerId        String?                  @unique
+  role                    Role                     @default(FAN)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  accounts                Account[]
+  mfaChallenges           MfaChallenge[]
+  sessions                Session[]
+  profiles                Profile[]
+  shows                   Show[]                   @relation("CreatedShows")
+  ticketOrders            TicketOrder[]            @relation("BuyerTicketOrders")
+  hypeEvents              HypeEvent[]
+  mediaListens            MediaListen[]
+  showListens             ShowListen[]
+  profileHypeEvents       ProfileHypeEvent[]
+  passwordResetCodes      PasswordResetCode[]
+  venueConnectionRequests VenueConnectionRequest[]
+  scannedTickets          Ticket[]                 @relation("TicketScans")
+  reassignedTickets       Ticket[]                 @relation("TicketReassignments")
+  fanPlaylists            FanPlaylist[]
+  favoriteMedia           FanFavoriteMedia[]
+  auditLogs               AuditLog[]
+  contentReports          ContentReport[]
+}
+
+model Profile {
+  id                            String                      @id @default(cuid())
+  slug                          String                      @unique
+  hexId                         String                      @unique
+  type                          ProfileType
+  name                          String
+  headline                      String?
+  bio                           String?
+  aboutContent                  String?
+  journalContent                String?
+  mediaContent                  String?
+  tourContent                   String?
+  merchContent                  String?
+  requestContent                String?
+  recommendContent              String?
+  topFiveContent                String?
+  addressLine1                  String?
+  contactInfo                   String?
+  hoursText                     String?
+  hometown                      String?
+  city                          String?
+  stateRegion                   String?
+  country                       String?
+  postalCode                    String?
+  latitude                      Float?
+  longitude                     Float?
+  heroImage                     String?
+  avatarImage                   String?
+  logoImage                     String?
+  galleryImage                  String?
+  featureVideoUrl               String?
+  companionSpriteSheet          String?
+  themePreset                   String                      @default("midnight-neon")
+  themeFontPreset               String?
+  themeAccentTone               String?
+  themeBackdropTone             String?
+  fanShareEnabled               Boolean                     @default(false)
+  genres                        String[]
+  songUploadCount               Int                         @default(0)
+  parkingDetails                String?
+  stayRecommendations           String?
+  upcomingContent               String?
+  previousShowHighlights        String?
+  stripeConnectAccountId        String?                     @unique
+  stripeConnectOnboarded        Boolean                     @default(false)
+  verified                      Boolean                     @default(false)
+  verificationStatus            OwnershipVerificationStatus @default(UNVERIFIED)
+  verificationSubmittedAt       DateTime?
+  verificationReviewedAt        DateTime?
+  verificationNotes             String?
+  hypeCount                     Int                         @default(0)
+  ownerId                       String
+  owner                         User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt                     DateTime                    @default(now())
+  updatedAt                     DateTime                    @updatedAt
+  hostedShows                   Show[]                      @relation("VenueShows")
+  headlinerShows                Show[]                      @relation("HeadlinerShows")
+  promotedShows                 Show[]                      @relation("PromotedShows")
+  mediaUploads                  ArtistMediaAsset[]
+  profileHypes                  ProfileHypeEvent[]
+  venueConnectionRequests       VenueConnectionRequest[]    @relation("VenueConnectionRequests")
+  recommendedConnectionRequests VenueConnectionRequest[]    @relation("RecommendedProfileConnectionRequests")
+  issuedTickets                 Ticket[]                    @relation("VenueIssuedTickets")
+  affiliateTicketOrders         TicketOrder[]               @relation("AffiliatePromoterTicketOrders")
+  accountsPayableEntries        AccountsPayableEntry[]
+  contentBlocks                 ProfileBlock[]
+}
+
+model FanPlaylist {
+  id        String            @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     FanPlaylistItem[]
+
+  @@index([userId, createdAt])
+}
+
+model FanPlaylistItem {
+  id                String      @id @default(cuid())
+  playlistId        String
+  mediaId           String
+  title             String
+  artistName        String
+  url               String
+  artistProfileSlug String?
+  notes             String?
+  artworkUrl        String?
+  position          Int
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  playlist          FanPlaylist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId, position])
+  @@index([playlistId, mediaId])
+}
+
+model FanFavoriteMedia {
+  id                String   @id @default(cuid())
+  userId            String
+  mediaId           String
+  title             String
+  artistName        String
+  url               String
+  artistProfileSlug String?
+  notes             String?
+  artworkUrl        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaId])
+  @@index([userId, createdAt])
+}
+
+model ArtistMediaAsset {
+  id               String   @id @default(cuid())
+  hexId            String   @unique
+  title            String
+  notes            String?
+  originalFileName String
+  mimeType         String
+  fileSizeBytes    Int
+  fileDataBase64   String?
+  storageProvider  String   @default("database")
+  storageKey       String?
+  storageUrl       String?
+  freeUseEnabled   Boolean  @default(false)
+  profileId        String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  profile          Profile           @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  radioTracks      RadioShowTrack[]
+
+  @@index([profileId, createdAt])
+  @@index([freeUseEnabled, createdAt])
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int      @default(0)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String?
+  ipAddress   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, createdAt])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model EmailDeliveryLog {
+  id        String   @id @default(cuid())
+  type      String
+  recipient String
+  status    String
+  provider  String?
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([recipient, createdAt])
+  @@index([status, createdAt])
+}
+
+model ContentReport {
+  id             String   @id @default(cuid())
+  reporterUserId String?
+  targetType     String
+  targetId       String
+  reason         String
+  details        String?
+  status         String   @default("OPEN")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  reporter       User?    @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@index([reporterUserId, createdAt])
+}
+
+model SupportRequest {
+  id              String   @id @default(cuid())
+  requesterUserId String?
+  type            String
+  name            String?
+  email           String?
+  subject         String
+  details         String
+  status          String   @default("OPEN")
+  priority        String   @default("NORMAL")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([type, createdAt])
+  @@index([requesterUserId, createdAt])
+}
+
+model Show {
+  id                     String                 @id @default(cuid())
+  slug                   String                 @unique
+  title                  String
+  description            String?
+  productionPlan         Json?
+  productionPlanVersion  Int                    @default(1)
+  isRadioShow            Boolean                @default(false)
+  status                 ShowStatus             @default(DRAFT)
+  startsAt               DateTime
+  endsAt                 DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  creatorId              String
+  creator                User                   @relation("CreatedShows", fields: [creatorId], references: [id], onDelete: Cascade)
+  venueProfileId         String?
+  venueProfile           Profile?               @relation("VenueShows", fields: [venueProfileId], references: [id])
+  headlinerProfileId     String?
+  headlinerProfile       Profile?               @relation("HeadlinerShows", fields: [headlinerProfileId], references: [id])
+  promoterProfileId      String?
+  promoterProfile        Profile?               @relation("PromotedShows", fields: [promoterProfileId], references: [id])
+  streamProvider         String?
+  streamPlaybackId       String?
+  streamKeyMasked        String?
+  posterImage            String?
+  ticketingOpensAt       DateTime?
+  bookingLegalNotes      String?
+  isTicketed             Boolean                @default(false)
+  ticketPriceCents       Int                    @default(0)
+  ticketCapacity         Int?
+  venuePayoutPercent     Int?
+  artistPayoutPercent    Int?
+  promoterPayoutPercent  Int                    @default(5)
+  ticketsSoldCount       Int                    @default(0)
+  hypeCount              Int                    @default(0)
+  tags                   String[]
+  hypes                  HypeEvent[]
+  showListens            ShowListen[]
+  ticketOrders           TicketOrder[]
+  tickets                Ticket[]
+  accountsPayableEntries AccountsPayableEntry[]
+  radioTracks            RadioShowTrack[]
+  advertisingConfig      ShowAdvertisingConfig?
+}
+
+model ShowAdvertisingConfig {
+  id              String   @id @default(cuid())
+  showId          String   @unique
+  show            Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+  enabled         Boolean  @default(true)
+  scope           String   @default("local")
+  frequency       Int      @default(3)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TicketOrder {
+  id                         String                 @id @default(cuid())
+  confirmationCode           String                 @unique
+  showId                     String
+  buyerUserId                String?
+  buyerName                  String
+  buyerEmail                 String
+  quantity                   Int
+  status                     TicketOrderStatus      @default(RESERVED)
+  paymentTokenRef            String?
+  stripePaymentIntentId      String?                @unique
+  affiliatePromoterProfileId String?
+  subtotalCents              Int
+  taxLocalCents              Int                    @default(0)
+  taxStateCents              Int                    @default(0)
+  taxCountryCents            Int                    @default(0)
+  taxInternationalCents      Int                    @default(0)
+  totalTaxCents              Int                    @default(0)
+  totalChargeCents           Int                    @default(0)
+  venuePayoutCents           Int
+  artistPayoutCents          Int
+  promoterPayoutCents        Int
+  locationCity               String?
+  locationStateRegion        String?
+  locationCountry            String?
+  locationPostalCode         String?
+  chargedAt                  DateTime?
+  createdAt                  DateTime               @default(now())
+  updatedAt                  DateTime               @updatedAt
+  show                       Show                   @relation(fields: [showId], references: [id], onDelete: Cascade)
+  buyerUser                  User?                  @relation("BuyerTicketOrders", fields: [buyerUserId], references: [id], onDelete: SetNull)
+  affiliatePromoterProfile   Profile?               @relation("AffiliatePromoterTicketOrders", fields: [affiliatePromoterProfileId], references: [id], onDelete: SetNull)
+  tickets                    Ticket[]
+  accountsPayableEntries     AccountsPayableEntry[]
+}
+
+model Ticket {
+  id                 String       @id @default(cuid())
+  serializedId       String       @unique
+  ticketOrderId      String
+  showId             String
+  venueProfileId     String?
+  holderName         String
+  holderEmail        String
+  status             TicketStatus @default(VALID)
+  scannedAt          DateTime?
+  scannedByUserId    String?
+  reassignedAt       DateTime?
+  reassignedByUserId String?
+  reassignCount      Int       @default(0)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  ticketOrder        TicketOrder  @relation(fields: [ticketOrderId], references: [id], onDelete: Cascade)
+  show               Show         @relation(fields: [showId], references: [id], onDelete: Cascade)
+  venueProfile       Profile?     @relation("VenueIssuedTickets", fields: [venueProfileId], references: [id], onDelete: SetNull)
+  scannedByUser      User?        @relation("TicketScans", fields: [scannedByUserId], references: [id], onDelete: SetNull)
+  reassignedByUser   User?        @relation("TicketReassignments", fields: [reassignedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([showId, status])
+  @@index([venueProfileId, status])
+}
+
+model AccountsPayableEntry {
+  id            String                  @id @default(cuid())
+  ticketOrderId String
+  showId        String
+  profileId     String?
+  category      AccountsPayableCategory
+  status        AccountsPayableStatus   @default(PENDING)
+  amountCents   Int
+  payeeLabel    String
+  note          String?
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  ticketOrder   TicketOrder             @relation(fields: [ticketOrderId], references: [id], onDelete: Cascade)
+  show          Show                    @relation(fields: [showId], references: [id], onDelete: Cascade)
+  profile       Profile?                @relation(fields: [profileId], references: [id], onDelete: SetNull)
+
+  @@index([ticketOrderId, category])
+  @@index([showId, category])
+  @@index([profileId, category])
+}
+
+model MediaListen {
+  id                String    @id @default(cuid())
+  userId            String
+  mediaId           String
+  title             String
+  mediaUrl          String
+  artistName        String
+  artistProfileSlug String?
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mediaId])
+}
+
+model ShowListen {
+  id          String   @id @default(cuid())
+  userId      String
+  showId      String
+  title       String
+  showSlug    String
+  playbackUrl String
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  show        Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, showId])
+}
+
+model PasswordResetCode {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String
+  userId     String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, expiresAt])
+  @@index([userId, expiresAt])
+}
+
+model MfaChallenge {
+  id               String   @id @default(cuid())
+  token            String   @unique
+  userId           String
+  secretCiphertext String?
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HypeEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  showId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  show      Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, showId])
+}
+
+model ProfileHypeEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  profileId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, profileId])
+}
+
+model VenueConnectionRequest {
+  id              String                  @id @default(cuid())
+  venueProfileId  String
+  artistProfileId String?
+  requesterId     String
+  requesterType   ConnectionRequestType
+  status          ConnectionRequestStatus @default(PENDING)
+  artistName      String
+  note            String?
+  notifyOnBooking Boolean                 @default(false)
+  createdAt       DateTime                @default(now())
+  respondedAt     DateTime?
+  updatedAt       DateTime                @updatedAt
+  venueProfile    Profile                 @relation("VenueConnectionRequests", fields: [venueProfileId], references: [id], onDelete: Cascade)
+  artistProfile   Profile?                @relation("RecommendedProfileConnectionRequests", fields: [artistProfileId], references: [id], onDelete: SetNull)
+  requester       User                    @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProfileBlock {
+  id          String   @id @default(cuid())
+  profileId   String
+  blockType   String
+  content     String
+  position    Int      @default(0)
+  version     Int      @default(1)
+  updatedAt   DateTime @updatedAt
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, blockType])
+  @@index([profileId])
+}
+
+model RadioShowTrack {
+  id           String            @id @default(cuid())
+  showId       String
+  position     Int
+  title        String
+  artistName   String?
+  mediaAssetId String?
+  externalUrl  String?
+  durationSecs Int?
+  blockLabel   String?
+  createdAt    DateTime          @default(now())
+  show         Show              @relation(fields: [showId], references: [id], onDelete: Cascade)
+  mediaAsset   ArtistMediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+
+  @@unique([showId, position])
+  @@index([showId])
+}
+
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  actorId      String
+  action       String
+  targetType   String
+  targetId     String
+  meta         Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetId])
+  @@index([createdAt])
+}
+
+model ProcessedWebhookEvent {
+  id          String   @id @default(cuid())
+  source      String
+  eventId     String
+  processedAt DateTime @default(now())
+
+  @@unique([source, eventId])
+  @@index([processedAt])
+}
