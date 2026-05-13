@@ -181,6 +181,7 @@ export default async function HomePage() {
     activity: wbActivity,
     radioShows,
     activeProfileTypes,
+    profileId: profile.id,
     listeningNow: discoverFeed.mediaEntries.reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
     hypedToday: discoverFeed.mediaEntries.slice(0, 10).reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
     showsTonight: eventsResult.upcoming.filter(s => {
