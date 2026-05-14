@@ -166,6 +166,7 @@ export type WorkbenchData = {
   radioShows: WbRadioShow[];
   /** Profile types the logged-in user has: 'ARTIST' | 'VENUE' | 'LISTENER' | 'DJ' */
   activeProfileTypes: string[];
+  profileId?: string;
   listeningNow: number;
   hypedToday: number;
   showsTonight: number;
