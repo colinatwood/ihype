@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation';
 import { useMediaPlayer } from '@/components/GlobalMediaPlayer';
 import { SetListBuilder, type SetListTrack } from '@/components/SetListBuilder';
+import { RevenueSplitVisualizer } from '@/components/RevenueSplitVisualizer';
 import { getAdvertisingClipsForScope } from '@/lib/advertising';
 import {
   royaltyFreeSampleClips,
@@ -219,6 +220,8 @@ export function PromoterShowCreationTool({
   const [liveStartsAt, setLiveStartsAt] = useState('');
   const [liveEndsAt, setLiveEndsAt] = useState('');
   const [liveTags, setLiveTags] = useState('live-event, venue-review');
+  const [splitMode, setSplitMode] = useState<'co-host' | 'referrer'>('referrer');
+  const [referrerLabel, setReferrerLabel] = useState('Anyone who shares your show');
   const [selectedMedia, setSelectedMedia] = useState<ShowMediaItem[]>([]);
   const [voiceOvers, setVoiceOvers] = useState<VoiceOverCue[]>([]);
   const [padAssignments, setPadAssignments] = useState<PadAssignment[]>([]);
@@ -2509,6 +2512,17 @@ export function PromoterShowCreationTool({
                 <strong>Venue approval first</strong>
               </div>
             </div>
+
+            <RevenueSplitVisualizer
+              tracks={selectedMedia.map(m => ({ id: m.mediaId, artistName: m.artistName, trackTitle: m.title, color: '#ff5029' }))}
+              hostName={promoters.find(p => p.profileId === selectedPromoterProfileId)?.name ?? 'You'}
+              referrerLabel={referrerLabel}
+              onReferrerLabelChange={setReferrerLabel}
+              mode={splitMode}
+              onModeChange={setSplitMode}
+              projection={selectedMedia.length > 0 ? { totalDollars: 2840, windowLabel: 'based on your last 4 shows', listens: 9400 } : null}
+              onSchedule={() => setSaveIntent('publish')}
+            />
 
             <div className="composer-action-bar">
               <div className="composer-action-bar-copy">

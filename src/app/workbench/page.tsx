@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
+import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
 
 // ── Icons ─────────────────────────────────────────────────────────
 
@@ -88,15 +89,15 @@ const ACTIVITY = [
 const ACT_COLORS: Record<string,string> = { hype:'#ff3e9a', show:'#22e5d4', radio:'#b983ff', payout:'#ffb84a' };
 
 const NAV_ITEMS = [
-  { id:'home',    label:'Home',      icon: <IcHome s={16}/> },
-  { id:'library', label:'Library',   icon: <IcLibrary s={16}/> },
-  { id:'radio',   label:'Radio',     icon: <IcRadio s={16}/> },
-  { id:'tickets', label:'Ticketing', icon: <IcTicket s={16}/> },
-  { id:'events',  label:'Events',    icon: <IcShows s={16}/> },
-  { id:'studio',  label:'Create',    icon: <IcStudio s={16}/> },
+  { id:'home',     label:'Home',             icon: <IcHome s={16}/> },
+  { id:'library',  label:'Library',          icon: <IcLibrary s={16}/> },
+  { id:'radio',    label:'Radio',            icon: <IcRadio s={16}/> },
+  { id:'tickets',  label:'Live Events',      icon: <IcTicket s={16}/> },
+  { id:'discover', label:'Discover · Seeds', icon: <IcDisco s={16}/> },
+  { id:'studio',   label:'Create',           icon: <IcStudio s={16}/> },
 ];
 
-type View = 'home'|'library'|'radio'|'tickets'|'events'|'studio'|'settings';
+type View = 'home'|'library'|'radio'|'tickets'|'events'|'discover'|'studio'|'settings';
 
 // ── Shared utils ──────────────────────────────────────────────────
 
@@ -823,6 +824,26 @@ function ViewSettings({ accent, setAccent, density, setDensity, queueRail, setQu
   );
 }
 
+// ── Discover / Seeds view ─────────────────────────────────────────
+
+function ViewSeeds() {
+  const tracks: SeedsSwipeStackTrack[] = TRACKS.map(t => ({
+    id: t.id, title: t.t, artistName: t.a, album: t.album,
+    color: t.c, durationLabel: t.d, hypeCount: t.h,
+  }));
+  const seeds: SeedsSwipeStackSeed[] = [];
+
+  return (
+    <SeedsSwipeStack
+      seeds={seeds}
+      tracks={tracks}
+      onSave={(seed) => fetch(`/api/discover/seeds/${seed.id}/save`, { method: 'POST' })}
+      onSkip={(seed) => fetch(`/api/discover/seeds/${seed.id}/skip`, { method: 'POST' })}
+      onHype={(seed) => fetch(`/api/discover/seeds/${seed.id}/hype`, { method: 'POST' })}
+    />
+  );
+}
+
 // ── Queue rail ────────────────────────────────────────────────────
 
 function QueueRail({ onPickTrack, currentId }:{ onPickTrack:(id:string)=>void; currentId:string|null }) {
@@ -933,6 +954,7 @@ export default function WorkbenchPage() {
           {view==='radio'    && <ViewRadio onPickTrack={handlePickTrack}/>}
           {view==='tickets'  && <ViewTicketing/>}
           {view==='events'   && <ViewEvents/>}
+          {view==='discover' && <ViewSeeds/>}
           {view==='studio'   && <ViewStudio/>}
           {view==='settings' && <ViewSettings accent={accent} setAccent={setAccent} density={density} setDensity={setDensity} queueRail={queueRail} setQueueRail={setQueueRail}/>}
         </main>
