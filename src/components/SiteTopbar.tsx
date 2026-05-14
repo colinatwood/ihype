@@ -10,12 +10,6 @@ export function SiteTopbar() {
   const { data: session } = useSession();
   const [query, setQuery] = useState('');
 
-  // Derive a breadcrumb label from the current path
-  const segment = pathname.split('/').filter(Boolean)[0];
-  const label = segment
-    ? segment.charAt(0).toUpperCase() + segment.slice(1)
-    : 'Home';
-
   function handleSearch(e: FormEvent) {
     e.preventDefault();
     if (query.trim()) {
@@ -28,8 +22,6 @@ export function SiteTopbar() {
     <div className="site-topbar" role="search" aria-label="Site search and stats">
       <div className="site-topbar-crumbs">
         <span className="site-topbar-crumb-dim">iHYPE</span>
-        <span className="site-topbar-sep">/</span>
-        <span className="site-topbar-crumb-active">{label}</span>
       </div>
 
       <div className="site-topbar-stats">

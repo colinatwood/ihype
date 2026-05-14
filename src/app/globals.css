@@ -417,6 +417,7 @@ body:has(.wb-shell) .site-nav { display: none; }
 @media (max-width: 640px) {
   .lp-promise-grid, .lp-how-grid { grid-template-columns: 1fr; }
   .lp-transparency-grid { grid-template-columns: 1fr 1fr; }
+  .lp-role-grid { grid-template-columns: 1fr; }
 }
 
 /* Hide Shows/Artists/Venues nav on marketing and auth pages */
@@ -618,6 +619,12 @@ body:has(.auth-signal-page) .nav-links-primary { display: none !important; }
   .lp-hype-compare { grid-template-columns: 1fr; }
   .lp-role-grid--v2 { grid-template-columns: 1fr; }
   .lp-zero-fee-inner { gap: 16px; }
+}
+
+@media (max-width: 900px) {
+  .lp-role-grid--v2 {
+    grid-template-columns: 1fr;
+  }
 }
 
 .lp-footer-cta .lp-hero-actions { justify-content: center; }
