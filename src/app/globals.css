@@ -997,6 +997,69 @@ body:has(.auth-signal-page) .site-dock {
 .wb-cta-banner-text { display: flex; flex-direction: column; gap: 4px; }
 .wb-cta-banner-text strong { font-size: 13px; color: var(--text); }
 .wb-cta-banner-text span { font-size: 11px; color: var(--muted); }
+
+@media (max-width: 980px) {
+  .wb-wrap {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .wb-sidebar {
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    overflow-x: auto;
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .wb-sidebar-foot {
+    margin-top: 0;
+    margin-left: auto;
+    flex-direction: row;
+    align-items: center;
+  }
+  .wb-nav-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+  .wb-nav-indicator,
+  .wb-nav-tooltip,
+  .wb-sidebar-signin {
+    display: none;
+  }
+  .wb-right {
+    display: none;
+  }
+  .wb-discover {
+    padding: 20px 16px;
+    gap: 16px;
+  }
+  .wb-panel-row {
+    grid-template-columns: 1fr;
+  }
+  .wb-role-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .wb-greeting-h {
+    font-size: 24px;
+    line-height: 1.15;
+  }
+  .wb-stat-row,
+  .wb-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .wb-role-row {
+    grid-template-columns: 1fr;
+  }
+  .wb-track-card {
+    min-height: 0;
+  }
+}
 .nav-search {
   display: flex;
   align-items: center;
