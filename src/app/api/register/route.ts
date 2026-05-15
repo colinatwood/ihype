@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { ProfileType } from '@prisma/client';
+import { Prisma, ProfileType } from '@prisma/client';
 import { getDiscoverPathForType, getProfilePathForType } from '@/lib/account-routing';
 import { recordAuditEvent } from '@/lib/audit';
 import { db } from '@/lib/db';
@@ -255,8 +255,7 @@ export async function POST(request: Request) {
     const user = await db.user.create({
       data: {
         name: body.role === 'FAN' ? normalizedUsername : trimmedName,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        email: normalizedEmail as any,
+        email: normalizedEmail,
         username: normalizedUsername || `user${Math.random().toString(36).slice(2, 8)}`,
         passwordHash,
         isThirteenOrOlder: body.isThirteenOrOlder,
@@ -322,7 +321,15 @@ export async function POST(request: Request) {
       publicProfilePath: getProfilePathForType(profile.type, profile.slug),
       profilePath: getDiscoverPathForType(profile.type)
     });
-  } catch {
-    return NextResponse.json({ error: 'Invalid registration payload' }, { status: 400 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      const first = error.issues[0];
+      return NextResponse.json({ error: first?.message ?? 'Invalid registration payload' }, { status: 400 });
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Username or email already taken.' }, { status: 409 });
+    }
+    console.error('[register]', error);
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 }
