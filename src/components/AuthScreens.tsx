@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FormEvent, ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 
 type RoleOption = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
@@ -166,7 +166,6 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [city, setCity] = useState('');
   const [stateRegion, setStateRegion] = useState('');
   const [country, setCountry] = useState('');
@@ -194,7 +193,6 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
         name,
         email,
         username,
-        password,
         role,
         isThirteenOrOlder: acceptedAge,
         acceptedArtistUploadPolicy: needsUploadPolicy ? acceptedPolicy : true,
@@ -267,20 +265,6 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
               <input autoComplete="username" onChange={(event) => setUsername(event.target.value)} required type="text" value={username} />
             </label>
           </div>
-
-          <label className="field">
-            <span>Password</span>
-            <input
-              aria-describedby="register-password-help"
-              autoComplete="new-password"
-              minLength={8}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-            <small id="register-password-help">Use at least 8 characters with a letter and a number.</small>
-          </label>
 
           <label className="field">
             <span>Beta invite code</span>
@@ -517,10 +501,38 @@ export function ForgotPasswordScreen() {
   );
 }
 
+type PasskeyEntry = {
+  id: string;
+  deviceType: string;
+  createdAt: string;
+  backedUp: boolean;
+};
+
 export function PasskeyManager() {
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [passkeys, setPasskeys] = useState<PasskeyEntry[] | null>(null);
+  const [loadingList, setLoadingList] = useState(true);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  async function loadPasskeys() {
+    setLoadingList(true);
+    try {
+      const res = await fetch('/api/auth/passkey/list');
+      const data = await res.json();
+      setPasskeys(data.passkeys ?? []);
+    } catch {
+      // silently ignore list errors
+    } finally {
+      setLoadingList(false);
+    }
+  }
+
+  // Load on mount
+  useEffect(() => {
+    void loadPasskeys();
+  }, []);
 
   async function registerPasskey() {
     setBusy(true);
@@ -532,10 +544,28 @@ export function PasskeyManager() {
       const attestation = await startRegistration(options);
       await postJson('/api/auth/passkey/register', attestation);
       setStatus('Passkey added. You can now sign in without a password.');
+      void loadPasskeys();
     } catch (err) {
       setError(getErrorMessage(err, 'Could not register passkey.'));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function removePasskey(id: string) {
+    setRemovingId(id);
+    setError('');
+    try {
+      const res = await fetch(`/api/auth/passkey/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(typeof payload.error === 'string' ? payload.error : 'Could not remove passkey.');
+      }
+      void loadPasskeys();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not remove passkey.'));
+    } finally {
+      setRemovingId(null);
     }
   }
 
@@ -546,6 +576,33 @@ export function PasskeyManager() {
       </button>
       {status ? <p className="status-note" style={{ marginTop: 8 }}>{status}</p> : null}
       {error ? <p className="status-note status-note-error" style={{ marginTop: 8 }}>{error}</p> : null}
+
+      {!loadingList && passkeys && passkeys.length > 0 ? (
+        <div style={{ marginTop: 16 }}>
+          <p style={{ fontWeight: 600, marginBottom: 8 }}>Registered passkeys</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {passkeys.map((pk) => (
+              <li key={pk.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <span style={{ flex: 1 }}>
+                  <span style={{ textTransform: 'capitalize' }}>{pk.deviceType.replace(/-/g, ' ')}</span>
+                  {pk.backedUp ? ' · synced' : ' · single device'}
+                  {' · '}
+                  {new Date(pk.createdAt).toLocaleDateString()}
+                </span>
+                <button
+                  className="button"
+                  disabled={removingId === pk.id}
+                  onClick={() => void removePasskey(pk.id)}
+                  style={{ padding: '4px 12px', fontSize: '0.85em' }}
+                  type="button"
+                >
+                  {removingId === pk.id ? 'Removing...' : 'Remove'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }
