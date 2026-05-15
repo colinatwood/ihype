@@ -96,25 +96,16 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 }
 
 export function LoginScreen({
-  initialIdentifier = '',
   justRegistered = false
 }: {
-  initialIdentifier?: string;
   justRegistered?: boolean;
 }) {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState(initialIdentifier);
-  const [password, setPassword] = useState('');
-  const [challengeId, setChallengeId] = useState('');
-  const [otp, setOtp] = useState('');
-  const [maskedEmail, setMaskedEmail] = useState('');
-  const [message, setMessage] = useState(
-    justRegistered ? 'Account created. Sign in with your email/username and password to continue.' : ''
+  const [message] = useState(
+    justRegistered ? 'Account created. Add a passkey in Settings, then sign in here.' : ''
   );
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [website, setWebsite] = useState('');
-  const isCodeStep = Boolean(challengeId);
 
   async function signInWithPasskey() {
     setError('');
@@ -127,52 +118,7 @@ export function LoginScreen({
       router.push(payload.redirect || '/auth/landing');
       router.refresh();
     } catch (err) {
-      setError(getErrorMessage(err, 'Passkey sign-in failed.'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function sendCode(statusMessage?: string) {
-    setError('');
-    setMessage(statusMessage ?? '');
-    setIsSubmitting(true);
-
-    try {
-      const payload = await postJson<{ challengeId: string; email: string }>('/api/auth/otp/request', {
-        identifier,
-        password,
-        website
-      });
-      setChallengeId(payload.challengeId);
-      setMaskedEmail(payload.email);
-      setMessage('We sent a 6-digit sign-in code to your email. It expires in 10 minutes.');
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not request a sign-in code.'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function requestCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await sendCode();
-  }
-
-  async function verifyCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-      const payload = await postJson<{ redirect?: string }>('/api/auth/otp/signin', {
-        challengeId,
-        otp
-      });
-      router.push(payload.redirect || '/auth/landing');
-      router.refresh();
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not verify that code.'));
+      setError(getErrorMessage(err, 'Passkey sign-in failed. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -180,124 +126,32 @@ export function LoginScreen({
 
   return (
     <AuthSignalShell
-      badge="Secure sign in"
-      cardSubtitle={
-        isCodeStep
-          ? `Use the 6-digit code sent to ${maskedEmail || 'your email'}.`
-          : 'Use your email or username. iHYPE sends a short-lived email code before opening your workspace.'
-      }
-      cardTitle={isCodeStep ? 'Enter your code' : 'Sign in to iHYPE'}
-      description="Access your role lane without exposing account state. Codes are short-lived, email-first, and built for fast workspace entry."
-      eyebrow="Secure access"
-      highlight={isCodeStep ? 'Verify the signal.' : 'Open your lane.'}
+      badge="Passkey sign-in"
+      cardSubtitle="Use Face ID, Touch ID, or your device PIN — no password, no email code."
+      cardTitle="Sign in to iHYPE"
+      description="Fast, phishing-resistant sign-in with your device's built-in biometrics. No password to remember."
+      eyebrow="Passkey sign-in"
+      highlight="One tap."
       signals={[
-        { label: 'Step 1', value: 'Password', detail: 'Confirms your account' },
-        { label: 'Step 2', value: 'Code', detail: 'Short-lived inbox check' },
-        { label: 'Step 3', value: 'Workspace', detail: 'Role-aware redirect' }
+        { label: 'No password', value: 'Passkey', detail: 'Device biometrics' },
+        { label: 'No inbox', value: 'Instant', detail: 'No email code needed' },
+        { label: 'Phishing-safe', value: 'FIDO2', detail: 'Bound to this site' }
       ]}
-      title={isCodeStep ? 'Check your inbox.' : 'Sign in.'}
+      title="Sign in."
     >
-      {!isCodeStep ? (
-        <>
-        <button
-          className="button"
-          disabled={isSubmitting}
-          onClick={signInWithPasskey}
-          style={{ marginBottom: 12 }}
-          type="button"
-        >
-          {isSubmitting ? 'Checking passkey...' : 'Sign in with passkey'}
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, opacity: 0.5 }}>
-          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid currentColor' }} />
-          <span style={{ fontSize: 12 }}>or use password</span>
-          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid currentColor' }} />
-        </div>
-        <form className="form" onSubmit={requestCode}>
-          <label className="field">
-            <span>Email or username</span>
-            <input
-              autoComplete="username"
-              onChange={(event) => setIdentifier(event.target.value)}
-              required
-              type="text"
-              value={identifier}
-            />
-          </label>
-          <label className="field">
-            <span>Password</span>
-            <input
-              autoComplete="current-password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </label>
-          <button className="button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? 'Sending code...' : 'Send sign-in code'}
-          </button>
-          <label className="bot-field" aria-hidden="true">
-            <span>Website</span>
-            <input
-              autoComplete="off"
-              onChange={(event) => setWebsite(event.target.value)}
-              tabIndex={-1}
-              type="text"
-              value={website}
-            />
-          </label>
-        </form>
-        </>
-      ) : (
-        <form className="form" onSubmit={verifyCode}>
-          <label className="field">
-            <span>6-digit code</span>
-            <input
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              maxLength={6}
-              onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              pattern="[0-9]{6}"
-              required
-              type="text"
-              value={otp}
-            />
-          </label>
-          <button className="button" disabled={isSubmitting || otp.length !== 6} type="submit">
-            {isSubmitting ? 'Verifying...' : 'Open my workspace'}
-          </button>
-          <div className="auth-inline-actions">
-            <button
-              className="text-link"
-              disabled={isSubmitting}
-              onClick={() => sendCode('Sending a fresh code to your email...')}
-              type="button"
-            >
-              Resend code
-            </button>
-            <button
-              className="text-link"
-              onClick={() => {
-                setChallengeId('');
-                setOtp('');
-                setMessage('');
-              }}
-              type="button"
-            >
-              Use a different login
-            </button>
-          </div>
-        </form>
-      )}
+      <button
+        className="button"
+        disabled={isSubmitting}
+        onClick={signInWithPasskey}
+        type="button"
+      >
+        {isSubmitting ? 'Checking passkey...' : 'Sign in with passkey'}
+      </button>
 
       {message ? <p className="status-note">{message}</p> : null}
       {error ? <p className="status-note status-note-error">{error}</p> : null}
 
       <div className="auth-route-links">
-        <Link className="text-link" href="/forgot">
-          Reset password
-        </Link>
         <Link className="text-link" href="/register">
           Join free
         </Link>
