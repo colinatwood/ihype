@@ -240,7 +240,10 @@ export async function POST(request: Request) {
     if (normalizedEmail) orConditions.push({ email: normalizedEmail });
     if (normalizedPhone) orConditions.push({ phone: normalizedPhone });
 
-    const existing = await db.user.findFirst({ where: { OR: orConditions } });
+    const existing = await db.user.findFirst({
+      where: { OR: orConditions },
+      select: { id: true, email: true, username: true }
+    });
 
     if (existing) {
       return NextResponse.json(
@@ -248,7 +251,7 @@ export async function POST(request: Request) {
           error:
             normalizedEmail && existing.email === normalizedEmail
               ? 'An account with that email already exists'
-              : normalizedPhone && existing.phone === normalizedPhone
+              : normalizedPhone
               ? 'An account with that phone number already exists'
               : 'Username is already taken'
         },
@@ -266,7 +269,8 @@ export async function POST(request: Request) {
         passwordHash,
         isThirteenOrOlder: body.isThirteenOrOlder,
         role: body.role
-      }
+      },
+      select: { id: true, email: true, username: true, role: true }
     });
 
     const profileType = getProfileType(body.role);
