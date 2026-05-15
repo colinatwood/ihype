@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback, useRef, createContext, useContext, memo } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
-import { HypeHeatmap, type HypeHeatmapCity, type HypeHeatmapVenuePing } from '@/components/HypeHeatmap';
-import { RevenueSplitVisualizer, type RevenueSplitTrack, type RevenueSplitProjection } from '@/components/RevenueSplitVisualizer';
+import { HypeHeatmap } from '@/components/HypeHeatmap';
+import { RevenueSplitVisualizer } from '@/components/RevenueSplitVisualizer';
 
 // ── Drag context ───────────────────────────────────────────────
 const DragTrackCtx = createContext<{
