@@ -28,7 +28,7 @@ export async function getPasskeyRegistrationOptions(userId: string, userName: st
   const options = await generateRegistrationOptions({
     rpName,
     rpID,
-    userID: Buffer.from(userId),
+    userID: userId,
     userName,
     attestationType: 'none',
     excludeCredentials,
