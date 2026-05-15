@@ -260,9 +260,8 @@ export async function POST(request: Request) {
     const user = await db.user.create({
       data: {
         name: body.role === 'FAN' ? normalizedUsername : trimmedName,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        email: normalizedEmail as any,
-        phone: normalizedPhone,
+        email: normalizedEmail ?? undefined,
+        phone: normalizedPhone ?? undefined,
         username: normalizedUsername || `user${Math.random().toString(36).slice(2, 8)}`,
         passwordHash,
         isThirteenOrOlder: body.isThirteenOrOlder,
