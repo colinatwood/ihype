@@ -1,7 +1,100 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, createContext, useContext, memo } from 'react';
+import Image from 'next/image';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
+import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
+import { HypeHeatmap } from '@/components/HypeHeatmap';
+import { PasskeyManager } from '@/components/AuthScreens';
+import { RevenueSplitVisualizer } from '@/components/RevenueSplitVisualizer';
+
+// ── Drag context ───────────────────────────────────────────────
+const DragTrackCtx = createContext<{
+  dragging: MediaTrack | null;
+  setDragging: (t: MediaTrack | null) => void;
+} | null>(null);
+
+function useDragTrack() {
+  return useContext(DragTrackCtx)!;
+}
+
+function DragTrackProvider({ children }: { children: React.ReactNode }) {
+  const [dragging, setDragging] = useState<MediaTrack | null>(null);
+  return <DragTrackCtx.Provider value={{ dragging, setDragging }}>{children}</DragTrackCtx.Provider>;
+}
+
+function DraggableTrack({ track, children, className, style, onClick }: {
+  track: MediaTrack;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  onClick?: () => void;
+}) {
+  const { setDragging } = useDragTrack();
+  return (
+    <div
+      draggable
+      className={className}
+      style={{ ...style, cursor: 'grab' }}
+      onClick={onClick}
+      onDragStart={e => {
+        setDragging(track);
+        e.dataTransfer.setData('application/ihype-track', JSON.stringify(track));
+        e.dataTransfer.effectAllowed = 'copy';
+      }}
+      onDragEnd={() => setDragging(null)}
+    >
+      {children}
+    </div>
+  );
+}
+
+function QueueDropZone({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const { addToQueue } = useMediaPlayer();
+  const [over, setOver] = useState(false);
+  return (
+    <div
+      className={className}
+      style={{ ...style, outline: over ? '2px solid var(--wb-accent)' : undefined, borderRadius: over ? 8 : undefined, transition: 'outline 0.1s' }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault();
+        setOver(false);
+        try {
+          const track: MediaTrack = JSON.parse(e.dataTransfer.getData('application/ihype-track'));
+          addToQueue(track);
+        } catch { /* ignore */ }
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function PlaylistDropZone({ name, children, className, style, onClick }: { name: string; children: React.ReactNode; className?: string; style?: React.CSSProperties; onClick?: () => void }) {
+  const [over, setOver] = useState(false);
+  const [flash, setFlash] = useState(false);
+  return (
+    <div
+      className={className}
+      style={{ ...style, outline: over ? '2px solid #b983ff' : undefined, borderRadius: over ? 10 : undefined, transition: 'outline 0.1s' }}
+      onClick={onClick}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault();
+        setOver(false);
+        setFlash(true);
+        setTimeout(() => setFlash(false), 1200);
+        // In production this would POST to /api/playlists
+        void name; void flash;
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 // ── Types ──────────────────────────────────────────────────────
 export type WbTrack = {
@@ -78,10 +171,12 @@ export type WorkbenchData = {
   radioShows: WbRadioShow[];
   /** Profile types the logged-in user has: 'ARTIST' | 'VENUE' | 'LISTENER' | 'DJ' */
   activeProfileTypes: string[];
+  profileId?: string;
   listeningNow: number;
   hypedToday: number;
   showsTonight: number;
   isVerified?: boolean;
+  lifeStats?: { totalHype: number; totalEarnings: number; songsPlayed: number; eventsAttended: number };
 };
 
 // ── Default prefs ──────────────────────────────────────────────
@@ -121,6 +216,8 @@ const IcRadio    = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="12" r="3"
 const IcTicket   = (p: {s?:number}) => <Ic s={p.s}><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" strokeDasharray="2 2"/></Ic>;
 const IcDiscover = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="12" r="9"/><polygon points="15 9 13 13 9 15 11 11" fill="currentColor" stroke="none"/></Ic>;
 const IcShows    = (p: {s?:number}) => <Ic s={p.s}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></Ic>;
+const IcSeeds    = (p: {s?:number}) => <Ic s={p.s}><path d="M12 22V12M12 12C12 7 7 4 2 4c0 5 3 8 10 8zM12 12c0-5 5-8 10-8-0 5-3 8-10 8z"/></Ic>;
+const IcArtist   = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><path d="M20 8l2 2-2 2M20 10h2"/></Ic>;
 const IcStudio   = (p: {s?:number}) => <Ic s={p.s}><path d="M6 3v18M18 3v18M3 6h18M3 12h18M3 18h18"/></Ic>;
 const IcSettings = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></Ic>;
 const IcPlay     = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20"/></svg>;
@@ -138,7 +235,12 @@ const IcCheck    = (p: {s?:number}) => <Ic {...p}><polyline points="20 6 9 17 4 
 const IcArrow    = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
 const IcDot      = ({ c = 'currentColor', s = 8 }: {c?:string; s?:number}) => <svg width={s} height={s} viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill={c}/></svg>;
 
-type View = 'home' | 'library' | 'radio' | 'tickets' | 'studio' | 'venue' | 'settings';
+// ── Skeleton loader ────────────────────────────────────────────
+function WbSkeleton({ width, height, style }: { width?: number | string; height?: number | string; style?: React.CSSProperties }) {
+  return <div className="wb-skeleton" style={{ width: width ?? '100%', height: height ?? 16, ...style }} />;
+}
+
+type View = 'home' | 'discover' | 'seeds' | 'tickets' | 'studio' | 'artist' | 'venue' | 'settings';
 
 // ── Onboarding modal ───────────────────────────────────────────
 function OnboardingModal({ onDone }: { onDone: () => void }) {
@@ -207,9 +309,13 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
     } catch { return DEFAULT_PREFS; }
   });
 
+  const prefsPersistRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    try { localStorage.setItem('ihype-wb-prefs', JSON.stringify(prefs)); } catch {}
     applyPrefs(prefs);
+    if (prefsPersistRef.current) clearTimeout(prefsPersistRef.current);
+    prefsPersistRef.current = setTimeout(() => {
+      try { localStorage.setItem('ihype-wb-prefs', JSON.stringify(prefs)); } catch {}
+    }, 400);
   }, [prefs]);
 
   // Apply on mount
@@ -241,53 +347,66 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="wb-root">
-      {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
-      {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-      <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={data.isVerified} />
-      <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} />
-      <main className="wb-main">
-        {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
-        {view === 'radio'    && <ViewRadio data={data} setView={setView} />}
-        {view === 'tickets'  && <ViewTicketing data={data} activeProfileTypes={data.activeProfileTypes} />}
-        {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
-        {view === 'library'  && <ViewLibrary data={data} />}
-
-        {view === 'studio'   && <ViewRadioStudio />}
-        {view === 'venue'    && <ViewVenue data={data} />}
-      </main>
-      {showQueue && <WbQueueRail data={data} />}
-      <WbPlayerDock />
-    </div>
+    <DragTrackProvider>
+      <div className="wb-root">
+        {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
+        {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
+        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={data.isVerified} />
+        <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
+        <main className="wb-main">
+          {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
+          {view === 'discover' && <ViewDiscover data={data} />}
+          {view === 'seeds'    && <ViewSeeds data={data} />}
+          {view === 'tickets'  && <ViewTicketing data={data} activeProfileTypes={data.activeProfileTypes} />}
+          {view === 'studio'   && <ViewRadioStudio />}
+          {view === 'artist'   && <ViewArtist data={data} />}
+          {view === 'venue'    && <ViewVenue data={data} />}
+          {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
+        </main>
+        {showQueue && <WbQueueRail data={data} />}
+        <WbPlayerDock queueRailOn={prefs.queueRail} onToggleQueue={() => setPref('queueRail', !prefs.queueRail)} />
+      </div>
+    </DragTrackProvider>
   );
 }
 
 // ── Sidebar ────────────────────────────────────────────────────
 const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
   { k: 'home',     label: 'Home',      Icon: IcHome },
-  { k: 'library',  label: 'Library',   Icon: IcLibrary },
-  { k: 'radio',    label: 'Radio',     Icon: IcRadio },
-  { k: 'tickets',  label: 'Events & Tickets', Icon: IcTicket },
-  { k: 'studio',   label: 'Create',    Icon: IcStudio },
+  { k: 'discover', label: 'Discover',  Icon: IcDiscover },
+  { k: 'seeds',    label: 'Seeds',     Icon: IcSeeds },
+  { k: 'tickets',  label: 'Ticketing', Icon: IcTicket },
+  { k: 'studio',   label: 'Studio',    Icon: IcStudio },
 ];
 
-function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes, mobileOpen, onMobileClose, isVerified }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean }) {
-  const isVenue = activeProfileTypes.includes('VENUE');
+function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobileOpen, isVerified }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean }) {
+  const isArtist = activeProfileTypes.includes('ARTIST');
+  const isVenue  = activeProfileTypes.includes('VENUE');
   return (
     <aside className={`wb-sidebar${mobileOpen ? ' wb-sidebar-mobile-open' : ''}`}>
       <div className="wb-sb-logo">iH</div>
       <div className="wb-sb-stack">
-        {NAV_ITEMS.filter(i => pinned.includes(i.k)).map(({ k, label, Icon }) => (
+        {NAV_ITEMS.map(({ k, label, Icon }) => (
           <SidebarBtn key={k} active={view === k} onClick={() => setView(k)} label={label} accent={accent}>
             <Icon s={18} />
           </SidebarBtn>
         ))}
+        {isArtist && (
+          <SidebarBtn active={view === 'artist'} onClick={() => setView('artist')} label="Artist" accent={accent}>
+            <IcArtist s={18} />
+          </SidebarBtn>
+        )}
         {isVenue && (
-          <SidebarBtn active={view === 'venue'} onClick={() => setView('venue')} label="Venue dashboard" accent="#22e5d4">
+          <SidebarBtn active={view === 'venue'} onClick={() => setView('venue')} label="Venue" accent={accent}>
             <IcShows s={18} />
           </SidebarBtn>
         )}
       </div>
+      {!isArtist && !isVenue && (
+        <SidebarBtn active={false} onClick={() => window.location.href = '/register'} label="Register as Artist/Venue" accent="#22e5d4">
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </SidebarBtn>
+      )}
       <div className="wb-sb-foot">
         <SidebarBtn active={view === 'settings'} onClick={() => setView('settings')} label="Settings" accent="rgba(255,255,255,.4)">
           <IcSettings s={18} />
@@ -325,45 +444,145 @@ function SidebarBtn({ active, onClick, label, children, accent }: { active: bool
 
 // ── Topbar ─────────────────────────────────────────────────────
 const VIEW_TITLES: Record<View, string> = {
-  home: 'Home', library: 'Library', radio: 'Radio', tickets: 'Events & Tickets',
-  studio: 'Radio studio', venue: 'Venue dashboard', settings: 'Settings · page customization',
+  home: 'Home', discover: 'Discover', seeds: 'Seeds', tickets: 'Ticketing',
+  studio: 'Studio', artist: 'Artist', venue: 'Venue', settings: 'Settings',
 };
 
-function WbTopbar({ view, data, onHamburger }: { view: View; data: WorkbenchData; onHamburger: () => void }) {
+type SearchHit = { type: string; id: string; name: string; subtitle: string; slug?: string };
+const TYPE_LABELS: Record<string, string> = { artist: 'Artist', venue: 'Venue', promoter: 'DJ', song: 'Track', show: 'Show' };
+
+function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: WorkbenchData; onHamburger: () => void; setView: (v: View) => void }) {
+  const [q, setQ] = useState('');
+  const [results, setResults] = useState<SearchHit[]>([]);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const debRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { playTrack } = useMediaPlayer();
+
+  useEffect(() => {
+    const poll = () => fetch('/api/stats/live').then(r => r.ok ? r.json() : null).then(d => {
+      if (!d) return;
+      // update is handled by parent re-render in future; for now we just log
+    }).catch(() => {});
+    const id = setInterval(poll, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (debRef.current) clearTimeout(debRef.current);
+    if (!q.trim()) { setResults([]); setOpen(false); return; }
+    debRef.current = setTimeout(async () => {
+      setBusy(true);
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}&limit=10`);
+        const d = await res.json() as { results: SearchHit[] };
+        setResults((d.results ?? []).filter(r => r.type !== 'genre'));
+        setOpen(true);
+      } catch { setResults([]); } finally { setBusy(false); }
+    }, 220);
+  }, [q]);
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); inputRef.current?.focus(); }
+      if (e.key === 'Escape') { setOpen(false); setQ(''); inputRef.current?.blur(); }
+    }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  function getHref(r: SearchHit) {
+    if (!r.slug) return null;
+    if (r.type === 'artist') return `/artists/${r.slug}`;
+    if (r.type === 'venue') return `/venues/${r.slug}`;
+    if (r.type === 'promoter') return `/promoters/${r.slug}`;
+    if (r.type === 'show') return `/shows/${r.slug}`;
+    return null;
+  }
+
+  function handleSelect(r: SearchHit) {
+    if (r.type === 'song') {
+      playTrack({ id: r.id, title: r.name, artistName: r.subtitle.replace(/^by /, '').split(' / ')[0], url: `/api/media/${r.id}`, mediaId: r.id, artistProfileSlug: r.slug ?? null });
+    } else {
+      const href = getHref(r);
+      if (href) { window.location.href = href; return; }
+    }
+    setOpen(false); setQ('');
+  }
+
   return (
     <header className="wb-topbar">
       <button className="wb-hamburger" onClick={onHamburger} aria-label="Toggle navigation">
         <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
-
       <div className="wb-top-logo">
-        <span className="wb-top-logo-mark">
-          <span style={{ color: 'var(--wb-ink)' }}>i</span>
-          <span style={{ color: 'var(--wb-accent)' }}>HYPE</span>
-        </span>
-        <span className="wb-top-beta">BETA</span>
+        <span className="wb-top-logo-mark"><span style={{ color: 'var(--wb-ink)' }}>i</span><span style={{ color: 'var(--wb-accent)' }}>HYPE</span></span>
       </div>
       <div className="wb-top-mid">
         <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', letterSpacing: '.04em' }}>{VIEW_TITLES[view]}</span>
         <span className="wb-top-dot" />
-        <span style={{ color: '#22e5d4', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
-          <IcDot c="#22e5d4" s={6} /> {data.listeningNow.toLocaleString()} listening
-        </span>
+        <span style={{ color: '#22e5d4', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}><IcDot c="#22e5d4" s={6} /> {data.listeningNow.toLocaleString()} listening</span>
         <span className="wb-top-dot" />
         <span style={{ fontSize: 11, color: 'var(--wb-ink-3)' }}>{data.hypedToday} hyped today</span>
       </div>
-      <div className="wb-search">
+      <div className="wb-search" ref={wrapRef} style={{ position: 'relative' }}>
         <IcSearch s={13} />
-        <input placeholder="Search artists, shows, venues, tracks…" className="wb-search-input" />
-        <span className="wb-kbd">⌘</span><span className="wb-kbd">K</span>
+        <input
+          ref={inputRef}
+          placeholder="Search artists, shows, venues, tracks…"
+          className="wb-search-input"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          onFocus={() => results.length > 0 && setOpen(true)}
+          autoComplete="off"
+        />
+        {busy
+          ? <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid var(--wb-line-2)', borderTopColor: 'var(--wb-accent)', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
+          : <><span className="wb-kbd">⌘</span><span className="wb-kbd">K</span></>
+        }
+        {open && results.length > 0 && (
+          <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line-2)', borderRadius: 10, boxShadow: '0 16px 48px rgba(0,0,0,.5)', zIndex: 500, overflow: 'hidden', minWidth: 320 }}>
+            {results.map(r => {
+              const href = getHref(r);
+              const inner = (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', cursor: 'pointer' }}
+                  onClick={() => handleSelect(r)}>
+                  <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-accent)', border: '1px solid var(--wb-line-2)', borderRadius: 3, padding: '1px 5px', flexShrink: 0 }}>
+                    {TYPE_LABELS[r.type] ?? r.type}
+                  </span>
+                  <span style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--wb-ink)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</span>
+                  <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', flexShrink: 0 }}>{r.subtitle}</span>
+                </div>
+              );
+              return href
+                ? <a key={`${r.type}-${r.id}`} href={href} style={{ display: 'block', textDecoration: 'none', borderBottom: '1px solid var(--wb-line)' }} onClick={() => setOpen(false)}>{inner}</a>
+                : <div key={`${r.type}-${r.id}`} style={{ borderBottom: '1px solid var(--wb-line)' }}>{inner}</div>;
+            })}
+          </div>
+        )}
+        {open && !busy && q.trim() && results.length === 0 && (
+          <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line-2)', borderRadius: 10, padding: '12px 14px', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink-3)', zIndex: 500 }}>
+            No results for &ldquo;{q}&rdquo;
+          </div>
+        )}
       </div>
     </header>
   );
 }
 
 // ── Player dock ────────────────────────────────────────────────
-function WbPlayerDock() {
-  const { currentTrack, isPlaying, currentTime, duration, togglePlayback, playNext, playPrevious, seekTo } = useMediaPlayer();
+function WbPlayerDock({ queueRailOn, onToggleQueue }: { queueRailOn: boolean; onToggleQueue: () => void }) {
+  const { currentTrack, isPlaying, currentTime, duration, volume, togglePlayback, playNext, playPrevious, seekTo, setVolume, queue } = useMediaPlayer();
 
   const progress = duration > 0 ? currentTime / duration : 0;
   const fmtTime = (s: number) => {
@@ -371,11 +590,21 @@ function WbPlayerDock() {
     return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
   };
 
+  function handleScrub(e: React.MouseEvent<HTMLDivElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    seekTo(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration);
+  }
+
+  function handleVolume(e: React.MouseEvent<HTMLDivElement>) {
+    const r = e.currentTarget.getBoundingClientRect();
+    setVolume(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)));
+  }
+
   return (
     <footer className="wb-dock">
       <div className="wb-dock-l">
         <div className="wb-dock-art" style={{ background: currentTrack ? 'linear-gradient(135deg, var(--wb-accent), #ff3e9a80)' : 'var(--wb-bg-3)' }}>
-          {currentTrack?.artworkUrl && <img src={currentTrack.artworkUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6 }} />}
+          {currentTrack?.artworkUrl && <Image src={currentTrack.artworkUrl} alt="" fill sizes="44px" style={{ objectFit: 'cover', borderRadius: 6 }} />}
         </div>
         <div style={{ minWidth: 0 }}>
           <div className="wb-dock-title">{currentTrack?.title ?? 'Nothing playing'}</div>
@@ -395,10 +624,7 @@ function WbPlayerDock() {
         </div>
         <div className="wb-scrub-row">
           <span className="wb-time">{fmtTime(currentTime)}</span>
-          <div className="wb-scrub-track" onClick={(e) => {
-            const r = e.currentTarget.getBoundingClientRect();
-            seekTo(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration);
-          }}>
+          <div className="wb-scrub-track" onClick={handleScrub}>
             <div className="wb-scrub-fill" style={{ width: `${progress * 100}%` }} />
             <div className="wb-scrub-knob" style={{ left: `${progress * 100}%` }} />
           </div>
@@ -406,9 +632,26 @@ function WbPlayerDock() {
         </div>
       </div>
       <div className="wb-dock-r">
-        <button className="wb-dock-btn"><IcQueue s={14} /></button>
-        <button className="wb-dock-btn"><IcVol s={14} /></button>
-        <div className="wb-vol-track"><div className="wb-vol-fill" /></div>
+        <button
+          className="wb-dock-btn"
+          onClick={onToggleQueue}
+          title="Toggle queue"
+          style={{ color: queueRailOn ? 'var(--wb-accent)' : undefined, position: 'relative' }}
+        >
+          <IcQueue s={14} />
+          {queue.length > 0 && (
+            <span style={{ position: 'absolute', top: 2, right: 2, width: 6, height: 6, borderRadius: '50%', background: 'var(--wb-accent)' }} />
+          )}
+        </button>
+        <button className="wb-dock-btn" title={`Volume ${Math.round(volume * 100)}%`}><IcVol s={14} /></button>
+        <div
+          className="wb-vol-track"
+          onClick={handleVolume}
+          style={{ cursor: 'pointer' }}
+          title={`Volume ${Math.round(volume * 100)}%`}
+        >
+          <div className="wb-vol-fill" style={{ width: `${volume * 100}%` }} />
+        </div>
       </div>
     </footer>
   );
@@ -416,40 +659,60 @@ function WbPlayerDock() {
 
 // ── Queue rail ─────────────────────────────────────────────────
 function WbQueueRail({ data }: { data: WorkbenchData }) {
-  const { currentTrack, playTrack } = useMediaPlayer();
+  const { currentTrack, currentIndex, queue, playTrack, removeFromQueue } = useMediaPlayer();
+  const upcoming = queue.slice(currentIndex + 1);
+  const played = queue.slice(0, currentIndex);
+
   return (
-    <aside className="wb-queue">
+    <QueueDropZone className="wb-queue">
       <div className="wb-queue-head">
         <div>
           <div className="wb-queue-title">Queue</div>
-          <div className="wb-queue-sub">{data.tracks.length} tracks · this week</div>
+          <div className="wb-queue-sub">
+            {queue.length === 0 ? 'Drag tracks here to queue them' : `${upcoming.length} up next · ${played.length} played`}
+          </div>
         </div>
-        <button className="wb-link-btn">Edit</button>
+        {queue.length > 0 && (
+          <button className="wb-link-btn" onClick={() => queue.forEach(t => removeFromQueue(t.id))}>Clear</button>
+        )}
       </div>
       <div className="wb-queue-list">
-        {data.tracks.map(t => {
-          const active = currentTrack?.id === t.id;
-          const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
-          return (
-            <button key={t.id} onClick={() => playTrack(mt)} className={`wb-q-item${active ? ' wb-q-item-active' : ''}`}>
-              <div className="wb-q-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}>
-                {active && <span className="wb-q-playing"><IcDot c={t.color} s={6} /></span>}
-              </div>
-              <div style={{ minWidth: 0, flex: 1, textAlign: 'left' }}>
-                <div className="wb-q-title">{t.title}</div>
-                <div className="wb-q-artist">{t.artistName}</div>
-              </div>
-              <div className="wb-q-hype"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
-              <div className="wb-q-dur">{t.duration}</div>
-            </button>
-          );
-        })}
+        {queue.length === 0 ? (
+          <div style={{ padding: '32px 16px', textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', lineHeight: 1.6 }}>
+            Drag any track here from the radio set list, library, or search results.
+          </div>
+        ) : (
+          queue.map((t, i) => {
+            const active = currentTrack?.id === t.id && i === currentIndex;
+            const isPast = i < currentIndex;
+            return (
+              <DraggableTrack key={`${t.id}-${i}`} track={t} className={`wb-q-item${active ? ' wb-q-item-active' : ''}`} onClick={() => playTrack(t, queue)}
+                style={{ opacity: isPast ? 0.4 : 1 }}>
+                <div className="wb-q-art" style={{ background: 'linear-gradient(135deg, var(--wb-accent), #ff3e9a80)', flexShrink: 0 }}>
+                  {active && <span className="wb-q-playing"><IcDot c="var(--wb-accent)" s={6} /></span>}
+                </div>
+                <div style={{ minWidth: 0, flex: 1, textAlign: 'left' }}>
+                  <div className="wb-q-title">{t.title}</div>
+                  <div className="wb-q-artist">{t.artistName}</div>
+                </div>
+                {active && <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-accent)' }}>NOW</span>}
+                <button
+                  style={{ background: 'none', border: 'none', color: 'var(--wb-ink-3)', cursor: 'pointer', padding: '2px 4px', fontSize: 14, lineHeight: 1 }}
+                  onClick={e => { e.stopPropagation(); removeFromQueue(t.id); }}
+                  title="Remove"
+                >×</button>
+              </DraggableTrack>
+            );
+          })
+        )}
       </div>
-      <div className="wb-queue-foot">
-        <span className="wb-eyebrow-xs">CURATED BY</span>
-        <div style={{ fontStyle: 'italic', fontSize: 16, marginTop: 4, color: 'var(--wb-ink)' }}>iHYPE · {data.city}</div>
-      </div>
-    </aside>
+      {queue.length === 0 && (
+        <div className="wb-queue-foot">
+          <span className="wb-eyebrow-xs">CURATED BY</span>
+          <div style={{ fontStyle: 'italic', fontSize: 16, marginTop: 4, color: 'var(--wb-ink)' }}>iHYPE · {data.city}</div>
+        </div>
+      )}
+    </QueueDropZone>
   );
 }
 
@@ -552,11 +815,27 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
       )}
 
       {/* Hyped tracks */}
+      {prefs.panel_hyped && data.tracks.length === 0 && (
+        <section className="wb-panel" style={{ marginTop: 14 }}>
+          <div className="wb-panel-head">
+            <div className="wb-panel-title">Hyped this week</div>
+          </div>
+          <div className="wb-tracks-grid">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <WbSkeleton height={80} style={{ borderRadius: 8 }} />
+                <WbSkeleton height={12} width="80%" />
+                <WbSkeleton height={10} width="60%" />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {prefs.panel_hyped && data.tracks.length > 0 && (
         <section className="wb-panel" style={{ marginTop: 14 }}>
           <div className="wb-panel-head">
             <div className="wb-panel-title">Hyped this week</div>
-            <button className="wb-link-btn" onClick={() => setView('library')}>Discover all →</button>
+            <button className="wb-link-btn" onClick={() => setView('seeds')}>Discover more →</button>
           </div>
           <div className="wb-tracks-grid">
             {data.tracks.slice(0, 6).map(t => {
@@ -577,12 +856,68 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
         </section>
       )}
 
+      {/* Lifetime heuristics */}
+      <div className="wb-stat-row" style={{ marginTop: 14 }}>
+        {[
+          { l: 'TOTAL HYPE GIVEN', v: (data.lifeStats?.totalHype ?? 3841).toLocaleString(),   d: 'all time',          c: '#ff3e9a' },
+          { l: 'TOTAL EARNINGS',   v: `$${(data.lifeStats?.totalEarnings ?? 9240).toLocaleString()}`, d: 'lifetime payouts', c: '#ffb84a' },
+          { l: 'SONGS PLAYED',     v: (data.lifeStats?.songsPlayed ?? 12447).toLocaleString(), d: 'all time listens',  c: '#b983ff' },
+          { l: 'EVENTS ATTENDED',  v: String(data.lifeStats?.eventsAttended ?? 28),            d: 'past tickets',      c: '#22e5d4' },
+        ].map(s => (
+          <div key={s.l} className="wb-stat-card">
+            <div className="wb-stat-l">{s.l}</div>
+            <div className="wb-stat-v">{s.v}</div>
+            <div className="wb-stat-d" style={{ color: s.c }}>{s.d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Favorites row */}
+      <div className="wb-col-row" style={{ marginTop: 14 }}>
+        <section className="wb-panel">
+          <div className="wb-panel-head">
+            <div className="wb-panel-title">Top artists</div>
+            <button className="wb-link-btn" onClick={() => setView('discover')}>All →</button>
+          </div>
+          {[
+            { name: 'Maya Reyes',    plays: 341, c: '#ff5029' },
+            { name: 'Cobalt Hour',   plays: 218, c: '#b983ff' },
+            { name: 'Vela',          plays: 177, c: '#22e5d4' },
+            { name: 'The Lowriders', plays: 134, c: '#ff3e9a' },
+          ].map(a => (
+            <div key={a.name} className="wb-act-row">
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${a.c}, ${a.c}80)`, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}><div className="wb-act-txt">{a.name}</div></div>
+              <div className="wb-act-time">{a.plays} plays</div>
+            </div>
+          ))}
+        </section>
+        <section className="wb-panel">
+          <div className="wb-panel-head">
+            <div className="wb-panel-title">Favorite venues</div>
+            <button className="wb-link-btn" onClick={() => setView('discover')}>All →</button>
+          </div>
+          {[
+            { name: 'Empty Bottle',   shows: 7, c: '#22e5d4' },
+            { name: 'Sleeping Village', shows: 4, c: '#ff3e9a' },
+            { name: 'Subterranean',   shows: 3, c: '#b983ff' },
+            { name: 'Hideout',        shows: 2, c: '#ffb84a' },
+          ].map(v => (
+            <div key={v.name} className="wb-act-row">
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: `linear-gradient(135deg, ${v.c}, ${v.c}80)`, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}><div className="wb-act-txt">{v.name}</div></div>
+              <div className="wb-act-time">{v.shows} shows</div>
+            </div>
+          ))}
+        </section>
+      </div>
+
     </div>
   );
 }
 
 // ── View: Radio ────────────────────────────────────────────────
-function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) => void }) {
+const ViewRadio = memo(function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) => void }) {
   const [activeId, setActiveId] = useState(data.radioShows[0]?.id ?? '');
   const { playTrack } = useMediaPlayer();
   const show = data.radioShows.find(r => r.id === activeId) ?? data.radioShows[0];
@@ -663,7 +998,7 @@ function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) 
               {data.tracks.slice(0, 6).map((t, i) => {
                 const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
                 return (
-                  <button key={t.id} onClick={() => playTrack(mt)} className="wb-q-row">
+                  <DraggableTrack key={t.id} track={mt} className="wb-q-row" onClick={() => playTrack(mt)}>
                     <div className="wb-q-idx">{String(i + 1).padStart(2, '0')}</div>
                     <div className="wb-q-art-sm" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }} />
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
@@ -672,7 +1007,7 @@ function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) 
                     </div>
                     <div className="wb-q-chip">{i === 0 && show.live ? 'NOW' : i < 2 ? 'JUST PLAYED' : `-${i * 4}m`}</div>
                     <div className="wb-q-hype-sm"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
-                  </button>
+                  </DraggableTrack>
                 );
               })}
             </div>
@@ -681,13 +1016,14 @@ function ViewRadio({ data, setView }: { data: WorkbenchData; setView: (v: View) 
       </div>
     </div>
   );
-}
+});
 
 // ── View: Ticketing ────────────────────────────────────────────
-function ViewTicketing({ data, activeProfileTypes }: { data: WorkbenchData; activeProfileTypes: string[] }) {
+const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: { data: WorkbenchData; activeProfileTypes: string[] }) {
   const canCreateEvents = activeProfileTypes.some(r => r === 'ARTIST' || r === 'VENUE');
   const isDJ = activeProfileTypes.includes('DJ');
-  const [tab, setTab] = useState<'browse' | 'mine' | 'selling' | 'scan' | 'create' | 'referral'>('browse');
+  const isVenue = activeProfileTypes.includes('VENUE');
+  const [tab, setTab] = useState<'browse' | 'recommended' | 'mine' | 'selling' | 'scan' | 'create' | 'referral' | 'venue'>('browse');
   const upcoming = data.tickets[0];
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferEmail, setTransferEmail] = useState('');
@@ -732,17 +1068,43 @@ function ViewTicketing({ data, activeProfileTypes }: { data: WorkbenchData; acti
         </div>
         <div className="wb-tabs">
           <button onClick={() => setTab('browse')} className={`wb-tab${tab === 'browse' ? ' wb-tab-active' : ''}`}>Browse</button>
+          <button onClick={() => setTab('recommended')} className={`wb-tab${tab === 'recommended' ? ' wb-tab-active' : ''}`}>Recommended</button>
           <button onClick={() => setTab('mine')} className={`wb-tab${tab === 'mine' ? ' wb-tab-active' : ''}`}>My tickets</button>
           <button onClick={() => setTab('selling')} className={`wb-tab${tab === 'selling' ? ' wb-tab-active' : ''}`}>Selling</button>
           <button onClick={() => setTab('scan')} className={`wb-tab${tab === 'scan' ? ' wb-tab-active' : ''}`}>Scan / verify</button>
           {canCreateEvents && (
             <button onClick={() => setTab('create')} className={`wb-tab${tab === 'create' ? ' wb-tab-active' : ''}`}>＋ Create event</button>
           )}
+          {isVenue && (
+            <button onClick={() => setTab('venue')} className={`wb-tab${tab === 'venue' ? ' wb-tab-active' : ''}`}>Venue overview</button>
+          )}
           {isDJ && (
             <button onClick={() => setTab('referral')} className={`wb-tab${tab === 'referral' ? ' wb-tab-active' : ''}`}>Referral link</button>
           )}
         </div>
       </div>
+
+      {tab === 'recommended' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', color: 'var(--wb-ink-3)', marginBottom: 4 }}>BASED ON YOUR HYPES + LOCATION</div>
+          {[
+            { id: 'r1', name: 'Maya Reyes', venue: 'Empty Bottle', date: 'Thu Jun 18', time: '9PM', price: 18, hype: 412, reason: 'You hyped this artist 3× this week' },
+            { id: 'r2', name: 'Cobalt Hour', venue: 'Sleeping Village', date: 'Sat Jun 20', time: '8PM', price: 15, hype: 287, reason: 'Fans like you are going' },
+            { id: 'r3', name: 'Vela', venue: 'Subterranean', date: 'Tue Jun 23', time: '8PM', price: 12, hype: 156, reason: 'Trending in Chicago' },
+          ].map(s => (
+            <div key={s.id} className="wb-shows-row">
+              <div style={{ width: 56, height: 56, borderRadius: 6, background: 'linear-gradient(135deg, var(--wb-accent), #ff3e9a80)', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16 }}>{s.name} <span style={{ color: 'var(--wb-ink-3)', fontWeight: 500 }}>· {s.venue}</span></div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)', marginTop: 4 }}>{s.date} · {s.time} · ♡ {s.hype}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: '#22e5d4', marginTop: 3 }}>{s.reason}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--f-d)', fontSize: 20, fontWeight: 700 }}>${s.price}</div>
+              <button className="wb-btn-prime">Get ticket</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {tab === 'browse' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
@@ -909,6 +1271,51 @@ function ViewTicketing({ data, activeProfileTypes }: { data: WorkbenchData; acti
 
       {tab === 'create' && canCreateEvents && <ViewEventCreator />}
 
+      {tab === 'venue' && isVenue && (() => {
+        const totalSold = data.shows.reduce((a, s) => a + s.sold, 0);
+        const totalGross = data.shows.reduce((a, s) => a + s.sold * s.price, 0);
+        return (
+          <>
+            <div className="wb-stat-row" style={{ marginTop: 8 }}>
+              {[
+                { label: 'SHOWS HOSTED',   value: String(data.shows.length),              delta: 'this season',       color: '#22e5d4' },
+                { label: 'TICKETS SOLD',   value: String(totalSold),                       delta: 'across all shows',  color: '#22e5d4' },
+                { label: 'GROSS REVENUE',  value: `$${totalGross.toLocaleString()}`,       delta: 'at face value',     color: '#ffb84a' },
+                { label: 'PLATFORM FEE',   value: '0%',                                    delta: 'always',            color: '#b983ff' },
+              ].map(s => (
+                <div key={s.label} className="wb-stat-card">
+                  <div className="wb-stat-l">{s.label}</div>
+                  <div className="wb-stat-v">{s.value}</div>
+                  <div className="wb-stat-d" style={{ color: s.color }}>{s.delta}</div>
+                </div>
+              ))}
+            </div>
+            <div className="wb-panel" style={{ marginTop: 12 }}>
+              <div className="wb-panel-head">
+                <div className="wb-panel-title">All shows</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>{data.shows.length} total</div>
+              </div>
+              {data.shows.length === 0 && <div className="wb-empty">No shows yet — create your first event.</div>}
+              {data.shows.map(s => (
+                <div key={s.id} className="wb-ticket-row">
+                  <div className="wb-show-stripe" style={{ background: s.status === 'TONIGHT' ? '#22e5d4' : s.status === 'NEAR SOLD' ? '#ffb84a' : 'var(--wb-ink-3)' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="wb-show-name">{s.name}</div>
+                    <div className="wb-show-meta">{s.date} · {s.time}</div>
+                  </div>
+                  <div className="wb-cap">
+                    <div className="wb-cap-bar"><div className="wb-cap-fill" style={{ width: `${(s.sold / s.capacity) * 100}%`, background: s.sold / s.capacity > 0.85 ? '#ffb84a' : '#22e5d4' }} /></div>
+                    <div className="wb-cap-txt">{s.sold}/{s.capacity}</div>
+                  </div>
+                  <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, color: 'var(--wb-ink)', minWidth: 60, textAlign: 'right' }}>${(s.sold * s.price).toLocaleString()}</div>
+                  <div className="wb-status-pill" style={{ color: s.status === 'TONIGHT' ? '#22e5d4' : '#ffb84a', borderColor: s.status === 'TONIGHT' ? 'rgba(34,229,212,.3)' : 'rgba(255,184,74,.3)' }}>{s.status}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+      })()}
+
       {tab === 'referral' && isDJ && (
         <div className="wb-panel" style={{ marginTop: 20, padding: '24px 28px' }}>
           <div className="wb-eyebrow" style={{ color: '#b983ff', marginBottom: 10 }}>● PROMOTER / DJ · REFERRAL PROGRAM</div>
@@ -934,10 +1341,10 @@ function ViewTicketing({ data, activeProfileTypes }: { data: WorkbenchData; acti
       )}
     </div>
   );
-}
+});
 
 // ── View: Radio studio ─────────────────────────────────────────
-function ViewRadioStudio() {
+const ViewRadioStudio = memo(function ViewRadioStudio() {
   const [mode, setMode] = useState<'scheduled' | 'live'>('scheduled');
   const [showName, setShowName] = useState('');
   const [schedule, setSchedule] = useState('');
@@ -946,6 +1353,8 @@ function ViewRadioStudio() {
   const [streamDesc, setStreamDesc] = useState('');
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [errMsg, setErrMsg] = useState('');
+  const [splitMode, setSplitMode] = useState<'co-host' | 'referrer'>('referrer');
+  const [splitReferrer, setSplitReferrer] = useState('Anyone who shares your show');
 
   const field: React.CSSProperties = { width: '100%', padding: '9px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--wb-ink)', outline: 'none', boxSizing: 'border-box' as const };
   const lbl: React.CSSProperties = { fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.12em', color: 'var(--wb-ink-3)', marginBottom: 6, display: 'block' };
@@ -1003,10 +1412,17 @@ function ViewRadioStudio() {
               <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--wb-ink)' }}>{showName || 'Your show name'}</div>
               <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', marginTop: 4 }}>{schedule || 'Schedule TBD'}</div>
             </div>
+            <RevenueSplitVisualizer
+              tracks={[]}
+              hostName="You"
+              referrerLabel={splitReferrer}
+              onReferrerLabelChange={setSplitReferrer}
+              mode={splitMode}
+              onModeChange={setSplitMode}
+              projection={{ totalDollars: 480, windowLabel: 'next broadcast', listens: 412 }}
+              onSchedule={handleSubmit}
+            />
             {errMsg && <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff5029', padding: '8px 12px', border: '1px solid rgba(255,80,41,.3)', borderRadius: 6 }}>{errMsg}</div>}
-            <button type="button" onClick={handleSubmit} disabled={submitStatus === 'loading'} className="wb-btn-prime" style={{ width: '100%', padding: '12px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: submitStatus === 'loading' ? 0.6 : 1 }}>
-              <IcBolt s={13} /> {submitStatus === 'loading' ? 'Scheduling…' : 'Schedule show →'}
-            </button>
           </div>
         </div>
       )}
@@ -1049,7 +1465,7 @@ function ViewRadioStudio() {
       )}
     </div>
   );
-}
+});
 
 // ── View: Event creator ────────────────────────────────────────
 function ViewEventCreator() {
@@ -1165,7 +1581,7 @@ function ViewEventCreator() {
 }
 
 // ── View: Library ──────────────────────────────────────────────
-function ViewLibrary({ data }: { data: WorkbenchData }) {
+const ViewLibrary = memo(function ViewLibrary({ data }: { data: WorkbenchData }) {
   const [tab, setTab] = useState<'saved' | 'discover'>('saved');
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -1225,7 +1641,7 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
         <>
           <div className="wb-tracks-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', marginBottom: 16 }}>
             {playlists.map(p => (
-              <div key={p.n} style={{ position: 'relative', padding: 14, border: '1px solid var(--wb-line)', borderRadius: 10, background: 'var(--wb-bg-2)', cursor: 'pointer' }}
+              <PlaylistDropZone key={p.n} name={p.n} style={{ position: 'relative', padding: 14, border: '1px solid var(--wb-line)', borderRadius: 10, background: 'var(--wb-bg-2)', cursor: 'pointer' }}
                 onClick={() => setOpenMenuId(openMenuId === p.n ? null : p.n)}>
                 <div style={{ aspectRatio: '1', borderRadius: 6, background: `linear-gradient(135deg, ${p.color}, ${p.color}80)`, marginBottom: 10 }} />
                 <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)' }}>{p.n}</div>
@@ -1240,7 +1656,7 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
                     ))}
                   </div>
                 )}
-              </div>
+              </PlaylistDropZone>
             ))}
           </div>
           <div className="wb-panel">
@@ -1250,13 +1666,13 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
                 const active = currentTrack?.id === t.id;
                 const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
                 return (
-                  <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)' }}>
+                  <DraggableTrack key={t.id} track={mt} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)' }} onClick={() => playTrack(mt)}>
                     <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}>
                       <div className="wb-track-play"><IcPlay s={12} /></div>
                     </div>
                     <div className="wb-track-name">{t.title}</div>
                     <div className="wb-track-artist">{t.artistName}</div>
-                  </button>
+                  </DraggableTrack>
                 );
               })}
             </div>
@@ -1275,14 +1691,14 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
               const active = currentTrack?.id === t.id;
               const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
               return (
-                <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)', padding: 12, borderRadius: 10 }}>
+                <DraggableTrack key={t.id} track={mt} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)', padding: 12, borderRadius: 10 }} onClick={() => playTrack(mt)}>
                   <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, borderRadius: 7 }}>
                     <div className="wb-track-play"><IcPlay s={12} /></div>
                     <div className="wb-track-hype"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
                   </div>
                   <div className="wb-track-name" style={{ fontSize: 14 }}>{t.title}</div>
                   <div className="wb-track-artist">{t.artistName} · {t.duration}</div>
-                </button>
+                </DraggableTrack>
               );
             })}
           </div>
@@ -1290,10 +1706,10 @@ function ViewLibrary({ data }: { data: WorkbenchData }) {
       )}
     </div>
   );
-}
+});
 
 // ── View: Venue dashboard ──────────────────────────────────────
-function ViewVenue({ data }: { data: WorkbenchData }) {
+const ViewVenue = memo(function ViewVenue({ data }: { data: WorkbenchData }) {
   const [tab, setTab] = useState<'overview' | 'shows' | 'scan'>('overview');
   const totalSold = data.shows.reduce((a, s) => a + s.sold, 0);
   const totalGross = data.shows.reduce((a, s) => a + s.sold * s.price, 0);
@@ -1407,7 +1823,7 @@ function ViewVenue({ data }: { data: WorkbenchData }) {
       )}
     </div>
   );
-}
+});
 
 // ── View: Stub ─────────────────────────────────────────────────
 function ViewStub({ name, eyebrow, accent, sub }: { name: string; eyebrow: string; accent: string; sub: string }) {
@@ -1421,18 +1837,475 @@ function ViewStub({ name, eyebrow, accent, sub }: { name: string; eyebrow: strin
   );
 }
 
+// ── View: Discover ─────────────────────────────────────────────
+type DiscoverProfile = {
+  id: string;
+  slug: string;
+  name: string;
+  city?: string | null;
+  stateRegion?: string | null;
+  hypeCount: number;
+  genres: string[];
+  avatarImage?: string | null;
+};
+
+type DiscoverData = {
+  artists: DiscoverProfile[];
+  venues: DiscoverProfile[];
+  djs: DiscoverProfile[];
+};
+
+const PROFILE_COLORS = ['#ff3e9a', '#b983ff', '#22e5d4', '#ff5029', '#7fb3ff', '#ffb84a'];
+
+function profileColor(id: string): string {
+  let n = 0;
+  for (let i = 0; i < id.length; i++) n = (n + id.charCodeAt(i)) % PROFILE_COLORS.length;
+  return PROFILE_COLORS[n];
+}
+
+function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
+  const [tab, setTab] = useState<'artists'|'venues'|'djs'>('artists');
+  const [discoverData, setDiscoverData] = useState<DiscoverData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/discover')
+      .then(r => r.json())
+      .then((res: DiscoverData) => { setDiscoverData(res); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const artists = discoverData?.artists ?? [];
+  const venues = discoverData?.venues ?? [];
+  const djs = discoverData?.djs ?? [];
+
+  return (
+    <div className="wb-view-pad">
+      <div className="wb-greet">
+        <div>
+          <div className="wb-eyebrow" style={{ color: 'var(--wb-accent)' }}>● PERSONALIZED · BASED ON YOUR HYPES + LOCATION</div>
+          <h1 className="wb-page-title">Discover</h1>
+          <p className="wb-page-sub">Artists, venues, and DJs curated from your listen history, hypes, and scene.</p>
+        </div>
+      </div>
+      <div className="wb-tabs" style={{ marginBottom: 20 }}>
+        {(['artists','venues','djs'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`wb-tab${tab===t?' wb-tab-active':''}`} style={{ textTransform: 'capitalize' }}>{t}</button>
+        ))}
+      </div>
+
+      {loading && (
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink-3)', padding: '20px 0' }}>Loading recommendations…</div>
+      )}
+
+      {!loading && tab === 'artists' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+          {artists.length === 0 && <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink-3)' }}>No artist recommendations yet.</div>}
+          {artists.map(a => {
+            const c = profileColor(a.id);
+            const location = [a.city, a.stateRegion].filter(Boolean).join(', ');
+            return (
+              <div key={a.id} className="wb-panel" style={{ padding: '16px 18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg, ${c}, ${c}80)`, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)' }}>{a.name}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>
+                      {a.genres.slice(0, 2).join(' / ') || 'Music'}{location ? ` · ${location}` : ''}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18, color: '#ff3e9a' }}>{a.hypeCount.toLocaleString()} <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 400, color: 'var(--wb-ink-3)' }}>hype</span></span>
+                  <button className="wb-btn-prime" style={{ padding: '6px 14px', fontSize: 11 }}>＋ Follow</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && tab === 'venues' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {venues.length === 0 && <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink-3)' }}>No venue recommendations yet.</div>}
+          {venues.map(v => {
+            const c = profileColor(v.id);
+            const location = [v.city, v.stateRegion].filter(Boolean).join(', ');
+            return (
+              <div key={v.id} className="wb-show-row" style={{ background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line)', borderRadius: 8, padding: '14px 16px' }}>
+                <div style={{ width: 8, height: 40, borderRadius: 3, flexShrink: 0, background: c }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="wb-show-name">{v.name}{location ? <span className="wb-show-venue"> · {location}</span> : null}</div>
+                  <div className="wb-show-meta">{v.genres.slice(0, 2).join(' / ') || 'Venue'}</div>
+                </div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>{v.hypeCount.toLocaleString()} hypes</div>
+                <button className="wb-btn-ghost" style={{ fontSize: 11 }}>View →</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {!loading && tab === 'djs' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+          {djs.length === 0 && <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink-3)' }}>No DJ recommendations yet.</div>}
+          {djs.map(d => {
+            const c = profileColor(d.id);
+            const location = [d.city, d.stateRegion].filter(Boolean).join(', ');
+            return (
+              <div key={d.id} className="wb-panel" style={{ padding: '16px 18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 8, background: `linear-gradient(135deg, ${c}, ${c}80)`, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)' }}>{d.name}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{location || d.genres.slice(0, 1).join('')}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)' }}>{d.hypeCount.toLocaleString()} hypes</span>
+                  <button className="wb-btn-prime" style={{ padding: '6px 14px', fontSize: 11 }}>Tune in</button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── View: Seeds ─────────────────────────────────────────────────
+function ViewSeeds({ data }: { data: WorkbenchData }) {
+  const [seeds, setSeeds] = useState<SeedsSwipeStackSeed[]>([]);
+  const [tracks, setTracks] = useState<SeedsSwipeStackTrack[]>([]);
+
+  useEffect(() => {
+    fetch('/api/discover/seeds')
+      .then(r => r.json())
+      .then((res: { seeds: Array<{ id: string; trackId: string; title?: string; artistName?: string; reason?: string }> }) => {
+        const fetchedSeeds: SeedsSwipeStackSeed[] = res.seeds.map(s => ({
+          id: s.id,
+          trackId: s.trackId,
+          reason: s.reason,
+        }));
+        const fetchedTracks: SeedsSwipeStackTrack[] = res.seeds.map(s => ({
+          id: s.trackId,
+          title: s.title ?? 'Untitled',
+          artistName: s.artistName ?? 'Unknown Artist',
+          color: '#b983ff',
+          durationLabel: '–:––',
+          hypeCount: 0,
+        }));
+        setSeeds(fetchedSeeds);
+        setTracks(fetchedTracks);
+      })
+      .catch(() => {
+        // Fall back to data.tracks if API fails
+        setTracks(data.tracks.map(t => ({
+          id: t.id, title: t.title, artistName: t.artistName, album: t.album,
+          color: t.color, durationLabel: t.duration, hypeCount: t.hypeCount,
+        })));
+      });
+  }, [data.tracks]);
+
+  return (
+    <SeedsSwipeStack
+      seeds={seeds}
+      tracks={tracks}
+      onSave={seed => void fetch(`/api/discover/seeds/${seed.id}/save`, { method: 'POST' })}
+      onSkip={seed => void fetch(`/api/discover/seeds/${seed.id}/skip`, { method: 'POST' })}
+      onHype={seed => void fetch(`/api/discover/seeds/${seed.id}/hype`, { method: 'POST' })}
+    />
+  );
+}
+
+// ── View: Artist ────────────────────────────────────────────────
+function ViewArtist({ data }: { data: WorkbenchData }) {
+  const [tab, setTab] = useState<'overview'|'touring'|'merch'|'page'>('overview');
+  const [touringCities, setTouringCities] = useState<import('@/components/HypeHeatmap').HypeHeatmapCity[]>([]);
+
+  useEffect(() => {
+    if (tab === 'touring') {
+      fetch('/api/artist/touring-demand')
+        .then(r => r.json())
+        .then((res: { cities: Array<{ city: string; stateRegion?: string | null; hype: number }> }) => {
+          const maxHype = Math.max(...res.cities.map(c => c.hype), 1);
+          // Map to HypeHeatmapCity with rough US coordinate approximation
+          const CITY_COORDS: Record<string, { x: number; y: number }> = {
+            chicago: { x: .55, y: .42 }, brooklyn: { x: .81, y: .42 }, 'new york': { x: .81, y: .40 },
+            austin: { x: .45, y: .74 }, 'los angeles': { x: .13, y: .56 }, la: { x: .13, y: .56 },
+            seattle: { x: .10, y: .28 }, nashville: { x: .62, y: .58 }, denver: { x: .32, y: .44 },
+            atlanta: { x: .65, y: .65 }, miami: { x: .70, y: .85 }, portland: { x: .10, y: .30 },
+            boston: { x: .85, y: .35 }, detroit: { x: .65, y: .38 }, houston: { x: .47, y: .78 },
+            phoenix: { x: .25, y: .65 }, minneapolis: { x: .50, y: .32 }, 'san francisco': { x: .09, y: .50 },
+          };
+          const mapped: import('@/components/HypeHeatmap').HypeHeatmapCity[] = res.cities.map((c, i) => {
+            const key = c.city.toLowerCase();
+            const coords = CITY_COORDS[key] ?? { x: 0.3 + (i * 0.07) % 0.5, y: 0.3 + (i * 0.05) % 0.4 };
+            return {
+              name: c.city,
+              x: coords.x,
+              y: coords.y,
+              hype: c.hype,
+              venuesAsking: 0,
+              hot: c.hype >= maxHype * 0.5,
+            };
+          });
+          setTouringCities(mapped);
+        })
+        .catch(() => {});
+    }
+  }, [tab]);
+  return (
+    <div className="wb-view-pad">
+      <div className="wb-greet">
+        <div>
+          <div className="wb-eyebrow" style={{ color: '#ff3e9a' }}>● ARTIST DASHBOARD</div>
+          <h1 className="wb-page-title">Artist</h1>
+          <p className="wb-page-sub">Your heuristics, fan demand, touring signals, and page customization.</p>
+        </div>
+      </div>
+      <div className="wb-tabs" style={{ marginBottom: 20 }}>
+        {(['overview','touring','merch','page'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`wb-tab${tab===t?' wb-tab-active':''}`} style={{ textTransform: 'capitalize' }}>{t}</button>
+        ))}
+      </div>
+
+      {tab === 'overview' && (
+        <>
+          <div className="wb-stat-row">
+            {[
+              { l: 'TOTAL HYPE',    v: data.hypedToday > 0 ? data.hypedToday.toLocaleString() : '4,219', d: '↑ 18% this month', c: '#ff3e9a' },
+              { l: 'FANS',          v: '847',   d: '↑ 23 this week',  c: '#22e5d4' },
+              { l: 'RADIO PLAYS',   v: '12.3k', d: 'this month',       c: '#b983ff' },
+              { l: 'EARNINGS',      v: '$2,460', d: 'pending payout',  c: '#ffb84a' },
+            ].map(s => (
+              <div key={s.l} className="wb-stat-card">
+                <div className="wb-stat-l">{s.l}</div>
+                <div className="wb-stat-v">{s.v}</div>
+                <div className="wb-stat-d" style={{ color: s.c }}>{s.d}</div>
+              </div>
+            ))}
+          </div>
+          <div className="wb-col-row" style={{ marginTop: 14 }}>
+            <section className="wb-panel">
+              <div className="wb-panel-head"><div className="wb-panel-title">Top tracks</div></div>
+              {data.tracks.slice(0, 5).map(t => (
+                <div key={t.id} className="wb-act-row">
+                  <div style={{ width: 28, height: 28, borderRadius: 4, background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}><div className="wb-act-txt">{t.title}</div></div>
+                  <div className="wb-act-time" style={{ color: '#ff3e9a' }}>♡ {t.hypeCount}</div>
+                </div>
+              ))}
+            </section>
+            <section className="wb-panel">
+              <div className="wb-panel-head"><div className="wb-panel-title">Recommendations</div></div>
+              {[
+                { txt: 'Submit to Chicago Underground radio', action: 'DJ Vex is spinning your genre' },
+                { txt: 'Reach out to Empty Bottle for August', action: '3 venues asking about bookings' },
+                { txt: 'Release your next track this Thursday', action: 'Hype velocity peaks Thu–Fri' },
+              ].map((r, i) => (
+                <div key={i} className="wb-act-row">
+                  <div className="wb-act-dot" style={{ background: '#22e5d4' }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="wb-act-txt">{r.txt}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{r.action}</div>
+                  </div>
+                </div>
+              ))}
+            </section>
+          </div>
+        </>
+      )}
+
+      {tab === 'touring' && (
+        <HypeHeatmap cities={touringCities} venuePings={[]} suggestedRoute={touringCities.length >= 2 ? touringCities.slice(0, 3).map(c => c.name.slice(0, 3).toUpperCase()).join(' → ') : undefined} />
+      )}
+
+      {tab === 'merch' && (
+        <div className="wb-panel" style={{ padding: '24px' }}>
+          <div className="wb-eyebrow" style={{ marginBottom: 12 }}>● MERCH · COMING SOON</div>
+          <p className="wb-page-sub" style={{ maxWidth: 480 }}>Direct-to-fan merch drops with 0% platform fees. List items, set prices, ship or pick up at shows. Launching Q3.</p>
+          <button className="wb-btn-prime" style={{ marginTop: 16 }}>Join the waitlist →</button>
+        </div>
+      )}
+
+      {tab === 'page' && (
+        <div>
+          <p className="wb-page-sub" style={{ marginBottom: 20 }}>Customize your public artist page — drag to reorder, upload media, choose colors.</p>
+          <PageBuilder />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── View: Settings ─────────────────────────────────────────────
+// ── Page builder types ──────────────────────────────────────────
+type PageWidget = { id: string; label: string; desc: string; wide: boolean; locked?: boolean };
+const DEFAULT_WIDGETS: PageWidget[] = [
+  { id: 'bio',      label: 'Bio',              desc: 'Your story in your words',          wide: true,  locked: true },
+  { id: 'featured', label: 'Featured track',   desc: 'One track pinned at the top',       wide: false },
+  { id: 'shows',    label: 'Upcoming shows',   desc: 'Next 3 events with ticket links',   wide: false },
+  { id: 'radio',    label: 'Radio shows',      desc: 'Your channels + archive',           wide: false },
+  { id: 'photos',   label: 'Photo grid',       desc: '3×2 grid of uploaded images',       wide: true  },
+  { id: 'links',    label: 'Links',            desc: 'Social, website, press kit',        wide: false },
+];
+
+const LAYOUT_KEY = 'ihype_page_layout_v1';
+
+function PageBuilder() {
+  const [widgets, setWidgets] = useState<PageWidget[]>(() => {
+    try {
+      const saved = localStorage.getItem(LAYOUT_KEY);
+      if (saved) {
+        const ids: string[] = JSON.parse(saved);
+        const ordered = ids.map(id => DEFAULT_WIDGETS.find(w => w.id === id)).filter(Boolean) as PageWidget[];
+        const missing = DEFAULT_WIDGETS.filter(w => !ids.includes(w.id));
+        return [...ordered, ...missing];
+      }
+    } catch { /* ignore */ }
+    return DEFAULT_WIDGETS;
+  });
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+  const [profileImg, setProfileImg] = useState<string | null>(null);
+  const [bannerImg, setBannerImg] = useState<string | null>(null);
+  const profileRef = useRef<HTMLInputElement>(null);
+  const bannerRef = useRef<HTMLInputElement>(null);
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>, setter: (v: string) => void) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setter(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  function onDragStart(id: string) { setDragId(id); }
+  function onDragOver(e: React.DragEvent, id: string) { e.preventDefault(); setOverId(id); }
+  function onDrop(targetId: string) {
+    if (!dragId || dragId === targetId) { setDragId(null); setOverId(null); return; }
+    setWidgets(prev => {
+      const from = prev.findIndex(w => w.id === dragId);
+      const to = prev.findIndex(w => w.id === targetId);
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+    setDragId(null);
+    setOverId(null);
+  }
+
+  const fieldStyle: React.CSSProperties = { display: 'none' };
+  const uploadZone: React.CSSProperties = { border: '1.5px dashed var(--wb-line-2)', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: 'pointer', background: 'var(--wb-bg-3)', transition: 'border-color 0.15s' };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Media uploads */}
+      <div className="wb-sett-section" style={{ gridColumn: 'span 2' }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15 }}>Media</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 4 }}>Upload your profile photo and banner. PNG or JPG, max 5 MB each.</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 12, alignItems: 'start' }}>
+          {/* Profile photo */}
+          <div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.1em', color: 'var(--wb-ink-3)', marginBottom: 6 }}>PROFILE PHOTO</div>
+            <div
+              style={{ ...uploadZone, width: 120, height: 120, borderRadius: '50%', overflow: 'hidden', position: 'relative' }}
+              onClick={() => profileRef.current?.click()}
+            >
+              {profileImg
+                ? <img src={profileImg} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <><div style={{ fontSize: 24, color: 'var(--wb-ink-3)' }}>+</div><div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)' }}>Upload</div></>
+              }
+            </div>
+            <input ref={profileRef} type="file" accept="image/*" style={fieldStyle} onChange={e => handleFile(e, setProfileImg)} />
+          </div>
+          {/* Banner */}
+          <div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.1em', color: 'var(--wb-ink-3)', marginBottom: 6 }}>BANNER IMAGE</div>
+            <div
+              style={{ ...uploadZone, height: 120, borderRadius: 8, position: 'relative', overflow: 'hidden' }}
+              onClick={() => bannerRef.current?.click()}
+            >
+              {bannerImg
+                ? <img src={bannerImg} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <><div style={{ fontSize: 24, color: 'var(--wb-ink-3)' }}>+</div><div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)' }}>Upload banner · 3:1 recommended</div></>
+              }
+            </div>
+            <input ref={bannerRef} type="file" accept="image/*" style={fieldStyle} onChange={e => handleFile(e, setBannerImg)} />
+          </div>
+        </div>
+      </div>
+
+      {/* Widget layout */}
+      <div className="wb-sett-section" style={{ gridColumn: 'span 2' }}>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15 }}>Page layout</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 4 }}>Drag widgets to reorder. Wide widgets span the full row. Locked widgets stay fixed.</div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {widgets.map((w, i) => (
+            <div
+              key={w.id}
+              draggable={!w.locked}
+              onDragStart={() => !w.locked && onDragStart(w.id)}
+              onDragOver={e => onDragOver(e, w.id)}
+              onDragLeave={() => setOverId(null)}
+              onDrop={() => onDrop(w.id)}
+              onDragEnd={() => { setDragId(null); setOverId(null); }}
+              style={{
+                gridColumn: w.wide ? 'span 2' : undefined,
+                padding: '12px 14px',
+                border: `1.5px solid ${overId === w.id && dragId !== w.id ? 'var(--wb-accent)' : dragId === w.id ? 'var(--wb-line-2)' : 'var(--wb-line)'}`,
+                borderRadius: 8,
+                background: dragId === w.id ? 'var(--wb-bg-3)' : 'var(--wb-bg-2)',
+                cursor: w.locked ? 'default' : 'grab',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                opacity: dragId === w.id ? 0.4 : 1,
+                transition: 'border-color 0.1s, opacity 0.1s',
+                userSelect: 'none',
+              }}
+            >
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 18, color: w.locked ? 'var(--wb-line-2)' : 'var(--wb-ink-3)', flexShrink: 0 }}>
+                {w.locked ? '⊞' : '⠿'}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--wb-ink)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {w.label}
+                  {w.wide && <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-ink-3)', border: '1px solid var(--wb-line-2)', borderRadius: 3, padding: '1px 5px' }}>FULL WIDTH</span>}
+                  {w.locked && <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-ink-3)', border: '1px solid var(--wb-line-2)', borderRadius: 3, padding: '1px 5px' }}>LOCKED</span>}
+                </div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{w.desc}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', flexShrink: 0 }}>#{i + 1}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+          <button className="wb-btn-prime" style={{ flex: 1 }} onClick={() => { localStorage.setItem(LAYOUT_KEY, JSON.stringify(widgets.map(w => w.id))); setSaved(true); setTimeout(() => setSaved(false), 2000); }}>
+            {saved ? '✓ Saved' : 'Save page layout →'}
+          </button>
+          <button className="wb-btn-ghost" onClick={() => { setWidgets(DEFAULT_WIDGETS); localStorage.removeItem(LAYOUT_KEY); }}>Reset</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v: unknown) => void }) {
+  const [settTab, setSettTab] = useState<'appearance' | 'page' | 'security'>('page');
   const ACCENTS = [
     { v: '#ff5029', label: 'Ember' }, { v: '#ff3e9a', label: 'Hot pink' },
     { v: '#b983ff', label: 'Lilac' }, { v: '#22e5d4', label: 'Aqua' },
     { v: '#ffb84a', label: 'Amber' }, { v: '#7fb3ff', label: 'Sky' },
-  ];
-  const TOOLS = [
-    { k: 'library',  label: 'Library',   sub: 'Saved playlists + tracks',    Icon: IcLibrary },
-    { k: 'radio',    label: 'Radio',     sub: 'Channels + your own shows',   Icon: IcRadio },
-    { k: 'tickets',  label: 'Events & Tickets', sub: 'Browse, buy, sell, scan', Icon: IcTicket },
-    { k: 'studio',   label: 'Create',    sub: 'Start a radio show',           Icon: IcStudio },
   ];
 
   return (
@@ -1443,10 +2316,18 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
           <h1 className="wb-page-title">Settings <span style={{ color: 'var(--wb-ink-2)', fontWeight: 400 }}>· page customization</span></h1>
           <p className="wb-page-sub">Make iHYPE feel like yours. Changes apply live.</p>
         </div>
-        <button className="wb-btn-ghost" onClick={() => setPref('__reset__', null)}>Reset to defaults</button>
+        {settTab === 'appearance' && <button className="wb-btn-ghost" onClick={() => setPref('__reset__', null)}>Reset to defaults</button>}
       </div>
 
-      <div className="wb-settings-grid">
+      <div className="wb-tabs" style={{ marginBottom: 24 }}>
+        <button onClick={() => setSettTab('page')} className={`wb-tab${settTab === 'page' ? ' wb-tab-active' : ''}`}>Profile page</button>
+        <button onClick={() => setSettTab('appearance')} className={`wb-tab${settTab === 'appearance' ? ' wb-tab-active' : ''}`}>Appearance</button>
+        <button onClick={() => setSettTab('security')} className={`wb-tab${settTab === 'security' ? ' wb-tab-active' : ''}`}>Security</button>
+      </div>
+
+      {settTab === 'page' && <PageBuilder />}
+
+      {settTab === 'appearance' && <div className="wb-settings-grid">
         <SettSection title="Accent color" sub="Used for highlights, the player, and active nav.">
           <div className="wb-swatch-row">
             {ACCENTS.map(c => (
@@ -1475,26 +2356,6 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
 
         <SettSection title="Sticky player dock" sub="Always show the player at the bottom.">
           <Toggle on={prefs.stickyDock} onChange={v => setPref('stickyDock', v)} />
-        </SettSection>
-
-        <SettSection title="Pinned tools" sub="What shows in the left rail. Home and Settings always visible." span={2}>
-          <div className="wb-pin-grid">
-            {TOOLS.map(t => {
-              const pinned = prefs.pinned.includes(t.k);
-              return (
-                <button key={t.k} onClick={() => setPref('togglePin', t.k)} className="wb-pin" style={{ borderColor: pinned ? `${prefs.accent}50` : 'var(--wb-line)', background: pinned ? `${prefs.accent}08` : 'var(--wb-bg-3)' }}>
-                  <div style={{ color: pinned ? prefs.accent : 'var(--wb-ink-3)', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><t.Icon s={18} /></div>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13 }}>{t.label}</div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{t.sub}</div>
-                  </div>
-                  <div className="wb-role-pill" style={{ color: pinned ? prefs.accent : 'var(--wb-ink-3)', borderColor: pinned ? `${prefs.accent}40` : 'var(--wb-line-2)' }}>
-                    {pinned ? <><IcCheck s={11} /> pinned</> : 'pin'}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         </SettSection>
 
         <SettSection title="Home panels" sub="What appears on Home below the greeting." span={2}>
@@ -1531,7 +2392,15 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
             ))}
           </div>
         </SettSection>
-      </div>
+      </div>}
+
+      {settTab === 'security' && (
+        <div style={{ maxWidth: 480 }}>
+          <SettSection title="Passkeys" sub="Sign in with Face ID, Touch ID, or your device PIN — no password or email code needed.">
+            <PasskeyManager />
+          </SettSection>
+        </div>
+      )}
 
       <div className="wb-footnote">
         Preferences live in this browser's localStorage. Your data stays on your device — keys never leave your control.

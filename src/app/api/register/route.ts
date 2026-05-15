@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { ProfileType } from '@prisma/client';
+import { Prisma, ProfileType } from '@prisma/client';
 import { getDiscoverPathForType, getProfilePathForType } from '@/lib/account-routing';
 import { recordAuditEvent } from '@/lib/audit';
 import { db } from '@/lib/db';
@@ -14,14 +14,16 @@ import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from
 import { slugify } from '@/lib/utils';
 
 const schema = z.object({
-  name: z.string().trim().min(2).optional(),
-  email: z.string().email(),
-  username: z.string().min(3).max(30),
+  name: z.preprocess(v => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().min(2).optional()),
+  email: z.string().email().optional(),
+  phone: z.string().trim().max(30).optional(),
+  username: z.string().min(3).max(30).optional(),
   password: z
     .string()
     .min(8)
     .regex(/[A-Za-z]/)
-    .regex(/[0-9]/),
+    .regex(/[0-9]/)
+    .optional(),
   role: z.enum(['FAN', 'ARTIST', 'DJ', 'VENUE']).default('FAN'),
   isThirteenOrOlder: z.boolean().optional().default(false),
   acceptedArtistUploadPolicy: z.boolean().optional().default(false),
@@ -167,9 +169,20 @@ export async function POST(request: Request) {
     }
 
     const body = schema.parse(rawBody);
-    const normalizedUsername = normalizeUsername(body.username);
-    const normalizedEmail = body.email.toLowerCase();
     const trimmedName = body.name?.trim() ?? '';
+    const normalizedEmail = body.email ? body.email.toLowerCase() : null;
+    const normalizedPhone = body.phone ? body.phone.replace(/\s+/g, '').toLowerCase() : null;
+
+    // Auto-generate username from name or a random string if not provided
+    let normalizedUsername: string;
+    if (body.username) {
+      normalizedUsername = normalizeUsername(body.username);
+    } else {
+      const base = trimmedName
+        ? normalizeUsername(trimmedName.replace(/\s+/g, ''))
+        : `user${Math.random().toString(36).slice(2, 8)}`;
+      normalizedUsername = base.slice(0, 30) || `user${Math.random().toString(36).slice(2, 8)}`;
+    }
 
     if (body.company) {
       await recordAuditEvent({
@@ -192,7 +205,7 @@ export async function POST(request: Request) {
         ipAddress: clientAddress,
         metadata: {
           role: body.role,
-          emailDomain: normalizedEmail.split('@')[1] ?? null
+          emailDomain: normalizedEmail?.split('@')[1] ?? null
         }
       });
       return NextResponse.json({ error: 'A valid beta invite code is required to create an account.' }, { status: 403 });
@@ -212,7 +225,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (isReservedPlatformEmail(normalizedEmail)) {
+    if (normalizedEmail && isReservedPlatformEmail(normalizedEmail)) {
       return NextResponse.json(
         { error: 'Please use an email address you control. @ihype.org email addresses are reserved.' },
         { status: 400 }
@@ -223,30 +236,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name is required for this account type.' }, { status: 400 });
     }
 
-    const existing = await db.user.findFirst({
-      where: {
-        OR: [{ email: normalizedEmail }, { username: normalizedUsername }]
-      }
-    });
+    const orConditions: Array<{ email: string } | { phone: string } | { username: string }> = [{ username: normalizedUsername }];
+    if (normalizedEmail) orConditions.push({ email: normalizedEmail });
+    if (normalizedPhone) orConditions.push({ phone: normalizedPhone });
+
+    const existing = await db.user.findFirst({ where: { OR: orConditions } });
 
     if (existing) {
       return NextResponse.json(
         {
           error:
-            existing.email === normalizedEmail
-              ? 'Email already exists'
+            normalizedEmail && existing.email === normalizedEmail
+              ? 'An account with that email already exists'
+              : normalizedPhone && existing.phone === normalizedPhone
+              ? 'An account with that phone number already exists'
               : 'Username is already taken'
         },
         { status: 409 }
       );
     }
 
-    const passwordHash = await bcrypt.hash(body.password, 10);
+    const passwordHash = body.password ? await bcrypt.hash(body.password, 10) : null;
     const user = await db.user.create({
       data: {
         name: body.role === 'FAN' ? normalizedUsername : trimmedName,
-        email: normalizedEmail,
-        username: normalizedUsername,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        email: normalizedEmail as any,
+        phone: normalizedPhone,
+        username: normalizedUsername || `user${Math.random().toString(36).slice(2, 8)}`,
         passwordHash,
         isThirteenOrOlder: body.isThirteenOrOlder,
         role: body.role
@@ -313,16 +330,13 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const passwordIssue = error.issues.find((issue) => issue.path.includes('password'));
-
-      if (passwordIssue) {
-        return NextResponse.json(
-          { error: 'Password must be at least 8 characters and include a letter and a number.' },
-          { status: 400 }
-        );
-      }
+      const first = error.issues[0];
+      return NextResponse.json({ error: first?.message ?? 'Invalid registration payload' }, { status: 400 });
     }
-
-    return NextResponse.json({ error: 'Invalid registration payload' }, { status: 400 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ error: 'Username or email already taken.' }, { status: 409 });
+    }
+    console.error('[register]', error);
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 }

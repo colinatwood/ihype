@@ -3,7 +3,6 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getSharedDiscoverFeed } from '@/lib/discover-feed';
 import { detectRequestLocation } from '@/lib/request-location';
-import { buildArtistMediaCollection } from '@/lib/media';
 import type { ProfileType } from '@prisma/client';
 import { WorkbenchShell, type WorkbenchData, type WbStat, type WbTrack, type WbShow, type WbActivity } from '@/components/WorkbenchShell';
 
@@ -161,6 +160,15 @@ export default async function HomePage() {
     code: `iH-${s.id.slice(0, 8).toUpperCase()}`,
   }));
 
+  // ── Life stats ──
+  const [totalHype, totalEarnings, songsPlayed, eventsAttended] = await Promise.all([
+    db.profileHypeEvent.count({ where: { profileId: profile.id } }).catch(() => 0),
+    db.ticketOrder.aggregate({ where: { buyerUserId: userId }, _sum: { subtotalCents: true } }).then(r => Math.round((r._sum.subtotalCents ?? 0) / 100)).catch(() => 0),
+    db.mediaListen.count({ where: { userId } }).catch(() => 0),
+    db.ticketOrder.count({ where: { buyerUserId: userId, status: 'CAPTURED' } }).catch(() => 0),
+  ]);
+  const lifeStats = { totalHype, totalEarnings, songsPlayed, eventsAttended };
+
   // ── Greeting subtitle ──
   const nextShow = eventsResult.upcoming[0];
   const greetingSub = nextShow
@@ -181,6 +189,8 @@ export default async function HomePage() {
     activity: wbActivity,
     radioShows,
     activeProfileTypes,
+    profileId: profile.id,
+    lifeStats,
     listeningNow: discoverFeed.mediaEntries.reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
     hypedToday: discoverFeed.mediaEntries.slice(0, 10).reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
     showsTonight: eventsResult.upcoming.filter(s => {

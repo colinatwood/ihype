@@ -33,7 +33,7 @@ export async function recordAuditEvent({
         entityType,
         entityId: entityId || null,
         ipAddress: ipAddress || null,
-        metadata: metadata ?? undefined
+        metadata: metadata as never
       }
     });
   } catch (error) {

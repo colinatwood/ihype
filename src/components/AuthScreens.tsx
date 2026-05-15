@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FormEvent, ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 
 type RoleOption = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
 
@@ -95,66 +96,29 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
 }
 
 export function LoginScreen({
-  initialIdentifier = '',
   justRegistered = false
 }: {
-  initialIdentifier?: string;
   justRegistered?: boolean;
 }) {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState(initialIdentifier);
-  const [password, setPassword] = useState('');
-  const [challengeId, setChallengeId] = useState('');
-  const [otp, setOtp] = useState('');
-  const [maskedEmail, setMaskedEmail] = useState('');
-  const [message, setMessage] = useState(
-    justRegistered ? 'Account created. Sign in with your email/username and password to continue.' : ''
+  const [message] = useState(
+    justRegistered ? 'Account created. Add a passkey in Settings, then sign in here.' : ''
   );
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [website, setWebsite] = useState('');
-  const isCodeStep = Boolean(challengeId);
 
-  async function sendCode(statusMessage?: string) {
-    setError('');
-    setMessage(statusMessage ?? '');
-    setIsSubmitting(true);
-
-    try {
-      const payload = await postJson<{ challengeId: string; email: string }>('/api/auth/otp/request', {
-        identifier,
-        password,
-        website
-      });
-      setChallengeId(payload.challengeId);
-      setMaskedEmail(payload.email);
-      setMessage('We sent a 6-digit sign-in code to your email. It expires in 10 minutes.');
-    } catch (err) {
-      setError(getErrorMessage(err, 'Could not request a sign-in code.'));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function requestCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    await sendCode();
-  }
-
-  async function verifyCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function signInWithPasskey() {
     setError('');
     setIsSubmitting(true);
-
     try {
-      const payload = await postJson<{ redirect?: string }>('/api/auth/otp/signin', {
-        challengeId,
-        otp
-      });
+      const optRes = await fetch('/api/auth/passkey/auth');
+      const options = await optRes.json();
+      const assertion = await startAuthentication(options);
+      const payload = await postJson<{ redirect?: string }>('/api/auth/passkey/auth', assertion);
       router.push(payload.redirect || '/auth/landing');
       router.refresh();
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not verify that code.'));
+      setError(getErrorMessage(err, 'Passkey sign-in failed. Please try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -162,108 +126,32 @@ export function LoginScreen({
 
   return (
     <AuthSignalShell
-      badge="Secure sign in"
-      cardSubtitle={
-        isCodeStep
-          ? `Use the 6-digit code sent to ${maskedEmail || 'your email'}.`
-          : 'Use your email or username. iHYPE sends a short-lived email code before opening your workspace.'
-      }
-      cardTitle={isCodeStep ? 'Enter your code' : 'Sign in to iHYPE'}
-      description="Access your role lane without exposing account state. Codes are short-lived, email-first, and built for fast workspace entry."
-      eyebrow="Secure access"
-      highlight={isCodeStep ? 'Verify the signal.' : 'Open your lane.'}
+      badge="Passkey sign-in"
+      cardSubtitle="Use Face ID, Touch ID, or your device PIN — no password, no email code."
+      cardTitle="Sign in to iHYPE"
+      description="Fast, phishing-resistant sign-in with your device's built-in biometrics. No password to remember."
+      eyebrow="Passkey sign-in"
+      highlight="One tap."
       signals={[
-        { label: 'Step 1', value: 'Password', detail: 'Confirms your account' },
-        { label: 'Step 2', value: 'Code', detail: 'Short-lived inbox check' },
-        { label: 'Step 3', value: 'Workspace', detail: 'Role-aware redirect' }
+        { label: 'No password', value: 'Passkey', detail: 'Device biometrics' },
+        { label: 'No inbox', value: 'Instant', detail: 'No email code needed' },
+        { label: 'Phishing-safe', value: 'FIDO2', detail: 'Bound to this site' }
       ]}
-      title={isCodeStep ? 'Check your inbox.' : 'Sign in.'}
+      title="Sign in."
     >
-      {!isCodeStep ? (
-        <form className="form" onSubmit={requestCode}>
-          <label className="field">
-            <span>Email or username</span>
-            <input
-              autoComplete="username"
-              onChange={(event) => setIdentifier(event.target.value)}
-              required
-              type="text"
-              value={identifier}
-            />
-          </label>
-          <label className="field">
-            <span>Password</span>
-            <input
-              autoComplete="current-password"
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
-            />
-          </label>
-          <button className="button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? 'Sending code...' : 'Send sign-in code'}
-          </button>
-          <label className="bot-field" aria-hidden="true">
-            <span>Website</span>
-            <input
-              autoComplete="off"
-              onChange={(event) => setWebsite(event.target.value)}
-              tabIndex={-1}
-              type="text"
-              value={website}
-            />
-          </label>
-        </form>
-      ) : (
-        <form className="form" onSubmit={verifyCode}>
-          <label className="field">
-            <span>6-digit code</span>
-            <input
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              maxLength={6}
-              onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              pattern="[0-9]{6}"
-              required
-              type="text"
-              value={otp}
-            />
-          </label>
-          <button className="button" disabled={isSubmitting || otp.length !== 6} type="submit">
-            {isSubmitting ? 'Verifying...' : 'Open my workspace'}
-          </button>
-          <div className="auth-inline-actions">
-            <button
-              className="text-link"
-              disabled={isSubmitting}
-              onClick={() => sendCode('Sending a fresh code to your email...')}
-              type="button"
-            >
-              Resend code
-            </button>
-            <button
-              className="text-link"
-              onClick={() => {
-                setChallengeId('');
-                setOtp('');
-                setMessage('');
-              }}
-              type="button"
-            >
-              Use a different login
-            </button>
-          </div>
-        </form>
-      )}
+      <button
+        className="button"
+        disabled={isSubmitting}
+        onClick={signInWithPasskey}
+        type="button"
+      >
+        {isSubmitting ? 'Checking passkey...' : 'Sign in with passkey'}
+      </button>
 
       {message ? <p className="status-note">{message}</p> : null}
       {error ? <p className="status-note status-note-error">{error}</p> : null}
 
       <div className="auth-route-links">
-        <Link className="text-link" href="/forgot">
-          Reset password
-        </Link>
         <Link className="text-link" href="/register">
           Join free
         </Link>
@@ -277,51 +165,51 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
   const [role, setRole] = useState<RoleOption>(initialRole);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [city, setCity] = useState('');
-  const [stateRegion, setStateRegion] = useState('');
-  const [country, setCountry] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [contactInfo, setContactInfo] = useState('');
-  const [addressLine1, setAddressLine1] = useState('');
-  const [hoursText, setHoursText] = useState('');
+  const [phone, setPhone] = useState('');
   const [acceptedAge, setAcceptedAge] = useState(false);
   const [acceptedPolicy, setAcceptedPolicy] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [company, setCompany] = useState('');
+  const [step, setStep] = useState<'form' | 'passkey'>('form');
   const needsPublicName = role !== 'FAN';
   const needsUploadPolicy = role === 'ARTIST' || role === 'DJ';
   const selectedRole = useMemo(() => roleOptions.find((option) => option.value === role), [role]);
 
-  async function createAccount(event: FormEvent<HTMLFormElement>) {
+  async function createAccountAndRegisterPasskey(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError('');
     setIsSubmitting(true);
 
     try {
-      await postJson('/api/register', {
+      // Step 1: create account
+      const result = await postJson<{ id: string }>('/api/register', {
         name,
-        email,
-        username,
-        password,
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
         role,
         isThirteenOrOlder: acceptedAge,
         acceptedArtistUploadPolicy: needsUploadPolicy ? acceptedPolicy : true,
         inviteCode,
         company,
-        city,
-        stateRegion,
-        country,
-        postalCode,
-        contactInfo,
-        addressLine1,
-        hoursText
       });
-      router.push(`/login?registered=1&identifier=${encodeURIComponent(email)}`);
+
+      // Step 2: get passkey registration options (no session needed — new account)
+      setStep('passkey');
+      const optRes = await fetch(`/api/auth/passkey/register-first?userId=${result.id}`);
+      if (!optRes.ok) throw new Error('Could not start passkey setup.');
+      const options = await optRes.json();
+
+      // Step 3: device prompts user for biometric / PIN
+      const credential = await startRegistration(options);
+
+      // Step 4: verify and receive session
+      const verifyRes = await postJson<{ redirect?: string }>('/api/auth/passkey/register-first', credential);
+      router.push(verifyRes.redirect || '/auth/landing');
+      router.refresh();
     } catch (err) {
+      setStep('form');
       setError(getErrorMessage(err, 'Could not create account.'));
     } finally {
       setIsSubmitting(false);
@@ -331,7 +219,7 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
   return (
     <AuthSignalShell
       badge="Join iHYPE"
-      cardSubtitle="Choose the lane you are joining first. If anything needs correction, this form keeps what you already typed."
+      cardSubtitle={step === 'passkey' ? 'Follow your device prompt to save a passkey.' : 'Pick your lane, then your device saves a passkey — no password needed.'}
       cardTitle="Create your account"
       description="One free account opens the ecosystem. Pick your role first, then build the page, shows, tickets, and discovery tools that match your lane."
       eyebrow="Free forever"
@@ -344,7 +232,13 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
       title="Join free."
       wide
     >
-      <form className="form" onSubmit={createAccount}>
+      {step === 'passkey' ? (
+        <div className="auth-passkey-pending">
+          <p>Waiting for your device passkey prompt…</p>
+          <p className="subtitle">Use Face ID, Touch ID, or your device PIN when prompted.</p>
+        </div>
+      ) : (
+        <form className="form" onSubmit={createAccountAndRegisterPasskey}>
           <fieldset className="role-choice-grid">
             <legend>Account type</legend>
             {roleOptions.map((option) => (
@@ -362,36 +256,39 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
             ))}
           </fieldset>
 
-          {needsPublicName ? (
-            <label className="field">
-              <span>{selectedRole?.label ?? 'Profile'} name</span>
-              <input onChange={(event) => setName(event.target.value)} required type="text" value={name} />
-            </label>
-          ) : null}
+          <label className="field">
+            <span>{needsPublicName ? (selectedRole?.label ?? 'Profile') + ' name' : 'Display name'}</span>
+            <input
+              onChange={(event) => setName(event.target.value)}
+              placeholder={needsPublicName ? 'Your public artist/venue name' : 'Optional — shown on your profile'}
+              required={needsPublicName}
+              type="text"
+              value={name}
+            />
+          </label>
 
-          <div className="auth-field-grid">
-            <label className="field">
-              <span>Email</span>
-              <input autoComplete="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
-            </label>
-            <label className="field">
-              <span>Username</span>
-              <input autoComplete="username" onChange={(event) => setUsername(event.target.value)} required type="text" value={username} />
-            </label>
-          </div>
+          <div className="field-group-label">Recovery options <span className="field-group-optional">— optional, add either to recover your account later</span></div>
 
           <label className="field">
-            <span>Password</span>
+            <span>Email</span>
             <input
-              aria-describedby="register-password-help"
-              autoComplete="new-password"
-              minLength={8}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              type="password"
-              value={password}
+              autoComplete="email"
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="Optional — for account recovery"
+              type="email"
+              value={email}
             />
-            <small id="register-password-help">Use at least 8 characters with a letter and a number.</small>
+          </label>
+
+          <label className="field">
+            <span>Phone</span>
+            <input
+              autoComplete="tel"
+              onChange={(event) => setPhone(event.target.value)}
+              placeholder="Optional — for account recovery"
+              type="tel"
+              value={phone}
+            />
           </label>
 
           <label className="field">
@@ -404,52 +301,6 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
               value={inviteCode}
             />
           </label>
-
-          <details className="auth-optional-details">
-            <summary>
-              <span>Optional profile details</span>
-              <small>Add location/contact now, or finish it later from your dashboard.</small>
-            </summary>
-
-            <div className="auth-field-grid">
-              <label className="field">
-                <span>City</span>
-                <input onChange={(event) => setCity(event.target.value)} type="text" value={city} />
-              </label>
-              <label className="field">
-                <span>State / province</span>
-                <input onChange={(event) => setStateRegion(event.target.value)} type="text" value={stateRegion} />
-              </label>
-              <label className="field">
-                <span>Country</span>
-                <input onChange={(event) => setCountry(event.target.value)} type="text" value={country} />
-              </label>
-              <label className="field">
-                <span>Home ZIP / postal code</span>
-                <input onChange={(event) => setPostalCode(event.target.value)} type="text" value={postalCode} />
-              </label>
-            </div>
-
-            {role === 'VENUE' ? (
-              <div className="auth-field-grid">
-                <label className="field">
-                  <span>Venue address</span>
-                  <input onChange={(event) => setAddressLine1(event.target.value)} type="text" value={addressLine1} />
-                </label>
-                <label className="field">
-                  <span>Hours</span>
-                  <input onChange={(event) => setHoursText(event.target.value)} type="text" value={hoursText} />
-                </label>
-              </div>
-            ) : null}
-
-            {role !== 'FAN' ? (
-              <label className="field">
-                <span>Contact info</span>
-                <input onChange={(event) => setContactInfo(event.target.value)} type="text" value={contactInfo} />
-              </label>
-            ) : null}
-          </details>
 
           <label className="check-row">
             <input checked={acceptedAge} onChange={(event) => setAcceptedAge(event.target.checked)} required type="checkbox" />
@@ -472,7 +323,7 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
           ) : null}
 
           <button className="button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? 'Creating account...' : 'Create account'}
+            {isSubmitting ? 'Setting up…' : 'Create account with passkey'}
           </button>
           <label className="bot-field" aria-hidden="true">
             <span>Company</span>
@@ -484,7 +335,8 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
               value={company}
             />
           </label>
-      </form>
+        </form>
+      )}
 
       {error ? <p className="status-note status-note-error">{error}</p> : null}
     </AuthSignalShell>
@@ -626,5 +478,111 @@ export function ForgotPasswordScreen() {
         </Link>
       </div>
     </AuthSignalShell>
+  );
+}
+
+type PasskeyEntry = {
+  id: string;
+  deviceType: string;
+  createdAt: string;
+  backedUp: boolean;
+};
+
+export function PasskeyManager() {
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [passkeys, setPasskeys] = useState<PasskeyEntry[] | null>(null);
+  const [loadingList, setLoadingList] = useState(true);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  async function loadPasskeys() {
+    setLoadingList(true);
+    try {
+      const res = await fetch('/api/auth/passkey/list');
+      const data = await res.json();
+      setPasskeys(data.passkeys ?? []);
+    } catch {
+      // silently ignore list errors
+    } finally {
+      setLoadingList(false);
+    }
+  }
+
+  // Load on mount
+  useEffect(() => {
+    void loadPasskeys();
+  }, []);
+
+  async function registerPasskey() {
+    setBusy(true);
+    setStatus('');
+    setError('');
+    try {
+      const optRes = await fetch('/api/auth/passkey/register');
+      const options = await optRes.json();
+      const attestation = await startRegistration(options);
+      await postJson('/api/auth/passkey/register', attestation);
+      setStatus('Passkey added. You can now sign in without a password.');
+      void loadPasskeys();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not register passkey.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removePasskey(id: string) {
+    setRemovingId(id);
+    setError('');
+    try {
+      const res = await fetch(`/api/auth/passkey/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}));
+        throw new Error(typeof payload.error === 'string' ? payload.error : 'Could not remove passkey.');
+      }
+      void loadPasskeys();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not remove passkey.'));
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
+  return (
+    <div>
+      <button className="button" disabled={busy} onClick={registerPasskey} type="button">
+        {busy ? 'Registering...' : 'Add a passkey'}
+      </button>
+      {status ? <p className="status-note" style={{ marginTop: 8 }}>{status}</p> : null}
+      {error ? <p className="status-note status-note-error" style={{ marginTop: 8 }}>{error}</p> : null}
+
+      {!loadingList && passkeys && passkeys.length > 0 ? (
+        <div style={{ marginTop: 16 }}>
+          <p style={{ fontWeight: 600, marginBottom: 8 }}>Registered passkeys</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            {passkeys.map((pk) => (
+              <li key={pk.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                <span style={{ flex: 1 }}>
+                  <span style={{ textTransform: 'capitalize' }}>{pk.deviceType.replace(/-/g, ' ')}</span>
+                  {pk.backedUp ? ' · synced' : ' · single device'}
+                  {' · '}
+                  {new Date(pk.createdAt).toLocaleDateString()}
+                </span>
+                <button
+                  className="button"
+                  disabled={removingId === pk.id}
+                  onClick={() => void removePasskey(pk.id)}
+                  style={{ padding: '4px 12px', fontSize: '0.85em' }}
+                  type="button"
+                >
+                  {removingId === pk.id ? 'Removing...' : 'Remove'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
   );
 }

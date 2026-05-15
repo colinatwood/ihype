@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+export const metadata: Metadata = {
+  title: 'Artists',
+  description: 'Discover independent artists on iHYPE. Browse by city, genre, and hype count — no algorithms, no pay-to-play.',
+  openGraph: { title: 'Artists · iHYPE', description: 'Discover independent artists — no algorithms, no pay-to-play.' },
+  twitter: { card: 'summary_large_image', title: 'Artists · iHYPE', description: 'Discover independent artists — no algorithms, no pay-to-play.' },
+};
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import {

@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -79,7 +80,8 @@ enum AccountsPayableStatus {
 model User {
   id                      String                   @id @default(cuid())
   name                    String?
-  email                   String                   @unique
+  email                   String?                  @unique
+  phone                   String?                  @unique
   username                String                   @unique
   passwordHash            String?
   isThirteenOrOlder       Boolean                  @default(true)
@@ -113,6 +115,9 @@ model User {
   favoriteMedia           FanFavoriteMedia[]
   auditLogs               AuditLog[]
   contentReports          ContentReport[]
+  seeds                   Seed[]
+  pageLayout              String[]  @default([])
+  passkeys                Passkey[]
 }
 
 model Profile {
@@ -375,8 +380,6 @@ model Show {
   advertisingConfig      ShowAdvertisingConfig?
 }
 
-// Extracted from the productionPlan JSON blob so advertising settings are
-// queryable and auditable without deserialising the full plan.
 model ShowAdvertisingConfig {
   id              String   @id @default(cuid())
   showId          String   @unique
@@ -517,6 +520,20 @@ model PasswordResetCode {
   @@index([userId, expiresAt])
 }
 
+model Passkey {
+  id                   String   @id @default(cuid())
+  userId               String
+  credentialId         String   @unique
+  publicKey            Bytes
+  counter              BigInt   @default(0)
+  deviceType           String
+  backedUp             Boolean  @default(false)
+  transports           String?
+  createdAt            DateTime @default(now())
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+}
+
 model MfaChallenge {
   id               String   @id @default(cuid())
   token            String   @unique
@@ -601,9 +618,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Versioned content blocks — the normalized replacement for the flat content
-// columns on Profile. During the dual-write transition both exist; once all
-// reads have been migrated the columns can be dropped.
 model ProfileBlock {
   id          String   @id @default(cuid())
   profileId   String
@@ -618,8 +632,6 @@ model ProfileBlock {
   @@index([profileId])
 }
 
-// Ordered tracklist for radio-style shows. Each row links a show to either
-// an uploaded ArtistMediaAsset or an external stream URL.
 model RadioShowTrack {
   id           String            @id @default(cuid())
   showId       String
@@ -638,7 +650,6 @@ model RadioShowTrack {
   @@index([showId])
 }
 
-// Immutable record of admin actions for accountability and debugging.
 model AdminAuditLog {
   id           String   @id @default(cuid())
   actorId      String
@@ -653,9 +664,17 @@ model AdminAuditLog {
   @@index([createdAt])
 }
 
-// Idempotency log for inbound webhooks. Inserting a duplicate eventId fails
-// on the unique constraint, which lets handlers skip already-processed events
-// without any additional SELECT.
+model Seed {
+  id          String   @id @default(cuid())
+  userId      String
+  mediaId     String
+  action      String   // "save" | "skip" | "hype"
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model ProcessedWebhookEvent {
   id          String   @id @default(cuid())
   source      String

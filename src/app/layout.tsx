@@ -5,7 +5,6 @@ import { Syne, DM_Sans, JetBrains_Mono, Instrument_Serif } from 'next/font/googl
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderLogo } from '@/components/HeaderLogo';
-import { NavPrimaryLinks } from '@/components/NavPrimaryLinks';
 
 const syne = Syne({ subsets: ['latin'], weight: ['600','700','800'], variable: '--font-syne', display: 'swap' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400','500','600','700'], variable: '--font-dm', display: 'swap' });
@@ -17,17 +16,17 @@ export const metadata: Metadata = {
     default: 'iHYPE.org',
     template: '%s · iHYPE'
   },
-  description: 'Streaming-first music discovery for artists, promoters, venues, and fans.',
+  description: 'Not-for-profit music discovery for artists, promoters, venues, and fans. 0% ticket fees. Free forever.',
   openGraph: {
     siteName: 'iHYPE',
     type: 'website',
-    title: 'iHYPE.org',
-    description: 'Streaming-first music discovery for artists, promoters, venues, and fans.',
+    title: 'iHYPE — Independent music built for the scene',
+    description: 'Not-for-profit music discovery for artists, promoters, venues, and fans. 0% ticket fees. Free forever.',
   },
   twitter: {
-    card: 'summary',
-    title: 'iHYPE.org',
-    description: 'Streaming-first music discovery for artists, promoters, venues, and fans.',
+    card: 'summary_large_image',
+    title: 'iHYPE — Independent music built for the scene',
+    description: 'Not-for-profit music discovery for artists, promoters, venues, and fans. 0% ticket fees. Free forever.',
   },
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org'
@@ -48,7 +47,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <header aria-label="Primary site header" className="nav site-nav">
             <div className="container nav-inner-marketing">
               <HeaderLogo />
-              <NavPrimaryLinks />
               <HeaderAuthLinks />
             </div>
           </header>
