@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FormEvent, ReactNode } from 'react';
 import { useMemo, useState } from 'react';
+import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 
 type RoleOption = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
 
@@ -115,6 +116,23 @@ export function LoginScreen({
   const [website, setWebsite] = useState('');
   const isCodeStep = Boolean(challengeId);
 
+  async function signInWithPasskey() {
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const optRes = await fetch('/api/auth/passkey/auth');
+      const options = await optRes.json();
+      const assertion = await startAuthentication(options);
+      const payload = await postJson<{ redirect?: string }>('/api/auth/passkey/auth', assertion);
+      router.push(payload.redirect || '/auth/landing');
+      router.refresh();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Passkey sign-in failed.'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function sendCode(statusMessage?: string) {
     setError('');
     setMessage(statusMessage ?? '');
@@ -180,6 +198,21 @@ export function LoginScreen({
       title={isCodeStep ? 'Check your inbox.' : 'Sign in.'}
     >
       {!isCodeStep ? (
+        <>
+        <button
+          className="button"
+          disabled={isSubmitting}
+          onClick={signInWithPasskey}
+          style={{ marginBottom: 12 }}
+          type="button"
+        >
+          {isSubmitting ? 'Checking passkey...' : 'Sign in with passkey'}
+        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, opacity: 0.5 }}>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid currentColor' }} />
+          <span style={{ fontSize: 12 }}>or use password</span>
+          <hr style={{ flex: 1, border: 'none', borderTop: '1px solid currentColor' }} />
+        </div>
         <form className="form" onSubmit={requestCode}>
           <label className="field">
             <span>Email or username</span>
@@ -215,6 +248,7 @@ export function LoginScreen({
             />
           </label>
         </form>
+        </>
       ) : (
         <form className="form" onSubmit={verifyCode}>
           <label className="field">
@@ -626,5 +660,38 @@ export function ForgotPasswordScreen() {
         </Link>
       </div>
     </AuthSignalShell>
+  );
+}
+
+export function PasskeyManager() {
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function registerPasskey() {
+    setBusy(true);
+    setStatus('');
+    setError('');
+    try {
+      const optRes = await fetch('/api/auth/passkey/register');
+      const options = await optRes.json();
+      const attestation = await startRegistration(options);
+      await postJson('/api/auth/passkey/register', attestation);
+      setStatus('Passkey added. You can now sign in without a password.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not register passkey.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <button className="button" disabled={busy} onClick={registerPasskey} type="button">
+        {busy ? 'Registering...' : 'Add a passkey'}
+      </button>
+      {status ? <p className="status-note" style={{ marginTop: 8 }}>{status}</p> : null}
+      {error ? <p className="status-note status-note-error" style={{ marginTop: 8 }}>{error}</p> : null}
+    </div>
   );
 }

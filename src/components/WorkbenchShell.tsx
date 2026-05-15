@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef, createContext, useCont
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
 import { HypeHeatmap } from '@/components/HypeHeatmap';
+import { PasskeyManager } from '@/components/AuthScreens';
 import { RevenueSplitVisualizer } from '@/components/RevenueSplitVisualizer';
 
 // ── Drag context ───────────────────────────────────────────────
@@ -2176,7 +2177,7 @@ function PageBuilder() {
 }
 
 function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v: unknown) => void }) {
-  const [settTab, setSettTab] = useState<'appearance' | 'page'>('page');
+  const [settTab, setSettTab] = useState<'appearance' | 'page' | 'security'>('page');
   const ACCENTS = [
     { v: '#ff5029', label: 'Ember' }, { v: '#ff3e9a', label: 'Hot pink' },
     { v: '#b983ff', label: 'Lilac' }, { v: '#22e5d4', label: 'Aqua' },
@@ -2197,6 +2198,7 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
       <div className="wb-tabs" style={{ marginBottom: 24 }}>
         <button onClick={() => setSettTab('page')} className={`wb-tab${settTab === 'page' ? ' wb-tab-active' : ''}`}>Profile page</button>
         <button onClick={() => setSettTab('appearance')} className={`wb-tab${settTab === 'appearance' ? ' wb-tab-active' : ''}`}>Appearance</button>
+        <button onClick={() => setSettTab('security')} className={`wb-tab${settTab === 'security' ? ' wb-tab-active' : ''}`}>Security</button>
       </div>
 
       {settTab === 'page' && <PageBuilder />}
@@ -2267,6 +2269,14 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
           </div>
         </SettSection>
       </div>}
+
+      {settTab === 'security' && (
+        <div style={{ maxWidth: 480 }}>
+          <SettSection title="Passkeys" sub="Sign in with Face ID, Touch ID, or your device PIN — no password or email code needed.">
+            <PasskeyManager />
+          </SettSection>
+        </div>
+      )}
 
       <div className="wb-footnote">
         Preferences live in this browser's localStorage. Your data stays on your device — keys never leave your control.
