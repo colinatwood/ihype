@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useCallback, useRef, createContext, useContext, memo } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
+import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
+import { HypeHeatmap } from '@/components/HypeHeatmap';
+import { RevenueSplitVisualizer } from '@/components/RevenueSplitVisualizer';
 
 // ── Drag context ───────────────────────────────────────────────
 const DragTrackCtx = createContext<{
@@ -171,6 +174,7 @@ export type WorkbenchData = {
   hypedToday: number;
   showsTonight: number;
   isVerified?: boolean;
+  lifeStats?: { totalHype: number; totalEarnings: number; songsPlayed: number; eventsAttended: number };
 };
 
 // ── Default prefs ──────────────────────────────────────────────
@@ -210,6 +214,8 @@ const IcRadio    = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="12" r="3"
 const IcTicket   = (p: {s?:number}) => <Ic s={p.s}><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" strokeDasharray="2 2"/></Ic>;
 const IcDiscover = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="12" r="9"/><polygon points="15 9 13 13 9 15 11 11" fill="currentColor" stroke="none"/></Ic>;
 const IcShows    = (p: {s?:number}) => <Ic s={p.s}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></Ic>;
+const IcSeeds    = (p: {s?:number}) => <Ic s={p.s}><path d="M12 22V12M12 12C12 7 7 4 2 4c0 5 3 8 10 8zM12 12c0-5 5-8 10-8-0 5-3 8-10 8z"/></Ic>;
+const IcArtist   = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><path d="M20 8l2 2-2 2M20 10h2"/></Ic>;
 const IcStudio   = (p: {s?:number}) => <Ic s={p.s}><path d="M6 3v18M18 3v18M3 6h18M3 12h18M3 18h18"/></Ic>;
 const IcSettings = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></Ic>;
 const IcPlay     = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20"/></svg>;
@@ -227,7 +233,7 @@ const IcCheck    = (p: {s?:number}) => <Ic {...p}><polyline points="20 6 9 17 4 
 const IcArrow    = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
 const IcDot      = ({ c = 'currentColor', s = 8 }: {c?:string; s?:number}) => <svg width={s} height={s} viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill={c}/></svg>;
 
-type View = 'home' | 'library' | 'radio' | 'tickets' | 'studio' | 'venue' | 'settings';
+type View = 'home' | 'discover' | 'seeds' | 'tickets' | 'studio' | 'artist' | 'venue' | 'settings';
 
 // ── Onboarding modal ───────────────────────────────────────────
 function OnboardingModal({ onDone }: { onDone: () => void }) {
@@ -342,12 +348,13 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
         <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
         <main className="wb-main">
           {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
-          {view === 'radio'    && <ViewRadio data={data} setView={setView} />}
+          {view === 'discover' && <ViewDiscover data={data} />}
+          {view === 'seeds'    && <ViewSeeds data={data} />}
           {view === 'tickets'  && <ViewTicketing data={data} activeProfileTypes={data.activeProfileTypes} />}
-          {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
-          {view === 'library'  && <ViewLibrary data={data} />}
           {view === 'studio'   && <ViewRadioStudio />}
+          {view === 'artist'   && <ViewArtist data={data} />}
           {view === 'venue'    && <ViewVenue data={data} />}
+          {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
         </main>
         {showQueue && <WbQueueRail data={data} />}
         <WbPlayerDock queueRailOn={prefs.queueRail} onToggleQueue={() => setPref('queueRail', !prefs.queueRail)} />
@@ -359,24 +366,40 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
 // ── Sidebar ────────────────────────────────────────────────────
 const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
   { k: 'home',     label: 'Home',      Icon: IcHome },
-  { k: 'library',  label: 'Library',   Icon: IcLibrary },
-  { k: 'radio',    label: 'Radio',     Icon: IcRadio },
-  { k: 'tickets',  label: 'Events & Tickets', Icon: IcTicket },
-  { k: 'studio',   label: 'Create',    Icon: IcStudio },
+  { k: 'discover', label: 'Discover',  Icon: IcDiscover },
+  { k: 'seeds',    label: 'Seeds',     Icon: IcSeeds },
+  { k: 'tickets',  label: 'Ticketing', Icon: IcTicket },
+  { k: 'studio',   label: 'Studio',    Icon: IcStudio },
 ];
 
-function WbSidebar({ view, setView, pinned, initials, accent, activeProfileTypes, mobileOpen, onMobileClose, isVerified }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean }) {
-  const isVenue = activeProfileTypes.includes('VENUE');
+function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobileOpen, isVerified }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean }) {
+  const isArtist = activeProfileTypes.includes('ARTIST');
+  const isVenue  = activeProfileTypes.includes('VENUE');
   return (
     <aside className={`wb-sidebar${mobileOpen ? ' wb-sidebar-mobile-open' : ''}`}>
       <div className="wb-sb-logo">iH</div>
       <div className="wb-sb-stack">
-        {NAV_ITEMS.filter(i => pinned.includes(i.k)).map(({ k, label, Icon }) => (
+        {NAV_ITEMS.map(({ k, label, Icon }) => (
           <SidebarBtn key={k} active={view === k} onClick={() => setView(k)} label={label} accent={accent}>
             <Icon s={18} />
           </SidebarBtn>
         ))}
+        {isArtist && (
+          <SidebarBtn active={view === 'artist'} onClick={() => setView('artist')} label="Artist" accent={accent}>
+            <IcArtist s={18} />
+          </SidebarBtn>
+        )}
+        {isVenue && (
+          <SidebarBtn active={view === 'venue'} onClick={() => setView('venue')} label="Venue" accent={accent}>
+            <IcShows s={18} />
+          </SidebarBtn>
+        )}
       </div>
+      {!isArtist && !isVenue && (
+        <SidebarBtn active={false} onClick={() => window.location.href = '/register'} label="Register as Artist/Venue" accent="#22e5d4">
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </SidebarBtn>
+      )}
       <div className="wb-sb-foot">
         <SidebarBtn active={view === 'settings'} onClick={() => setView('settings')} label="Settings" accent="rgba(255,255,255,.4)">
           <IcSettings s={18} />
@@ -414,8 +437,8 @@ function SidebarBtn({ active, onClick, label, children, accent }: { active: bool
 
 // ── Topbar ─────────────────────────────────────────────────────
 const VIEW_TITLES: Record<View, string> = {
-  home: 'Home', library: 'Library', radio: 'Radio', tickets: 'Events & Tickets',
-  studio: 'Radio studio', venue: 'Venue dashboard', settings: 'Settings',
+  home: 'Home', discover: 'Discover', seeds: 'Seeds', tickets: 'Ticketing',
+  studio: 'Studio', artist: 'Artist', venue: 'Venue', settings: 'Settings',
 };
 
 type SearchHit = { type: string; id: string; name: string; subtitle: string; slug?: string };
@@ -430,6 +453,15 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { playTrack } = useMediaPlayer();
+
+  useEffect(() => {
+    const poll = () => fetch('/api/stats/live').then(r => r.ok ? r.json() : null).then(d => {
+      if (!d) return;
+      // update is handled by parent re-render in future; for now we just log
+    }).catch(() => {});
+    const id = setInterval(poll, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (debRef.current) clearTimeout(debRef.current);
@@ -474,8 +506,9 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
   function handleSelect(r: SearchHit) {
     if (r.type === 'song') {
       playTrack({ id: r.id, title: r.name, artistName: r.subtitle.replace(/^by /, '').split(' / ')[0], url: `/api/media/${r.id}`, mediaId: r.id, artistProfileSlug: r.slug ?? null });
-    } else if (r.type === 'show') {
-      setView('tickets');
+    } else {
+      const href = getHref(r);
+      if (href) { window.location.href = href; return; }
     }
     setOpen(false); setQ('');
   }
@@ -487,7 +520,6 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
       </button>
       <div className="wb-top-logo">
         <span className="wb-top-logo-mark"><span style={{ color: 'var(--wb-ink)' }}>i</span><span style={{ color: 'var(--wb-accent)' }}>HYPE</span></span>
-        <span className="wb-top-beta">BETA</span>
       </div>
       <div className="wb-top-mid">
         <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', letterSpacing: '.04em' }}>{VIEW_TITLES[view]}</span>
@@ -780,7 +812,7 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
         <section className="wb-panel" style={{ marginTop: 14 }}>
           <div className="wb-panel-head">
             <div className="wb-panel-title">Hyped this week</div>
-            <button className="wb-link-btn" onClick={() => setView('library')}>Discover all →</button>
+            <button className="wb-link-btn" onClick={() => setView('seeds')}>Discover more →</button>
           </div>
           <div className="wb-tracks-grid">
             {data.tracks.slice(0, 6).map(t => {
@@ -800,6 +832,62 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
           </div>
         </section>
       )}
+
+      {/* Lifetime heuristics */}
+      <div className="wb-stat-row" style={{ marginTop: 14 }}>
+        {[
+          { l: 'TOTAL HYPE GIVEN', v: (data.lifeStats?.totalHype ?? 3841).toLocaleString(),   d: 'all time',          c: '#ff3e9a' },
+          { l: 'TOTAL EARNINGS',   v: `$${(data.lifeStats?.totalEarnings ?? 9240).toLocaleString()}`, d: 'lifetime payouts', c: '#ffb84a' },
+          { l: 'SONGS PLAYED',     v: (data.lifeStats?.songsPlayed ?? 12447).toLocaleString(), d: 'all time listens',  c: '#b983ff' },
+          { l: 'EVENTS ATTENDED',  v: String(data.lifeStats?.eventsAttended ?? 28),            d: 'past tickets',      c: '#22e5d4' },
+        ].map(s => (
+          <div key={s.l} className="wb-stat-card">
+            <div className="wb-stat-l">{s.l}</div>
+            <div className="wb-stat-v">{s.v}</div>
+            <div className="wb-stat-d" style={{ color: s.c }}>{s.d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Favorites row */}
+      <div className="wb-col-row" style={{ marginTop: 14 }}>
+        <section className="wb-panel">
+          <div className="wb-panel-head">
+            <div className="wb-panel-title">Top artists</div>
+            <button className="wb-link-btn" onClick={() => setView('discover')}>All →</button>
+          </div>
+          {[
+            { name: 'Maya Reyes',    plays: 341, c: '#ff5029' },
+            { name: 'Cobalt Hour',   plays: 218, c: '#b983ff' },
+            { name: 'Vela',          plays: 177, c: '#22e5d4' },
+            { name: 'The Lowriders', plays: 134, c: '#ff3e9a' },
+          ].map(a => (
+            <div key={a.name} className="wb-act-row">
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${a.c}, ${a.c}80)`, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}><div className="wb-act-txt">{a.name}</div></div>
+              <div className="wb-act-time">{a.plays} plays</div>
+            </div>
+          ))}
+        </section>
+        <section className="wb-panel">
+          <div className="wb-panel-head">
+            <div className="wb-panel-title">Favorite venues</div>
+            <button className="wb-link-btn" onClick={() => setView('discover')}>All →</button>
+          </div>
+          {[
+            { name: 'Empty Bottle',   shows: 7, c: '#22e5d4' },
+            { name: 'Sleeping Village', shows: 4, c: '#ff3e9a' },
+            { name: 'Subterranean',   shows: 3, c: '#b983ff' },
+            { name: 'Hideout',        shows: 2, c: '#ffb84a' },
+          ].map(v => (
+            <div key={v.name} className="wb-act-row">
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: `linear-gradient(135deg, ${v.c}, ${v.c}80)`, flexShrink: 0 }} />
+              <div style={{ flex: 1 }}><div className="wb-act-txt">{v.name}</div></div>
+              <div className="wb-act-time">{v.shows} shows</div>
+            </div>
+          ))}
+        </section>
+      </div>
 
     </div>
   );
@@ -912,7 +1000,7 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
   const canCreateEvents = activeProfileTypes.some(r => r === 'ARTIST' || r === 'VENUE');
   const isDJ = activeProfileTypes.includes('DJ');
   const isVenue = activeProfileTypes.includes('VENUE');
-  const [tab, setTab] = useState<'browse' | 'mine' | 'selling' | 'scan' | 'create' | 'referral' | 'venue'>('browse');
+  const [tab, setTab] = useState<'browse' | 'recommended' | 'mine' | 'selling' | 'scan' | 'create' | 'referral' | 'venue'>('browse');
   const upcoming = data.tickets[0];
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferEmail, setTransferEmail] = useState('');
@@ -957,6 +1045,7 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
         </div>
         <div className="wb-tabs">
           <button onClick={() => setTab('browse')} className={`wb-tab${tab === 'browse' ? ' wb-tab-active' : ''}`}>Browse</button>
+          <button onClick={() => setTab('recommended')} className={`wb-tab${tab === 'recommended' ? ' wb-tab-active' : ''}`}>Recommended</button>
           <button onClick={() => setTab('mine')} className={`wb-tab${tab === 'mine' ? ' wb-tab-active' : ''}`}>My tickets</button>
           <button onClick={() => setTab('selling')} className={`wb-tab${tab === 'selling' ? ' wb-tab-active' : ''}`}>Selling</button>
           <button onClick={() => setTab('scan')} className={`wb-tab${tab === 'scan' ? ' wb-tab-active' : ''}`}>Scan / verify</button>
@@ -971,6 +1060,28 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
           )}
         </div>
       </div>
+
+      {tab === 'recommended' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', color: 'var(--wb-ink-3)', marginBottom: 4 }}>BASED ON YOUR HYPES + LOCATION</div>
+          {[
+            { id: 'r1', name: 'Maya Reyes', venue: 'Empty Bottle', date: 'Thu Jun 18', time: '9PM', price: 18, hype: 412, reason: 'You hyped this artist 3× this week' },
+            { id: 'r2', name: 'Cobalt Hour', venue: 'Sleeping Village', date: 'Sat Jun 20', time: '8PM', price: 15, hype: 287, reason: 'Fans like you are going' },
+            { id: 'r3', name: 'Vela', venue: 'Subterranean', date: 'Tue Jun 23', time: '8PM', price: 12, hype: 156, reason: 'Trending in Chicago' },
+          ].map(s => (
+            <div key={s.id} className="wb-shows-row">
+              <div style={{ width: 56, height: 56, borderRadius: 6, background: 'linear-gradient(135deg, var(--wb-accent), #ff3e9a80)', flexShrink: 0 }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16 }}>{s.name} <span style={{ color: 'var(--wb-ink-3)', fontWeight: 500 }}>· {s.venue}</span></div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)', marginTop: 4 }}>{s.date} · {s.time} · ♡ {s.hype}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: '#22e5d4', marginTop: 3 }}>{s.reason}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--f-d)', fontSize: 20, fontWeight: 700 }}>${s.price}</div>
+              <button className="wb-btn-prime">Get ticket</button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {tab === 'browse' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
@@ -1219,6 +1330,8 @@ const ViewRadioStudio = memo(function ViewRadioStudio() {
   const [streamDesc, setStreamDesc] = useState('');
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [errMsg, setErrMsg] = useState('');
+  const [splitMode, setSplitMode] = useState<'co-host' | 'referrer'>('referrer');
+  const [splitReferrer, setSplitReferrer] = useState('Anyone who shares your show');
 
   const field: React.CSSProperties = { width: '100%', padding: '9px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--wb-ink)', outline: 'none', boxSizing: 'border-box' as const };
   const lbl: React.CSSProperties = { fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.12em', color: 'var(--wb-ink-3)', marginBottom: 6, display: 'block' };
@@ -1276,10 +1389,17 @@ const ViewRadioStudio = memo(function ViewRadioStudio() {
               <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--wb-ink)' }}>{showName || 'Your show name'}</div>
               <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', marginTop: 4 }}>{schedule || 'Schedule TBD'}</div>
             </div>
+            <RevenueSplitVisualizer
+              tracks={[]}
+              hostName="You"
+              referrerLabel={splitReferrer}
+              onReferrerLabelChange={setSplitReferrer}
+              mode={splitMode}
+              onModeChange={setSplitMode}
+              projection={{ totalDollars: 480, windowLabel: 'next broadcast', listens: 412 }}
+              onSchedule={handleSubmit}
+            />
             {errMsg && <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff5029', padding: '8px 12px', border: '1px solid rgba(255,80,41,.3)', borderRadius: 6 }}>{errMsg}</div>}
-            <button type="button" onClick={handleSubmit} disabled={submitStatus === 'loading'} className="wb-btn-prime" style={{ width: '100%', padding: '12px', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: submitStatus === 'loading' ? 0.6 : 1 }}>
-              <IcBolt s={13} /> {submitStatus === 'loading' ? 'Scheduling…' : 'Schedule show →'}
-            </button>
           </div>
         </div>
       )}
@@ -1694,6 +1814,208 @@ function ViewStub({ name, eyebrow, accent, sub }: { name: string; eyebrow: strin
   );
 }
 
+// ── View: Discover ─────────────────────────────────────────────
+const DEMO_ARTISTS = [
+  { id: 'a1', name: 'Maya Reyes',    genre: 'Indie / Dream-pop', hype: 1247, location: 'Chicago, IL', c: '#ff5029', reason: 'Based on your hype history' },
+  { id: 'a2', name: 'Cobalt Hour',   genre: 'Post-rock',         hype: 892,  location: 'Chicago, IL', c: '#b983ff', reason: 'Trending in your city' },
+  { id: 'a3', name: 'Vela',          genre: 'Ambient / Folk',    hype: 602,  location: 'Detroit, MI',  c: '#22e5d4', reason: 'Fans of Cobalt Hour also hype' },
+  { id: 'a4', name: 'Saint Hex',     genre: 'Downtempo',         hype: 441,  location: 'Chicago, IL', c: '#7fb3ff', reason: 'High hype velocity this week' },
+  { id: 'a5', name: 'Juno North',    genre: 'Alt-country',       hype: 334,  location: 'Nashville, TN',c: '#ffb84a', reason: 'Artists you follow recommend' },
+  { id: 'a6', name: 'The Lowriders', genre: 'Americana',         hype: 218,  location: 'Austin, TX',   c: '#ff3e9a', reason: 'Booked at venues you frequent' },
+];
+const DEMO_VENUES = [
+  { id: 'v1', name: 'Empty Bottle',     city: 'Chicago, IL', cap: 200, genre: 'Indie / Punk', c: '#22e5d4', shows: 4 },
+  { id: 'v2', name: 'Sleeping Village', city: 'Chicago, IL', cap: 150, genre: 'Indie / Electronic', c: '#b983ff', shows: 2 },
+  { id: 'v3', name: 'Mohawk',           city: 'Austin, TX',  cap: 520, genre: 'All genres', c: '#ff5029', shows: 7 },
+];
+const DEMO_DJS = [
+  { id: 'd1', name: 'DJ Vex',    show: 'Chicago Underground', listeners: 412, c: '#ff3e9a', reason: 'Plays artists you hype' },
+  { id: 'd2', name: 'Saint Hex', show: 'After Hours',          listeners: 128, c: '#7fb3ff', reason: 'Similar taste profile' },
+];
+
+function ViewDiscover({ data }: { data: WorkbenchData }) {
+  const [tab, setTab] = useState<'artists'|'venues'|'djs'>('artists');
+  return (
+    <div className="wb-view-pad">
+      <div className="wb-greet">
+        <div>
+          <div className="wb-eyebrow" style={{ color: 'var(--wb-accent)' }}>● PERSONALIZED · BASED ON YOUR HYPES + LOCATION</div>
+          <h1 className="wb-page-title">Discover</h1>
+          <p className="wb-page-sub">Artists, venues, and DJs curated from your listen history, hypes, and scene.</p>
+        </div>
+      </div>
+      <div className="wb-tabs" style={{ marginBottom: 20 }}>
+        {(['artists','venues','djs'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`wb-tab${tab===t?' wb-tab-active':''}`} style={{ textTransform: 'capitalize' }}>{t}</button>
+        ))}
+      </div>
+
+      {tab === 'artists' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+          {DEMO_ARTISTS.map(a => (
+            <div key={a.id} className="wb-panel" style={{ padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg, ${a.c}, ${a.c}80)`, flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)' }}>{a.name}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{a.genre} · {a.location}</div>
+                </div>
+              </div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', letterSpacing: '.08em', marginBottom: 10 }}>{a.reason}</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18, color: '#ff3e9a' }}>{a.hype.toLocaleString()} <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 400, color: 'var(--wb-ink-3)' }}>hype</span></span>
+                <button className="wb-btn-prime" style={{ padding: '6px 14px', fontSize: 11 }}>＋ Follow</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'venues' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {DEMO_VENUES.map(v => (
+            <div key={v.id} className="wb-show-row" style={{ background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line)', borderRadius: 8, padding: '14px 16px' }}>
+              <div style={{ width: 8, height: 40, borderRadius: 3, flexShrink: 0, background: v.c }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="wb-show-name">{v.name} <span className="wb-show-venue">· {v.city}</span></div>
+                <div className="wb-show-meta">{v.genre} · cap {v.cap}</div>
+              </div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>{v.shows} upcoming shows</div>
+              <button className="wb-btn-ghost" style={{ fontSize: 11 }}>View →</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab === 'djs' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+          {DEMO_DJS.map(d => (
+            <div key={d.id} className="wb-panel" style={{ padding: '16px 18px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 8, background: `linear-gradient(135deg, ${d.c}, ${d.c}80)`, flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)' }}>{d.name}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{d.show}</div>
+                </div>
+              </div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginBottom: 10 }}>{d.reason}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)' }}>{d.listeners} listening now</span>
+                <button className="wb-btn-prime" style={{ padding: '6px 14px', fontSize: 11 }}>Tune in</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── View: Seeds ─────────────────────────────────────────────────
+function ViewSeeds({ data }: { data: WorkbenchData }) {
+  const tracks: SeedsSwipeStackTrack[] = data.tracks.map(t => ({
+    id: t.id, title: t.title, artistName: t.artistName, album: t.album,
+    color: t.color, durationLabel: t.duration, hypeCount: t.hypeCount,
+  }));
+  const seeds: SeedsSwipeStackSeed[] = [];
+  return (
+    <SeedsSwipeStack
+      seeds={seeds}
+      tracks={tracks}
+      onSave={seed => void fetch(`/api/discover/seeds/${seed.id}/save`, { method: 'POST' })}
+      onSkip={seed => void fetch(`/api/discover/seeds/${seed.id}/skip`, { method: 'POST' })}
+      onHype={seed => void fetch(`/api/discover/seeds/${seed.id}/hype`, { method: 'POST' })}
+    />
+  );
+}
+
+// ── View: Artist ────────────────────────────────────────────────
+function ViewArtist({ data }: { data: WorkbenchData }) {
+  const [tab, setTab] = useState<'overview'|'touring'|'merch'|'page'>('overview');
+  return (
+    <div className="wb-view-pad">
+      <div className="wb-greet">
+        <div>
+          <div className="wb-eyebrow" style={{ color: '#ff3e9a' }}>● ARTIST DASHBOARD</div>
+          <h1 className="wb-page-title">Artist</h1>
+          <p className="wb-page-sub">Your heuristics, fan demand, touring signals, and page customization.</p>
+        </div>
+      </div>
+      <div className="wb-tabs" style={{ marginBottom: 20 }}>
+        {(['overview','touring','merch','page'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`wb-tab${tab===t?' wb-tab-active':''}`} style={{ textTransform: 'capitalize' }}>{t}</button>
+        ))}
+      </div>
+
+      {tab === 'overview' && (
+        <>
+          <div className="wb-stat-row">
+            {[
+              { l: 'TOTAL HYPE',    v: data.hypedToday > 0 ? data.hypedToday.toLocaleString() : '4,219', d: '↑ 18% this month', c: '#ff3e9a' },
+              { l: 'FANS',          v: '847',   d: '↑ 23 this week',  c: '#22e5d4' },
+              { l: 'RADIO PLAYS',   v: '12.3k', d: 'this month',       c: '#b983ff' },
+              { l: 'EARNINGS',      v: '$2,460', d: 'pending payout',  c: '#ffb84a' },
+            ].map(s => (
+              <div key={s.l} className="wb-stat-card">
+                <div className="wb-stat-l">{s.l}</div>
+                <div className="wb-stat-v">{s.v}</div>
+                <div className="wb-stat-d" style={{ color: s.c }}>{s.d}</div>
+              </div>
+            ))}
+          </div>
+          <div className="wb-col-row" style={{ marginTop: 14 }}>
+            <section className="wb-panel">
+              <div className="wb-panel-head"><div className="wb-panel-title">Top tracks</div></div>
+              {data.tracks.slice(0, 5).map(t => (
+                <div key={t.id} className="wb-act-row">
+                  <div style={{ width: 28, height: 28, borderRadius: 4, background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}><div className="wb-act-txt">{t.title}</div></div>
+                  <div className="wb-act-time" style={{ color: '#ff3e9a' }}>♡ {t.hypeCount}</div>
+                </div>
+              ))}
+            </section>
+            <section className="wb-panel">
+              <div className="wb-panel-head"><div className="wb-panel-title">Recommendations</div></div>
+              {[
+                { txt: 'Submit to Chicago Underground radio', action: 'DJ Vex is spinning your genre' },
+                { txt: 'Reach out to Empty Bottle for August', action: '3 venues asking about bookings' },
+                { txt: 'Release your next track this Thursday', action: 'Hype velocity peaks Thu–Fri' },
+              ].map((r, i) => (
+                <div key={i} className="wb-act-row">
+                  <div className="wb-act-dot" style={{ background: '#22e5d4' }} />
+                  <div style={{ flex: 1 }}>
+                    <div className="wb-act-txt">{r.txt}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{r.action}</div>
+                  </div>
+                </div>
+              ))}
+            </section>
+          </div>
+        </>
+      )}
+
+      {tab === 'touring' && (
+        <HypeHeatmap cities={[]} venuePings={[]} suggestedRoute="CHI → BKN → ATX" />
+      )}
+
+      {tab === 'merch' && (
+        <div className="wb-panel" style={{ padding: '24px' }}>
+          <div className="wb-eyebrow" style={{ marginBottom: 12 }}>● MERCH · COMING SOON</div>
+          <p className="wb-page-sub" style={{ maxWidth: 480 }}>Direct-to-fan merch drops with 0% platform fees. List items, set prices, ship or pick up at shows. Launching Q3.</p>
+          <button className="wb-btn-prime" style={{ marginTop: 16 }}>Join the waitlist →</button>
+        </div>
+      )}
+
+      {tab === 'page' && (
+        <div>
+          <p className="wb-page-sub" style={{ marginBottom: 20 }}>Customize your public artist page — drag to reorder, upload media, choose colors.</p>
+          <PageBuilder />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── View: Settings ─────────────────────────────────────────────
 // ── Page builder types ──────────────────────────────────────────
 type PageWidget = { id: string; label: string; desc: string; wide: boolean; locked?: boolean };
@@ -1854,17 +2176,11 @@ function PageBuilder() {
 }
 
 function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v: unknown) => void }) {
-  const [settTab, setSettTab] = useState<'workbench' | 'page'>('page');
+  const [settTab, setSettTab] = useState<'appearance' | 'page'>('page');
   const ACCENTS = [
     { v: '#ff5029', label: 'Ember' }, { v: '#ff3e9a', label: 'Hot pink' },
     { v: '#b983ff', label: 'Lilac' }, { v: '#22e5d4', label: 'Aqua' },
     { v: '#ffb84a', label: 'Amber' }, { v: '#7fb3ff', label: 'Sky' },
-  ];
-  const TOOLS = [
-    { k: 'library',  label: 'Library',   sub: 'Saved playlists + tracks',    Icon: IcLibrary },
-    { k: 'radio',    label: 'Radio',     sub: 'Channels + your own shows',   Icon: IcRadio },
-    { k: 'tickets',  label: 'Events & Tickets', sub: 'Browse, buy, sell, scan', Icon: IcTicket },
-    { k: 'studio',   label: 'Create',    sub: 'Start a radio show',           Icon: IcStudio },
   ];
 
   return (
@@ -1875,17 +2191,17 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
           <h1 className="wb-page-title">Settings <span style={{ color: 'var(--wb-ink-2)', fontWeight: 400 }}>· page customization</span></h1>
           <p className="wb-page-sub">Make iHYPE feel like yours. Changes apply live.</p>
         </div>
-        {settTab === 'workbench' && <button className="wb-btn-ghost" onClick={() => setPref('__reset__', null)}>Reset to defaults</button>}
+        {settTab === 'appearance' && <button className="wb-btn-ghost" onClick={() => setPref('__reset__', null)}>Reset to defaults</button>}
       </div>
 
       <div className="wb-tabs" style={{ marginBottom: 24 }}>
-        <button onClick={() => setSettTab('workbench')} className={`wb-tab${settTab === 'workbench' ? ' wb-tab-active' : ''}`}>Workbench</button>
         <button onClick={() => setSettTab('page')} className={`wb-tab${settTab === 'page' ? ' wb-tab-active' : ''}`}>Profile page</button>
+        <button onClick={() => setSettTab('appearance')} className={`wb-tab${settTab === 'appearance' ? ' wb-tab-active' : ''}`}>Appearance</button>
       </div>
 
       {settTab === 'page' && <PageBuilder />}
 
-      {settTab === 'workbench' && <div className="wb-settings-grid">
+      {settTab === 'appearance' && <div className="wb-settings-grid">
         <SettSection title="Accent color" sub="Used for highlights, the player, and active nav.">
           <div className="wb-swatch-row">
             {ACCENTS.map(c => (
@@ -1914,26 +2230,6 @@ function ViewSettings({ prefs, setPref }: { prefs: Prefs; setPref: (k: string, v
 
         <SettSection title="Sticky player dock" sub="Always show the player at the bottom.">
           <Toggle on={prefs.stickyDock} onChange={v => setPref('stickyDock', v)} />
-        </SettSection>
-
-        <SettSection title="Pinned tools" sub="What shows in the left rail. Home and Settings always visible." span={2}>
-          <div className="wb-pin-grid">
-            {TOOLS.map(t => {
-              const pinned = prefs.pinned.includes(t.k);
-              return (
-                <button key={t.k} onClick={() => setPref('togglePin', t.k)} className="wb-pin" style={{ borderColor: pinned ? `${prefs.accent}50` : 'var(--wb-line)', background: pinned ? `${prefs.accent}08` : 'var(--wb-bg-3)' }}>
-                  <div style={{ color: pinned ? prefs.accent : 'var(--wb-ink-3)', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><t.Icon s={18} /></div>
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13 }}>{t.label}</div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', marginTop: 2 }}>{t.sub}</div>
-                  </div>
-                  <div className="wb-role-pill" style={{ color: pinned ? prefs.accent : 'var(--wb-ink-3)', borderColor: pinned ? `${prefs.accent}40` : 'var(--wb-line-2)' }}>
-                    {pinned ? <><IcCheck s={11} /> pinned</> : 'pin'}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
         </SettSection>
 
         <SettSection title="Home panels" sub="What appears on Home below the greeting." span={2}>
