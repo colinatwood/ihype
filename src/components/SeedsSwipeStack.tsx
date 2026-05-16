@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 
 export type SeedsSwipeStackTrack = {
   id: string;
@@ -62,22 +62,18 @@ function IcX({ s = 16 }: { s?: number }) {
   );
 }
 
-const DEMO_SEEDS: SeedsSwipeStackSeed[] = [
-  { id: 'sd1', trackId: '1', reason: 'Because you HYPEd Maya Reyes' },
-  { id: 'sd2', trackId: '2', reason: 'Trending in Chicago' },
-  { id: 'sd3', trackId: '3', reason: 'DJ Vex played this last week' },
-  { id: 'sd4', trackId: '4', reason: 'High hype velocity this week' },
-  { id: 'sd5', trackId: '5', reason: 'New from an artist like yours' },
-];
-
 export function SeedsSwipeStack({ seeds, tracks, onSave, onSkip, onHype }: Props) {
-  const activeSeedList = seeds.length > 0 ? seeds : DEMO_SEEDS;
+  const activeSeedList = seeds;
   const [index, setIndex] = useState(0);
   const [swipeDir, setSwipeDir] = useState<'left' | 'right' | 'up' | null>(null);
   const [dragDx, setDragDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const dragStartX = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [seeds]);
 
   const seed = activeSeedList[index];
   const track = seed ? tracks.find(t => t.id === seed.trackId) : null;

@@ -172,6 +172,7 @@ export type WorkbenchData = {
   /** Profile types the logged-in user has: 'ARTIST' | 'VENUE' | 'LISTENER' | 'DJ' */
   activeProfileTypes: string[];
   profileId?: string;
+  profilePath?: string;
   listeningNow: number;
   hypedToday: number;
   showsTonight: number;
@@ -300,6 +301,10 @@ function OnboardingModal({ onDone }: { onDone: () => void }) {
 // ── Main shell ─────────────────────────────────────────────────
 export function WorkbenchShell({ data }: { data: WorkbenchData }) {
   const [view, setView] = useState<View>('home');
+  const [liveStats, setLiveStats] = useState({
+    listeningNow: data.listeningNow,
+    hypedToday: data.hypedToday,
+  });
   const [onboarded, setOnboarded] = useState(true); // true until mount check
   const [prefs, setPrefs] = useState<Prefs>(() => {
     if (typeof window === 'undefined') return DEFAULT_PREFS;
@@ -320,6 +325,40 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
 
   // Apply on mount
   useEffect(() => { applyPrefs(prefs); }, []); // eslint-disable-line
+
+  useEffect(() => {
+    setLiveStats({
+      listeningNow: data.listeningNow,
+      hypedToday: data.hypedToday,
+    });
+  }, [data.listeningNow, data.hypedToday]);
+
+  useEffect(() => {
+    let active = true;
+
+    const poll = async () => {
+      try {
+        const response = await fetch('/api/stats/live');
+        if (!response.ok) return;
+        const stats = await response.json() as Partial<Pick<WorkbenchData, 'listeningNow' | 'hypedToday'>>;
+        if (!active) return;
+        setLiveStats((current) => ({
+          listeningNow: typeof stats.listeningNow === 'number' ? stats.listeningNow : current.listeningNow,
+          hypedToday: typeof stats.hypedToday === 'number' ? stats.hypedToday : current.hypedToday,
+        }));
+      } catch {
+        // Keep the server-rendered stats if the live poll is unavailable.
+      }
+    };
+
+    void poll();
+    const id = setInterval(poll, 30000);
+
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, []);
 
   // Check onboarding state on mount
   useEffect(() => {
@@ -345,25 +384,26 @@ export function WorkbenchShell({ data }: { data: WorkbenchData }) {
 
   const showQueue = prefs.queueRail;
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const liveData: WorkbenchData = { ...data, ...liveStats };
 
   return (
     <DragTrackProvider>
       <div className="wb-root">
         {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
         {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={data.userInitials} accent={prefs.accent} activeProfileTypes={data.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={data.isVerified} />
-        <WbTopbar view={view} data={data} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
+        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} />
+        <WbTopbar view={view} data={liveData} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
         <main className="wb-main">
-          {view === 'home'     && <ViewHome data={data} prefs={prefs} setView={setView} />}
-          {view === 'discover' && <ViewDiscover data={data} />}
-          {view === 'seeds'    && <ViewSeeds data={data} />}
-          {view === 'tickets'  && <ViewTicketing data={data} activeProfileTypes={data.activeProfileTypes} />}
+          {view === 'home'     && <ViewHome data={liveData} prefs={prefs} setView={setView} />}
+          {view === 'discover' && <ViewDiscover data={liveData} />}
+          {view === 'seeds'    && <ViewSeeds data={liveData} />}
+          {view === 'tickets'  && <ViewTicketing data={liveData} activeProfileTypes={liveData.activeProfileTypes} />}
           {view === 'studio'   && <ViewRadioStudio />}
-          {view === 'artist'   && <ViewArtist data={data} />}
-          {view === 'venue'    && <ViewVenue data={data} />}
+          {view === 'artist'   && <ViewArtist data={liveData} />}
+          {view === 'venue'    && <ViewVenue data={liveData} />}
           {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
         </main>
-        {showQueue && <WbQueueRail data={data} />}
+        {showQueue && <WbQueueRail data={liveData} />}
         <WbPlayerDock queueRailOn={prefs.queueRail} onToggleQueue={() => setPref('queueRail', !prefs.queueRail)} />
       </div>
     </DragTrackProvider>
@@ -460,15 +500,6 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { playTrack } = useMediaPlayer();
-
-  useEffect(() => {
-    const poll = () => fetch('/api/stats/live').then(r => r.ok ? r.json() : null).then(d => {
-      if (!d) return;
-      // update is handled by parent re-render in future; for now we just log
-    }).catch(() => {});
-    const id = setInterval(poll, 30000);
-    return () => clearInterval(id);
-  }, []);
 
   useEffect(() => {
     if (debRef.current) clearTimeout(debRef.current);
@@ -726,6 +757,12 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
   const greeting = prefs.greeting === 'minimal' ? data.userName : prefs.greeting === 'data'
     ? `${data.stats[0]?.value ?? '—'} hypes this week.`
     : `Good ${tod}, ${data.userName}.`;
+  const shareProfile = () => {
+    const profileUrl = new URL(data.profilePath ?? '/', window.location.origin).toString();
+    navigator.clipboard.writeText(profileUrl).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="wb-view-pad">
@@ -741,11 +778,7 @@ function ViewHome({ data, prefs, setView }: { data: WorkbenchData; prefs: Prefs;
         <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
           <button className="wb-btn-prime" onClick={() => setView('studio')}><IcBolt s={12} /> Start a radio show</button>
           <button className="wb-btn-ghost" onClick={() => setView('tickets')}>Browse events →</button>
-          <button className="wb-btn-ghost" onClick={() => {
-            navigator.clipboard.writeText(`${window.location.origin}/home`).catch(() => {});
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-          }}>{copied ? 'Copied!' : 'Share your profile →'}</button>
+          <button className="wb-btn-ghost" onClick={shareProfile}>{copied ? 'Copied!' : 'Share your profile →'}</button>
         </div>
       </div>
 
@@ -1981,15 +2014,29 @@ function ViewSeeds({ data }: { data: WorkbenchData }) {
   const [tracks, setTracks] = useState<SeedsSwipeStackTrack[]>([]);
 
   useEffect(() => {
+    const fallbackTracks = data.tracks.map(t => ({
+      id: t.id, title: t.title, artistName: t.artistName, album: t.album,
+      color: t.color, durationLabel: t.duration, hypeCount: t.hypeCount,
+    }));
+    const fallbackSeeds = fallbackTracks.map(t => ({
+      id: t.id,
+      trackId: t.id,
+      reason: 'From your discover feed',
+    }));
+
     fetch('/api/discover/seeds')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error('Could not load seeds');
+        return r.json();
+      })
       .then((res: { seeds: Array<{ id: string; trackId: string; title?: string; artistName?: string; reason?: string }> }) => {
-        const fetchedSeeds: SeedsSwipeStackSeed[] = res.seeds.map(s => ({
+        const seedRows = Array.isArray(res.seeds) ? res.seeds : [];
+        const fetchedSeeds: SeedsSwipeStackSeed[] = seedRows.map(s => ({
           id: s.id,
           trackId: s.trackId,
           reason: s.reason,
         }));
-        const fetchedTracks: SeedsSwipeStackTrack[] = res.seeds.map(s => ({
+        const fetchedTracks: SeedsSwipeStackTrack[] = seedRows.map(s => ({
           id: s.trackId,
           title: s.title ?? 'Untitled',
           artistName: s.artistName ?? 'Unknown Artist',
@@ -2001,11 +2048,8 @@ function ViewSeeds({ data }: { data: WorkbenchData }) {
         setTracks(fetchedTracks);
       })
       .catch(() => {
-        // Fall back to data.tracks if API fails
-        setTracks(data.tracks.map(t => ({
-          id: t.id, title: t.title, artistName: t.artistName, album: t.album,
-          color: t.color, durationLabel: t.duration, hypeCount: t.hypeCount,
-        })));
+        setSeeds(fallbackSeeds);
+        setTracks(fallbackTracks);
       });
   }, [data.tracks]);
 

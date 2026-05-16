@@ -1133,65 +1133,69 @@ export function PromoterShowCreationTool({
 
     setPending(true);
 
-    const response = await fetch('/api/shows', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        status: 'DRAFT',
-        startsAt: startsAt.toISOString(),
-        endsAt: endsAt ? endsAt.toISOString() : undefined,
-        venueProfileId: selectedVenueProfileId,
-        headlinerProfileId,
-        promoterProfileId: selectedPromoterProfileId,
-        isTicketed: false,
-        bookingLegalNotes: buildLiveEventLegalNotes(),
-        tags: [
-          'live-event',
-          'venue-approval-required',
-          ...liveTags
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter(Boolean)
-        ]
-      })
-    });
+    try {
+      const response = await fetch('/api/shows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim() || undefined,
+          status: 'DRAFT',
+          startsAt: startsAt.toISOString(),
+          endsAt: endsAt ? endsAt.toISOString() : undefined,
+          venueProfileId: selectedVenueProfileId,
+          headlinerProfileId,
+          promoterProfileId: selectedPromoterProfileId,
+          isTicketed: false,
+          bookingLegalNotes: buildLiveEventLegalNotes(),
+          tags: [
+            'live-event',
+            'venue-approval-required',
+            ...liveTags
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter(Boolean)
+          ]
+        })
+      });
 
-    const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
-    if (response.ok) {
-      const nextShowHref = `/shows/${data.slug}`;
+      if (response.ok) {
+        const nextShowHref = `/shows/${data.slug}`;
 
-      if (setListTracks.length > 0 && data.id) {
-        await fetch(`/api/shows/${data.id}/tracks/batch`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tracks: setListTracks.map((t, i) => ({
-              position: i,
-              title: t.title,
-              artistName: t.artistName,
-              mediaHexId: t.mediaHexId
-            }))
-          })
-        }).catch(() => null);
+        if (setListTracks.length > 0 && data.id) {
+          await fetch(`/api/shows/${data.id}/tracks/batch`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tracks: setListTracks.map((t, i) => ({
+                position: i,
+                title: t.title,
+                artistName: t.artistName,
+                mediaHexId: t.mediaHexId
+              }))
+            })
+          }).catch(() => null);
+        }
+
+        setTitle('');
+        setDescription('');
+        setLiveStartsAt('');
+        setLiveEndsAt('');
+        setLiveTags('live-event, venue-review');
+        setSetListTracks([]);
+        setLastSavedShowHref(nextShowHref);
+        setMessage(`Live event draft saved. ${data.title} is ready for venue review before ticketing opens.`);
+        router.refresh();
+      } else {
+        setMessage(data.error ?? 'Could not save the live event draft.');
       }
-
-      setTitle('');
-      setDescription('');
-      setLiveStartsAt('');
-      setLiveEndsAt('');
-      setLiveTags('live-event, venue-review');
-      setSetListTracks([]);
-      setLastSavedShowHref(nextShowHref);
-      setMessage(`Live event draft saved. ${data.title} is ready for venue review before ticketing opens.`);
-      router.refresh();
-    } else {
-      setMessage(data.error ?? 'Could not save the live event draft.');
+    } catch {
+      setMessage('Could not save the live event draft. Please try again.');
+    } finally {
+      setPending(false);
     }
-
-    setPending(false);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {

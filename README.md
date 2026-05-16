@@ -153,7 +153,7 @@ Without `SMOKE_BASE_URL`, the script checks `http://localhost:3000`.
 ### Vercel config refresh
 
 - `package.json` now uses `postinstall: prisma generate` so Prisma Client is regenerated during Vercel installs.
-- `package.json` now exposes `vercel-build` to keep the Vercel build pipeline explicit: `prisma generate && prisma migrate deploy && next build`.
+- `package.json` now exposes `vercel-build` to keep the Vercel build pipeline explicit: `node scripts/prisma-migrate-retry.mjs && prisma generate && next build`.
 - `vercel.json` now points `buildCommand` at `npm run vercel-build` and keeps the function duration override scoped to `src/app/api/**/route.{ts,js}`.
 - The old `installCommand` override was removed so Vercel can use its framework-default install behavior.
 

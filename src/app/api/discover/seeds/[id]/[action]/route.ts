@@ -14,9 +14,23 @@ export async function POST(
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  await db.seed.create({
-    data: { userId: session.user.id, mediaId: id, action },
-  }).catch(() => {});
+  try {
+    const media = await db.artistMediaAsset.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!media) {
+      return NextResponse.json({ ok: false, error: 'Seed media was not found.' }, { status: 404 });
+    }
+
+    await db.seed.create({
+      data: { userId: session.user.id, mediaId: id, action },
+    });
+  } catch (error) {
+    console.error('[discover/seeds] failed to record action', error);
+    return NextResponse.json({ ok: false, error: 'Could not record seed action.' }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -24,6 +24,13 @@ function discoverHref(type: ProfileType) {
   return '/artists';
 }
 
+function profileHref(type: ProfileType, slug: string) {
+  if (type === 'DJ') return `/promoters/${slug}`;
+  if (type === 'VENUE') return `/venues/${slug}`;
+  if (type === 'LISTENER') return `/fans/${slug}`;
+  return `/artists/${slug}`;
+}
+
 // Palette for track art gradients (cycles through)
 const COLORS = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#7fb3ff'];
 
@@ -190,6 +197,7 @@ export default async function HomePage() {
     radioShows,
     activeProfileTypes,
     profileId: profile.id,
+    profilePath: profileHref(profile.type, profile.slug),
     lifeStats,
     listeningNow: discoverFeed.mediaEntries.reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
     hypedToday: discoverFeed.mediaEntries.slice(0, 10).reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),

@@ -70,11 +70,11 @@ commits that would be lost from each side and ask before proceeding.
 
 ### Vercel build script
 
-`vercel-build` uses a semicolon before `prisma generate` so a DB-connectivity
-failure during `prisma migrate deploy` does not block `next build`:
+`vercel-build` runs migrations through `scripts/prisma-migrate-retry.mjs` before
+`prisma generate` and `next build`. The retry wrapper handles transient
+Postgres migration-lock contention, but a real migration failure must block the
+deployment so the app is not published against an incompatible schema:
 
 ```
-"vercel-build": "prisma migrate deploy; prisma generate && next build"
+"vercel-build": "node scripts/prisma-migrate-retry.mjs && prisma generate && next build"
 ```
-
-Do not change this back to `&&`.

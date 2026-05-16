@@ -26,9 +26,8 @@ export default function OgImage() {
 
         {/* Centre: headline */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ fontSize: 72, fontWeight: 900, color: '#f0ebe5', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
-            Independent music,
-            <br />
+          <div style={{ display: 'flex', flexDirection: 'column', fontSize: 72, fontWeight: 900, color: '#f0ebe5', lineHeight: 1.05, letterSpacing: '-0.03em' }}>
+            <span>Independent music,</span>
             <span style={{ color: '#ff5029' }}>built for the scene.</span>
           </div>
           <div style={{ fontSize: 28, color: '#5a5048', maxWidth: 780 }}>
