@@ -144,7 +144,19 @@ export type WbTicket = {
 export type WbActivity = {
   text: string;
   time: string;
-  kind: 'hype' | 'show' | 'radio' | 'payout';
+  kind: 'hype' | 'show' | 'radio' | 'payout' | 'request' | 'security';
+};
+
+export type WbNotification = {
+  id: string;
+  title: string;
+  body: string;
+  time: string;
+  kind: WbActivity['kind'];
+  actionLabel?: string;
+  view?: View;
+  href?: string;
+  unread?: boolean;
 };
 
 export type WbRadioShow = {
@@ -178,6 +190,8 @@ export type WorkbenchData = {
   profilePath?: string;
   pendingVenueRequestCount?: number;
   profileCompletion?: { percent: number; missing: string[]; checks?: Array<{ label: string; ok: boolean }> };
+  notifications?: WbNotification[];
+  referralStats?: { clicks: number; buyers: number; grossCents: number; payoutCents: number };
   listeningNow: number;
   hypedToday: number;
   showsTonight: number;
@@ -246,7 +260,7 @@ function WbSkeleton({ width, height, style }: { width?: number | string; height?
   return <div className="wb-skeleton" style={{ width: width ?? '100%', height: height ?? 16, ...style }} />;
 }
 
-type View = 'home' | 'discover' | 'seeds' | 'tickets' | 'studio' | 'artist' | 'venue' | 'settings';
+type View = 'home' | 'discover' | 'seeds' | 'tickets' | 'studio' | 'artist' | 'venue' | 'settings' | 'inbox';
 
 // ── Onboarding modal ───────────────────────────────────────────
 function OnboardingModal({ onDone }: { onDone: () => void }) {
@@ -416,6 +430,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
           {view === 'artist'   && <ViewArtist data={liveData} />}
           {view === 'venue'    && <ViewVenue data={liveData} />}
           {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} />}
+          {view === 'inbox'    && <ViewInbox data={liveData} setView={setView} />}
         </main>
         {showQueue && <WbQueueRail data={liveData} />}
         <WbPlayerDock queueRailOn={prefs.queueRail} onToggleQueue={() => setPref('queueRail', !prefs.queueRail)} />
@@ -499,7 +514,7 @@ function SidebarBtn({ active, onClick, label, children, accent }: { active: bool
 // ── Topbar ─────────────────────────────────────────────────────
 const VIEW_TITLES: Record<View, string> = {
   home: 'Home', discover: 'Discover', seeds: 'Seeds', tickets: 'Ticketing',
-  studio: 'Studio', artist: 'Artist', venue: 'Venue', settings: 'Settings',
+  studio: 'Studio', artist: 'Artist', venue: 'Venue', settings: 'Settings', inbox: 'Inbox',
 };
 
 type SearchHit = { type: string; id: string; name: string; subtitle: string; slug?: string };
@@ -514,6 +529,7 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
   const wrapRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { playTrack } = useMediaPlayer();
+  const unreadCount = data.notifications?.filter(n => n.unread).length ?? 0;
 
   useEffect(() => {
     if (debRef.current) clearTimeout(debRef.current);
@@ -579,6 +595,13 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
         <span style={{ color: '#22e5d4', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}><IcDot c="#22e5d4" s={6} /> {data.listeningNow.toLocaleString()} listening</span>
         <span className="wb-top-dot" />
         <span style={{ fontSize: 11, color: 'var(--wb-ink-3)' }}>{data.hypedToday} hyped today</span>
+        <button
+          type="button"
+          onClick={() => setView('inbox')}
+          style={{ marginLeft: 8, border: '1px solid var(--wb-line-2)', borderRadius: 999, background: view === 'inbox' ? 'var(--wb-bg-3)' : 'transparent', color: 'var(--wb-ink-2)', fontFamily: 'var(--f-m)', fontSize: 10, padding: '5px 9px', cursor: 'pointer' }}
+        >
+          Inbox{unreadCount ? ` ${unreadCount}` : ''}
+        </button>
       </div>
       <div className="wb-search" ref={wrapRef} style={{ position: 'relative' }}>
         <IcSearch s={13} />
@@ -902,10 +925,17 @@ function ShareAndGrowCard({ data }: { data: WorkbenchData }) {
   const [copied, setCopied] = useState(false);
   const types = data.activeProfileTypes || [];
   const isArtistOrDJ = types.includes('ARTIST') || types.includes('DJ');
-  if (!isArtistOrDJ || !data.profileHexId) return null;
+  if (!data.profilePath) return null;
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://ihype.org';
   const referralUrl = `${origin}/register?ref=${data.profileHexId}`;
   const profileUrl = `${origin}${data.profilePath ?? ''}`;
+  const primaryUrl = isArtistOrDJ && data.profileHexId ? referralUrl : profileUrl;
+  const primaryLabel = isArtistOrDJ ? 'Copy referral' : 'Copy profile';
+  const primaryCopy = isArtistOrDJ
+    ? 'Share your referral link for attribution. Promoter payouts only happen when the referred person buys a ticketed show.'
+    : types.includes('VENUE')
+    ? 'Share your venue page so artists, promoters, and fans can find shows and booking context.'
+    : 'Share your fan page to show the artists, venues, and events shaping your scene.';
   async function copy(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -917,15 +947,15 @@ function ShareAndGrowCard({ data }: { data: WorkbenchData }) {
     <section className="wb-panel" style={{ marginTop: 16, padding: '18px 22px', background: 'linear-gradient(135deg, rgba(185,131,255,0.08), rgba(34,229,212,0.05))', border: '1px solid rgba(185,131,255,0.25)' }}>
       <div className="wb-eyebrow" style={{ color: '#b983ff', marginBottom: 6 }}>● SHARE &amp; GROW</div>
       <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18, color: 'var(--wb-ink)', marginBottom: 4 }}>Invite fans &amp; build your network</div>
-      <p className="wb-page-sub" style={{ marginBottom: 12, fontSize: 13 }}>Anyone who joins iHYPE through your referral link is attributed to you. Share it on socials, in your bio, or with friends.</p>
+      <p className="wb-page-sub" style={{ marginBottom: 12, fontSize: 13 }}>{primaryCopy}</p>
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-        <input readOnly value={referralUrl} style={{ flex: 1, padding: '8px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-accent)', outline: 'none' }} onClick={(e) => (e.target as HTMLInputElement).select()} />
-        <button className="wb-btn-prime" onClick={() => copy(referralUrl)} style={{ whiteSpace: 'nowrap' }}>{copied ? 'Copied ✓' : 'Copy referral'}</button>
+        <input readOnly value={primaryUrl} style={{ flex: 1, padding: '8px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-accent)', outline: 'none' }} onClick={(e) => (e.target as HTMLInputElement).select()} />
+        <button className="wb-btn-prime" onClick={() => copy(primaryUrl)} style={{ whiteSpace: 'nowrap' }}>{copied ? 'Copied ✓' : primaryLabel}</button>
       </div>
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      {isArtistOrDJ ? <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <input readOnly value={profileUrl} style={{ flex: 1, padding: '8px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink-2)', outline: 'none' }} onClick={(e) => (e.target as HTMLInputElement).select()} />
         <button className="wb-btn-ghost" onClick={() => copy(profileUrl)} style={{ whiteSpace: 'nowrap' }}>Copy profile</button>
-      </div>
+      </div> : null}
     </section>
   );
 }
@@ -946,6 +976,105 @@ function VenueIncomingRequestsCard({ data }: { data: WorkbenchData }) {
         <a className="wb-btn-prime" href={`${data.profilePath}?section=request`} style={{ whiteSpace: 'nowrap', textDecoration: 'none' }}>Review →</a>
       ) : null}
     </section>
+  );
+}
+
+const ACTIVITY_COLORS: Record<WbActivity['kind'], string> = {
+  hype: '#ff3e9a',
+  show: '#22e5d4',
+  radio: '#b983ff',
+  payout: '#ffb84a',
+  request: '#7fb3ff',
+  security: '#ff5029'
+};
+
+function RoleNextActionHub({ data, setView }: { data: WorkbenchData; setView: (v: View) => void }) {
+  const type = data.profileType ?? data.activeProfileTypes[0] ?? 'LISTENER';
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://ihype.org';
+  const profileUrl = data.profilePath ? `${origin}${data.profilePath}` : origin;
+  const referralUrl = data.profileHexId ? `${origin}/register?ref=${data.profileHexId}` : profileUrl;
+  const cards: Array<{ title: string; copy: string; action: string; view?: View; href?: string; run?: () => void | Promise<void> }> = type === 'ARTIST'
+    ? [
+        { title: 'Promote this week', copy: 'Share your profile, push a track, and point fans at the next show.', action: 'Share profile', run: () => navigator.clipboard?.writeText(profileUrl) },
+        { title: 'Fan insights', copy: `${data.lifeStats?.totalHype ?? 0} total hypes and ${data.lifeStats?.songsPlayed ?? 0} listens are shaping your audience.`, action: 'Open artist tools', view: 'artist' as View },
+        { title: 'Press kit', copy: 'Use your public page as the lightweight media kit for venues and promoters.', action: 'View page', href: data.profilePath }
+      ]
+    : type === 'DJ'
+    ? [
+        { title: 'Referral performance', copy: `${data.referralStats?.buyers ?? 0} buyers, $${((data.referralStats?.payoutCents ?? 0) / 100).toFixed(0)} estimated promoter payout.`, action: 'Open referrals', view: 'tickets' as View },
+        { title: 'Curate radio', copy: 'Start a free live or prerecorded show to grow demand before ticketed events.', action: 'Create show', view: 'studio' as View },
+        { title: 'Event templates', copy: 'Reuse show copy, announce links, and post-event recap language.', action: 'Create event', view: 'tickets' as View }
+      ]
+    : type === 'VENUE'
+    ? [
+        { title: 'Booking inbox', copy: `${data.pendingVenueRequestCount ?? 0} pending request${(data.pendingVenueRequestCount ?? 0) === 1 ? '' : 's'} from artists and fans.`, action: 'Review requests', view: 'venue' as View },
+        { title: 'Open nights', copy: 'Use ticketing to turn available dates into confirmed shows.', action: 'Create event', view: 'tickets' as View },
+        { title: 'Door tools', copy: 'QR scanning, guest list, sales, and payout status live together.', action: 'Open scanner', view: 'tickets' as View }
+      ]
+    : [
+        { title: 'My Scene', copy: 'Hyped artists, followed venues, radio picks, and upcoming shows in one loop.', action: 'Tune feed', view: 'seeds' as View },
+        { title: 'Show reminders', copy: data.shows[0] ? `Next nearby pick: ${data.shows[0].name}.` : 'Hype artists and shows to build reminders.', action: 'Browse events', view: 'tickets' as View },
+        { title: 'Share discoveries', copy: 'Send a profile, show, or radio set to help the scene travel.', action: 'Discover', view: 'discover' as View }
+      ];
+
+  return (
+    <section className="wb-panel" style={{ marginBottom: 16, padding: '18px 20px' }}>
+      <div className="wb-panel-head">
+        <div>
+          <div className="wb-panel-title">Next best actions</div>
+          <div className="wb-small-muted">Role-aware moves that keep discovery, sharing, tickets, and creation connected.</div>
+        </div>
+      </div>
+      <div className="wb-first-step-grid">
+        {cards.map((card) => {
+          const content = (
+            <>
+              <strong>{card.title}</strong>
+              <span>{card.copy}</span>
+              <em style={{ color: 'var(--wb-accent)', fontStyle: 'normal', fontFamily: 'var(--f-m)', fontSize: 10, marginTop: 6 }}>{card.action}</em>
+            </>
+          );
+          if (card.href) return <a className="wb-first-step" href={card.href} key={card.title}>{content}</a>;
+          return <button className="wb-first-step" key={card.title} onClick={() => card.run ? card.run() : card.view ? setView(card.view) : undefined} type="button">{content}</button>;
+        })}
+      </div>
+      {type === 'DJ' || type === 'ARTIST' ? (
+        <div className="wb-small-muted" style={{ marginTop: 12 }}>
+          Referral payouts apply only when a buyer uses your referral code on a ticketed show. Radio shows remain free community curation.
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ViewInbox({ data, setView }: { data: WorkbenchData; setView: (v: View) => void }) {
+  const notifications = data.notifications ?? [];
+  return (
+    <div className="wb-view-pad" style={{ maxWidth: 900 }}>
+      <div className="wb-greet">
+        <div>
+          <div className="wb-eyebrow" style={{ color: '#7fb3ff' }}>● INBOX · ACTIONS</div>
+          <h1 className="wb-page-title">Notifications</h1>
+          <p className="wb-page-sub">Ticket updates, booking requests, referrals, verification, and show reminders.</p>
+        </div>
+      </div>
+      <section className="wb-panel">
+        {notifications.length === 0 ? (
+          <div className="wb-empty">Nothing needs attention right now.</div>
+        ) : notifications.map((n) => (
+          <div key={n.id} className="wb-act-row" style={{ alignItems: 'flex-start' }}>
+            <div className="wb-act-dot" style={{ background: ACTIVITY_COLORS[n.kind] }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="wb-act-txt" style={{ color: 'var(--wb-ink)' }}>{n.title}</div>
+              <div className="wb-small-muted" style={{ marginTop: 3 }}>{n.body}</div>
+            </div>
+            <div className="wb-act-time">{n.time}</div>
+            {n.view ? <button className="wb-btn-ghost-sm" onClick={() => setView(n.view!)}>{n.actionLabel ?? 'Open'}</button> : null}
+            {n.href ? <a className="wb-btn-ghost-sm" href={n.href} style={{ textDecoration: 'none' }}>{n.actionLabel ?? 'Open'}</a> : null}
+          </div>
+        ))}
+      </section>
+    </div>
   );
 }
 
@@ -984,6 +1113,7 @@ function ViewHome({ data, prefs, setView, starterPack = [] }: { data: WorkbenchD
       </div>
 
       <WbFirstSteps data={data} setView={setView} />
+      <RoleNextActionHub data={data} setView={setView} />
       <ShareAndGrowCard data={data} />
       <VenueIncomingRequestsCard data={data} />
       <StarterPackPanel items={starterPack} />
@@ -1037,7 +1167,7 @@ function ViewHome({ data, prefs, setView, starterPack = [] }: { data: WorkbenchD
               <div>
                 {data.activity.map((a, i) => (
                   <div key={i} className="wb-act-row">
-                    <div className="wb-act-dot" style={{ background: { hype: '#ff3e9a', show: '#22e5d4', radio: '#b983ff', payout: '#ffb84a' }[a.kind] }} />
+                    <div className="wb-act-dot" style={{ background: ACTIVITY_COLORS[a.kind] }} />
                     <div style={{ flex: 1 }}>
                       <div className="wb-act-txt">{a.text}</div>
                     </div>
@@ -1428,6 +1558,13 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
               <div className="wb-act-row" style={{ color: 'var(--wb-ink-3)', fontSize: 13 }}>No tickets yet — browse shows to get started.</div>
             )}
           </div>
+          {data.tickets.length > 0 ? (
+            <div className="wb-panel" style={{ marginTop: 14, padding: '16px 18px' }}>
+              <div className="wb-panel-title">Post-show recap</div>
+              <p className="wb-page-sub" style={{ fontSize: 12, margin: '6px 0 12px' }}>After the show, save the artists discovered, songs played, and a shareable memory for your scene.</p>
+              <button className="wb-btn-ghost" onClick={() => setTab('recommended')}>Find related artists</button>
+            </div>
+          ) : null}
         </>
       )}
 
@@ -1529,6 +1666,16 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
                 </div>
               ))}
             </div>
+            <div className="wb-panel" style={{ marginTop: 12, padding: '16px 18px', display: 'flex', gap: 12, alignItems: 'center' }}>
+              <div style={{ width: 42, height: 42, borderRadius: 8, background: 'rgba(34,229,212,.12)', color: '#22e5d4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--f-d)', fontWeight: 800 }}>
+                {data.pendingVenueRequestCount ?? 0}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div className="wb-panel-title">Booking request inbox</div>
+                <div className="wb-small-muted">Review artist requests, fan recommendations, pending holds, and open-night opportunities.</div>
+              </div>
+              {data.profilePath ? <a className="wb-btn-prime" href={`${data.profilePath}?section=request`} style={{ textDecoration: 'none' }}>Open requests</a> : null}
+            </div>
             <div className="wb-panel" style={{ marginTop: 12 }}>
               <div className="wb-panel-head">
                 <div className="wb-panel-title">All shows</div>
@@ -1559,7 +1706,21 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
         <div className="wb-panel" style={{ marginTop: 20, padding: '24px 28px' }}>
           <div className="wb-eyebrow" style={{ color: '#b983ff', marginBottom: 10 }}>● PROMOTER / DJ · REFERRAL LINKS · 10% ON TICKETS YOU DRIVE</div>
           <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 24, letterSpacing: '-.02em', color: 'var(--wb-ink)', margin: '0 0 8px' }}>Your referral link</h2>
-          <p className="wb-page-sub" style={{ marginBottom: 24 }}>Share your link for any event. When fans buy tickets through it, you earn 10% — paid automatically by iHYPE, no invoice required.</p>
+          <p className="wb-page-sub" style={{ marginBottom: 18 }}>Share your link for ticketed events. When fans buy tickets through it, you earn your promoter portion of the ticket payout. Free radio shows do not create payouts.</p>
+          <div className="wb-stat-row" style={{ marginBottom: 18 }}>
+            {[
+              { label: 'LINK CLICKS', value: String(data.referralStats?.clicks ?? 0), delta: 'tracked joins', color: '#b983ff' },
+              { label: 'TICKET BUYERS', value: String(data.referralStats?.buyers ?? 0), delta: 'orders attributed', color: '#22e5d4' },
+              { label: 'GROSS DRIVEN', value: `$${((data.referralStats?.grossCents ?? 0) / 100).toFixed(0)}`, delta: 'ticket sales', color: '#ff3e9a' },
+              { label: 'EST. PAYOUT', value: `$${((data.referralStats?.payoutCents ?? 0) / 100).toFixed(0)}`, delta: 'promoter portion', color: '#ffb84a' }
+            ].map(s => (
+              <div key={s.label} className="wb-stat-card">
+                <div className="wb-stat-l">{s.label}</div>
+                <div className="wb-stat-v">{s.value}</div>
+                <div className="wb-stat-d" style={{ color: s.color }}>{s.delta}</div>
+              </div>
+            ))}
+          </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 20 }}>
             <input readOnly value={`https://ihype.org/register?ref=${data.profileHexId ?? data.userInitials?.toLowerCase() ?? 'you'}`} style={{ flex: 1, padding: '10px 14px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--wb-accent)', outline: 'none' }} />
             <button className="wb-btn-prime" onClick={() => navigator.clipboard?.writeText(`https://ihype.org/register?ref=${data.profileHexId ?? data.userInitials?.toLowerCase() ?? 'you'}`)}>Copy</button>

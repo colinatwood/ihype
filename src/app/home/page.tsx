@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { getSharedDiscoverFeed } from '@/lib/discover-feed';
 import { detectRequestLocation } from '@/lib/request-location';
 import type { ProfileType } from '@prisma/client';
-import { WorkbenchShell, type WorkbenchData, type WbStat, type WbTrack, type WbShow, type WbActivity } from '@/components/WorkbenchShell';
+import { WorkbenchShell, type WorkbenchData, type WbStat, type WbTrack, type WbShow, type WbActivity, type WbNotification } from '@/components/WorkbenchShell';
 import { EmailVerificationBanner } from '@/components/EmailVerificationBanner';
 
 export const dynamic = 'force-dynamic';
@@ -245,6 +245,20 @@ export default async function HomePage() {
   const pendingVenueRequestCount = profile.type === 'VENUE'
     ? await db.venueConnectionRequest.count({ where: { venueProfileId: profile.id, status: 'PENDING' } }).catch(() => 0)
     : 0;
+  const referralStats = profile.type === 'DJ'
+    ? await Promise.all([
+        db.ticketOrder.count({ where: { affiliatePromoterProfileId: profile.id, status: { not: 'VOID' } } }),
+        db.ticketOrder.aggregate({
+          where: { affiliatePromoterProfileId: profile.id, status: { not: 'VOID' } },
+          _sum: { totalChargeCents: true, promoterPayoutCents: true }
+        })
+      ]).then(([buyers, sums]) => ({
+        clicks: buyers,
+        buyers,
+        grossCents: sums._sum.totalChargeCents ?? 0,
+        payoutCents: sums._sum.promoterPayoutCents ?? 0
+      })).catch(() => ({ clicks: 0, buyers: 0, grossCents: 0, payoutCents: 0 }))
+    : undefined;
 
   // ── Fan activity feed (recent uploads + upcoming shows from hyped profiles) ──
   let fanActivityFeed: WbActivity[] = [];
@@ -299,6 +313,72 @@ export default async function HomePage() {
     : discoverFeed.mediaEntries.length > 0
     ? `${discoverFeed.mediaEntries.length} new tracks in your discover feed.`
     : `Welcome to your iHYPE workbench, ${roleLabel(profile.type)}.`;
+  const emailVerified = (session.user as { emailVerified?: Date | string | null }).emailVerified ?? null;
+  const needsEmailVerification = !emailVerified && Boolean(session.user.email);
+  const profileCompletion = getProfileCompletion(profile, eventsResult.upcoming.length + eventsResult.past.length);
+  const notificationCandidates: Array<WbNotification | null> = [
+    needsEmailVerification ? {
+      id: 'verify-email',
+      title: 'Verify your email',
+      body: 'Keep ticket updates, booking requests, and security alerts deliverable.',
+      time: 'now',
+      kind: 'security',
+      href: '/verify-email',
+      actionLabel: 'Verify',
+      unread: true
+    } : null,
+    profileCompletion.percent < 100 ? {
+      id: 'profile-completion',
+      title: 'Finish your public page',
+      body: `${profileCompletion.missing.slice(0, 2).join(' + ') || 'A few details'} will make discovery and booking easier.`,
+      time: 'today',
+      kind: 'hype',
+      view: 'settings',
+      actionLabel: 'Edit page',
+      unread: true
+    } : null,
+    pendingVenueRequestCount > 0 ? {
+      id: 'venue-requests',
+      title: 'Booking requests waiting',
+      body: `${pendingVenueRequestCount} artist or fan recommendation${pendingVenueRequestCount === 1 ? '' : 's'} need a venue response.`,
+      time: 'new',
+      kind: 'request',
+      view: 'venue',
+      actionLabel: 'Review',
+      unread: true
+    } : null,
+    nextShow ? {
+      id: 'next-show',
+      title: 'Upcoming show reminder',
+      body: `${nextShow.title} is ${nextShow.startsAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}. Share it or prep your ticket.`,
+      time: 'soon',
+      kind: 'show',
+      view: 'tickets',
+      actionLabel: 'Open',
+      unread: false
+    } : null,
+    profile.type === 'DJ' ? {
+      id: 'referral-stats',
+      title: 'Referral analytics updated',
+      body: `${referralStats?.buyers ?? 0} ticket buyer${(referralStats?.buyers ?? 0) === 1 ? '' : 's'} attributed to your promoter link.`,
+      time: 'live',
+      kind: 'payout',
+      view: 'tickets',
+      actionLabel: 'View',
+      unread: false
+    } : null,
+    radioShows[0] ? {
+      id: 'radio-pick',
+      title: 'Radio curation is active',
+      body: `${radioShows[0].name} is available for listeners in the Radio tab.`,
+      time: radioShows[0].live ? 'live' : 'next',
+      kind: 'radio',
+      view: 'studio',
+      actionLabel: 'Create yours',
+      unread: false
+    } : null
+  ];
+  const notifications = notificationCandidates.filter((item): item is WbNotification => Boolean(item));
 
   const wbData: WorkbenchData = {
     userName: parts[0] ?? userName,
@@ -317,7 +397,9 @@ export default async function HomePage() {
     profileHexId: profile.hexId,
     profilePath: profileHref(profile.type, profile.slug),
     pendingVenueRequestCount,
-    profileCompletion: getProfileCompletion(profile, eventsResult.upcoming.length + eventsResult.past.length),
+    profileCompletion,
+    notifications,
+    referralStats,
     lifeStats,
     listeningNow: discoverFeed.mediaEntries.reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
     hypedToday: discoverFeed.mediaEntries.slice(0, 10).reduce((a, e) => a + (e.artistHypeCount ?? 0), 0),
@@ -326,9 +408,6 @@ export default async function HomePage() {
       return diff >= 0 && diff < 24 * 60 * 60 * 1000;
     }).length,
   };
-
-  const emailVerified = (session.user as { emailVerified?: Date | string | null }).emailVerified ?? null;
-  const needsEmailVerification = !emailVerified && Boolean(session.user.email);
 
   // Starter pack: only fetched if the user has no signal yet.
   const userTotalHype = await db.hypeEvent.count({ where: { userId } }).catch(() => 0);

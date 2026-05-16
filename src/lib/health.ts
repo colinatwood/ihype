@@ -2,7 +2,7 @@ import { db } from '@/lib/db';
 import { isEmailDeliveryConfigured, isSmtpEmailConfigured } from '@/lib/mailer';
 import { isBlobMediaStorageConfigured } from '@/lib/media-storage';
 import { isPaymentProcessingConfigured } from '@/lib/payments';
-import { areDemoLoginsEnabled, areLiveStreamsEnabled, isInviteCodeRequired, shouldHideDemoContent } from '@/lib/runtime-flags';
+import { areDemoLoginsEnabledRuntime, areLiveStreamsEnabledRuntime, isInviteCodeRequiredRuntime, shouldHideDemoContentRuntime } from '@/lib/runtime-flags';
 
 export async function getHealthSnapshot() {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -18,6 +18,13 @@ export async function getHealthSnapshot() {
         db.profile.count({ where: { verificationStatus: 'PENDING' } }),
         db.ticketOrder.count({ where: { status: 'RESERVED' } })
       ]);
+
+    const [demoLogins, inviteOnlySignup, demoContentHidden, liveStreams] = await Promise.all([
+      areDemoLoginsEnabledRuntime(),
+      isInviteCodeRequiredRuntime(),
+      shouldHideDemoContentRuntime(),
+      areLiveStreamsEnabledRuntime()
+    ]);
 
     return {
       status: 'ok' as const,
@@ -39,12 +46,12 @@ export async function getHealthSnapshot() {
         smtpEmail: isSmtpEmailConfigured(),
         blobMediaStorage: isBlobMediaStorageConfigured(),
         ticketPaymentCapture: isPaymentProcessingConfigured(),
-        liveStreams: areLiveStreamsEnabled()
+        liveStreams
       },
       safety: {
-        demoLogins: areDemoLoginsEnabled(),
-        inviteOnlySignup: isInviteCodeRequired(),
-        demoContentHidden: shouldHideDemoContent()
+        demoLogins,
+        inviteOnlySignup,
+        demoContentHidden
       }
     };
   } catch (error) {

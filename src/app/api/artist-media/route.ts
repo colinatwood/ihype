@@ -5,7 +5,7 @@ import { createHexId } from '@/lib/hex-id';
 import { validateArtistMediaUpload } from '@/lib/media-validation';
 import { isBlobMediaStorageConfigured, uploadArtistMediaToBlob } from '@/lib/media-storage';
 import { canManageOwnedResource } from '@/lib/permissions';
-import { areDatabaseMediaUploadsEnabled } from '@/lib/runtime-flags';
+import { areDatabaseMediaUploadsEnabledRuntime } from '@/lib/runtime-flags';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
     const hexId = createHexId();
     const hasBlobStorage = isBlobMediaStorageConfigured();
 
-    if (!hasBlobStorage && !areDatabaseMediaUploadsEnabled()) {
+    if (!hasBlobStorage && !(await areDatabaseMediaUploadsEnabledRuntime())) {
       return NextResponse.json(
         {
           error:

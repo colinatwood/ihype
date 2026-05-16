@@ -8,9 +8,16 @@ import { AdminFeatureFlags } from '@/components/AdminFeatureFlags';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getHealthSnapshot } from '@/lib/health';
+import { isBlobMediaStorageConfigured } from '@/lib/media-storage';
 import { isPaymentProcessingConfigured } from '@/lib/payments';
 import { isAdminSession } from '@/lib/permissions';
-import { areDemoLoginsEnabled, areLiveStreamsEnabled, isInviteCodeRequired, shouldHideDemoContent } from '@/lib/runtime-flags';
+import {
+  areDemoLoginsEnabledRuntime,
+  areLiveStreamsEnabledRuntime,
+  getRuntimeFlag,
+  isInviteCodeRequiredRuntime,
+  shouldHideDemoContentRuntime
+} from '@/lib/runtime-flags';
 import { featureShowAction } from './users/actions';
 
 export const metadata: Metadata = {
@@ -132,13 +139,28 @@ export default async function AdminPage() {
     })
   ]);
 
+  const [
+    demoLoginsEnabled,
+    inviteOnlySignupEnabled,
+    demoContentHidden,
+    liveStreamsEnabled,
+    blobMediaStorageEnabled,
+    ticketPaymentCaptureEnabled
+  ] = await Promise.all([
+    areDemoLoginsEnabledRuntime(),
+    isInviteCodeRequiredRuntime(),
+    shouldHideDemoContentRuntime(),
+    areLiveStreamsEnabledRuntime(),
+    getRuntimeFlag('blob_media_storage', isBlobMediaStorageConfigured()),
+    getRuntimeFlag('ticket_payment_capture', isPaymentProcessingConfigured())
+  ]);
   const featureFlags = [
-    { key: 'demo_logins', label: 'Demo logins', enabled: areDemoLoginsEnabled() },
-    { key: 'invite_only_signup', label: 'Invite-only signup', enabled: isInviteCodeRequired() },
-    { key: 'hide_demo_content', label: 'Hide demo content', enabled: shouldHideDemoContent() },
-    { key: 'live_streams', label: 'Live streams', enabled: areLiveStreamsEnabled() },
-    { key: 'blob_media_storage', label: 'Blob media storage', enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN) },
-    { key: 'ticket_payment_capture', label: 'Ticket payment capture', enabled: isPaymentProcessingConfigured() }
+    { key: 'demo_logins', label: 'Demo logins', enabled: demoLoginsEnabled },
+    { key: 'invite_only_signup', label: 'Invite-only signup', enabled: inviteOnlySignupEnabled },
+    { key: 'hide_demo_content', label: 'Hide demo content', enabled: demoContentHidden },
+    { key: 'live_streams', label: 'Live streams', enabled: liveStreamsEnabled },
+    { key: 'blob_media_storage', label: 'Blob media storage', enabled: blobMediaStorageEnabled },
+    { key: 'ticket_payment_capture', label: 'Ticket payment capture', enabled: ticketPaymentCaptureEnabled }
   ];
   const revenueCents = revenueAgg._sum.totalChargeCents ?? 0;
   const revenueLabel = `$${(revenueCents / 100).toFixed(2)}`;

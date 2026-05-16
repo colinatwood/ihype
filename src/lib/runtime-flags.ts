@@ -16,6 +16,35 @@ function parseBooleanFlag(value: string | undefined, defaultValue: boolean) {
   return defaultValue;
 }
 
+type RuntimeFlagKey =
+  | 'demo_logins'
+  | 'invite_only_signup'
+  | 'hide_demo_content'
+  | 'live_streams'
+  | 'blob_media_storage'
+  | 'ticket_payment_capture';
+
+async function readRuntimeOverride(key: RuntimeFlagKey) {
+  if (!process.env.KV_REST_API_URL && !process.env.KV_URL) {
+    return null;
+  }
+
+  try {
+    const { kv } = await import('@vercel/kv');
+    const value = await kv.get<string>(`flags:${key}`);
+    if (value == null) return null;
+    return parseBooleanFlag(value, false);
+  } catch (error) {
+    console.error('Runtime flag read failed', error);
+    return null;
+  }
+}
+
+export async function getRuntimeFlag(key: RuntimeFlagKey, fallback: boolean) {
+  const override = await readRuntimeOverride(key);
+  return override ?? fallback;
+}
+
 const demoIdentifiers = new Set([
   'fan',
   'fan@ihype.org',
@@ -41,6 +70,10 @@ export function areDemoLoginsEnabled() {
   );
 }
 
+export async function areDemoLoginsEnabledRuntime() {
+  return getRuntimeFlag('demo_logins', areDemoLoginsEnabled());
+}
+
 export function isDemoIdentifier(identifier: string | null | undefined) {
   if (!identifier) {
     return false;
@@ -58,6 +91,10 @@ export function isDemoUser(user: {
 
 export function shouldHideDemoContent() {
   return process.env.NODE_ENV === 'production' && !areDemoLoginsEnabled();
+}
+
+export async function shouldHideDemoContentRuntime() {
+  return getRuntimeFlag('hide_demo_content', process.env.NODE_ENV === 'production' && !(await areDemoLoginsEnabledRuntime()));
 }
 
 export function getDemoOwnerExclusion() {
@@ -95,21 +132,33 @@ export function areDatabaseMediaUploadsEnabled() {
   );
 }
 
+export async function areDatabaseMediaUploadsEnabledRuntime() {
+  return getRuntimeFlag('blob_media_storage', areDatabaseMediaUploadsEnabled());
+}
+
 export function areLiveStreamsEnabled() {
   return parseBooleanFlag(process.env.FEATURE_ENABLE_LIVE_STREAMS, false);
+}
+
+export async function areLiveStreamsEnabledRuntime() {
+  return getRuntimeFlag('live_streams', areLiveStreamsEnabled());
 }
 
 export function isInviteCodeRequired() {
   return parseBooleanFlag(process.env.FEATURE_REQUIRE_INVITE_CODE, false);
 }
 
-export function isValidInviteCode(value: string | null | undefined) {
+export async function isInviteCodeRequiredRuntime() {
+  return getRuntimeFlag('invite_only_signup', isInviteCodeRequired());
+}
+
+export function isValidInviteCode(value: string | null | undefined, requiredOverride?: boolean) {
   const configuredCodes = process.env.BETA_INVITE_CODES?.split(',')
     .map((code) => code.trim().toLowerCase())
     .filter(Boolean);
 
   if (!configuredCodes?.length) {
-    return !isInviteCodeRequired();
+    return !(requiredOverride ?? isInviteCodeRequired());
   }
 
   return configuredCodes.includes(value?.trim().toLowerCase() ?? '');

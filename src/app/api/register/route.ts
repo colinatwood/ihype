@@ -9,7 +9,7 @@ import { createHexId } from '@/lib/hex-id';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
-import { isInviteCodeRequired, isReservedPlatformEmail, isValidInviteCode } from '@/lib/runtime-flags';
+import { isInviteCodeRequiredRuntime, isReservedPlatformEmail, isValidInviteCode } from '@/lib/runtime-flags';
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
 import { slugify } from '@/lib/utils';
 
@@ -213,7 +213,8 @@ export async function POST(request: Request) {
       );
     }
 
-    if (isInviteCodeRequired() && !isValidInviteCode(body.inviteCode)) {
+    const inviteCodeRequired = await isInviteCodeRequiredRuntime();
+    if (inviteCodeRequired && !isValidInviteCode(body.inviteCode, inviteCodeRequired)) {
       return NextResponse.json(
         { error: 'A valid beta invite code is required while invite-only signup is enabled.' },
         { status: 403 }

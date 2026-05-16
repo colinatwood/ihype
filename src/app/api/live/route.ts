@@ -4,12 +4,12 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getMuxClient } from '@/lib/mux';
 import { canManageOwnedResource } from '@/lib/permissions';
-import { areLiveStreamsEnabled } from '@/lib/runtime-flags';
+import { areLiveStreamsEnabledRuntime } from '@/lib/runtime-flags';
 
 const schema = z.object({ showId: z.string().cuid() });
 
 export async function POST(request: Request) {
-  if (!areLiveStreamsEnabled()) {
+  if (!(await areLiveStreamsEnabledRuntime())) {
     return NextResponse.json(
       {
         error:
