@@ -9,7 +9,7 @@ import { createHexId } from '@/lib/hex-id';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
-import { isInviteCodeRequired, isReservedPlatformEmail, isValidInviteCode } from '@/lib/runtime-flags';
+import { isReservedPlatformEmail } from '@/lib/runtime-flags';
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
 import { slugify } from '@/lib/utils';
 
@@ -161,13 +161,6 @@ export async function POST(request: Request) {
     }
 
     const rawBody = await request.json();
-
-    // Beta invite gate — set BETA_INVITE_CODE env var to require a code at signup.
-    const betaCode = process.env.BETA_INVITE_CODE?.trim();
-    if (betaCode && rawBody?.inviteCode?.trim() !== betaCode) {
-      return NextResponse.json({ error: 'A valid beta invite code is required to sign up.' }, { status: 403 });
-    }
-
     const body = schema.parse(rawBody);
     const trimmedName = body.name?.trim() ?? '';
     const normalizedEmail = body.email ? body.email.toLowerCase() : null;
@@ -196,19 +189,6 @@ export async function POST(request: Request) {
 
     if (!isValidUsername(normalizedUsername)) {
       return NextResponse.json({ error: getUsernameValidationMessage() }, { status: 400 });
-    }
-
-    if (isInviteCodeRequired() && !isValidInviteCode(body.inviteCode)) {
-      await recordAuditEvent({
-        action: 'invite_code_rejected',
-        entityType: 'register',
-        ipAddress: clientAddress,
-        metadata: {
-          role: body.role,
-          emailDomain: normalizedEmail?.split('@')[1] ?? null
-        }
-      });
-      return NextResponse.json({ error: 'A valid beta invite code is required to create an account.' }, { status: 403 });
     }
 
     if ((body.role === 'ARTIST' || body.role === 'DJ') && !body.acceptedArtistUploadPolicy) {
