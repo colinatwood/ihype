@@ -22,7 +22,7 @@ export async function createLoginOtpChallenge({
   const normalizedIdentifier = identifier.trim().toLowerCase();
 
   const user = await db.user.findFirst({
-    where: { OR: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }] }
+    where: { OR: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }, { phone: normalizedIdentifier }] }
   });
 
   if (!user?.passwordHash) {
@@ -53,7 +53,12 @@ export async function createLoginOtpChallenge({
     }
   });
 
-  await sendLoginOtpEmail({ email: user.email ?? '', name: user.name, otp });
+  if (!user.email) {
+    await waitForInvalidCredential();
+    return null;
+  }
+
+  await sendLoginOtpEmail({ email: user.email, name: user.name, otp });
 
   return {
     challengeId: challengeToken,
