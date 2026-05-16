@@ -97,7 +97,7 @@ const NAV_ITEMS = [
   { id:'studio',   label:'Create',           icon: <IcStudio s={16}/> },
 ];
 
-type View = 'home'|'library'|'radio'|'tickets'|'events'|'discover'|'studio'|'settings';
+type View = 'home'|'library'|'radio'|'tickets'|'discover'|'studio'|'settings';
 
 // ── Shared utils ──────────────────────────────────────────────────
 
@@ -157,7 +157,7 @@ function ViewHome({ session, onPickTrack, currentId, setView }:
             style={{ padding:'9px 16px', background:'var(--accent)', color:'var(--bg)', borderRadius:6, fontFamily:'var(--f-m)', fontSize:12, fontWeight:600, letterSpacing:'.04em', display:'flex', alignItems:'center', gap:6, border:'none', cursor:'pointer' }}>
             <IcBolt s={12}/> Create an event
           </button>
-          <button onClick={()=>setView('events')} type="button" style={btnGhost}>Browse events →</button>
+          <button onClick={()=>setView('tickets')} type="button" style={btnGhost}>Browse events →</button>
         </div>
       </div>
 
@@ -182,7 +182,7 @@ function ViewHome({ session, onPickTrack, currentId, setView }:
         <section style={panel}>
           <div style={panelHead}>
             <div style={panelTitle}>Tonight in Chicago</div>
-            <button onClick={()=>setView('events')} type="button" style={linkBtn}>All events →</button>
+            <button onClick={()=>setView('tickets')} type="button" style={linkBtn}>All events →</button>
           </div>
           {SHOWS.slice(0,3).map((s,i)=>{
             const sc = s.status==='TONIGHT'?'#22e5d4':s.status==='NEAR SOLD'?'#ffb84a':'var(--ink-3)';
@@ -482,20 +482,20 @@ function ViewRadio({ onPickTrack }:{ onPickTrack:(id:string)=>void }) {
 // ── Ticketing view ────────────────────────────────────────────────
 
 function ViewTicketing() {
-  const [tab, setTab] = useState<'mine'|'selling'|'scan'>('mine');
+  const [tab, setTab] = useState<'mine'|'selling'|'scan'|'browse'>('mine');
   return (
     <div style={{ padding:'24px 32px 32px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:22, gap:24 }}>
         <div>
           <div style={eyebrow('#22e5d4')}>● 3 TICKETS · 1 TONIGHT · NO QUEUES, NO SCALPERS</div>
-          <h1 style={pageTitle}>Ticketing</h1>
+          <h1 style={pageTitle}>Live Events</h1>
           <p style={pageSub}>Buy, hold, transfer, and verify tickets — all without leaving iHYPE. Wallet entries are signed to your account; venues scan QR at the door.</p>
         </div>
         <div style={{ display:'flex', gap:4, padding:4, background:'var(--bg-2)', border:'1px solid var(--line)', borderRadius:8, flexShrink:0 }}>
-          {(['mine','selling','scan'] as const).map((k,i)=>(
+          {(['mine','selling','scan','browse'] as const).map((k,i)=>(
             <button key={k} onClick={()=>setTab(k)} type="button"
               style={{ padding:'7px 12px', borderRadius:5, fontFamily:'var(--f-m)', fontSize:11, letterSpacing:'.04em', border:'none', cursor:'pointer', background:tab===k?'var(--bg-3)':'transparent', color:tab===k?'var(--ink)':'var(--ink-3)' }}>
-              {['My tickets','Selling','Scan / verify'][i]}
+              {['My tickets','Selling','Scan / verify','Browse'][i]}
             </button>
           ))}
         </div>
@@ -560,7 +560,7 @@ function ViewTicketing() {
             {[
               { l:'TICKETS SOLD',   v:'184',    d:'across 4 shows',  c:'#22e5d4' },
               { l:'GROSS',          v:'$3,128',  d:'this month',      c:'#22e5d4' },
-              { l:'PLATFORM FEE',   v:'0%',      d:'always',          c:'#b983ff' },
+              { l:'ARTIST SHARE',   v:'45%',     d:'per ticket sold',  c:'#b983ff' },
               { l:'PAYOUT PENDING', v:'$2,460',  d:'releases Jun 24', c:'#ffb84a' },
             ].map(s=>(
               <div key={s.l} style={{ padding:'14px 16px', border:'1px solid var(--line)', borderRadius:10, background:'var(--bg-2)' }}>
@@ -637,42 +637,37 @@ function ViewTicketing() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-// ── Events view ───────────────────────────────────────────────────
-
-function ViewEvents() {
-  return (
-    <div style={{ padding:'24px 32px 32px' }}>
-      <div style={{ marginBottom:22 }}>
-        <div style={eyebrow('#22e5d4')}>● 7 TONIGHT · 23 THIS WEEK · CHICAGO</div>
-        <h1 style={pageTitle}>Events</h1>
-        <p style={pageSub}>Live events in your city. No platform fee. Tickets settle at the door.</p>
-      </div>
-      <div style={panel}>
-        {SHOWS.map((s,i)=>{
-          const sc = s.status==='TONIGHT'?'#22e5d4':s.status==='NEAR SOLD'?'#ffb84a':'var(--ink-3)';
-          return (
-            <div key={i} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 20px', borderBottom:'1px solid var(--line)' }}>
-              <div style={{ width:3, height:48, borderRadius:2, flexShrink:0, background:sc }}/>
-              <div style={{ flex:1 }}>
-                <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:16, color:'var(--ink)' }}>{s.name} <span style={{ color:'var(--ink-3)', fontWeight:500 }}>· {s.venue}</span></div>
-                <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{s.date} · {s.time} · ♡ {s.hype}</div>
-              </div>
-              <div style={{ minWidth:100 }}>
-                <div style={{ width:80, height:3, background:'rgba(255,255,255,.06)', borderRadius:2, overflow:'hidden', marginBottom:4 }}>
-                  <div style={{ height:'100%', width:`${s.sold/s.cap*100}%`, background:s.sold/s.cap>0.85?'#ffb84a':'#22e5d4', borderRadius:2 }}/>
+      {tab==='browse' && (
+        <div>
+          <div style={{ marginBottom:22 }}>
+            <div style={eyebrow('#22e5d4')}>● 7 TONIGHT · 23 THIS WEEK · CHICAGO</div>
+            <p style={pageSub}>Live events in your city. No platform fee. Tickets settle at the door.</p>
+          </div>
+          <div style={panel}>
+            {SHOWS.map((s,i)=>{
+              const sc = s.status==='TONIGHT'?'#22e5d4':s.status==='NEAR SOLD'?'#ffb84a':'var(--ink-3)';
+              return (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:16, padding:'16px 20px', borderBottom:'1px solid var(--line)' }}>
+                  <div style={{ width:3, height:48, borderRadius:2, flexShrink:0, background:sc }}/>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:16, color:'var(--ink)' }}>{s.name} <span style={{ color:'var(--ink-3)', fontWeight:500 }}>· {s.venue}</span></div>
+                    <div style={{ fontFamily:'var(--f-m)', fontSize:10, color:'var(--ink-3)', marginTop:3 }}>{s.date} · {s.time} · ♡ {s.hype}</div>
+                  </div>
+                  <div style={{ minWidth:100 }}>
+                    <div style={{ width:80, height:3, background:'rgba(255,255,255,.06)', borderRadius:2, overflow:'hidden', marginBottom:4 }}>
+                      <div style={{ height:'100%', width:`${s.sold/s.cap*100}%`, background:s.sold/s.cap>0.85?'#ffb84a':'#22e5d4', borderRadius:2 }}/>
+                    </div>
+                    <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)' }}>{s.sold}/{s.cap} capacity</div>
+                  </div>
+                  <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:18, color:'var(--ink)' }}>${s.price}</div>
+                  <button type="button" style={btnPrime}>Get ticket</button>
                 </div>
-                <div style={{ fontFamily:'var(--f-m)', fontSize:9, color:'var(--ink-3)' }}>{s.sold}/{s.cap} capacity</div>
-              </div>
-              <div style={{ fontFamily:'var(--f-d)', fontWeight:700, fontSize:18, color:'var(--ink)' }}>${s.price}</div>
-              <button type="button" style={btnPrime}>Get ticket</button>
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -714,7 +709,7 @@ function ViewStudio() {
   return (
     <div style={{ padding:'24px 32px 32px' }}>
       <div style={{ marginBottom:22 }}>
-        <div style={eyebrow('#ff5029')}>● CREATE · YOUR SCENE · NO PLATFORM FEE</div>
+        <div style={eyebrow('#ff5029')}>● CREATE · YOUR SCENE · ARTIST SHARE · 45%</div>
         <h1 style={pageTitle}>Create an event</h1>
         <p style={pageSub}>Publish a show, set your ticket price, and sell directly to fans. iHYPE takes nothing.</p>
       </div>
@@ -953,7 +948,7 @@ export default function WorkbenchPage() {
           {view==='library'  && <ViewLibrary onPickTrack={handlePickTrack} currentId={currentId}/>}
           {view==='radio'    && <ViewRadio onPickTrack={handlePickTrack}/>}
           {view==='tickets'  && <ViewTicketing/>}
-          {view==='events'   && <ViewEvents/>}
+
           {view==='discover' && <ViewSeeds/>}
           {view==='studio'   && <ViewStudio/>}
           {view==='settings' && <ViewSettings accent={accent} setAccent={setAccent} density={density} setDensity={setDensity} queueRail={queueRail} setQueueRail={setQueueRail}/>}
