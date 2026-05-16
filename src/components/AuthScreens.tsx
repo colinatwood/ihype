@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
@@ -100,7 +99,6 @@ export function LoginScreen({
 }: {
   justRegistered?: boolean;
 }) {
-  const router = useRouter();
   const [message] = useState(
     justRegistered ? 'Account created. Add a passkey in Settings, then sign in here.' : ''
   );
@@ -115,8 +113,7 @@ export function LoginScreen({
       const options = await optRes.json();
       const assertion = await startAuthentication(options);
       const payload = await postJson<{ redirect?: string }>('/api/auth/passkey/auth', assertion);
-      router.push(payload.redirect || '/auth/landing');
-      router.refresh();
+      window.location.href = payload.redirect || '/auth/landing';
     } catch (err) {
       setError(getErrorMessage(err, 'Passkey sign-in failed. Please try again.'));
     } finally {
@@ -161,7 +158,6 @@ export function LoginScreen({
 }
 
 export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOption }) {
-  const router = useRouter();
   const [role, setRole] = useState<RoleOption>(initialRole);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -206,8 +202,7 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
 
       // Step 4: verify and receive session
       const verifyRes = await postJson<{ redirect?: string }>('/api/auth/passkey/register-first', credential);
-      router.push(verifyRes.redirect || '/auth/landing');
-      router.refresh();
+      window.location.href = verifyRes.redirect || '/auth/landing';
     } catch (err) {
       setStep('form');
       setError(getErrorMessage(err, 'Could not create account.'));
