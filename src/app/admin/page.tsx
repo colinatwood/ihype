@@ -3,12 +3,15 @@ import Link from 'next/link';
 import { AdminSignupTestPanel } from '@/components/AdminSignupTestPanel';
 import { redirect } from 'next/navigation';
 import { AdminReportActions, AdminVerificationActions } from '@/components/AdminModerationActions';
+import { AdminNav } from '@/components/AdminNav';
+import { AdminFeatureFlags } from '@/components/AdminFeatureFlags';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getHealthSnapshot } from '@/lib/health';
 import { isPaymentProcessingConfigured } from '@/lib/payments';
 import { isAdminSession } from '@/lib/permissions';
 import { areDemoLoginsEnabled, areLiveStreamsEnabled, isInviteCodeRequired, shouldHideDemoContent } from '@/lib/runtime-flags';
+import { featureShowAction } from './users/actions';
 
 export const metadata: Metadata = {
   title: 'Admin Beta Console | iHYPE.org',
@@ -55,7 +58,10 @@ export default async function AdminPage() {
     recentAudits,
     recentUsers,
     signupFunnelAudits,
-    health
+    health,
+    recentTicketOrders,
+    revenueAgg,
+    recentShows
   ] = await Promise.all([
     db.user.count(),
     db.profile.count(),
@@ -106,17 +112,36 @@ export default async function AdminPage() {
       take: 250,
       select: { action: true, metadata: true }
     }),
-    getHealthSnapshot()
+    getHealthSnapshot(),
+    db.ticketOrder.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: { show: { select: { title: true } } }
+    }),
+    db.ticketOrder.aggregate({
+      where: { status: 'CAPTURED' },
+      _sum: { totalChargeCents: true }
+    }),
+    db.show.findMany({
+      take: 8,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        venueProfile: { select: { name: true } },
+        _count: { select: { tickets: true } }
+      }
+    })
   ]);
 
   const featureFlags = [
-    ['Demo logins', areDemoLoginsEnabled()],
-    ['Invite-only signup', isInviteCodeRequired()],
-    ['Hide demo content', shouldHideDemoContent()],
-    ['Live streams', areLiveStreamsEnabled()],
-    ['Blob media storage', Boolean(process.env.BLOB_READ_WRITE_TOKEN)],
-    ['Ticket payment capture', isPaymentProcessingConfigured()]
-  ] as const;
+    { key: 'demo_logins', label: 'Demo logins', enabled: areDemoLoginsEnabled() },
+    { key: 'invite_only_signup', label: 'Invite-only signup', enabled: isInviteCodeRequired() },
+    { key: 'hide_demo_content', label: 'Hide demo content', enabled: shouldHideDemoContent() },
+    { key: 'live_streams', label: 'Live streams', enabled: areLiveStreamsEnabled() },
+    { key: 'blob_media_storage', label: 'Blob media storage', enabled: Boolean(process.env.BLOB_READ_WRITE_TOKEN) },
+    { key: 'ticket_payment_capture', label: 'Ticket payment capture', enabled: isPaymentProcessingConfigured() }
+  ];
+  const revenueCents = revenueAgg._sum.totalChargeCents ?? 0;
+  const revenueLabel = `$${(revenueCents / 100).toFixed(2)}`;
   const healthOperations = health.status === 'ok' ? health.operations : null;
   const healthIntegrations = health.status === 'ok' ? health.integrations : null;
   const funnelCounts = signupFunnelAudits.reduce<Record<string, number>>((counts, event) => {
@@ -155,6 +180,7 @@ export default async function AdminPage() {
 
   return (
     <main className="container section admin-console">
+      <AdminNav active="dashboard" />
       <section className="panel admin-console-hero">
         <div>
           <div className="badge">Admin beta console</div>
@@ -165,6 +191,12 @@ export default async function AdminPage() {
           </p>
         </div>
         <div className="cta-row">
+          <Link className="button" href="/admin/users">
+            User management
+          </Link>
+          <Link className="button" href="/admin/broadcast">
+            Broadcast email
+          </Link>
           <Link className="button secondary" href="/transparency">
             Transparency
           </Link>
@@ -172,6 +204,13 @@ export default async function AdminPage() {
             About iHYPE
           </Link>
         </div>
+      </section>
+
+      <section className="admin-metric-grid">
+        <article className="card admin-metric-card">
+          <span>Revenue (captured)</span>
+          <strong>{revenueLabel}</strong>
+        </article>
       </section>
 
       <section className="admin-metric-grid">
@@ -308,13 +347,45 @@ export default async function AdminPage() {
               </Link>
             ))}
           </div>
+          <AdminFeatureFlags initialFlags={featureFlags} />
+        </article>
+
+        <article className="panel admin-console-panel">
+          <h2>Ticket orders</h2>
           <div className="admin-list">
-            {featureFlags.map(([label, value]) => (
-              <div className="admin-list-row" key={label}>
-                <span>{label}</span>
-                <strong>{statusLabel(value)}</strong>
-              </div>
-            ))}
+            {recentTicketOrders.length ? (
+              recentTicketOrders.map((order) => (
+                <div className="admin-list-row" key={order.id}>
+                  <span>{order.show?.title ?? 'Unknown show'}</span>
+                  <strong>{order.status}</strong>
+                  <small>{order.buyerEmail} · ${(order.totalChargeCents / 100).toFixed(2)}</small>
+                </div>
+              ))
+            ) : (
+              <div className="empty">No ticket orders yet.</div>
+            )}
+          </div>
+        </article>
+
+        <article className="panel admin-console-panel">
+          <h2>Recent shows</h2>
+          <div className="admin-list">
+            {recentShows.length ? (
+              recentShows.map((show) => (
+                <div className="admin-list-row" key={show.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ flex: 1 }}>{show.title}</span>
+                  <small>{show.venueProfile?.name ?? '—'}</small>
+                  <small>{show.startsAt.toISOString().slice(0, 10)}</small>
+                  <small>{show._count.tickets} tix</small>
+                  <form action={featureShowAction}>
+                    <input type="hidden" name="showId" value={show.id} />
+                    <button className="button small secondary" type="submit">Feature</button>
+                  </form>
+                </div>
+              ))
+            ) : (
+              <div className="empty">No shows yet.</div>
+            )}
           </div>
         </article>
 
