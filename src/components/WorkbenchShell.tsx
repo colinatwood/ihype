@@ -7,7 +7,6 @@ import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer'
 import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
 import { HypeHeatmap } from '@/components/HypeHeatmap';
 import { PasskeyManager } from '@/components/AuthScreens';
-import { RevenueSplitVisualizer } from '@/components/RevenueSplitVisualizer';
 
 // ── Drag context ───────────────────────────────────────────────
 const DragTrackCtx = createContext<{
@@ -1447,9 +1446,6 @@ const ViewRadioStudio = memo(function ViewRadioStudio() {
   const [streamDesc, setStreamDesc] = useState('');
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [errMsg, setErrMsg] = useState('');
-  const [splitMode, setSplitMode] = useState<'co-host' | 'referrer'>('referrer');
-  const [splitReferrer, setSplitReferrer] = useState('Anyone who shares your show');
-
   const field: React.CSSProperties = { width: '100%', padding: '9px 12px', background: 'var(--wb-bg-3)', border: '1px solid var(--wb-line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--wb-ink)', outline: 'none', boxSizing: 'border-box' as const };
   const lbl: React.CSSProperties = { fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.12em', color: 'var(--wb-ink-3)', marginBottom: 6, display: 'block' };
   const grp: React.CSSProperties = { display: 'flex', flexDirection: 'column' as const };
@@ -1482,7 +1478,7 @@ const ViewRadioStudio = memo(function ViewRadioStudio() {
     <div className="wb-view-pad">
       <div className="wb-eyebrow" style={{ color: '#ff3e9a' }}>● RADIO STUDIO · ALL ROLES CAN BROADCAST</div>
       <h1 className="wb-page-title">Create a show</h1>
-      <p className="wb-page-sub">Launch a scheduled radio show or go live instantly. Artists, DJs, promoters, and venues can all broadcast. No ads, no algorithm.</p>
+      <p className="wb-page-sub">Launch a scheduled or live radio show. Anyone can curate music, tell people what they love, and share it with the scene. Radio shows are free community programming, not a payout product.</p>
 
       <div className="wb-tabs" style={{ marginBottom: 20, marginTop: 16 }}>
         <button onClick={() => { setMode('scheduled'); setErrMsg(''); }} className={`wb-tab${mode === 'scheduled' ? ' wb-tab-active' : ''}`}>Scheduled show</button>
@@ -1506,16 +1502,29 @@ const ViewRadioStudio = memo(function ViewRadioStudio() {
               <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--wb-ink)' }}>{showName || 'Your show name'}</div>
               <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', marginTop: 4 }}>{schedule || 'Schedule TBD'}</div>
             </div>
-            <RevenueSplitVisualizer
-              tracks={[]}
-              hostName="You"
-              referrerLabel={splitReferrer}
-              onReferrerLabelChange={setSplitReferrer}
-              mode={splitMode}
-              onModeChange={setSplitMode}
-              projection={{ totalDollars: 480, windowLabel: 'next broadcast', listens: 412 }}
-              onSchedule={handleSubmit}
-            />
+            <div className="wb-panel" style={{ padding: '18px 16px', display: 'grid', gap: 14 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--wb-ink)' }}>Community curation</div>
+                <p style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', lineHeight: 1.6, margin: '8px 0 0' }}>
+                  Build a playlist-style show, spotlight artists, or host a live listening room. These broadcasts help music travel through real people.
+                </p>
+              </div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {[
+                  ['Curate', 'Add the songs and artists you want others to hear.'],
+                  ['Share', 'Send listeners to the Radio tab or your public show archive.'],
+                  ['Refer tickets separately', 'Referral payouts only apply when someone buys a ticket to a ticketed show with your referral code.']
+                ].map(([label, copy]) => (
+                  <div key={label} style={{ padding: '10px 12px', border: '1px solid var(--wb-line-2)', borderRadius: 8, background: 'var(--wb-bg-3)' }}>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.12em', color: '#ff3e9a', marginBottom: 4 }}>{label.toUpperCase()}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)', lineHeight: 1.55 }}>{copy}</div>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={handleSubmit} className="wb-btn-prime" style={{ width: '100%', justifyContent: 'center' }}>
+                Schedule &amp; publish â†’
+              </button>
+            </div>
             {errMsg && <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff5029', padding: '8px 12px', border: '1px solid rgba(255,80,41,.3)', borderRadius: 6 }}>{errMsg}</div>}
           </div>
         </div>
