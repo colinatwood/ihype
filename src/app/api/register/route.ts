@@ -48,7 +48,8 @@ const schema = z.object({
   themeAccentTone: z.enum(profileAccentToneIds).optional(),
   themeBackdropTone: z.enum(profileBackdropToneIds).optional(),
   inviteCode: z.string().trim().max(80).optional(),
-  company: z.string().trim().max(120).optional()
+  company: z.string().trim().max(120).optional(),
+  passkeyFlow: z.boolean().optional().default(false)
 });
 
 function getProfileType(role: 'FAN' | 'ARTIST' | 'DJ' | 'VENUE'): ProfileType {
@@ -177,6 +178,13 @@ export async function POST(request: Request) {
       normalizedUsername = base.slice(0, 30) || `user${Math.random().toString(36).slice(2, 8)}`;
     }
 
+    if (!body.passkeyFlow && !normalizedEmail && !normalizedPhone) {
+      return NextResponse.json(
+        { error: 'An email address or phone number is required to create an account.' },
+        { status: 400 }
+      );
+    }
+
     if (body.company) {
       await recordAuditEvent({
         action: 'bot_trap_triggered',
@@ -238,9 +246,7 @@ export async function POST(request: Request) {
           error:
             normalizedEmail && existing.email === normalizedEmail
               ? 'An account with that email already exists'
-              : normalizedPhone
-              ? 'An account with that phone number already exists'
-              : 'Username is already taken'
+              : 'An account with those credentials already exists'
         },
         { status: 409 }
       );
@@ -307,7 +313,7 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json({
+    const resp = NextResponse.json({
       id: user.id,
       email: user.email,
       username: user.username,
@@ -318,6 +324,19 @@ export async function POST(request: Request) {
       publicProfilePath: getProfilePathForType(profile.type, profile.slug),
       profilePath: getDiscoverPathForType(profile.type)
     });
+
+    if (body.passkeyFlow) {
+      const isProduction = process.env.NODE_ENV === 'production';
+      resp.cookies.set('pk_reg_first_uid', user.id, {
+        httpOnly: true,
+        sameSite: 'strict',
+        maxAge: 600,
+        path: '/',
+        secure: isProduction
+      });
+    }
+
+    return resp;
   } catch (error) {
     if (error instanceof z.ZodError) {
       const first = error.issues[0];

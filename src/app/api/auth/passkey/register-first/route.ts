@@ -15,9 +15,10 @@ export async function GET(request: Request) {
   const rl = await consumeRateLimit(`pk-reg-first-opt:${clientAddress}`, { limit: 10, windowMs: 5 * 60 * 1000 });
   if (!rl.allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 });
 
-  const { searchParams } = new URL(request.url);
-  const userId = searchParams.get('userId');
-  if (!userId) return NextResponse.json({ error: 'Missing userId.' }, { status: 400 });
+  const { cookies } = await import('next/headers');
+  const jar = await cookies();
+  const userId = jar.get('pk_reg_first_uid')?.value;
+  if (!userId) return NextResponse.json({ error: 'Registration session expired. Please sign up again.' }, { status: 400 });
 
   const user = await db.user.findUnique({
     where: { id: userId },
@@ -56,14 +57,19 @@ export async function POST(request: Request) {
   if (!raw) return NextResponse.json({ error: 'Challenge expired. Try again.' }, { status: 400 });
 
   const colonIdx = raw.indexOf(':');
+  if (colonIdx <= 0) return NextResponse.json({ error: 'Malformed challenge. Try again.' }, { status: 400 });
   const userId = raw.slice(0, colonIdx);
   const challenge = raw.slice(colonIdx + 1);
 
   const user = await db.user.findUnique({
     where: { id: userId },
-    select: { id: true, name: true, email: true, image: true, role: true, createdAt: true, emailVerified: true },
+    select: { id: true, name: true, email: true, image: true, role: true, createdAt: true, emailVerified: true, _count: { select: { passkeys: true } } },
   });
   if (!user) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+
+  if (user._count.passkeys > 0) {
+    return NextResponse.json({ error: 'Passkey already registered. Please sign in instead.' }, { status: 403 });
+  }
 
   if (Date.now() - user.createdAt.getTime() > MAX_AGE_MS) {
     return NextResponse.json({ error: 'Link expired.' }, { status: 403 });

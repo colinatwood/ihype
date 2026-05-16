@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 
 type AuditInput = {
@@ -33,7 +34,7 @@ export async function recordAuditEvent({
         entityType,
         entityId: entityId || null,
         ipAddress: ipAddress || null,
-        metadata: metadata as never
+        metadata: (metadata ?? Prisma.JsonNull) as Prisma.InputJsonValue
       }
     });
   } catch (error) {

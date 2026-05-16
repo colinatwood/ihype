@@ -6,6 +6,7 @@ import { recordAuditEvent } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { createHexId } from '@/lib/hex-id';
 import { isAdminSession } from '@/lib/permissions';
+import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 
 export async function POST(request: Request) {
@@ -13,6 +14,11 @@ export async function POST(request: Request) {
 
   if (!isAdminSession(session)) {
     return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
+  }
+
+  const rl = await consumeRateLimit(`admin-signup-test:${session?.user?.id ?? 'unknown'}`, { limit: 3, windowMs: 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many test requests. Please wait.' }, { status: 429 });
   }
 
   const startedAt = Date.now();
