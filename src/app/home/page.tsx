@@ -9,6 +9,7 @@ import { EmailVerificationBanner } from '@/components/EmailVerificationBanner';
 import { NewToScene } from '@/components/NewToScene';
 import { getDiscoveryStreak } from '@/lib/streaks';
 import { TrendingNearMe } from '@/components/TrendingNearMe';
+import { AdBanner } from '@/components/AdBanner';
 
 export const dynamic = 'force-dynamic';
 
@@ -504,6 +505,7 @@ export default async function HomePage() {
       <div className="container">
         <TrendingNearMe viewerCity={profile.city ?? viewerLocation?.city ?? null} />
         <NewToScene />
+        <AdBanner />
       </div>
     </>
   );

@@ -20,6 +20,7 @@
         "vercel-build": "node scripts/prisma-migrate-retry.mjs && prisma generate && next build"
     },
     "dependencies": {
+        "@anthropic-ai/sdk": "^0.96.0",
         "@auth/prisma-adapter": "2.11.2",
         "@mux/mux-node": "^12.8.1",
         "@prisma/client": "^6.19.3",
