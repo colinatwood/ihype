@@ -13,6 +13,7 @@ import { isInviteCodeRequiredRuntime, isReservedPlatformEmail, isValidInviteCode
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
 import { slugify } from '@/lib/utils';
 import { sendDay1Email } from '@/lib/onboarding-emails';
+import { checkForSpam } from '@/lib/spam-detection';
 
 const schema = z.object({
   name: z.preprocess(v => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().min(2).optional()),
@@ -314,6 +315,28 @@ export async function POST(request: Request) {
         profileId: profile.id
       }
     });
+
+    // Spam detection — check bio/headline content if provided
+    const spamCheckText = [body.name, body.bio, body.headline, body.aboutContent]
+      .filter(Boolean)
+      .join('\n')
+      .trim();
+    if (spamCheckText.length > 20) {
+      checkForSpam(spamCheckText, 'registration profile content')
+        .then(async (spamResult) => {
+          if (spamResult.isSpam && spamResult.confidence > 0.85) {
+            await recordAuditEvent({
+              actorUserId: user.id,
+              action: 'account_flagged_spam',
+              entityType: 'user',
+              entityId: user.id,
+              ipAddress: clientAddress,
+              metadata: { confidence: spamResult.confidence }
+            });
+          }
+        })
+        .catch(() => {});
+    }
 
     // Fire-and-forget onboarding email
     void sendDay1Email(user.id);

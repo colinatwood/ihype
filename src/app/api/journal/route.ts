@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
+import { checkForSpam } from '@/lib/spam-detection';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,12 @@ export async function POST(request: NextRequest) {
   const content = typeof body.content === 'string' ? body.content.trim().slice(0, MAX_CONTENT) : '';
   if (!profileId || !title || !content) {
     return NextResponse.json({ error: 'profileId, title, and content are required.' }, { status: 400 });
+  }
+
+  // Spam detection
+  const spamResult = await checkForSpam(`${title}\n${content}`, 'journal post');
+  if (spamResult.isSpam && spamResult.confidence > 0.8) {
+    return NextResponse.json({ error: 'Content flagged as spam.' }, { status: 403 });
   }
 
   const profile = await db.profile.findUnique({

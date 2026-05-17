@@ -18,6 +18,8 @@ import { ShowRsvpButton } from '@/components/ShowRsvpButton';
 import { ShowSetlistEditor } from '@/components/ShowSetlistEditor';
 import { AdBanner } from '@/components/AdBanner';
 import { ShowWhoIsGoing } from '@/components/ShowWhoIsGoing';
+import { ShowRemindButton } from '@/components/ShowRemindButton';
+import { ShowRecapForm } from '@/components/ShowRecapForm';
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -270,6 +272,11 @@ export default async function ShowDetailPage({
             canRsvp={Boolean(session?.user?.id)}
             initialCount={rsvpCount}
             initialGoing={viewerGoing}
+          />
+          <ShowRemindButton
+            showId={show.id}
+            initialSet={false}
+            canRemind={Boolean(session?.user?.id) && show.status !== 'ENDED'}
           />
         </div>
       </div>
@@ -718,6 +725,22 @@ export default async function ShowDetailPage({
       <div style={{ marginTop: 16, marginBottom: 16 }}>
         <ShowWhoIsGoing showId={show.id} />
       </div>
+      {show.recapText && (
+        <section className="section">
+          <div className="panel" style={{ padding: '1.25rem' }}>
+            <h2>Show recap</h2>
+            <p style={{ whiteSpace: 'pre-wrap' }}>{show.recapText}</p>
+          </div>
+        </section>
+      )}
+      {isShowOwner && show.status === 'ENDED' && (
+        <section className="section">
+          <div className="panel" style={{ padding: '1.25rem' }}>
+            <h2 style={{ marginTop: 0 }}>Write a recap</h2>
+            <ShowRecapForm showId={show.id} initialRecap={show.recapText} />
+          </div>
+        </section>
+      )}
       <ShowComments showId={show.id} canPost={Boolean(session?.user?.id)} />
       <div style={{ marginTop: 24 }}>
         <AdBanner />
