@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 
+// NOTE: Consumers must pass width+height (or fill) to avoid Cumulative Layout Shift (CLS).
 export function BlurImage({ src, alt, ...props }: React.ComponentProps<typeof Image>) {
   if (!src) return null;
   return (

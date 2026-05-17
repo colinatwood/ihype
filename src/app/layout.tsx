@@ -16,6 +16,7 @@ import { BugReportButton } from '@/components/BugReportButton';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import { PushPrompt } from '@/components/PushPrompt';
+import { A2HSPrompt } from '@/components/A2HSPrompt';
 
 const syne = Syne({ subsets: ['latin'], weight: ['600','700','800'], variable: '--font-syne', display: 'swap' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400','500','600','700'], variable: '--font-dm', display: 'swap' });
@@ -69,6 +70,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </div>
           <MiniPlayer />
           <PushPrompt />
+          <A2HSPrompt />
           <BottomTabBar />
           <BugReportButton />
           <PwaInstallPrompt />
