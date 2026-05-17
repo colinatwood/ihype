@@ -131,6 +131,7 @@ model User {
   emailBounced            Boolean                  @default(false)
   badges                  Badge[]
   showAttendees           ShowAttendee[]
+  sentBookingRequests     BookingRequest[]         @relation("BookingRequestFromUser")
 }
 
 model Profile {
@@ -209,6 +210,8 @@ model Profile {
   setlistTemplates              SetlistTemplate[]
   nowPlaying                    String?
   availabilityDates             AvailabilityDate[]
+  receivedBookingRequests       BookingRequest[]   @relation("BookingRequestToProfile")
+  collabPosts                   CollabPost[]
 }
 
 model FanPlaylist {
@@ -406,6 +409,7 @@ model Show {
   comments               ShowComment[]
   rsvps                  ShowRsvp[]
   attendees              ShowAttendee[]
+  setlistProgress        Json?
 }
 
 model ShowAdvertisingConfig {
@@ -950,4 +954,45 @@ model CuratedPlaylist {
   updatedAt   DateTime @updatedAt
 
   @@index([published, createdAt])
+}
+
+model BookingRequest {
+  id          String   @id @default(cuid())
+  fromUserId  String
+  toProfileId String
+  message     String
+  status      String   @default("pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  fromUser    User     @relation("BookingRequestFromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toProfile   Profile  @relation("BookingRequestToProfile", fields: [toProfileId], references: [id], onDelete: Cascade)
+
+  @@index([toProfileId, status])
+  @@index([fromUserId, createdAt])
+}
+
+model CollabPost {
+  id          String   @id @default(cuid())
+  profileId   String
+  type        String
+  description String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([active, createdAt])
+  @@index([profileId])
+}
+
+model FeatureRequest {
+  id          String   @id @default(cuid())
+  userId      String?
+  title       String
+  description String
+  votes       Int      @default(0)
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
+
+  @@index([status, votes])
+  @@index([createdAt])
 }

@@ -28,6 +28,8 @@ export function NotificationBell() {
 
   useEffect(() => {
     void load();
+    const interval = setInterval(() => { void load(); }, 30_000);
+    return () => clearInterval(interval);
   }, []);
 
   async function markRead() {

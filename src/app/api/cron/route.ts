@@ -118,8 +118,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ok: alerts.length === 0, userCount, profileCount, alerts, checkedAt: new Date().toISOString() });
     }
 
+    case 'weekly-picks': {
+      const { sendWeeklyPicksEmails } = await import('@/lib/weekly-picks');
+      const result = await sendWeeklyPicksEmails();
+      return NextResponse.json({ ok: true, ...result });
+    }
+
+    case 'admin-report': {
+      const { sendAdminWeeklyReport } = await import('@/lib/admin-report');
+      const result = await sendAdminWeeklyReport();
+      return NextResponse.json(result);
+    }
+
     default:
-      return NextResponse.json({ error: 'Unknown job. Use ?job=digest|artist-digest|health-check|onboarding|show-reminders|db-health' }, { status: 400 });
+      return NextResponse.json({ error: 'Unknown job. Use ?job=digest|artist-digest|health-check|onboarding|show-reminders|db-health|weekly-picks|admin-report' }, { status: 400 });
   }
 }
 
