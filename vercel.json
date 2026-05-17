@@ -42,6 +42,14 @@
                   {
                       "path":  "/api/cron?job=db-health",
                       "schedule":  "0 8 * * 1"
+                  },
+                  {
+                      "path":  "/api/cron?job=weekly-picks",
+                      "schedule":  "0 9 * * 5"
+                  },
+                  {
+                      "path":  "/api/cron?job=admin-report",
+                      "schedule":  "0 8 * * 1"
                   }
               ]
 }

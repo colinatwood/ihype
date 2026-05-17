@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-type Tab = 'dashboard' | 'users' | 'review' | 'broadcast' | 'audit' | 'journal' | 'ads' | 'playlists';
+type Tab = 'dashboard' | 'users' | 'review' | 'broadcast' | 'audit' | 'journal' | 'ads' | 'playlists' | 'feedback';
 
 const TABS: Array<{ key: Tab; href: string; label: string }> = [
   { key: 'dashboard', href: '/admin', label: 'Dashboard' },
@@ -10,7 +10,8 @@ const TABS: Array<{ key: Tab; href: string; label: string }> = [
   { key: 'broadcast', href: '/admin/broadcast', label: 'Broadcast' },
   { key: 'audit', href: '/admin/audit', label: 'Audit log' },
   { key: 'journal', href: '/admin/journal', label: 'Journal' },
-  { key: 'playlists', href: '/admin/playlists', label: 'Playlists' }
+  { key: 'playlists', href: '/admin/playlists', label: 'Playlists' },
+  { key: 'feedback', href: '/admin/feedback', label: 'Feedback' }
 ];
 
 export function AdminNav({ active }: { active: Tab }) {

@@ -12,6 +12,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { NavDrawer } from '@/components/NavDrawer';
 import { SearchBar } from '@/components/SearchBar';
+import { BugReportButton } from '@/components/BugReportButton';
 
 const syne = Syne({ subsets: ['latin'], weight: ['600','700','800'], variable: '--font-syne', display: 'swap' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400','500','600','700'], variable: '--font-dm', display: 'swap' });
@@ -63,6 +64,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
           </div>
           <BottomTabBar />
+          <BugReportButton />
           <PwaInstallPrompt />
           <CookieConsent />
           <ServiceWorkerRegister />
@@ -76,6 +78,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <a href="/privacy">Privacy</a>
               <a href="/dmca">DMCA</a>
               <a href="/playlists">Playlists</a>
+              <a href="/collab">Collab</a>
+              <a href="/feedback">Feedback</a>
               <span>© {new Date().getFullYear()} iHYPE — not-for-profit</span>
             </div>
           </footer>
