@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
+import { AdminNav } from '@/components/AdminNav';
 
 export const metadata: Metadata = {
   title: 'Content Reports | Admin | iHYPE.org',
@@ -23,8 +25,24 @@ export default async function AdminReportsPage() {
     take: 200,
   });
 
+  // Enrich with entity data
+  const profileIds = reports.filter(r => r.targetType === 'profile').map(r => r.targetId);
+  const showIds = reports.filter(r => r.targetType === 'show').map(r => r.targetId);
+  const commentIds = reports.filter(r => r.targetType === 'comment').map(r => r.targetId);
+
+  const [profiles, shows, comments] = await Promise.all([
+    profileIds.length > 0 ? db.profile.findMany({ where: { id: { in: profileIds } }, select: { id: true, name: true, slug: true, type: true } }) : [],
+    showIds.length > 0 ? db.show.findMany({ where: { id: { in: showIds } }, select: { id: true, title: true, slug: true } }) : [],
+    commentIds.length > 0 ? db.showComment.findMany({ where: { id: { in: commentIds } }, select: { id: true, content: true } }) : [],
+  ]);
+
+  const profileMap = new Map(profiles.map(p => [p.id, p]));
+  const showMap = new Map(shows.map(s => [s.id, s]));
+  const commentMap = new Map(comments.map(c => [c.id, c]));
+
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px' }}>
+      <AdminNav active="reports" />
       <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.02em', color: 'var(--ink)', marginBottom: 8 }}>
         Content Reports
       </h1>
@@ -49,12 +67,27 @@ export default async function AdminReportsPage() {
               </tr>
             </thead>
             <tbody>
-              {reports.map(r => (
+              {reports.map(r => {
+                const profile = r.targetType === 'profile' ? profileMap.get(r.targetId) : null;
+                const show = r.targetType === 'show' ? showMap.get(r.targetId) : null;
+                const comment = r.targetType === 'comment' ? commentMap.get(r.targetId) : null;
+                const entityHref = profile
+                  ? (profile.type === 'VENUE' ? `/venues/${profile.slug}` : profile.type === 'DJ' ? `/promoters/${profile.slug}` : `/artists/${profile.slug}`)
+                  : show ? `/shows/${show.slug}` : null;
+                const entityLabel = profile?.name ?? show?.title ?? (comment ? comment.content.slice(0, 60) + (comment.content.length > 60 ? '…' : '') : r.targetId);
+
+                return (
                 <tr key={r.id} style={{ borderBottom: '1px solid var(--line)' }}>
                   <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString()}</td>
                   <td style={tdStyle}>{r.reason}</td>
                   <td style={tdStyle}>{r.targetType}</td>
-                  <td style={{ ...tdStyle, fontFamily: 'monospace', fontSize: 11, color: 'var(--ink-3)' }}>{r.targetId}</td>
+                  <td style={{ ...tdStyle, fontSize: 12 }}>
+                    {entityHref ? (
+                      <Link href={entityHref} style={{ color: 'var(--accent)', textDecoration: 'none' }} target="_blank">{entityLabel}</Link>
+                    ) : (
+                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: 'var(--ink-3)' }}>{entityLabel}</span>
+                    )}
+                  </td>
                   <td style={tdStyle}>
                     {r.reporter ? (
                       <span title={r.reporter.email ?? ''}>{r.reporter.name ?? r.reporter.email}</span>
@@ -75,12 +108,18 @@ export default async function AdminReportsPage() {
                     </span>
                   </td>
                   <td style={tdStyle}>
+                    {entityHref ? (
+                      <Link href={entityHref} target="_blank" style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', textDecoration: 'none', marginRight: 8 }}>
+                        View ↗
+                      </Link>
+                    ) : null}
                     {r.status === 'OPEN' && (
                       <ResolveButton reportId={r.id} />
                     )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

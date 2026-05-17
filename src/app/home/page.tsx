@@ -8,6 +8,7 @@ import { WorkbenchShell, type WorkbenchData, type WbStat, type WbTrack, type WbS
 import { EmailVerificationBanner } from '@/components/EmailVerificationBanner';
 import { NewToScene } from '@/components/NewToScene';
 import { getDiscoveryStreak } from '@/lib/streaks';
+import { TrendingNearMe } from '@/components/TrendingNearMe';
 
 export const dynamic = 'force-dynamic';
 
@@ -264,6 +265,39 @@ export default async function HomePage() {
       })).catch(() => ({ clicks: 0, buyers: 0, grossCents: 0, payoutCents: 0 }))
     : undefined;
 
+  // ── Following feed: upcoming shows from followed artists ──
+  let followingShows: Array<{ id: string; title: string; slug: string; startsAt: Date; venueName: string | null; headlinerName: string | null }> = [];
+  const followedProfileIds = await db.follow.findMany({
+    where: { followerId: userId },
+    select: { followeeProfileId: true },
+    take: 100
+  }).then(rows => rows.map(r => r.followeeProfileId)).catch(() => [] as string[]);
+  if (followedProfileIds.length > 0) {
+    followingShows = await db.show.findMany({
+      where: {
+        status: { not: 'CANCELED' },
+        startsAt: { gte: now },
+        OR: [
+          { headlinerProfileId: { in: followedProfileIds } },
+          { venueProfileId: { in: followedProfileIds } }
+        ]
+      },
+      include: {
+        venueProfile: { select: { name: true } },
+        headlinerProfile: { select: { name: true } }
+      },
+      orderBy: { startsAt: 'asc' },
+      take: 4
+    }).then(rows => rows.map(r => ({
+      id: r.id,
+      title: r.title,
+      slug: r.slug,
+      startsAt: r.startsAt,
+      venueName: (r as any).venueProfile?.name ?? null,
+      headlinerName: (r as any).headlinerProfile?.name ?? null,
+    }))).catch(() => [] as typeof followingShows);
+  }
+
   // ── Fan activity feed (recent uploads + upcoming shows from hyped profiles) ──
   let fanActivityFeed: WbActivity[] = [];
   if (profile.type === 'LISTENER') {
@@ -448,8 +482,27 @@ export default async function HomePage() {
           </div>
         </div>
       ) : null}
+      {followingShows.length > 0 ? (
+        <div className="container section" style={{ paddingTop: 16, paddingBottom: 0 }}>
+          <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, letterSpacing: '-.01em', marginBottom: 10, color: 'var(--ink)' }}>
+            Following
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
+            {followingShows.map(s => (
+              <a key={s.id} href={`/shows/${s.slug}`} style={{ display: 'block', padding: '12px 14px', background: 'var(--bg-3)', border: '1px solid var(--line)', borderRadius: 10, textDecoration: 'none' }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', marginBottom: 3 }}>{s.title}</div>
+                {s.headlinerName ? <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)' }}>{s.headlinerName}</div> : null}
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>
+                  {s.venueName ? `${s.venueName} · ` : ''}{s.startsAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <WorkbenchShell data={wbData} starterPack={starterPack} />
       <div className="container">
+        <TrendingNearMe viewerCity={profile.city ?? viewerLocation?.city ?? null} />
         <NewToScene />
       </div>
     </>

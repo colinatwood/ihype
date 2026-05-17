@@ -89,6 +89,9 @@ export default async function ShowsIndexPage({
             <Link className="button small secondary" href="/register?role=VENUE">
               List venue shows
             </Link>
+            <Link className="button small secondary" href="/shows/map">
+              Map view
+            </Link>
           </div>
           {nearCity ? (
             <div className="cta-row" style={{ marginTop: '0.75rem' }} role="group" aria-label="Location filter">
