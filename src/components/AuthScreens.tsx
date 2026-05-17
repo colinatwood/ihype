@@ -386,8 +386,56 @@ export function LoginScreen({
         <Link className="text-link" href="/forgot-password">
           Reset password
         </Link>
+        <MagicLinkButton />
       </div>
     </AuthSignalShell>
+  );
+}
+
+function MagicLinkButton() {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function send(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await postJson('/api/auth/magic-link', { email });
+      setSent(true);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not send link.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button className="text-link" onClick={() => setOpen(true)} type="button">
+        Email me a sign-in link
+      </button>
+    );
+  }
+
+  if (sent) {
+    return <p className="status-note">Check your inbox for a sign-in link (expires in 15 min).</p>;
+  }
+
+  return (
+    <form className="form" onSubmit={send} style={{ marginTop: 4 }}>
+      <label className="field">
+        <span>Email</span>
+        <input autoComplete="email" onChange={(e) => setEmail(e.target.value)} required type="email" value={email} />
+      </label>
+      <button className="button secondary" disabled={busy} type="submit" style={{ fontSize: 13 }}>
+        {busy ? 'Sending...' : 'Send sign-in link'}
+      </button>
+      {error ? <p className="status-note status-note-error">{error}</p> : null}
+    </form>
   );
 }
 

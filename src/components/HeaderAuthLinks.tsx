@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { logoutAction } from '@/app/logout/actions';
 import { AdminPerspectiveHeaderSelect, useAdminPerspective } from '@/components/AdminPerspective';
+import { NotificationBell } from '@/components/NotificationBell';
 
 function getDisplayName(user: { name?: string | null; email?: string | null }) {
   const name = user.name?.trim();
@@ -41,6 +42,7 @@ export function HeaderAuthLinks() {
     return (
       <div className="nav-auth-slot nav-auth-cluster">
         <div className="nav-links nav-links-auth nav-links-compact">
+          <NotificationBell />
           <Link className="nav-user-pill" href={accountHref} aria-label={`Open account dashboard for ${displayName}`}>
             <span className="nav-user-avatar" aria-hidden="true">
               {displayName.charAt(0).toUpperCase()}

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { saveNotificationPreferences } from './actions';
+import { PushNotificationToggle } from '@/components/PushNotificationToggle';
 
 export const metadata = { title: 'Notification preferences · iHYPE' };
 export const dynamic = 'force-dynamic';
@@ -45,6 +46,7 @@ export default async function NotificationPreferencesPage() {
           <button className="button" type="submit">Save preferences</button>
         </div>
       </form>
+      <PushNotificationToggle />
     </main>
   );
 }
