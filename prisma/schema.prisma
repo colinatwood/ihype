@@ -879,3 +879,18 @@ model UserMediaQueue {
 
   @@index([userId, position])
 }
+
+model AdSubmission {
+  id               String    @id @default(cuid())
+  advertiserName   String
+  advertiserType   String
+  campaignWebsite  String
+  adTextCopy       String
+  creativeAssetUrl String?
+  status           String    @default("pending")
+  aiReasoning      String?
+  reviewedAt       DateTime?
+  reviewedBy       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
