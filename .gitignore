@@ -21,3 +21,4 @@ tsconfig.tsbuildinfo
 .npm-cache
 .sync-bundles
 .vercel-sandbox-data
+.claude/worktrees/
