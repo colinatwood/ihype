@@ -81,12 +81,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <div className="container" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 24px', alignItems: 'center', justifyContent: 'center', fontSize: 13, opacity: 0.65 }}>
               <a href="/about">About</a>
               <a href="/transparency">Transparency</a>
-              <a href="/leaderboard">Leaderboard</a>
+              <a href="/discover?tab=fans">Leaderboard</a>
               <a href="/advertise">Advertise</a>
               <a href="/status">Status</a>
               <a href="/privacy">Privacy</a>
               <a href="/dmca">DMCA</a>
-              <a href="/playlists/curated">Playlists</a>
+              <a href="/playlists">Playlists</a>
               <span>© {new Date().getFullYear()} iHYPE — not-for-profit</span>
             </div>
           </footer>

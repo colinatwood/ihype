@@ -24,17 +24,14 @@ import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideD
 import { SoundsLike } from '@/components/SoundsLike';
 import { StreamingLinks } from '@/components/StreamingLinks';
 
-const artistSections = ['about', 'media', 'tour', 'merch'] as const;
+const artistSections = ['about', 'media', 'merch'] as const;
 
 type ArtistSection = (typeof artistSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): ArtistSection {
-  if (section === 'journal' || section === 'tour') {
-    return section === 'tour' ? 'tour' : 'about';
-  }
-
-  if (section === 'events') {
-    return 'tour';
+  // Map legacy tour/events/journal params to about
+  if (section === 'tour' || section === 'events' || section === 'journal') {
+    return 'about';
   }
 
   if (typeof section === 'string' && artistSections.includes(section as ArtistSection)) {
@@ -45,7 +42,6 @@ function getActiveSection(section: string | string[] | undefined): ArtistSection
 }
 
 function getSectionLabel(section: ArtistSection) {
-  if (section === 'tour') return 'Tour';
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 
@@ -373,6 +369,35 @@ export default async function ArtistPage({
                   </ul>
                 </div>
               ) : null}
+
+              {/* Tour content merged into about */}
+              {profile.tourContent ? (
+                <div className="artist-copy">{profile.tourContent}</div>
+              ) : null}
+
+              <NetworkEarthGlobe
+                description="Start from the visitor ZIP, highlight nearby venues, then zoom out to trace the artist tour path across current and previous show stops."
+                emptyRouteLabel="No tour stops are mapped yet."
+                routeLabel="Tour path"
+                routeStops={globeRouteStops}
+                title="Earth globe for nearby venues and tour paths"
+                venues={venues}
+                viewerLocation={viewerLocation}
+              />
+
+              <div className="artist-tour-shows">
+                <h3>Upcoming shows</h3>
+                <div className="grid grid-2">
+                  {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming dates yet.</div>}
+                </div>
+              </div>
+
+              <div className="artist-tour-shows">
+                <h3>Previous shows</h3>
+                <div className="grid grid-2">
+                  {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous dates yet.</div>}
+                </div>
+              </div>
             </>
           ) : null}
 
@@ -405,37 +430,6 @@ export default async function ArtistPage({
                   <div className="empty-example-card">Seed preview, artwork, and play controls will appear here.</div>
                 </div>
               )}
-            </>
-          ) : null}
-
-          {activeSection === 'tour' ? (
-            <>
-              <h2>Tour</h2>
-              <div className="artist-copy">{profile.tourContent || 'No tour notes yet.'}</div>
-
-              <NetworkEarthGlobe
-                description="Start from the visitor ZIP, highlight nearby venues, then zoom out to trace the artist tour path across current and previous show stops."
-                emptyRouteLabel="No tour stops are mapped yet."
-                routeLabel="Tour path"
-                routeStops={globeRouteStops}
-                title="Earth globe for nearby venues and tour paths"
-                venues={venues}
-                viewerLocation={viewerLocation}
-              />
-
-              <div className="artist-tour-shows">
-                <h3>Upcoming</h3>
-                <div className="grid grid-2">
-                  {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming dates yet.</div>}
-                </div>
-              </div>
-
-              <div className="artist-tour-shows">
-                <h3>Previous</h3>
-                <div className="grid grid-2">
-                  {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous dates yet.</div>}
-                </div>
-              </div>
             </>
           ) : null}
 

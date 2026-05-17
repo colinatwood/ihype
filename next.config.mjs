@@ -180,9 +180,59 @@ const nextConfig = {
         permanent: false
       },
       {
-        source: '/discover',
-        destination: '/artists',
-        permanent: false
+        source: '/trending',
+        destination: '/discover?tab=trending',
+        permanent: true
+      },
+      {
+        source: '/leaderboard',
+        destination: '/discover?tab=fans',
+        permanent: true
+      },
+      {
+        source: '/playlists/curated',
+        destination: '/playlists',
+        permanent: true
+      },
+      {
+        source: '/admin/reports',
+        destination: '/admin/review?tab=reports',
+        permanent: true
+      },
+      {
+        source: '/admin/verifications',
+        destination: '/admin/review?tab=verifications',
+        permanent: true
+      },
+      {
+        source: '/admin/duplicates',
+        destination: '/admin/review?tab=duplicates',
+        permanent: true
+      },
+      {
+        source: '/admin/rate-limits',
+        destination: '/status',
+        permanent: true
+      },
+      {
+        source: '/settings/notifications',
+        destination: '/settings',
+        permanent: true
+      },
+      {
+        source: '/settings/data',
+        destination: '/settings',
+        permanent: true
+      },
+      {
+        source: '/workbench/analytics',
+        destination: '/workbench?tab=analytics',
+        permanent: true
+      },
+      {
+        source: '/workbench/tickets',
+        destination: '/workbench?tab=tickets',
+        permanent: true
       },
       {
         source: '/customizer',
