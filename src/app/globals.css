@@ -72,11 +72,19 @@
   --panel-2: rgba(240,235,228,.9);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+  /* 2. Remove tap highlight on all elements */
+  -webkit-tap-highlight-color: transparent;
+}
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--f-b, 'DM Sans', 'Segoe UI', sans-serif); }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 button, input, select, textarea { font: inherit; }
+/* 2. Pointer cursor for interactive elements */
+button, a, [role="button"] {
+  cursor: pointer;
+}
 
 .container { width: min(1280px, calc(100% - 2.5rem)); margin: 0 auto; }
 .site-shell {
@@ -15029,4 +15037,19 @@ html.high-contrast p {
 }
 .form-sticky-submit {
   padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* ── Mobile polish additions ──────────────────────────────────────── */
+
+/* 1. iOS scroll momentum + overscroll containment */
+.site-shell, [data-scroll], .panel-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* 3. Input zoom prevention on iOS (font-size >= 16px) */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: max(16px, 1em) !important;
+  }
 }

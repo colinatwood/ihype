@@ -1,14 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { playerStore } from '@/lib/player-store';
+import { updateMediaSession } from '@/lib/media-session';
 
 export function MiniPlayer() {
   const [state, setState] = useState(() => playerStore.get());
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // 5. Unlock audio context on first touch (iOS background audio)
+    function unlockAudio() {
+      audioRef.current?.play().catch(() => {});
+      document.removeEventListener('touchstart', unlockAudio);
+    }
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+    return () => document.removeEventListener('touchstart', unlockAudio);
+  }, []);
+
+  useEffect(() => {
+    // 6. Media Session API
+    updateMediaSession(playerStore.get());
     setState(playerStore.get());
-    const unsub = playerStore.subscribe(() => setState(playerStore.get()));
+    const unsub = playerStore.subscribe(() => {
+      setState(playerStore.get());
+      updateMediaSession(playerStore.get());
+    });
     return () => { unsub(); };
   }, []);
 
@@ -32,6 +49,8 @@ export function MiniPlayer() {
         backdropFilter: 'blur(16px)',
       }}
     >
+      {/* 5. Hidden audio element for iOS background audio unlock */}
+      <audio ref={audioRef} playsInline style={{ display: 'none' }} />
       {/* Progress bar */}
       <div style={{ height: 2, background: 'var(--line)' }}>
         <div
