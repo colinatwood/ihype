@@ -17,6 +17,31 @@ async function checkDb(): Promise<boolean> {
   }
 }
 
+async function checkResend(): Promise<{ ok: boolean; label: string }> {
+  if (!process.env.RESEND_API_KEY) return { ok: false, label: 'API key missing' };
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}` }
+    });
+    // 200 or 405 both mean the key is valid
+    return { ok: res.status < 500, label: res.status < 500 ? 'Reachable' : `HTTP ${res.status}` };
+  } catch {
+    return { ok: false, label: 'Unreachable' };
+  }
+}
+
+async function checkKv(): Promise<{ ok: boolean; label: string }> {
+  if (!process.env.KV_REST_API_URL) return { ok: false, label: 'Not configured' };
+  try {
+    const { kv } = await import('@vercel/kv');
+    await kv.ping();
+    return { ok: true, label: 'Connected' };
+  } catch {
+    return { ok: false, label: 'Error' };
+  }
+}
+
 function StatusDot({ ok }: { ok: boolean }) {
   return (
     <span
@@ -34,14 +59,26 @@ function StatusDot({ ok }: { ok: boolean }) {
 }
 
 export default async function StatusPage() {
-  const dbOk = await checkDb();
+  const [dbOk, resendResult, kvResult] = await Promise.all([
+    checkDb(),
+    checkResend(),
+    checkKv()
+  ]);
 
   const envChecks = REQUIRED_ENV_VARS.map((key) => ({
     key,
     ok: Boolean(process.env[key]),
   }));
 
-  const allOk = dbOk && envChecks.every((c) => c.ok);
+  const anthropicPresent = Boolean(process.env.ANTHROPIC_API_KEY);
+  const stripePresent = Boolean(process.env.STRIPE_SECRET_KEY);
+
+  const allOk =
+    dbOk &&
+    resendResult.ok &&
+    anthropicPresent &&
+    stripePresent &&
+    envChecks.every((c) => c.ok);
 
   return (
     <main className="container section" style={{ maxWidth: 560 }}>
@@ -55,6 +92,30 @@ export default async function StatusPage() {
           <StatusDot ok={dbOk} />
           <span>Database</span>
           <span className="meta" style={{ marginLeft: 'auto' }}>{dbOk ? 'Connected' : 'Error'}</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <StatusDot ok={resendResult.ok} />
+          <span>Resend (email)</span>
+          <span className="meta" style={{ marginLeft: 'auto' }}>{resendResult.label}</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <StatusDot ok={kvResult.ok} />
+          <span>KV (Vercel KV)</span>
+          <span className="meta" style={{ marginLeft: 'auto' }}>{kvResult.label}</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <StatusDot ok={anthropicPresent} />
+          <span style={{ fontFamily: 'var(--font-jb, monospace)', fontSize: 13 }}>ANTHROPIC_API_KEY</span>
+          <span className="meta" style={{ marginLeft: 'auto' }}>{anthropicPresent ? 'Present' : 'Missing'}</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <StatusDot ok={stripePresent} />
+          <span style={{ fontFamily: 'var(--font-jb, monospace)', fontSize: 13 }}>STRIPE_SECRET_KEY</span>
+          <span className="meta" style={{ marginLeft: 'auto' }}>{stripePresent ? 'Present' : 'Missing'}</span>
         </div>
 
         {envChecks.map(({ key, ok }) => (

@@ -18,11 +18,13 @@ async function checkAndRecordMilestone(profileId: string, newCount: number) {
       select: { id: true, name: true, slug: true, type: true, owner: { select: { email: true, name: true } } }
     });
     if (!profile) return;
+    const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org';
+    const cardUrl = `${base}/api/milestones/${profileId}/card?milestone=${encodeURIComponent(`${crossed} HYPES`)}`;
     await recordAuditEvent({
       action: `profile_milestone_hype_${crossed}`,
       entityType: 'profile',
       entityId: profileId,
-      metadata: { milestone: crossed, profileName: profile.name }
+      metadata: { milestone: crossed, profileName: profile.name, cardUrl }
     });
     const ownerEmail = profile.owner?.email;
     if (ownerEmail) {

@@ -11,6 +11,10 @@ const STATIC_ASSETS = [
 
 const CORE_PAGES = [
   '/',
+  '/home',
+  '/artists',
+  '/shows',
+  '/trending',
   '/hype',
   '/tickets'
 ];

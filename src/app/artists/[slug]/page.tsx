@@ -21,6 +21,8 @@ import { detectRequestLocation } from '@/lib/request-location';
 import { AdBanner } from '@/components/AdBanner';
 import { AvailabilityCalendar } from '@/components/AvailabilityCalendar';
 import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
+import { SoundsLike } from '@/components/SoundsLike';
+import { StreamingLinks } from '@/components/StreamingLinks';
 
 const artistSections = ['about', 'media', 'tour', 'merch'] as const;
 
@@ -454,6 +456,8 @@ export default async function ArtistPage({
         <AvailabilityCalendar profileId={profile.id} />
       </div>
       <PeopleAlsoHype profileId={profile.id} />
+      <SoundsLike profileId={profile.id} profileName={profile.name} />
+      <StreamingLinks linksJson={profile.links ?? null} />
       <div style={{ marginTop: 16 }}>
         <ReportButton entityType="profile" entityId={profile.id} />
       </div>

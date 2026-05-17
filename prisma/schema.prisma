@@ -364,6 +364,7 @@ model Show {
   slug                   String                 @unique
   title                  String
   description            String?
+  recapText              String?
   productionPlan         Json?
   productionPlanVersion  Int                    @default(1)
   isRadioShow            Boolean                @default(false)
@@ -936,4 +937,17 @@ model ShowAttendee {
 
   @@unique([userId, showId])
   @@index([showId])
+}
+
+model CuratedPlaylist {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  createdBy   String
+  tracks      Json
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, createdAt])
 }

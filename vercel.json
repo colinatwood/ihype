@@ -38,6 +38,10 @@
                   {
                       "path":  "/api/show-reminders-cron",
                       "schedule":  "0 */6 * * *"
+                  },
+                  {
+                      "path":  "/api/db-health-cron",
+                      "schedule":  "0 8 * * 1"
                   }
               ]
 }
