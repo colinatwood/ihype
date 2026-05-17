@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
+import { getRateLimitMetrics } from '@/lib/rate-limit';
 
 export const metadata: Metadata = {
   title: 'System Status · iHYPE',
@@ -59,10 +60,11 @@ function StatusDot({ ok }: { ok: boolean }) {
 }
 
 export default async function StatusPage() {
-  const [dbOk, resendResult, kvResult] = await Promise.all([
+  const [dbOk, resendResult, kvResult, rateLimitMetrics] = await Promise.all([
     checkDb(),
     checkResend(),
-    checkKv()
+    checkKv(),
+    getRateLimitMetrics(50).catch(() => [] as Array<{ bucket: string; hits: number }>)
   ]);
 
   const envChecks = REQUIRED_ENV_VARS.map((key) => ({
@@ -130,6 +132,31 @@ export default async function StatusPage() {
       <p className="meta" style={{ marginTop: 16 }}>
         Checked at {new Date().toUTCString()}
       </p>
+
+      {rateLimitMetrics.length > 0 && (
+        <>
+          <h2 className="title" style={{ fontSize: '1.25rem', marginTop: 32 }}>Rate Limit Metrics</h2>
+          <p className="meta" style={{ marginBottom: 12 }}>Top {rateLimitMetrics.length} buckets by request count.</p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--f-m)', fontSize: 12 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--line-2)', color: 'var(--ink-3)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600, fontSize: 10 }}>Bucket key</th>
+                  <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 600, fontSize: 10 }}>Hits</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rateLimitMetrics.map((m) => (
+                  <tr key={m.bucket} style={{ borderBottom: '1px solid var(--line)' }}>
+                    <td style={{ padding: '10px 12px', color: 'var(--ink)', fontFamily: 'monospace', fontSize: 11 }}>{m.bucket}</td>
+                    <td style={{ padding: '10px 12px', textAlign: 'right', color: m.hits > 100 ? '#ff3e9a' : 'var(--ink)' }}>{m.hits}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </main>
   );
 }

@@ -1,5 +1,4 @@
 import { db } from '@/lib/db';
-import { AdImpressionPing } from '@/components/AdImpressionPing';
 
 export async function AdBanner() {
   // Prefer premium > featured > standard
@@ -30,9 +29,16 @@ export async function AdBanner() {
 
   if (!ad) return null;
 
+  const adId = ad.id;
+
   return (
     <aside className="panel" style={{ borderLeft: '3px solid var(--accent)', padding: '10px 14px' }}>
-      <AdImpressionPing id={ad.id} />
+      {/* Inline impression ping — avoids the need for a separate client component */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `(function(){fetch('/api/ads/${adId}/impression',{method:'POST'}).catch(function(){});})();`
+        }}
+      />
       <p className="meta" style={{ marginBottom: 4 }}>Supporter{ad.tier !== 'standard' ? ` · ${ad.tier}` : ''}</p>
       <p style={{ margin: 0 }}>
         <a href={ad.campaignWebsite} rel="noopener noreferrer" target="_blank">

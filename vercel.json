@@ -20,27 +20,27 @@
                       "schedule":  "*/5 * * * *"
                   },
                   {
-                      "path":  "/api/digest",
+                      "path":  "/api/cron?job=digest",
                       "schedule":  "0 10 * * 1"
                   },
                   {
-                      "path":  "/api/health-check-cron",
+                      "path":  "/api/cron?job=health-check",
                       "schedule":  "*/15 * * * *"
                   },
                   {
-                      "path":  "/api/digest/artist",
+                      "path":  "/api/cron?job=artist-digest",
                       "schedule":  "0 10 * * 2"
                   },
                   {
-                      "path":  "/api/onboarding-cron",
+                      "path":  "/api/cron?job=onboarding",
                       "schedule":  "0 9 * * *"
                   },
                   {
-                      "path":  "/api/show-reminders-cron",
+                      "path":  "/api/cron?job=show-reminders",
                       "schedule":  "0 */6 * * *"
                   },
                   {
-                      "path":  "/api/db-health-cron",
+                      "path":  "/api/cron?job=db-health",
                       "schedule":  "0 8 * * 1"
                   }
               ]

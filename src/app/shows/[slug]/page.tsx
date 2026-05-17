@@ -14,11 +14,9 @@ import { formatShowTime } from '@/lib/utils';
 import { getMuxPlaybackToken } from '@/lib/mux';
 import { ShowPlaybackTracker } from '@/components/ShowPlaybackTracker';
 import { ShowComments } from '@/components/ShowComments';
-import { ShowRsvpButton } from '@/components/ShowRsvpButton';
+import { ShowEngagement } from '@/components/ShowEngagement';
 import { ShowSetlistEditor } from '@/components/ShowSetlistEditor';
 import { AdBanner } from '@/components/AdBanner';
-import { ShowWhoIsGoing } from '@/components/ShowWhoIsGoing';
-import { ShowRemindButton } from '@/components/ShowRemindButton';
 import { ShowRecapForm } from '@/components/ShowRecapForm';
 
 export async function generateMetadata(
@@ -263,20 +261,18 @@ export default async function ShowDetailPage({
           {show.venueProfile ? ` | ${show.venueProfile.name}` : ''}
           {show.headlinerProfile ? ` | ${show.headlinerProfile.name}` : ''}
         </p>
-        <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <a className="button small secondary" href={`/shows/${slug}/poster?download=1`} download>
+        <div style={{ marginTop: 10 }}>
+          <a className="button small secondary" href={`/shows/${slug}/poster?download=1`} download style={{ marginBottom: 8, display: 'inline-block' }}>
             Download poster
           </a>
-          <ShowRsvpButton
+          <ShowEngagement
             showId={show.id}
             canRsvp={Boolean(session?.user?.id)}
             initialCount={rsvpCount}
             initialGoing={viewerGoing}
-          />
-          <ShowRemindButton
-            showId={show.id}
-            initialSet={false}
-            canRemind={Boolean(session?.user?.id) && show.status !== 'ENDED'}
+            canRemind={Boolean(session?.user?.id)}
+            initialReminded={false}
+            showEnded={show.status === 'ENDED'}
           />
         </div>
       </div>
@@ -722,9 +718,7 @@ export default async function ShowDetailPage({
       ) : null}
       {isShowOwner ? <ShowSetlistEditor showId={show.id} initialTracks={setlistTracks} /> : null}
 
-      <div style={{ marginTop: 16, marginBottom: 16 }}>
-        <ShowWhoIsGoing showId={show.id} />
-      </div>
+      {/* Who's going is now embedded in ShowEngagement above */}
       {show.recapText && (
         <section className="section">
           <div className="panel" style={{ padding: '1.25rem' }}>

@@ -7,7 +7,7 @@ const NAV_LINKS = [
   { href: '/shows', label: 'Shows' },
   { href: '/artists', label: 'Artists' },
   { href: '/venues', label: 'Venues' },
-  { href: '/trending', label: 'Trending' },
+  { href: '/discover', label: 'Discover' },
   { href: '/journal', label: 'Journal' },
 ];
 

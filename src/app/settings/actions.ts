@@ -21,5 +21,5 @@ export async function saveNotificationPreferences(formData: FormData) {
     create: { userId: session.user.id, ...data }
   });
 
-  revalidatePath('/settings/notifications');
+  revalidatePath('/settings');
 }
