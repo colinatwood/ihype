@@ -50,6 +50,10 @@
                   {
                       "path":  "/api/cron?job=admin-report",
                       "schedule":  "0 8 * * 1"
+                  },
+                  {
+                      "path":  "/api/cron?job=new-to-scene",
+                      "schedule":  "0 10 * * 3"
                   }
               ]
 }

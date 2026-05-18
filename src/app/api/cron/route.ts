@@ -130,8 +130,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result);
     }
 
+    case 'new-to-scene': {
+      const { sendNewToSceneEmail } = await import('@/lib/new-to-scene');
+      const result = await sendNewToSceneEmail();
+      return NextResponse.json({ ok: true, ...result });
+    }
+
     default:
-      return NextResponse.json({ error: 'Unknown job. Use ?job=digest|artist-digest|health-check|onboarding|show-reminders|db-health|weekly-picks|admin-report' }, { status: 400 });
+      return NextResponse.json({ error: 'Unknown job. Use ?job=digest|artist-digest|health-check|onboarding|show-reminders|db-health|weekly-picks|admin-report|new-to-scene' }, { status: 400 });
   }
 }
 
