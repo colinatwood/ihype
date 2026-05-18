@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { recordAuditEvent } from '@/lib/audit';
 import { isAdminSession } from '@/lib/permissions';
+import { requireRecentAdminReauth } from '@/lib/admin-confirmation';
 
 async function requireAdmin() {
   const session = await auth();
@@ -33,6 +34,9 @@ export async function suspendUserAction(formData: FormData) {
 
 export async function promoteToAdminAction(formData: FormData) {
   const session = await requireAdmin();
+  if (!await requireRecentAdminReauth(session.user!.id!)) {
+    return Response.json({ requiresReauth: true }, { status: 401 });
+  }
   const userId = String(formData.get('userId') ?? '');
   if (!userId) return;
 

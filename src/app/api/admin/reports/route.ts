@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
+import { recordAuditEvent } from '@/lib/audit';
+import { readClientAddress } from '@/lib/request-meta';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +39,14 @@ export async function PATCH(request: NextRequest) {
   if (!reportId) return NextResponse.json({ error: 'reportId required.' }, { status: 400 });
 
   await db.report.update({ where: { id: reportId }, data: { status: 'closed' } });
+
+  await recordAuditEvent({
+    actorUserId: session.user?.id,
+    action: 'admin_report_closed',
+    entityType: 'Report',
+    entityId: reportId,
+    ipAddress: readClientAddress(request),
+  });
 
   return NextResponse.json({ ok: true });
 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { db } from '@/lib/db';
 
 function verifyResendSignature(
@@ -13,7 +13,10 @@ function verifyResendSignature(
   const hmac = createHmac('sha256', secret).update(toSign).digest('base64');
   const expected = `v1,${hmac}`;
   const signatures = svixSignature.split(' ');
-  return signatures.some((sig) => sig === expected);
+  return signatures.some((sig) => {
+    if (sig.length !== expected.length) return false;
+    return timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+  });
 }
 
 export async function POST(request: NextRequest) {
@@ -27,6 +30,11 @@ export async function POST(request: NextRequest) {
   const svixSignature = request.headers.get('svix-signature') ?? '';
 
   const body = await request.text();
+
+  const timestampMs = parseInt(svixTimestamp, 10) * 1000;
+  if (Math.abs(Date.now() - timestampMs) > 300_000) {
+    return NextResponse.json({ error: 'Request timestamp too old' }, { status: 401 });
+  }
 
   if (!verifyResendSignature(body, svixId, svixTimestamp, svixSignature, secret)) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });

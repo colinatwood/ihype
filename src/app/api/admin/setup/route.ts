@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { recordAuditEvent } from '@/lib/audit';
 import { readClientAddress } from '@/lib/request-meta';
+import { consumeRateLimit } from '@/lib/rate-limit';
 
 const REG_COOKIE_TTL_SECONDS = 10 * 60;
 
 export async function POST(request: Request) {
+  const ip = readClientAddress(request);
+  const rl = await consumeRateLimit(`admin-setup:${ip ?? 'unknown'}`, { limit: 5, windowMs: 15 * 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
+  }
+
   const secret = process.env.ADMIN_SETUP_SECRET;
   if (!secret) {
     return NextResponse.json({ error: 'Admin setup is not configured.' }, { status: 500 });

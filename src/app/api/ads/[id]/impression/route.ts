@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { consumeRateLimit } from '@/lib/rate-limit';
+import { readClientAddress } from '@/lib/request-meta';
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const ip = readClientAddress(request);
+  const rl = await consumeRateLimit(`ad-impression:${ip ?? 'unknown'}`, { limit: 50, windowMs: 60 * 1000 });
+  if (!rl.allowed) {
+    return NextResponse.json({ ok: false }, { status: 429 });
+  }
+
   const { id } = await params;
   try {
     await db.adSubmission.update({

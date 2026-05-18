@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { isAdminSession } from '@/lib/permissions';
 import { recordAuditEvent } from '@/lib/audit';
 import { readClientAddress } from '@/lib/request-meta';
+import { requireRecentAdminReauth } from '@/lib/admin-confirmation';
 
 const ALLOWED_FLAGS = new Set([
   'demo_logins',
@@ -17,6 +18,10 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!isAdminSession(session) || !session?.user?.id) {
     return NextResponse.json({ error: 'Forbidden.' }, { status: 403 });
+  }
+
+  if (!await requireRecentAdminReauth(session.user.id)) {
+    return Response.json({ requiresReauth: true }, { status: 401 });
   }
 
   let body: { flag?: string; enabled?: boolean };
