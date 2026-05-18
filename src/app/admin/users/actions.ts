@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { recordAuditEvent } from '@/lib/audit';
@@ -35,7 +36,7 @@ export async function suspendUserAction(formData: FormData) {
 export async function promoteToAdminAction(formData: FormData) {
   const session = await requireAdmin();
   if (!await requireRecentAdminReauth(session.user!.id!)) {
-    return Response.json({ requiresReauth: true }, { status: 401 });
+    redirect('/admin/users?reauth=required');
   }
   const userId = String(formData.get('userId') ?? '');
   if (!userId) return;
