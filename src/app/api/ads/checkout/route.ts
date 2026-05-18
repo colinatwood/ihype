@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2025-02-24.acacia' });
+import { getStripe } from '@/lib/stripe';
 
 const TIER_PRICES: Record<string, number> = {
   featured: 5000,  // $50
@@ -23,7 +21,7 @@ export async function POST(request: NextRequest) {
   if (!priceAmount) return NextResponse.json({ url: null, message: 'Standard tier is free — no payment needed.' });
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org';
-  const checkout = await stripe.checkout.sessions.create({
+  const checkout = await getStripe().checkout.sessions.create({
     mode: 'subscription',
     line_items: [{ price_data: { currency: 'usd', unit_amount: priceAmount, recurring: { interval: 'month' }, product_data: { name: `iHYPE ${ad.tier} ad — ${ad.advertiserName}` } }, quantity: 1 }],
     success_url: `${baseUrl}/advertise?success=1&adId=${adId}`,

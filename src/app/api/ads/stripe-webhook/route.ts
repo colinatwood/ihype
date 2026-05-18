@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import type Stripe from 'stripe';
 import { db } from '@/lib/db';
+import { getStripe } from '@/lib/stripe';
 
 export const runtime = 'nodejs';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', { apiVersion: '2025-02-24.acacia' });
 
 export async function POST(request: NextRequest) {
   const sig = request.headers.get('stripe-signature') ?? '';
   const body = await request.text();
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_AD_WEBHOOK_SECRET ?? '');
+    const secret = process.env.STRIPE_AD_WEBHOOK_SECRET ?? '';
+    event = getStripe().webhooks.constructEvent(body, sig, secret);
   } catch {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
