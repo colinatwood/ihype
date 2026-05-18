@@ -1,7 +1,40 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { withAccelerate } from '@prisma/extension-accelerate';
 
+const RUNTIME_POSTGRES_URL_CANDIDATES = [
+  'POSTGRES_PRISMA_URL',
+  'DATABASE_URL_POSTGRES_PRISMA_URL',
+  'POSTGRES_URL',
+  'DATABASE_URL_POSTGRES_URL',
+  'DIRECT_DATABASE_URL',
+  'DATABASE_DIRECT_URL',
+  'DATABASE_URL_UNPOOLED',
+  'POSTGRES_URL_NON_POOLING',
+  'DATABASE_URL_POSTGRES_URL_NON_POOLING',
+  'POSTGRES_URL_NO_SSL',
+  'DATABASE_URL_POSTGRES_URL_NO_SSL'
+] as const;
+
+function isPostgresUrl(url: string | undefined) {
+  return Boolean(url?.startsWith('postgresql://') || url?.startsWith('postgres://'));
+}
+
+function normalizeRuntimeDatabaseUrl() {
+  if (isPostgresUrl(process.env.DATABASE_URL)) {
+    return;
+  }
+
+  for (const key of RUNTIME_POSTGRES_URL_CANDIDATES) {
+    const value = process.env[key]?.trim();
+    if (isPostgresUrl(value)) {
+      process.env.DATABASE_URL = value;
+      return;
+    }
+  }
+}
+
 function makePrisma() {
+  normalizeRuntimeDatabaseUrl();
   return new PrismaClient().$extends(withAccelerate());
 }
 
