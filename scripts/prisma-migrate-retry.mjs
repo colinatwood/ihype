@@ -1,6 +1,11 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 
+if (!process.env.DATABASE_URL) {
+  console.warn('DATABASE_URL is not set — skipping prisma migrate deploy. Connect a database before promoting to production.');
+  process.exit(0);
+}
+
 const maxAttempts = Number.parseInt(process.env.PRISMA_MIGRATE_ATTEMPTS ?? '5', 10);
 const retryDelayMs = Number.parseInt(process.env.PRISMA_MIGRATE_RETRY_DELAY_MS ?? '15000', 10);
 const prismaBin = path.join(
