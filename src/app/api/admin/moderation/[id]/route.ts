@@ -12,7 +12,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   await db.contentReport.update({ where: { id }, data: { status: action === 'approve' ? 'ACTIONED' : 'DISMISSED' } });
 
   await recordAuditEvent({
-    actorUserId: session.user?.id,
+    actorUserId: session?.user?.id,
     action: 'admin_content_report_actioned',
     entityType: 'ContentReport',
     entityId: id,

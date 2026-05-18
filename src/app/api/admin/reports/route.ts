@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest) {
   await db.report.update({ where: { id: reportId }, data: { status: 'closed' } });
 
   await recordAuditEvent({
-    actorUserId: session.user?.id,
+    actorUserId: session?.user?.id,
     action: 'admin_report_closed',
     entityType: 'Report',
     entityId: reportId,
