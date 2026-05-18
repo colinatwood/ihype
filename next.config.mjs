@@ -209,11 +209,7 @@ const nextConfig = {
         destination: '/admin/review?tab=duplicates',
         permanent: true
       },
-      {
-        source: '/admin/rate-limits',
-        destination: '/status',
-        permanent: true
-      },
+
       {
         source: '/settings/notifications',
         destination: '/settings',
@@ -249,11 +245,7 @@ const nextConfig = {
         destination: '/artists',
         permanent: false
       },
-      {
-        source: '/search',
-        destination: '/artists',
-        permanent: false
-      },
+
       {
         source: '/governance',
         destination: '/about',
