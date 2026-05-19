@@ -29,29 +29,8 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Wake up Neon database
-        run: |
-          node - << 'EOF'
-          const { Client } = require('pg');
-          const c = new Client({ connectionString: process.env.DIRECT_URL, connectionTimeoutMillis: 30000 });
-          c.connect()
-            .then(() => c.query('SELECT 1'))
-            .then(() => { console.log('DB ready'); return c.end(); })
-            .catch(e => { console.error('wake-up:', e.message); });
-          EOF
-        env:
-          DIRECT_URL: ${{ secrets.DIRECT_URL }}
-
       - name: Remove broken migration record
-        run: |
-          node - << 'EOF'
-          const { Client } = require('pg');
-          const c = new Client({ connectionString: process.env.DIRECT_URL });
-          c.connect()
-            .then(() => c.query("DELETE FROM _prisma_migrations WHERE migration_name = '20260507000001_radio_track_block_label'"))
-            .then(r => { console.log('deleted rows:', r.rowCount); return c.end(); })
-            .catch(e => { console.error(e.message); process.exit(1); });
-          EOF
+        run: node scripts/fix-broken-migration.js
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
