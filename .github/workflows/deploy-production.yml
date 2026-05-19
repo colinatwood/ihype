@@ -59,9 +59,9 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          AUTH_URL: ${{ secrets.AUTH_URL }}
-          NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
-          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          AUTH_URL: https://ihype.org
+          NEXT_PUBLIC_BASE_URL: https://ihype.org
+          NEXT_PUBLIC_APP_URL: https://ihype.org
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
 
