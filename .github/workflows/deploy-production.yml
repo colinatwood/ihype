@@ -29,14 +29,33 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Resolve any failed migrations
-        run: npx prisma migrate resolve --rolled-back 20260507000001_radio_track_block_label || true
+      - name: Wake up Neon database
+        run: |
+          node -e "
+          var pg = require('pg');
+          var c = new pg.Client({connectionString: process.env.DIRECT_URL, connectionTimeoutMillis: 30000});
+          c.connect(function(err) {
+            if (err) { console.error('wake-up:', err.message); process.exit(0); }
+            c.query('SELECT 1', function() { c.end(); console.log('DB ready'); });
+          });
+          "
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL }}
+
+      - name: Mark broken migration as applied
+        run: npx prisma migrate resolve --applied 20260507000001_radio_track_block_label || true
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       - name: Run migrations
-        run: npx prisma migrate deploy
+        run: |
+          for i in 1 2 3; do
+            npx prisma migrate deploy && exit 0
+            echo "Migration attempt $i failed, retrying in 15s..."
+            sleep 15
+          done
+          exit 1
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
