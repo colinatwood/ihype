@@ -46,7 +46,8 @@ const schema = z.object({
   themeAccentTone: z.enum(profileAccentToneIds).optional(),
   themeBackdropTone: z.enum(profileBackdropToneIds).optional(),
   inviteCode: z.string().trim().max(80).optional(),
-  company: z.string().trim().max(120).optional()
+  company: z.string().trim().max(120).optional(),
+  turnstileToken: z.string().optional()
 });
 
 function getProfileType(role: 'FAN' | 'ARTIST' | 'DJ' | 'VENUE'): ProfileType {
@@ -159,6 +160,24 @@ export async function POST(request: Request) {
     }
 
     const rawBody = await request.json();
+
+    // Verify Turnstile token if site key is configured
+    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+    if (turnstileSecret) {
+      const token = rawBody.turnstileToken as string | undefined;
+      if (!token) {
+        return NextResponse.json({ error: 'CAPTCHA token missing.' }, { status: 400 });
+      }
+      const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: turnstileSecret, response: token })
+      });
+      const result = await resp.json() as { success: boolean };
+      if (!result.success) {
+        return NextResponse.json({ error: 'CAPTCHA verification failed. Please try again.' }, { status: 400 });
+      }
+    }
 
     // Beta invite gate — set BETA_INVITE_CODE env var to require a code at signup.
     const betaCode = process.env.BETA_INVITE_CODE?.trim();

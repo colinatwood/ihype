@@ -8,8 +8,8 @@ NEXT_PUBLIC_BASE_URL = "https://ihype.org"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_KV_PREVIEW_NAMESPACE_ID"
+id = "b6330641874a4420b240d3a82760a9aa"
+preview_id = "eb2e8a134c184a13a71710ec0287b958"
 
 [[r2_buckets]]
 binding = "R2"
@@ -19,6 +19,32 @@ preview_bucket_name = "ihype-media-preview"
 [[hyperdrive]]
 binding = "HYPERDRIVE"
 id = "REPLACE_WITH_HYPERDRIVE_ID"
+
+[[d1_databases]]
+binding = "D1"
+database_name = "ihype-cron"
+database_id = "72feb348-a07a-4bd5-a6ee-5b27b751999d"
+
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiterDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RateLimiterDO"]
+
+[[analytics_engine_datasets]]
+binding = "AE"
+dataset = "ihype_analytics"
+
+[[queues.producers]]
+binding = "EMAIL_QUEUE"
+queue = "ihype-email-queue"
+
+[[queues.consumers]]
+queue = "ihype-email-queue"
+max_batch_size = 10
+max_batch_timeout = 30
 
 [triggers]
 crons = [

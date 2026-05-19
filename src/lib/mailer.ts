@@ -1,5 +1,6 @@
 import { recordEmailDelivery } from '@/lib/audit';
 import { env } from '@/lib/env';
+import { enqueueEmail } from '@/lib/email-queue';
 
 function getEmailFrom() {
   return env.EMAIL_FROM;
@@ -70,6 +71,11 @@ type LoginOtpEmailInput = {
 
 export async function sendLoginOtpEmail({ email, name, otp }: LoginOtpEmailInput) {
   const resolvedName = name?.trim() || 'there';
+
+  const enqueued = await enqueueEmail('login-otp', { email, name, otp });
+  if (enqueued) {
+    return { mode: 'queued' as const };
+  }
 
   if (!isEmailDeliveryConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
@@ -147,6 +153,11 @@ export async function sendPasswordResetPasscodeEmail({
   name,
   expiresInMinutes
 }: PasswordResetEmailInput) {
+  const enqueued = await enqueueEmail('password-reset', { email, code, name, expiresInMinutes });
+  if (enqueued) {
+    return { mode: 'queued' as const };
+  }
+
   if (!isEmailDeliveryConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(`[password-reset] ${email} -> ${code} (valid ${expiresInMinutes} minutes)`);
@@ -207,6 +218,19 @@ export async function sendIssuedTicketEmail({
   totalChargeLabel,
   tickets
 }: IssuedTicketEmailInput) {
+  const enqueued = await enqueueEmail('ticket', {
+    email,
+    name,
+    showTitle,
+    venueName,
+    eventOpensAtLabel,
+    totalChargeLabel,
+    tickets,
+  });
+  if (enqueued) {
+    return { mode: 'queued' as const };
+  }
+
   if (!isEmailDeliveryConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(

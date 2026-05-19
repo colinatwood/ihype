@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { FormEvent, ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type RoleOption = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
 
@@ -292,9 +292,23 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [company, setCompany] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string>('');
   const needsPublicName = role !== 'FAN';
   const needsUploadPolicy = role === 'ARTIST' || role === 'DJ';
   const selectedRole = useMemo(() => roleOptions.find((option) => option.value === role), [role]);
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+  useEffect(() => {
+    if (!turnstileSiteKey) return;
+
+    (window as unknown as Record<string, unknown>).onTurnstileSuccess = (token: string) => {
+      setTurnstileToken(token);
+    };
+
+    return () => {
+      delete (window as unknown as Record<string, unknown>).onTurnstileSuccess;
+    };
+  }, [turnstileSiteKey]);
 
   async function createAccount(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -318,7 +332,8 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
         postalCode,
         contactInfo,
         addressLine1,
-        hoursText
+        hoursText,
+        turnstileToken: turnstileToken || undefined
       });
       router.push(`/login?registered=1&identifier=${encodeURIComponent(email)}`);
     } catch (err) {
@@ -469,6 +484,17 @@ export function RegisterScreen({ initialRole = 'FAN' }: { initialRole?: RoleOpti
               />
               <span>I confirm I am authorized to upload or use the music/media I add to iHYPE.</span>
             </label>
+          ) : null}
+
+          {turnstileSiteKey ? (
+            <>
+              <script async src="https://challenges.cloudflare.com/turnstile/v0/api.js" />
+              <div
+                className="cf-turnstile"
+                data-callback="onTurnstileSuccess"
+                data-sitekey={turnstileSiteKey}
+              />
+            </>
           ) : null}
 
           <button className="button" disabled={isSubmitting} type="submit">

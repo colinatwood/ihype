@@ -1,4 +1,9 @@
-import { kvGet, kvPut } from '@/lib/kv';
+// Structural type for a Durable Object namespace — avoids importing
+// @cloudflare/workers-types which is not available in the Next.js build.
+type DONamespace = {
+  idFromName(name: string): { toString(): string };
+  get(id: { toString(): string }): { fetch(url: string | Request, init?: RequestInit): Promise<Response> };
+};
 
 type RateLimitRecord = {
   count: number;
@@ -28,27 +33,6 @@ export function rateLimitHeaders(result: RateLimitResult): Record<string, string
 // Convenience: build the ip:userId composite key used by most API routes
 export function rateLimitKey(prefix: string, userId: string | undefined, ip: string | null): string {
   return userId ? `${prefix}:user:${userId}` : `${prefix}:ip:${ip ?? 'unknown'}`;
-}
-
-// ---------------------------------------------------------------------------
-// KV-backed implementation (CF KV adapter)
-// ---------------------------------------------------------------------------
-
-async function consumeKv(key: string, { limit, windowMs }: RateLimitOptions): Promise<RateLimitResult> {
-  const record = await kvGet<{ count: number; resetAt: number }>(key);
-  const now = Date.now();
-
-  if (record === null || record.resetAt <= now) {
-    const count = 1;
-    await kvPut(key, JSON.stringify({ count, resetAt: now + windowMs }), { ex: Math.ceil(windowMs / 1000) });
-    const retryAfterSeconds = Math.ceil(windowMs / 1000);
-    return { allowed: count <= limit, remaining: Math.max(0, limit - count), retryAfterSeconds };
-  }
-
-  const count = record.count + 1;
-  const retryAfterSeconds = Math.max(1, Math.ceil((record.resetAt - now) / 1000));
-  await kvPut(key, JSON.stringify({ count, resetAt: record.resetAt }), { ex: retryAfterSeconds });
-  return { allowed: count <= limit, remaining: Math.max(0, limit - count), retryAfterSeconds };
 }
 
 // ---------------------------------------------------------------------------
@@ -111,6 +95,40 @@ function consumeMemory(key: string, { limit, windowMs }: RateLimitOptions): Rate
 }
 
 // ---------------------------------------------------------------------------
+// Durable Object-backed implementation (atomic, CF Workers runtime)
+// ---------------------------------------------------------------------------
+
+async function getRateLimiterNamespace(): Promise<DONamespace | null> {
+  try {
+    const { getCloudflareContext } = await import('@opennextjs/cloudflare');
+    const ctx = getCloudflareContext();
+    const ns = (ctx.env as Record<string, unknown>).RATE_LIMITER;
+    return (ns as DONamespace) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function consumeDO(key: string, options: RateLimitOptions): Promise<RateLimitResult> {
+  const ns = await getRateLimiterNamespace();
+  if (!ns) {
+    return consumeMemory(key, options);
+  }
+
+  const id = ns.idFromName(key);
+  const stub = ns.get(id);
+
+  const response = await stub.fetch('https://do/check', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ limit: options.limit, windowMs: options.windowMs }),
+  });
+
+  const result = await response.json() as RateLimitResult;
+  return result;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -119,5 +137,5 @@ export async function getRateLimitMetrics(): Promise<[]> {
 }
 
 export async function consumeRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult> {
-  return consumeKv(key, options);
+  return consumeDO(key, options);
 }
