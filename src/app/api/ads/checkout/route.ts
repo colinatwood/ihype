@@ -11,7 +11,8 @@ const TIER_PRICES: Record<string, number> = {
 };
 
 export async function POST(request: NextRequest) {
-  await auth();
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const { adId } = await request.json() as { adId: string };
 
   const ad = await db.adSubmission.findUnique({ where: { id: adId }, select: { id: true, tier: true, status: true, advertiserName: true } });
