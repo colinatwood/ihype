@@ -1,6 +1,5 @@
 import { db } from '@/lib/db';
-import { isSmtpEmailConfigured } from '@/lib/mailer';
-import nodemailer from 'nodemailer';
+import { isEmailDeliveryConfigured } from '@/lib/mailer';
 import { env } from '@/lib/env';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -69,31 +68,31 @@ export async function sendVerificationEmail(
   email: string,
   code: string
 ): Promise<void> {
-  if (!isSmtpEmailConfigured()) {
+  if (!isEmailDeliveryConfigured()) {
     if (process.env.NODE_ENV !== 'production') {
       console.info(`[email-verify] ${email} -> ${code}`);
     }
     return;
   }
 
-  const transporter = nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure:
-      env.SMTP_SECURE?.trim().toLowerCase() === 'true' ||
-      env.SMTP_SECURE?.trim() === '1' ||
-      env.SMTP_SECURE?.trim().toLowerCase() === 'yes',
-    auth:
-      env.SMTP_USER && env.SMTP_PASSWORD
-        ? { user: env.SMTP_USER, pass: env.SMTP_PASSWORD }
-        : undefined
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: env.EMAIL_FROM,
+      to: email,
+      subject: 'Verify your iHYPE.org email',
+      text: `Your iHYPE.org verification code is: ${code}\n\nThis code expires in 24 hours.`,
+      html: `<p>Your iHYPE.org verification code is: <strong>${code}</strong></p><p>This code expires in 24 hours.</p>`
+    })
   });
 
-  await transporter.sendMail({
-    from: env.SMTP_FROM,
-    to: email,
-    subject: 'Verify your iHYPE.org email',
-    text: `Your iHYPE.org verification code is: ${code}\n\nThis code expires in 24 hours.`,
-    html: `<p>Your iHYPE.org verification code is: <strong>${code}</strong></p><p>This code expires in 24 hours.</p>`
-  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    const message = typeof payload.message === 'string' ? payload.message : `HTTP ${response.status}`;
+    throw new Error(`Resend email verification delivery failed: ${message}`);
+  }
 }

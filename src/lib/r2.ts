@@ -12,11 +12,15 @@ function sanitizePathSegment(value: string): string {
     .slice(0, 120);
 }
 
-async function getR2Binding(): Promise<R2Bucket | null> {
+type R2BucketLike = {
+  put(key: string, value: ArrayBuffer, opts?: { httpMetadata?: { contentType?: string } }): Promise<void>;
+};
+
+async function getR2Binding(): Promise<R2BucketLike | null> {
   try {
     const { getCloudflareContext } = await import('@opennextjs/cloudflare');
     const ctx = getCloudflareContext();
-    return (ctx.env as Record<string, unknown>).R2 as R2Bucket ?? null;
+    return ((ctx.env as Record<string, unknown>).R2 as R2BucketLike) ?? null;
   } catch {
     return null;
   }

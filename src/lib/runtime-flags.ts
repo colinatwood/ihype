@@ -1,3 +1,14 @@
+import { kvGet } from '@/lib/kv';
+
+export async function readRuntimeOverride(key: string): Promise<boolean | null> {
+  const value = await kvGet<string>('flags:' + key);
+  if (value === null) return null;
+  const normalized = value.trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  return null;
+}
+
 function parseBooleanFlag(value: string | undefined, defaultValue: boolean) {
   if (value == null) {
     return defaultValue;

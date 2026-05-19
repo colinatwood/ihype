@@ -1,3 +1,5 @@
+import { kvGet, kvPut } from '@/lib/kv';
+
 type RateLimitRecord = {
   count: number;
   resetAt: number;
@@ -29,22 +31,24 @@ export function rateLimitKey(prefix: string, userId: string | undefined, ip: str
 }
 
 // ---------------------------------------------------------------------------
-// KV-backed implementation (Vercel KV / Redis)
+// KV-backed implementation (CF KV adapter)
 // ---------------------------------------------------------------------------
 
 async function consumeKv(key: string, { limit, windowMs }: RateLimitOptions): Promise<RateLimitResult> {
-  const { kv } = await import('@vercel/kv');
-  const windowSecs = Math.ceil(windowMs / 1000);
-  const count = await kv.incr(key);
-  if (count === 1) {
-    await kv.expire(key, windowSecs);
+  const record = await kvGet<{ count: number; resetAt: number }>(key);
+  const now = Date.now();
+
+  if (record === null || record.resetAt <= now) {
+    const count = 1;
+    await kvPut(key, JSON.stringify({ count, resetAt: now + windowMs }), { ex: Math.ceil(windowMs / 1000) });
+    const retryAfterSeconds = Math.ceil(windowMs / 1000);
+    return { allowed: count <= limit, remaining: Math.max(0, limit - count), retryAfterSeconds };
   }
-  const ttl = await kv.ttl(key);
-  const retryAfterSeconds = Math.max(1, ttl);
-  if (count > limit) {
-    return { allowed: false, remaining: 0, retryAfterSeconds };
-  }
-  return { allowed: true, remaining: Math.max(0, limit - count), retryAfterSeconds };
+
+  const count = record.count + 1;
+  const retryAfterSeconds = Math.max(1, Math.ceil((record.resetAt - now) / 1000));
+  await kvPut(key, JSON.stringify({ count, resetAt: record.resetAt }), { ex: retryAfterSeconds });
+  return { allowed: count <= limit, remaining: Math.max(0, limit - count), retryAfterSeconds };
 }
 
 // ---------------------------------------------------------------------------
@@ -110,9 +114,10 @@ function consumeMemory(key: string, { limit, windowMs }: RateLimitOptions): Rate
 // Public API
 // ---------------------------------------------------------------------------
 
+export async function getRateLimitMetrics(): Promise<[]> {
+  return [];
+}
+
 export async function consumeRateLimit(key: string, options: RateLimitOptions): Promise<RateLimitResult> {
-  if (process.env.KV_REST_API_URL) {
-    return consumeKv(key, options);
-  }
-  return consumeMemory(key, options);
+  return consumeKv(key, options);
 }

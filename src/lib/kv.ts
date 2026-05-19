@@ -45,11 +45,18 @@ function memList(prefix: string): string[] {
 
 // ---- CF KV binding ----------------------------------------------------------
 
-async function getBinding(): Promise<KVNamespace | null> {
+type KVLike = {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string, opts?: { expirationTtl?: number }): Promise<void>;
+  delete(key: string): Promise<void>;
+  list(opts: { prefix?: string; cursor?: string; limit?: number }): Promise<{ keys: { name: string }[]; list_complete: boolean; cursor: string }>;
+};
+
+async function getBinding(): Promise<KVLike | null> {
   try {
     const { getCloudflareContext } = await import('@opennextjs/cloudflare');
     const ctx = getCloudflareContext();
-    return (ctx.env as Record<string, unknown>).KV as KVNamespace ?? null;
+    return ((ctx.env as Record<string, unknown>).KV as KVLike) ?? null;
   } catch {
     return null;
   }

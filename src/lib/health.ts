@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { isEmailDeliveryConfigured, isSmtpEmailConfigured } from '@/lib/mailer';
+import { isEmailDeliveryConfigured } from '@/lib/mailer';
 import { isBlobMediaStorageConfigured } from '@/lib/media-storage';
 import { isPaymentProcessingConfigured } from '@/lib/payments';
 import { areDemoLoginsEnabled, areLiveStreamsEnabled, isInviteCodeRequired, shouldHideDemoContent } from '@/lib/runtime-flags';
@@ -36,7 +36,6 @@ export async function getHealthSnapshot() {
       },
       integrations: {
         emailDelivery: isEmailDeliveryConfigured(),
-        smtpEmail: isSmtpEmailConfigured(),
         blobMediaStorage: isBlobMediaStorageConfigured(),
         ticketPaymentCapture: isPaymentProcessingConfigured(),
         liveStreams: areLiveStreamsEnabled()
