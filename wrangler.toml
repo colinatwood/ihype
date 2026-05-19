@@ -5,6 +5,7 @@ pages_build_output_dir = ".open-next/assets"
 
 [vars]
 NEXT_PUBLIC_BASE_URL = "https://ihype.org"
+NEXT_PUBLIC_TURNSTILE_SITE_KEY = "0x4AAAAAADSF8WNxaeBIRmR7"
 
 [[kv_namespaces]]
 binding = "KV"
