@@ -1,4 +1,4 @@
-name: Deploy to Cloudflare Pages
+name: Deploy to Cloudflare
 
 on:
   push:
@@ -46,3 +46,6 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy .open-next/assets --project-name=ihype --branch=main
+
+      - name: Deploy cron Worker
+        run: npx wrangler deploy --config wrangler.cron.toml
