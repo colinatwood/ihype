@@ -1,7 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic();
-
 export interface AdData {
   advertiserName: string;
   advertiserType: string;
@@ -16,6 +14,7 @@ export interface VettingResult {
 }
 
 export async function vetAdvertisement(adData: AdData): Promise<VettingResult> {
+  const client = new Anthropic();
   const systemPrompt = `You are an automated compliance officer for iHYPE.org, a privacy-first, not-for-profit music discovery platform.
 Your sole task is to strictly vet advertisement (supporter) applications.
 
