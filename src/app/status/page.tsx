@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { db } from '@/lib/db';
 import { getRateLimitMetrics } from '@/lib/rate-limit';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'System Status · iHYPE',
   robots: { index: false, follow: false },

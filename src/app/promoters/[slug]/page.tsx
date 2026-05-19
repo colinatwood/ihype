@@ -14,6 +14,8 @@ import { canManageOwnedResource } from '@/lib/permissions';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 
+export const dynamic = 'force-dynamic';
+
 const promoterSections = ['about', 'shows', 'events'] as const;
 
 type PromoterSection = (typeof promoterSections)[number];

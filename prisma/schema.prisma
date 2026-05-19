@@ -132,6 +132,7 @@ model User {
   badges                  Badge[]
   showAttendees           ShowAttendee[]
   sentBookingRequests     BookingRequest[]         @relation("BookingRequestFromUser")
+  adSubmissions           AdSubmission[]           @relation("AdSubmissions")
 }
 
 model Profile {
@@ -906,6 +907,10 @@ model AdSubmission {
   tier             String    @default("standard")
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  submitterUserId  String?
+  submitter        User?     @relation("AdSubmissions", fields: [submitterUserId], references: [id], onDelete: SetNull)
+
+  @@index([submitterUserId])
 }
 
 model Badge {

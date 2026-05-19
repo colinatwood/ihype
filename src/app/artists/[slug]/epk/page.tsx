@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { getSafeImageUrl } from '@/lib/asset-safety';
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {

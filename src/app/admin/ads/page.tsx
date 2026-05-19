@@ -5,6 +5,8 @@ import { isAdminSession } from '@/lib/permissions';
 import { AdminNav } from '@/components/AdminNav';
 import { AdminAdsClient } from '@/components/AdminAdsClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminAdsPage() {
   const session = await auth();
   if (!isAdminSession(session)) redirect('/');

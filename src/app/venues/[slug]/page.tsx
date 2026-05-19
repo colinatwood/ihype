@@ -15,6 +15,8 @@ import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@
 import { canManageOwnedResource } from '@/lib/permissions';
 import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 
+export const dynamic = 'force-dynamic';
+
 const venueSections = ['about', 'upcoming', 'request'] as const;
 
 type VenueSection = (typeof venueSections)[number];

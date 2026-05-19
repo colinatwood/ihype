@@ -23,6 +23,8 @@ import {
   shouldHideDemoContent
 } from '@/lib/runtime-flags';
 
+export const dynamic = 'force-dynamic';
+
 const listenerSections = ['about', 'recommend'] as const;
 
 type ListenerSection = (typeof listenerSections)[number];

@@ -2,6 +2,8 @@ import { db } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PressKitPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const profile = await db.profile.findUnique({

@@ -7,6 +7,8 @@ import { isAdminSession } from '@/lib/permissions';
 import { AdminNav } from '@/components/AdminNav';
 import { promoteToAdminAction, suspendUserAction } from './actions';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'User management | iHYPE Admin',
   robots: { index: false, follow: false }

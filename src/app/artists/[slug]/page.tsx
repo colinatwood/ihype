@@ -25,6 +25,8 @@ import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideD
 import { SoundsLike } from '@/components/SoundsLike';
 import { StreamingLinks } from '@/components/StreamingLinks';
 
+export const dynamic = 'force-dynamic';
+
 const artistSections = ['about', 'media', 'merch'] as const;
 
 type ArtistSection = (typeof artistSections)[number];

@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session;
     const adId = session.metadata?.adId;
     if (adId) {
+      // Idempotency: skip if already active
+      const existing = await db.adSubmission.findUnique({ where: { id: adId }, select: { status: true } });
+      if (existing?.status === 'active') {
+        return NextResponse.json({ received: true });
+      }
       await db.adSubmission.update({ where: { id: adId }, data: { status: 'active' } });
       // Record the subscription ID in audit log since AdSubmission has no stripeSubscriptionId field
       if (session.subscription) {

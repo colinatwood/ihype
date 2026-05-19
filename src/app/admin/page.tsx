@@ -21,6 +21,8 @@ import {
 } from '@/lib/runtime-flags';
 import { featureShowAction } from './users/actions';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Admin Beta Console | iHYPE.org',
   robots: { index: false, follow: false }

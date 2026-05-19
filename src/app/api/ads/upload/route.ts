@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { vetAdvertisement } from '@/lib/ad-vetting';
@@ -53,9 +54,11 @@ export async function POST(request: Request) {
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json({ error: 'Creative asset must be a JPEG, PNG, GIF, or WebP image.' }, { status: 400 });
     }
-    const buffer = await file.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-    creativeAssetUrl = `data:${file.type};base64,${base64}`;
+    const blob = await put(`ads/${Date.now()}-${file.name}`, file, {
+      access: 'public',
+      contentType: file.type,
+    });
+    creativeAssetUrl = blob.url;
   }
 
   const vettingResult = await vetAdvertisement({
@@ -84,6 +87,7 @@ export async function POST(request: Request) {
       status,
       aiReasoning: vettingResult.reasoning,
       tier,
+      submitterUserId: session.user.id,
     },
   });
 
