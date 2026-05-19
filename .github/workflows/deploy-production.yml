@@ -30,7 +30,15 @@ jobs:
         run: npx prisma generate
 
       - name: Wake up Neon database
-        run: node -e "const { Client } = require('pg'); const c = new Client({ connectionString: process.env.DIRECT_URL, connectionTimeoutMillis: 30000 }); c.connect().then(() => c.query('SELECT 1')).then(() => { console.log('DB ready'); return c.end(); }).catch(e => { console.error('Wake-up failed:', e.message); process.exit(0); });"
+        run: |
+          node -e "
+          var pg = require('pg');
+          var c = new pg.Client({connectionString: process.env.DIRECT_URL, connectionTimeoutMillis: 30000});
+          c.connect(function(err) {
+            if (err) { console.error('wake-up:', err.message); process.exit(0); }
+            c.query('SELECT 1', function() { c.end(); console.log('DB ready'); });
+          });
+          "
         env:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
