@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     description: 'Not-for-profit music discovery for artists, promoters, venues, and fans. 0% ticket fees. Free forever.',
   },
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org'
+    process.env.NEXT_PUBLIC_BASE_URL || 'https://ihype.org'
   )
 };
 
