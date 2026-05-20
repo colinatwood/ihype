@@ -21,11 +21,6 @@ AUTH_TRUST_HOST = "true"
 #   RESEND_API_KEY        Email sending
 #   STRIPE_SECRET_KEY     Payments
 #   STRIPE_WEBHOOK_SECRET Stripe webhook verification
-#   MUX_TOKEN_ID          Mux API
-#   MUX_TOKEN_SECRET
-#   MUX_SIGNING_KEY_ID
-#   MUX_SIGNING_PRIVATE_KEY
-#   MUX_WEBHOOK_SECRET
 #   VAPID_PRIVATE_KEY     Web push notifications
 #   VAPID_PUBLIC_KEY
 #   VAPID_SUBJECT

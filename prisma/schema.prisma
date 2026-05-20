@@ -385,9 +385,6 @@ model Show {
   headlinerProfile       Profile?               @relation("HeadlinerShows", fields: [headlinerProfileId], references: [id])
   promoterProfileId      String?
   promoterProfile        Profile?               @relation("PromotedShows", fields: [promoterProfileId], references: [id])
-  streamProvider         String?
-  streamPlaybackId       String?
-  streamKeyMasked        String?
   posterImage            String?
   ticketingOpensAt       DateTime?
   bookingLegalNotes      String?

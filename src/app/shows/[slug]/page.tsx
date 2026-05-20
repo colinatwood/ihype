@@ -12,8 +12,6 @@ import { detectRequestLocation } from '@/lib/request-location';
 import { parseShowProductionPlan } from '@/lib/show-composer';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import { formatShowTime } from '@/lib/utils';
-import { getMuxPlaybackToken } from '@/lib/mux';
-import { ShowPlaybackTracker } from '@/components/ShowPlaybackTracker';
 import { ShowComments } from '@/components/ShowComments';
 import { ShowEngagement } from '@/components/ShowEngagement';
 import { ShowSetlistEditor } from '@/components/ShowSetlistEditor';
@@ -175,14 +173,6 @@ export default async function ShowDetailPage({
 
   const canWatch = !show.isTicketed || hasTicket || (session?.user?.id === show.creatorId) || isAdminSession(session);
 
-  let playbackUrl: string | null = null;
-  if (show.streamPlaybackId && canWatch) {
-    const token = show.isTicketed ? getMuxPlaybackToken(show.streamPlaybackId) : null;
-    playbackUrl = token
-      ? `https://stream.mux.com/${show.streamPlaybackId}.m3u8?token=${token}`
-      : `https://stream.mux.com/${show.streamPlaybackId}.m3u8`;
-  }
-
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org';
   const jsonLd = show.isRadioShow ? {
     '@context': 'https://schema.org',
@@ -281,16 +271,7 @@ export default async function ShowDetailPage({
       <div className="grid grid-2">
         <section className="panel" style={{ padding: '1rem' }}>
           <div className="video-shell">
-            {playbackUrl ? (
-              <ShowPlaybackTracker
-                autoPlay={show.status === 'LIVE'}
-                isLive={show.status === 'LIVE'}
-                playbackUrl={playbackUrl}
-                showId={show.id}
-                showSlug={show.slug}
-                title={show.title}
-              />
-            ) : productionPlan ? (
+            {productionPlan ? (
               <ShowSequencePlayer
                 autoPlay={show.status === 'LIVE'}
                 isPreview={show.status === 'DRAFT'}
@@ -301,7 +282,9 @@ export default async function ShowDetailPage({
               />
             ) : (
               <div className="show-art" style={{ minHeight: 320 }}>
-                Connect your stream provider to go live
+                {show.posterImage
+                  ? <img alt={show.title} src={show.posterImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <span className="meta">No audio uploaded yet</span>}
               </div>
             )}
           </div>
@@ -326,10 +309,6 @@ export default async function ShowDetailPage({
               <tr>
                 <th>Status</th>
                 <td>{show.status}</td>
-              </tr>
-              <tr>
-                <th>Stream provider</th>
-                <td>{show.streamProvider ?? 'Not configured'}</td>
               </tr>
               <tr>
                 <th>Venue</th>
