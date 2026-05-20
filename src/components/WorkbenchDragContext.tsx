@@ -4,7 +4,7 @@ import React, { useState, createContext, useContext } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 
 // ── Drag context ───────────────────────────────────────────────
-const DragTrackCtx = createContext<{
+export const DragTrackCtx = createContext<{
   dragging: MediaTrack | null;
   setDragging: (t: MediaTrack | null) => void;
 } | null>(null);
