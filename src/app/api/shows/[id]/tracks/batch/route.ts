@@ -4,7 +4,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
 
-type RouteContext = { params: Promise<{ showId: string }> };
+type RouteContext = { params: Promise<{ id: string }> };
 
 const batchSchema = z.object({
   tracks: z.array(
@@ -25,7 +25,7 @@ export async function PUT(req: Request, { params }: RouteContext) {
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
   }
 
-  const { showId } = await params;
+  const { id: showId } = await params;
 
   const show = await db.show.findUnique({
     where: { id: showId },

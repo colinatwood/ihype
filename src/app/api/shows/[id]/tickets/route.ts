@@ -152,7 +152,7 @@ function buildAccountsPayableEntries({
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ showId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -169,7 +169,7 @@ export async function POST(
   }
 
   try {
-    const { showId } = await params;
+    const { id: showId } = await params;
     const body = schema.parse(await request.json());
 
     const [user, show] = await Promise.all([

@@ -5,7 +5,7 @@ import { isAdminSession } from '@/lib/permissions';
 import { detectRequestLocation } from '@/lib/request-location';
 import { isLocalMatch, isRegionalMatch } from '@/lib/discover-feed';
 
-type RouteContext = { params: Promise<{ showId: string }> };
+type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * GET /api/shows/[showId]/tracks/suggest
@@ -19,7 +19,7 @@ type RouteContext = { params: Promise<{ showId: string }> };
  */
 export async function GET(req: Request, { params }: RouteContext) {
   const session = await auth();
-  const { showId } = await params;
+  const { id: showId } = await params;
 
   const show = await db.show.findUnique({
     where: { id: showId },

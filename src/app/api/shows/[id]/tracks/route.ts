@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
 
-type RouteContext = { params: Promise<{ showId: string }> };
+type RouteContext = { params: Promise<{ id: string }> };
 
 async function resolveShow(showId: string) {
   return db.show.findUnique({
@@ -21,7 +21,7 @@ function canManage(session: Session | null, show: { creatorId: string }) {
 
 /** GET /api/shows/[showId]/tracks — public tracklist */
 export async function GET(_req: Request, { params }: RouteContext) {
-  const { showId } = await params;
+  const { id: showId } = await params;
   const tracks = await db.radioShowTrack.findMany({
     where: { showId },
     orderBy: { position: 'asc' },
@@ -57,7 +57,7 @@ const trackSchema = z.object({
 /** POST /api/shows/[showId]/tracks — append or upsert a track by position */
 export async function POST(req: Request, { params }: RouteContext) {
   const session = await auth();
-  const { showId } = await params;
+  const { id: showId } = await params;
 
   const show = await resolveShow(showId);
   if (!show) return NextResponse.json({ error: 'Show not found.' }, { status: 404 });
@@ -92,7 +92,7 @@ export async function POST(req: Request, { params }: RouteContext) {
 /** DELETE /api/shows/[showId]/tracks?position=N — remove a track slot */
 export async function DELETE(req: Request, { params }: RouteContext) {
   const session = await auth();
-  const { showId } = await params;
+  const { id: showId } = await params;
 
   const show = await resolveShow(showId);
   if (!show) return NextResponse.json({ error: 'Show not found.' }, { status: 404 });

@@ -110,14 +110,14 @@ function buildPayableEntries(show: {
 
 export async function POST(
   _request: Request,
-  { params }: { params: Promise<{ showId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Login required' }, { status: 401 });
   }
 
-  const { showId } = await params;
+  const { id: showId } = await params;
   const isAdmin = isAdminSession(session);
 
   const show = await db.show.findUnique({

@@ -6,9 +6,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ showId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const { showId } = await params;
+  const { id: showId } = await params;
 
   if (!showId) {
     return NextResponse.json({ error: 'Show ID or slug is required.' }, { status: 400 });
