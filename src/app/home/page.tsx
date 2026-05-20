@@ -484,11 +484,11 @@ export default async function HomePage() {
           </div>
         </div>
       ) : null}
-      {followingShows.length > 0 ? (
-        <div className="container section" style={{ paddingTop: 16, paddingBottom: 0 }}>
-          <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, letterSpacing: '-.01em', marginBottom: 10, color: 'var(--ink)' }}>
-            Following
-          </h2>
+      <div className="container section" style={{ paddingTop: 16, paddingBottom: 0 }}>
+        <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, letterSpacing: '-.01em', marginBottom: 10, color: 'var(--ink)' }}>
+          Following
+        </h2>
+        {followingShows.length > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
             {followingShows.map(s => (
               <a key={s.id} href={`/shows/${s.slug}`} style={{ display: 'block', padding: '12px 14px', background: 'var(--bg-3)', border: '1px solid var(--line)', borderRadius: 10, textDecoration: 'none' }}>
@@ -500,8 +500,13 @@ export default async function HomePage() {
               </a>
             ))}
           </div>
-        </div>
-      ) : null}
+        ) : (
+          <p className="meta" style={{ marginBottom: 0 }}>
+            No upcoming shows from artists you follow.{' '}
+            <a href="/artists" style={{ color: 'var(--accent)' }}>Discover artists</a> to see their shows here.
+          </p>
+        )}
+      </div>
       <WorkbenchShell data={wbData} starterPack={starterPack} />
       <div className="container">
         <TrendingNearMe viewerCity={profile.city ?? viewerLocation?.city ?? null} />

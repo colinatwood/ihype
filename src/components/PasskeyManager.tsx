@@ -16,6 +16,8 @@ export function PasskeyManager() {
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
   const [pendingName, setPendingName] = useState('');
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
   const [status, setStatus] = useState('');
 
   const load = useCallback(async () => {
@@ -64,6 +66,23 @@ export function PasskeyManager() {
     setPasskeys((prev) => prev.filter((p) => p.id !== id));
   }
 
+  function startRename(pk: PasskeyEntry) {
+    setRenamingId(pk.id);
+    setRenameValue(pk.name ?? '');
+  }
+
+  async function saveRename(id: string) {
+    const res = await fetch(`/api/auth/passkey/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: renameValue }),
+    });
+    if (res.ok) {
+      setPasskeys((prev) => prev.map((p) => p.id === id ? { ...p, name: renameValue.trim() || null } : p));
+    }
+    setRenamingId(null);
+  }
+
   function labelFor(pk: PasskeyEntry) {
     if (pk.name) return pk.name;
     return pk.deviceType === 'multiDevice' ? 'Synced passkey' : 'Device passkey';
@@ -79,22 +98,35 @@ export function PasskeyManager() {
         <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 12px', display: 'grid', gap: 8 }}>
           {passkeys.map((pk) => (
             <li key={pk.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--bg-2)', borderRadius: 8 }}>
-              <span style={{ flex: 1, fontSize: 13 }}>
-                {pk.deviceType === 'multiDevice' ? '☁️ ' : '🔑 '}
-                {labelFor(pk)}
-                {pk.backedUp && <span className="badge" style={{ marginLeft: 8, fontSize: 11 }}>backed up</span>}
-                <span className="meta" style={{ display: 'block', fontSize: 11 }}>
-                  Added {new Date(pk.createdAt).toLocaleDateString()}
-                </span>
-              </span>
-              <button
-                className="button secondary small"
-                type="button"
-                onClick={() => void removePasskey(pk.id)}
-                style={{ fontSize: 12 }}
-              >
-                Remove
-              </button>
+              {renamingId === pk.id ? (
+                <>
+                  <input
+                    className="input small"
+                    type="text"
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    maxLength={80}
+                    style={{ flex: 1, fontSize: 13 }}
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === 'Enter') void saveRename(pk.id); if (e.key === 'Escape') setRenamingId(null); }}
+                  />
+                  <button className="button small" type="button" onClick={() => void saveRename(pk.id)}>Save</button>
+                  <button className="button secondary small" type="button" onClick={() => setRenamingId(null)}>Cancel</button>
+                </>
+              ) : (
+                <>
+                  <span style={{ flex: 1, fontSize: 13 }}>
+                    {pk.deviceType === 'multiDevice' ? '☁️ ' : '🔑 '}
+                    {labelFor(pk)}
+                    {pk.backedUp && <span className="badge" style={{ marginLeft: 8, fontSize: 11 }}>backed up</span>}
+                    <span className="meta" style={{ display: 'block', fontSize: 11 }}>
+                      Added {new Date(pk.createdAt).toLocaleDateString()}
+                    </span>
+                  </span>
+                  <button className="button secondary small" type="button" onClick={() => startRename(pk)} style={{ fontSize: 12 }}>Rename</button>
+                  <button className="button secondary small" type="button" onClick={() => void removePasskey(pk.id)} style={{ fontSize: 12 }}>Remove</button>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -110,12 +142,7 @@ export function PasskeyManager() {
           style={{ flex: '1 1 160px', fontSize: 13 }}
           disabled={registering}
         />
-        <button
-          className="button small"
-          type="button"
-          onClick={() => void addPasskey()}
-          disabled={registering}
-        >
+        <button className="button small" type="button" onClick={() => void addPasskey()} disabled={registering}>
           {registering ? 'Follow browser prompt…' : '+ Add passkey'}
         </button>
       </div>

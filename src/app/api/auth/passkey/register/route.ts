@@ -10,6 +10,10 @@ export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const clientAddress = readClientAddress(request);
+  const rlGet = await consumeRateLimit(`pk-reg-opts:${clientAddress}`, { limit: 10, windowMs: 5 * 60 * 1000 });
+  if (!rlGet.allowed) return NextResponse.json({ error: 'Too many requests.' }, { status: 429 });
+
   const user = await db.user.findUnique({ where: { id: session.user.id }, select: { username: true } });
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
