@@ -103,7 +103,10 @@ export async function verifyPasskeyAuthentication(
 ) {
   const { rpID, origin } = getRpInfo();
 
-  const passkey = await db.passkey.findUnique({ where: { credentialId: response.id } });
+  const passkey = await db.passkey.findUnique({
+    where: { credentialId: response.id },
+    select: { credentialId: true, publicKey: true, counter: true, transports: true, userId: true },
+  });
   if (!passkey) return null;
 
   const verification = await verifyAuthenticationResponse({
