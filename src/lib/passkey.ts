@@ -45,6 +45,7 @@ export async function verifyPasskeyRegistration(
   userId: string,
   response: RegistrationResponseJSON,
   expectedChallenge: string,
+  name?: string,
 ) {
   const { rpID, origin } = getRpInfo();
   const verification = await verifyRegistrationResponse({
@@ -68,6 +69,7 @@ export async function verifyPasskeyRegistration(
       deviceType: credentialDeviceType,
       backedUp: credentialBackedUp,
       transports: (response.response.transports ?? []).join(','),
+      name: name?.trim().slice(0, 80) || null,
     },
   });
 

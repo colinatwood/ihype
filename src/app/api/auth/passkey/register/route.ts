@@ -39,10 +39,12 @@ export async function POST(request: Request) {
   const challenge = jar.get('pk_reg_challenge')?.value;
   if (!challenge) return NextResponse.json({ error: 'Challenge expired. Try again.' }, { status: 400 });
 
-  const body = await request.json();
+  const raw = await request.json() as Record<string, unknown>;
+  const name = typeof raw._name === 'string' ? raw._name : undefined;
+  if (name) delete raw._name;
   let ok: boolean;
   try {
-    ok = await verifyPasskeyRegistration(session.user.id, body, challenge);
+    ok = await verifyPasskeyRegistration(session.user.id, raw as unknown as import('@simplewebauthn/types').RegistrationResponseJSON, challenge, name);
   } catch (err) {
     console.error('[passkey/register] verification threw:', err);
     const resp = NextResponse.json({ error: 'Passkey registration failed.' }, { status: 400 });

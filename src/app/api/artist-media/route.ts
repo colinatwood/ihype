@@ -43,6 +43,7 @@ export async function GET(request: Request) {
     db.artistMediaAsset.findMany({
       where: { profileId },
       orderBy: { createdAt: 'desc' },
+      take: 200,
       select: {
         hexId: true,
         title: true,

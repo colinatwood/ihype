@@ -8,12 +8,14 @@ type PasskeyEntry = {
   deviceType: string;
   createdAt: string;
   backedUp: boolean;
+  name: string | null;
 };
 
 export function PasskeyManager() {
   const [passkeys, setPasskeys] = useState<PasskeyEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
+  const [pendingName, setPendingName] = useState('');
   const [status, setStatus] = useState('');
 
   const load = useCallback(async () => {
@@ -36,14 +38,16 @@ export function PasskeyManager() {
     setStatus('');
     try {
       const optRes = await fetch('/api/auth/passkey/register');
+      if (!optRes.ok) throw new Error('Could not start passkey setup.');
       const options = await optRes.json() as Record<string, unknown>;
       const credential = await startRegistration(options as never);
       const verifyRes = await fetch('/api/auth/passkey/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credential),
+        body: JSON.stringify({ ...credential, _name: pendingName.trim() || undefined }),
       });
       if (!verifyRes.ok) throw new Error('Registration failed');
+      setPendingName('');
       setStatus('Passkey added successfully.');
       await load();
     } catch (err: unknown) {
@@ -55,8 +59,14 @@ export function PasskeyManager() {
   }
 
   async function removePasskey(id: string) {
+    if (!confirm('Remove this passkey? You may lose access if it\'s your only sign-in method.')) return;
     await fetch(`/api/auth/passkey/${id}`, { method: 'DELETE' });
     setPasskeys((prev) => prev.filter((p) => p.id !== id));
+  }
+
+  function labelFor(pk: PasskeyEntry) {
+    if (pk.name) return pk.name;
+    return pk.deviceType === 'multiDevice' ? 'Synced passkey' : 'Device passkey';
   }
 
   return (
@@ -70,7 +80,8 @@ export function PasskeyManager() {
           {passkeys.map((pk) => (
             <li key={pk.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--bg-2)', borderRadius: 8 }}>
               <span style={{ flex: 1, fontSize: 13 }}>
-                {pk.deviceType === 'multiDevice' ? '☁️ Synced passkey' : '🔑 Device passkey'}
+                {pk.deviceType === 'multiDevice' ? '☁️ ' : '🔑 '}
+                {labelFor(pk)}
                 {pk.backedUp && <span className="badge" style={{ marginLeft: 8, fontSize: 11 }}>backed up</span>}
                 <span className="meta" style={{ display: 'block', fontSize: 11 }}>
                   Added {new Date(pk.createdAt).toLocaleDateString()}
@@ -79,7 +90,7 @@ export function PasskeyManager() {
               <button
                 className="button secondary small"
                 type="button"
-                onClick={() => removePasskey(pk.id)}
+                onClick={() => void removePasskey(pk.id)}
                 style={{ fontSize: 12 }}
               >
                 Remove
@@ -88,14 +99,26 @@ export function PasskeyManager() {
           ))}
         </ul>
       )}
-      <button
-        className="button small"
-        type="button"
-        onClick={addPasskey}
-        disabled={registering}
-      >
-        {registering ? 'Follow browser prompt…' : '+ Add passkey'}
-      </button>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          className="input small"
+          type="text"
+          placeholder="Name (e.g. MacBook, iPhone)"
+          value={pendingName}
+          onChange={(e) => setPendingName(e.target.value)}
+          maxLength={80}
+          style={{ flex: '1 1 160px', fontSize: 13 }}
+          disabled={registering}
+        />
+        <button
+          className="button small"
+          type="button"
+          onClick={() => void addPasskey()}
+          disabled={registering}
+        >
+          {registering ? 'Follow browser prompt…' : '+ Add passkey'}
+        </button>
+      </div>
       {status && <p className="meta" style={{ marginTop: 8 }}>{status}</p>}
     </div>
   );
