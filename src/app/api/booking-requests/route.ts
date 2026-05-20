@@ -19,8 +19,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Rate limit exceeded.' }, { status: 429 });
   }
 
-  const body = await request.json();
-  const { toProfileId, message } = body as { toProfileId?: string; message?: string };
+  let body: { toProfileId?: string; message?: string };
+  try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 }); }
+  const { toProfileId, message } = body;
   const trimmedMessage = message?.trim() ?? '';
   if (!toProfileId || !trimmedMessage) {
     return NextResponse.json({ error: 'toProfileId and message are required.' }, { status: 400 });

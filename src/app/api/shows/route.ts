@@ -51,16 +51,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Login required' }, { status: 401 });
     }
 
+    const profileSelect = { select: { id: true, name: true, slug: true, type: true, avatarImage: true, city: true, stateRegion: true } };
     const shows = await db.show.findMany({
-      include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
+      include: { venueProfile: profileSelect, headlinerProfile: profileSelect, promoterProfile: profileSelect },
       where: { creatorId: session.user.id },
       orderBy: [{ createdAt: 'desc' }]
     });
     return NextResponse.json(shows);
   }
 
+  const profileSelect = { select: { id: true, name: true, slug: true, type: true, avatarImage: true, city: true, stateRegion: true } };
   const shows = await db.show.findMany({
-    include: { venueProfile: true, headlinerProfile: true, promoterProfile: true },
+    include: { venueProfile: profileSelect, headlinerProfile: profileSelect, promoterProfile: profileSelect },
     where: {
       status: { in: ['SCHEDULED', 'LIVE', 'ENDED'] },
       ...getDemoCreatorExclusion()
@@ -251,7 +253,7 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         return NextResponse.json(
-          { error: error instanceof Error ? error.message : 'Invalid payout split' },
+          { error: 'Invalid payout split configuration.' },
           { status: 400 }
         );
       }

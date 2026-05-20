@@ -38,7 +38,14 @@ let _env: Env | undefined;
 
 export const env = new Proxy({} as Env, {
   get(_target, prop: string) {
-    if (!_env) _env = envSchema.parse(process.env);
+    if (!_env) {
+      try {
+        _env = envSchema.parse(process.env);
+      } catch (e) {
+        console.error('[env] Invalid server configuration:', e);
+        throw new Error('Server misconfiguration.');
+      }
+    }
     return _env[prop as keyof Env];
   },
 });

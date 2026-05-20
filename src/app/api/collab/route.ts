@@ -22,7 +22,9 @@ export async function POST(request: NextRequest) {
   const ip = readClientAddress(request);
   const rl = await consumeRateLimit(`collab:${ip}`, { limit: 5, windowMs: 60 * 60 * 1000 });
   if (!rl.allowed) return NextResponse.json({ error: 'Rate limit exceeded.' }, { status: 429 });
-  const { profileId, type, description } = await request.json() as { profileId?: string; type?: string; description?: string };
+  let parsed: { profileId?: string; type?: string; description?: string };
+  try { parsed = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 }); }
+  const { profileId, type, description } = parsed;
   if (!profileId || !type || !description?.trim()) return NextResponse.json({ error: 'Missing fields.' }, { status: 400 });
   const profile = await db.profile.findUnique({ where: { id: profileId, ownerId: session.user.id }, select: { id: true } });
   if (!profile) return NextResponse.json({ error: 'Profile not found or not yours.' }, { status: 403 });
