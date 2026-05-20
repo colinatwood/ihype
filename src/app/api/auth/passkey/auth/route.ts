@@ -36,10 +36,17 @@ export async function POST(request: Request) {
   const challenge = jar.get('pk_auth_challenge')?.value;
   if (!challenge) return NextResponse.json({ error: 'Challenge expired. Try again.' }, { status: 400 });
 
-  const body = await request.json();
-  const userId = await verifyPasskeyAuthentication(body, challenge);
-
   const clearChallenge = (resp: NextResponse) => { resp.cookies.delete('pk_auth_challenge'); return resp; };
+
+  const body = await request.json();
+
+  let userId: string | null;
+  try {
+    userId = await verifyPasskeyAuthentication(body, challenge);
+  } catch (err) {
+    console.error('[passkey/auth] verification threw:', err);
+    return clearChallenge(NextResponse.json({ error: 'Passkey verification failed.' }, { status: 401 }));
+  }
 
   if (!userId) return clearChallenge(NextResponse.json({ error: 'Passkey verification failed.' }, { status: 401 }));
 
