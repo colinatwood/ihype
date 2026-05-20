@@ -1,6 +1,5 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { PrismaNeon } from '@prisma/adapter-neon';
-import { Pool } from '@neondatabase/serverless';
+import { PrismaNeonHttp } from '@prisma/adapter-neon';
 
 function getConnectionString(): string {
   try {
@@ -17,19 +16,29 @@ function getConnectionString(): string {
   return process.env.DATABASE_URL ?? '';
 }
 
-function makePrisma() {
-  const pool = new Pool({ connectionString: getConnectionString() });
-  const adapter = new PrismaNeon(pool);
-  return new PrismaClient({ adapter });
+// Lazy singleton — not created at module load time because process.env is only
+// populated after the first request arrives (opennextjs populateProcessEnv).
+// Re-created if the connection string changes between invocations.
+let _prisma: PrismaClient | undefined;
+let _cs: string | undefined;
+
+function getPrisma(): PrismaClient {
+  const cs = getConnectionString();
+  if (!_prisma || cs !== _cs) {
+    _cs = cs;
+    const adapter = new PrismaNeonHttp(cs, {});
+    _prisma = new PrismaClient({ adapter });
+  }
+  return _prisma;
 }
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
-
-export const db = globalForPrisma.prisma ?? makePrisma();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = db;
-}
+// Proxy so callers can keep using `db.user.findMany(...)` etc. unchanged,
+// while actual initialization is deferred until first access.
+export const db = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    return Reflect.get(getPrisma(), prop, getPrisma());
+  },
+});
 
 function isRetryablePrismaError(error: unknown) {
   return (
