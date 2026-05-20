@@ -1,6 +1,8 @@
 import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaNeon } from '@prisma/adapter-neon';
+import { Pool } from '@neondatabase/serverless';
 
-function getConnectionString(): string | undefined {
+function getConnectionString(): string {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getCloudflareContext } = require('@opennextjs/cloudflare');
@@ -12,12 +14,13 @@ function getConnectionString(): string | undefined {
   } catch {
     // Not in a CF Workers context (local dev / Next.js build) — fall through
   }
-  return process.env.DATABASE_URL;
+  return process.env.DATABASE_URL ?? '';
 }
 
 function makePrisma() {
-  const url = getConnectionString();
-  return new PrismaClient({ datasources: url ? { db: { url } } : undefined });
+  const pool = new Pool({ connectionString: getConnectionString() });
+  const adapter = new PrismaNeon(pool);
+  return new PrismaClient({ adapter });
 }
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
