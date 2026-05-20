@@ -40,7 +40,15 @@ export async function POST(request: Request) {
   if (!challenge) return NextResponse.json({ error: 'Challenge expired. Try again.' }, { status: 400 });
 
   const body = await request.json();
-  const ok = await verifyPasskeyRegistration(session.user.id, body, challenge);
+  let ok: boolean;
+  try {
+    ok = await verifyPasskeyRegistration(session.user.id, body, challenge);
+  } catch (err) {
+    console.error('[passkey/register] verification threw:', err);
+    const resp = NextResponse.json({ error: 'Passkey registration failed.' }, { status: 400 });
+    resp.cookies.delete('pk_reg_challenge');
+    return resp;
+  }
 
   const resp = NextResponse.json({ ok });
   resp.cookies.delete('pk_reg_challenge');

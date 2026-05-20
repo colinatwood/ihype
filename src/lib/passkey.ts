@@ -111,7 +111,7 @@ export async function verifyPasskeyAuthentication(
     expectedRPID: rpID,
     authenticator: {
       credentialID: Uint8Array.from(Buffer.from(passkey.credentialId, 'base64url')),
-      credentialPublicKey: new Uint8Array(passkey.publicKey),
+      credentialPublicKey: new Uint8Array(Buffer.isBuffer(passkey.publicKey) ? passkey.publicKey : Buffer.from(passkey.publicKey as unknown as ArrayBuffer)),
       counter: Number(passkey.counter),
       transports: passkey.transports ? (passkey.transports.split(',') as AuthenticatorTransportFuture[]) : undefined,
     },
