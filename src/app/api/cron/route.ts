@@ -28,6 +28,9 @@ export async function GET(request: NextRequest) {
     }
 
     case 'artist-digest': {
+      // TODO: sendArtistWeeklyDigest does a db.profile.findUnique() per profileId,
+      // causing N extra round-trips. Refactor to accept a pre-fetched profile object
+      // (including owner email) so the data can be loaded in a single query here.
       const { sendArtistWeeklyDigest } = await import('@/lib/artist-digest');
       const { db } = await import('@/lib/db');
       const profiles = await db.profile.findMany({
