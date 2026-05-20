@@ -1,5 +1,4 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { withAccelerate } from '@prisma/extension-accelerate';
 
 function getConnectionString(): string | undefined {
   try {
@@ -18,12 +17,10 @@ function getConnectionString(): string | undefined {
 
 function makePrisma() {
   const url = getConnectionString();
-  return new PrismaClient({ datasources: url ? { db: { url } } : undefined }).$extends(
-    withAccelerate()
-  );
+  return new PrismaClient({ datasources: url ? { db: { url } } : undefined });
 }
 
-const globalForPrisma = globalThis as unknown as { prisma?: ReturnType<typeof makePrisma> };
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export const db = globalForPrisma.prisma ?? makePrisma();
 
