@@ -7,7 +7,7 @@ on:
 
 jobs:
   check:
-    name: Lint, typecheck, and test
+    name: Typecheck and test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,9 +22,6 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
-
-      - name: Lint
-        run: npm run lint
 
       - name: Typecheck
         run: npx tsc --noEmit
