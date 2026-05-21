@@ -1,0 +1,31 @@
+name: Reset test logins
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type: reset test logins'
+        required: true
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    environment: Production – ihype
+    if: github.event.inputs.confirm == 'reset test logins'
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      RESET_LOGIN_PASSWORD: ${{ secrets.TEMP_LOGIN_RESET_PASSWORD }}
+      CONFIRM_RESET_TEST_LOGINS: ${{ github.event.inputs.confirm }}
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run admin:reset-test-logins

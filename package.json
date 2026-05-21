@@ -18,6 +18,7 @@
         "prisma:seed:launch": "tsx prisma/launch-seed.ts",
         "prisma:migrate:deploy": "prisma migrate deploy",
         "smoke:production": "node scripts/smoke-production.mjs",
+        "admin:reset-test-logins": "node scripts/reset-test-logins.mjs",
         "analyze": "ANALYZE=true npm run build",
         "cf:build": "opennextjs-cloudflare build",
         "cf:preview": "opennextjs-cloudflare preview",
