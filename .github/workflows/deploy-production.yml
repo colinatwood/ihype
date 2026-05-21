@@ -30,6 +30,9 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      - name: Run tests
+        run: npm test
+
       - name: Run migrations
         run: |
           for i in 1 2 3; do
