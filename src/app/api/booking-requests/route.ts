@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 import { sendGenericEmail } from '@/lib/mailer';
+import { getBaseUrl } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,8 +61,8 @@ export async function POST(request: NextRequest) {
     await sendGenericEmail({
       to: profile.owner.email,
       subject: `New booking request on iHYPE`,
-      text: `You have a new booking request for ${profile.name}.\n\nMessage: ${trimmedMessage}\n\nLog in to review it: https://ihype.org/home?tab=bookings`,
-      html: `<p>You have a new booking request for <strong>${profile.name}</strong>.</p><p><em>${trimmedMessage}</em></p><p><a href="https://ihype.org/home?tab=bookings">Review it on iHYPE</a></p>`
+      text: `You have a new booking request for ${profile.name}.\n\nMessage: ${trimmedMessage}\n\nLog in to review it: ${getBaseUrl()}/home?tab=bookings`,
+      html: `<p>You have a new booking request for <strong>${profile.name}</strong>.</p><p><em>${trimmedMessage}</em></p><p><a href="${getBaseUrl()}/home?tab=bookings">Review it on iHYPE</a></p>`
     }).catch(() => {});
   }
 

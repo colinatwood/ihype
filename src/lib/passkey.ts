@@ -10,6 +10,7 @@ import type {
   AuthenticatorTransportFuture,
 } from '@simplewebauthn/types';
 import { db } from '@/lib/db';
+import { getBaseUrl } from '@/lib/utils';
 
 function getRpInfo() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ihype.org';

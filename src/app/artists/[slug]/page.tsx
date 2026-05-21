@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
@@ -24,6 +25,7 @@ import { AvailabilityCalendar } from '@/components/AvailabilityCalendar';
 import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { SoundsLike } from '@/components/SoundsLike';
 import { StreamingLinks } from '@/components/StreamingLinks';
+import { getBaseUrl } from '@/lib/utils';
 
 const artistSections = ['about', 'media', 'merch'] as const;
 
@@ -54,11 +56,8 @@ function formatShowDate(value: Date) {
   }).format(value);
 }
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> }
-): Promise<Metadata> {
-  const { slug } = await params;
-  const profile = await db.profile.findUnique({
+const getArtistMeta = cache((slug: string) =>
+  db.profile.findUnique({
     where: { slug },
     select: {
       name: true,
@@ -70,7 +69,14 @@ export async function generateMetadata(
       avatarImage: true,
       owner: { select: { email: true, username: true } }
     }
-  });
+  })
+);
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const profile = await getArtistMeta(slug);
 
   if (!profile || (shouldHideDemoContent() && isDemoUser(profile.owner))) {
     return { title: 'Artist | iHYPE' };
@@ -121,28 +127,19 @@ export default async function ArtistPage({
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeSection = getActiveSection(resolvedSearchParams.section);
 
-  const profile = await db.profile.findUnique({
-    where: { slug },
-    include: {
-      owner: {
-        select: {
-          email: true,
-          username: true
+  const getArtistPage = cache((s: string) =>
+    db.profile.findUnique({
+      where: { slug: s },
+      include: {
+        owner: { select: { email: true, username: true } },
+        mediaUploads: {
+          select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true },
+          orderBy: { createdAt: 'desc' }
         }
-      },
-      mediaUploads: {
-        select: {
-          hexId: true,
-          title: true,
-          notes: true,
-          mimeType: true,
-          fileSizeBytes: true,
-          createdAt: true
-        },
-        orderBy: { createdAt: 'desc' }
       }
-    }
-  });
+    })
+  );
+  const profile = await getArtistPage(slug);
   if (!profile || profile.type !== 'ARTIST') return notFound();
   if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
   const profileSlug = profile.slug;
@@ -240,7 +237,7 @@ export default async function ArtistPage({
             : ('past' as const)
     }));
 
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org';
+  const base = getBaseUrl();
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'MusicGroup',

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { notFound } from 'next/navigation';
@@ -11,18 +12,15 @@ import { isAdminSession } from '@/lib/permissions';
 import { detectRequestLocation } from '@/lib/request-location';
 import { parseShowProductionPlan } from '@/lib/show-composer';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
-import { formatShowTime } from '@/lib/utils';
+import { formatShowTime, getBaseUrl } from '@/lib/utils';
 import { ShowComments } from '@/components/ShowComments';
 import { ShowEngagement } from '@/components/ShowEngagement';
 import { ShowSetlistEditor } from '@/components/ShowSetlistEditor';
 import { AdBanner } from '@/components/AdBanner';
 import { ShowRecapForm } from '@/components/ShowRecapForm';
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> }
-): Promise<Metadata> {
-  const { slug } = await params;
-  const show = await db.show.findUnique({
+const getShowMeta = cache((slug: string) =>
+  db.show.findUnique({
     where: { slug },
     select: {
       title: true,
@@ -35,7 +33,14 @@ export async function generateMetadata(
       venueProfile:     { select: { name: true, city: true, stateRegion: true } },
       headlinerProfile: { select: { name: true } },
     }
-  });
+  })
+);
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const show = await getShowMeta(slug);
 
   if (!show) return { title: 'Show · iHYPE' };
 
@@ -93,35 +98,26 @@ export default async function ShowDetailPage({
     typeof resolvedSearchParams.affiliate === 'string' ? resolvedSearchParams.affiliate : undefined;
   const refHexId =
     typeof resolvedSearchParams.ref === 'string' ? resolvedSearchParams.ref : undefined;
-  const show = await db.show.findUnique({
-    where: { slug },
-    include: {
-      venueProfile: true,
-      headlinerProfile: true,
-      promoterProfile: true,
-      ticketOrders: {
-        orderBy: { createdAt: 'desc' },
-        take: 6,
-        include: {
-          tickets: {
-            select: { reassignCount: true }
-          }
-        }
-      },
-      radioTracks: {
-        orderBy: { position: 'asc' },
-        select: {
-          id: true,
-          position: true,
-          title: true,
-          artistName: true,
-          externalUrl: true,
-          durationSecs: true,
-          blockLabel: true
+  const getShowPage = cache((s: string) =>
+    db.show.findUnique({
+      where: { slug: s },
+      include: {
+        venueProfile: true,
+        headlinerProfile: true,
+        promoterProfile: true,
+        ticketOrders: {
+          orderBy: { createdAt: 'desc' },
+          take: 6,
+          include: { tickets: { select: { reassignCount: true } } }
+        },
+        radioTracks: {
+          orderBy: { position: 'asc' },
+          select: { id: true, position: true, title: true, artistName: true, externalUrl: true, durationSecs: true, blockLabel: true }
         }
       }
-    }
-  });
+    })
+  );
+  const show = await getShowPage(slug);
 
   if (!show) return notFound();
   const canPreviewDraft =
@@ -173,7 +169,7 @@ export default async function ShowDetailPage({
 
   const canWatch = !show.isTicketed || hasTicket || (session?.user?.id === show.creatorId) || isAdminSession(session);
 
-  const base = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://ihype.org';
+  const base = getBaseUrl();
   const jsonLd = show.isRadioShow ? {
     '@context': 'https://schema.org',
     '@type': 'RadioEpisode',
