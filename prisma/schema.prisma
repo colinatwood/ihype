@@ -416,6 +416,7 @@ model Show {
   @@index([status, startsAt])
   @@index([venueProfileId, status])
   @@index([headlinerProfileId, status])
+  @@index([promoterProfileId, status])
 }
 
 model ShowAdvertisingConfig {

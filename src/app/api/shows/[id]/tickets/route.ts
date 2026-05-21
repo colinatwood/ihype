@@ -231,6 +231,7 @@ export async function POST(
       return NextResponse.json({ error: 'Tickets are only available for scheduled or live shows' }, { status: 400 });
     }
 
+    // Pre-flight capacity check (non-authoritative — re-checked inside transaction)
     if (show.ticketCapacity !== null && show.ticketsSoldCount + body.quantity > show.ticketCapacity) {
       return NextResponse.json({ error: 'Not enough tickets remain for this order' }, { status: 400 });
     }
@@ -275,6 +276,17 @@ export async function POST(
     }
 
     const result = await db.$transaction(async (tx) => {
+      // Authoritative capacity check inside the transaction to prevent overselling
+      if (show.ticketCapacity !== null) {
+        const fresh = await tx.show.findUnique({
+          where: { id: show.id },
+          select: { ticketsSoldCount: true, ticketCapacity: true }
+        });
+        if (fresh && fresh.ticketCapacity !== null && fresh.ticketsSoldCount + body.quantity > fresh.ticketCapacity) {
+          throw Object.assign(new Error('Not enough tickets remain for this order'), { statusCode: 400 });
+        }
+      }
+
       const createdOrder = await tx.ticketOrder.create({
         data: {
           confirmationCode: randomUUID().split('-')[0].toUpperCase(),
@@ -426,6 +438,9 @@ export async function POST(
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.issues[0]?.message ?? 'Invalid order payload' }, { status: 400 });
+    }
+    if (error instanceof Error && (error as Error & { statusCode?: number }).statusCode === 400) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({ error: 'Could not complete this ticket order' }, { status: 500 });
