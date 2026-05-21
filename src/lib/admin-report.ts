@@ -1,9 +1,9 @@
 import { db } from '@/lib/db';
 import { sendGenericEmail } from '@/lib/mailer';
 import { getBaseUrl } from '@/lib/utils';
+import { ADMIN_EMAIL } from '@/lib/env';
 
 export async function sendAdminWeeklyReport(): Promise<{ ok: boolean }> {
-  const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL ?? 'admin@ihype.org';
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   const [newUsers, newProfiles, newShows, pendingAds, openFeatureRequests, bugReports] = await Promise.all([

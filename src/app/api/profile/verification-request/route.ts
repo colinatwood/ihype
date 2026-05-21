@@ -5,6 +5,7 @@ import { sendGenericEmail } from '@/lib/mailer';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 import { getBaseUrl } from '@/lib/utils';
+import { ADMIN_EMAIL } from '@/lib/env';
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -30,7 +31,6 @@ export async function POST(request: NextRequest) {
     data: { verificationStatus: 'PENDING', verificationRequested: true, verificationSubmittedAt: new Date(), verificationNotes: notes ?? null }
   });
 
-  const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL ?? 'admin@ihype.org';
   await sendGenericEmail({ to: ADMIN_EMAIL, subject: `[iHYPE] Verification request: ${profile.name}`, html: `<p><strong>${profile.name}</strong> requested verification.</p><p>Social links: ${socialLinks}</p><p>Notes: ${notes ?? 'none'}</p><p><a href="${getBaseUrl()}/admin/review">Review in admin</a></p>`, text: `${profile.name} requested verification.\nSocial: ${socialLinks}` });
 
   return NextResponse.json({ ok: true, message: 'Verification request submitted. We review within 3 business days.' });

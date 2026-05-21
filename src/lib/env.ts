@@ -31,8 +31,11 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional().transform(v => { const s = blank(v); return s?.startsWith('whsec_') ? s : undefined; }),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional().transform(v => { const s = blank(v); return s?.startsWith('pk_') ? s : undefined; }),
   AUTH_GOOGLE_ID: optStr,
-  AUTH_GOOGLE_SECRET: optStr
+  AUTH_GOOGLE_SECRET: optStr,
+  ADMIN_ALERT_EMAIL: optEmail
 });
+
+export const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL ?? 'admin@ihype.org';
 
 type Env = z.infer<typeof envSchema>;
 

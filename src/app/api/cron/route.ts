@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCronRequestAuthorized } from '@/lib/cron-auth';
+import { ADMIN_EMAIL } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -34,13 +35,12 @@ export async function GET(request: NextRequest) {
       const { getHealthSnapshot } = await import('@/lib/health');
       const { isEmailDeliveryConfigured, sendGenericEmail } = await import('@/lib/mailer');
       const { checkCronHealth } = await import('@/lib/cron-health');
-      const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL ?? 'admin@ihype.org';
       const snapshot = await getHealthSnapshot();
       if (snapshot.status !== 'ok' && isEmailDeliveryConfigured()) {
         try {
           const summary = JSON.stringify(snapshot, null, 2);
           await sendGenericEmail({
-            to: 'admin@ihype.org',
+            to: ADMIN_EMAIL,
             subject: '[iHYPE] Health check failure',
             text: `iHYPE health check returned non-ok status.\n\n${summary}`,
             html: `<p>iHYPE health check returned non-ok status.</p><pre style="font-family:monospace;font-size:12px;background:#0a0805;color:#f0ebe5;padding:12px;border-radius:6px;white-space:pre-wrap;">${summary.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</pre>`
@@ -108,7 +108,6 @@ export async function GET(request: NextRequest) {
     case 'db-health': {
       const { db } = await import('@/lib/db');
       const { sendGenericEmail } = await import('@/lib/mailer');
-      const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL ?? process.env.SMTP_FROM ?? 'admin@ihype.org';
       const [userCountResult, profileCountResult] = await Promise.all([
         db.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*) as count FROM "User"`,
         db.$queryRaw<Array<{ count: bigint }>>`SELECT COUNT(*) as count FROM "Profile"`
@@ -248,7 +247,6 @@ export async function GET(request: NextRequest) {
     case 'stripe-connect-health': {
       const { db } = await import('@/lib/db');
       const { sendGenericEmail } = await import('@/lib/mailer');
-      const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL ?? 'admin@ihype.org';
       const issues = await db.profile.findMany({
         where: {
           OR: [

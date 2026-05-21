@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { sendGenericEmail } from '@/lib/mailer';
+import { ADMIN_EMAIL } from '@/lib/env';
 
 export async function triggerShowPayouts(): Promise<{ processed: number }> {
   // Find ended shows with unsettled tickets sold
@@ -16,7 +17,6 @@ export async function triggerShowPayouts(): Promise<{ processed: number }> {
     take: 20
   });
 
-  const ADMIN_EMAIL = process.env.ADMIN_ALERT_EMAIL ?? 'admin@ihype.org';
   let processed = 0;
 
   for (const show of completedShows) {

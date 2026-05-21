@@ -5,6 +5,7 @@ import { vetAdvertisement } from '@/lib/ad-vetting';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 import { getBaseUrl } from '@/lib/utils';
+import { ADMIN_EMAIL } from '@/lib/env';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
 
   // Fire-and-forget admin alert
   import('@/lib/mailer').then(({ sendGenericEmail }) =>
-    sendGenericEmail({ to: process.env.ADMIN_ALERT_EMAIL ?? 'admin@ihype.org', subject: `[iHYPE] New ad submission: ${advertiserName}`, text: `Tier: ${tier}\nType: ${advertiserType}\nWebsite: ${campaignWebsite}`, html: `<p><strong>${advertiserName}</strong> submitted a <strong>${tier}</strong> ad.</p><p>Website: ${campaignWebsite}</p><p><a href="${getBaseUrl()}/admin/ads">Review in admin</a></p>` }).catch(() => {})
+    sendGenericEmail({ to: ADMIN_EMAIL, subject: `[iHYPE] New ad submission: ${advertiserName}`, text: `Tier: ${tier}\nType: ${advertiserType}\nWebsite: ${campaignWebsite}`, html: `<p><strong>${advertiserName}</strong> submitted a <strong>${tier}</strong> ad.</p><p>Website: ${campaignWebsite}</p><p><a href="${getBaseUrl()}/admin/ads">Review in admin</a></p>` }).catch(() => {})
   );
 
   if (status === 'rejected') {

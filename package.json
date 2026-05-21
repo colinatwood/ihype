@@ -26,7 +26,7 @@
         "cf:deploy": "wrangler deploy worker.js --experimental-autoconfig=false"
     },
     "dependencies": {
-        "@anthropic-ai/sdk": "^0.96.0",
+        "@anthropic-ai/sdk": "^0.97.1",
         "@auth/prisma-adapter": "2.11.2",
         "@mux/mux-node": "^12.8.1",
         "@opennextjs/cloudflare": "^1.7.0",
