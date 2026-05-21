@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
+import { postJson } from '@/lib/api-client';
 
 type RoleOption = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
 type AuthMethod = 'email' | 'passkey';
@@ -95,20 +96,6 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-async function postJson<T>(url: string, body: unknown): Promise<T> {
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(typeof payload.error === 'string' ? payload.error : 'Request failed.');
-  }
-
-  return payload as T;
-}
 
 function getAuthLandingPath(redirect?: string) {
   if (!redirect || redirect.startsWith('/auth/landing')) {
@@ -197,6 +184,10 @@ export function LoginScreen({
     setIsSubmitting(true);
     try {
       const optRes = await fetch('/api/auth/passkey/auth');
+      if (!optRes.ok) {
+        const errBody = await optRes.json().catch(() => ({}));
+        throw new Error(typeof errBody.error === 'string' ? errBody.error : 'Could not start passkey sign-in.');
+      }
       const options = await optRes.json();
       const assertion = await startAuthentication(options);
       const payload = await postJson<{ redirect?: string }>('/api/auth/passkey/auth', assertion);
