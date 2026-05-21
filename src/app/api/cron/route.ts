@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCronRequestAuthorized } from '@/lib/cron-auth';
 import { ADMIN_EMAIL } from '@/lib/env';
+import { pingCronAlive } from '@/lib/cron-health';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
     case 'digest': {
       const { sendDigestsToAllEligibleUsers } = await import('@/lib/email-digest');
       const summary = await sendDigestsToAllEligibleUsers();
+      await pingCronAlive('digest');
       return NextResponse.json(summary);
     }
 
@@ -102,6 +104,7 @@ export async function GET(request: NextRequest) {
     case 'show-reminders': {
       const { sendShowReminders } = await import('@/lib/show-reminders');
       const { sent } = await sendShowReminders();
+      await pingCronAlive('show-reminders');
       return NextResponse.json({ ok: true, sent });
     }
 
@@ -129,12 +132,14 @@ export async function GET(request: NextRequest) {
       if (alerts.length > 0) {
         await sendGenericEmail({ to: ADMIN_EMAIL, subject: '[iHYPE] DB health alert', text: alerts.join('\n\n') + `\n\nCurrent counts: users=${userCount}, profiles=${profileCount}`, html: `<p>${alerts.map(a => `<strong>${a}</strong>`).join('<br/><br/>')}</p>` }).catch(() => {});
       }
+      await pingCronAlive('db-health');
       return NextResponse.json({ ok: alerts.length === 0, userCount, profileCount, alerts, checkedAt: new Date().toISOString() });
     }
 
     case 'weekly-picks': {
       const { sendWeeklyPicksEmails } = await import('@/lib/weekly-picks');
       const result = await sendWeeklyPicksEmails();
+      await pingCronAlive('weekly-picks');
       return NextResponse.json({ ok: true, ...result });
     }
 
@@ -147,6 +152,7 @@ export async function GET(request: NextRequest) {
     case 'new-to-scene': {
       const { sendNewToSceneEmail } = await import('@/lib/new-to-scene');
       const result = await sendNewToSceneEmail();
+      await pingCronAlive('new-to-scene');
       return NextResponse.json({ ok: true, ...result });
     }
 

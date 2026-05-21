@@ -10,6 +10,16 @@ APP_BASE_URL = "https://ihype.org"
 
 [triggers]
 crons = [
-  "* * * * *",    # show-lifecycle (every minute)
-  "*/5 * * * *"   # expire-reservations (every 5 minutes)
+  "* * * * *",    # show-lifecycle
+  "*/5 * * * *",  # expire-reservations
+  "0 */6 * * *",  # health-check, db-health
+  "0 2 * * *",    # expire-ads
+  "0 3 * * *",    # session-cleanup
+  "0 4 * * 1",    # audit-log-rotate (Monday)
+  "0 6 * * *",    # feature-shows
+  "0 8 * * *",    # digest
+  "0 9 * * 1",    # weekly-picks, artist-digest, admin-report, follow-digest (Monday)
+  "0 10 * * *",   # new-to-scene
+  "0 12 * * *",   # show-reminders
+  "0 14 * * *",   # onboarding
 ]
