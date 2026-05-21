@@ -44,7 +44,7 @@ describe('webhook idempotency store', () => {
 
   it('does not confuse events with the same ID from different sources', async () => {
     await store.process('stripe', 'evt_001');
-    const result = await store.process('stripe', 'evt_001');
+    const result = await store.process('mux', 'evt_001');
     expect(result.duplicate).toBe(false);
   });
 
