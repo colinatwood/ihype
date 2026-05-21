@@ -14881,6 +14881,11 @@ html.high-contrast p {
 /* 3. Search bar mobile/desktop */
 .search-bar-desktop {
   display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  max-width: 280px;
+  margin: 0 16px;
 }
 .search-bar-mobile-trigger {
   display: none;
