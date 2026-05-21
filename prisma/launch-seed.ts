@@ -1,8 +1,16 @@
 import { randomUUID } from 'node:crypto';
-import { PrismaClient, ProfileType, Role, ShowStatus } from '@prisma/client';
+import { PrismaClient, ProfileType, Role, ShowStatus } from '@prisma/client/wasm';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL is required.');
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString })
+});
 
 const confirm = process.env.CONFIRM_LAUNCH_SEED;
 if (process.env.NODE_ENV === 'production' && confirm !== 'seed ihype launch') {

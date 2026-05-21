@@ -1,10 +1,18 @@
-import { PrismaClient, ProfileType, Role } from '@prisma/client';
+import { PrismaClient, ProfileType, Role } from '@prisma/client/wasm';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
 
 const confirm = process.env.CONFIRM_RESET_TEST_LOGINS;
 const password = process.env.RESET_LOGIN_PASSWORD;
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL is required.');
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString })
+});
 
 if (process.env.NODE_ENV === 'production' && confirm !== 'reset test logins') {
   throw new Error('Refusing production login reset without CONFIRM_RESET_TEST_LOGINS="reset test logins".');
