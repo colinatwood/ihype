@@ -49,7 +49,7 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://ihype.org
 
       - name: Deploy to Cloudflare Workers
-        run: npx wrangler deploy
+        run: npx wrangler deploy worker.js --experimental-autoconfig=false
 
       - name: Deploy cron Worker
         run: npx wrangler deploy --config wrangler.cron.toml
