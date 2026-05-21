@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+
 import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
@@ -165,7 +165,6 @@ export function LoginScreen({
   initialIdentifier?: string;
   justRegistered?: boolean;
 }) {
-  const router = useRouter();
   const [mode, setMode] = useState<AuthMethod>(justRegistered ? 'email' : 'passkey');
   const [identifier, setIdentifier] = useState(initialIdentifier);
   const [password, setPassword] = useState('');
@@ -195,8 +194,7 @@ export function LoginScreen({
       const assertion = await startAuthentication(options);
       const payload = await postJson<{ redirect?: string }>('/api/auth/passkey/auth', assertion);
       trackSignupFunnel('login_passkey_success', { method: 'passkey', step: 'login', ...getPasskeyDiagnostics() });
-      router.push(getAuthLandingPath(payload.redirect));
-      router.refresh();
+      window.location.href = getAuthLandingPath(payload.redirect);
     } catch (err) {
       const reason = getErrorMessage(err, 'Passkey sign-in failed. Please try again or use email code.');
       trackSignupFunnel('login_passkey_failed', { method: 'passkey', step: 'login', reason, ...getPasskeyDiagnostics(err) });
@@ -238,8 +236,7 @@ export function LoginScreen({
         otp
       });
       trackSignupFunnel('login_email_code_success', { method: 'email', step: 'login' });
-      router.push(getAuthLandingPath(payload.redirect));
-      router.refresh();
+      window.location.href = getAuthLandingPath(payload.redirect);
     } catch (err) {
       const reason = getErrorMessage(err, 'Could not verify that code.');
       trackSignupFunnel('login_email_code_verify_failed', { method: 'email', step: 'login', reason });
@@ -440,7 +437,6 @@ export function RegisterScreen({
   initialRole?: RoleOption;
   inviteOnly?: boolean;
 }) {
-  const router = useRouter();
   const [role, setRole] = useState<RoleOption>(initialRole);
   const [authMethod, setAuthMethod] = useState<AuthMethod>('email');
   const [signupVariant, setSignupVariant] = useState<SignupVariant>('email_first');
@@ -539,8 +535,7 @@ export function RegisterScreen({
     const credential = await startRegistration(options);
     const verifyRes = await postJson<{ redirect?: string }>('/api/auth/passkey/register-first', credential);
     trackSignupFunnel('passkey_success', { role, method: 'passkey', step: 'register', variant: signupVariant, ...getPasskeyDiagnostics() });
-    router.push(getAuthLandingPath(verifyRes.redirect));
-    router.refresh();
+    window.location.href = getAuthLandingPath(verifyRes.redirect);
   }
 
   async function createAccount(event: FormEvent<HTMLFormElement>) {
@@ -626,8 +621,7 @@ export function RegisterScreen({
         otp
       });
       trackSignupFunnel('email_code_success', { role, method: 'email', step: 'register', variant: signupVariant });
-      router.push(getAuthLandingPath(payload.redirect));
-      router.refresh();
+      window.location.href = getAuthLandingPath(payload.redirect);
     } catch (err) {
       const reason = getErrorMessage(err, 'Could not verify that code.');
       trackSignupFunnel('email_code_verify_failed', { role, method: 'email', step: 'register', reason, variant: signupVariant });
@@ -667,8 +661,7 @@ export function RegisterScreen({
 
       // Step 4: verify and receive session
       const verifyRes = await postJson<{ redirect?: string }>('/api/auth/passkey/register-first', credential);
-      router.push(verifyRes.redirect || '/auth/landing');
-      router.refresh();
+      window.location.href = verifyRes.redirect || '/auth/landing';
     } catch (err) {
       setStep('form');
       setError(getErrorMessage(err, 'Could not create account.'));
