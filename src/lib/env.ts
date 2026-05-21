@@ -17,9 +17,9 @@ const envSchema = z.object({
   MUX_TOKEN_ID: z.string().optional(),
   MUX_TOKEN_SECRET: z.string().optional(),
   MUX_WEBHOOK_SECRET: z.string().optional(),
-  STRIPE_SECRET_KEY: z.string().startsWith('sk_').optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
-  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().startsWith('pk_').optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   AUTH_GOOGLE_ID: z.string().min(1).optional(),
   AUTH_GOOGLE_SECRET: z.string().min(1).optional()
 });

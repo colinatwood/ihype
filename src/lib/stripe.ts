@@ -4,15 +4,15 @@ let _stripe: Stripe | null = null;
 
 export function getStripe(): Stripe {
   if (!_stripe) {
-    const key = process.env.STRIPE_SECRET_KEY;
-    if (!key) throw new Error('STRIPE_SECRET_KEY is not configured.');
+    const key = process.env.STRIPE_SECRET_KEY?.trim();
+    if (!key?.startsWith('sk_')) throw new Error('STRIPE_SECRET_KEY is not configured with a valid secret key.');
     _stripe = new Stripe(key, { apiVersion: '2025-02-24.acacia' });
   }
   return _stripe;
 }
 
 export function isStripeConfigured(): boolean {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
+  return Boolean(process.env.STRIPE_SECRET_KEY?.trim().startsWith('sk_'));
 }
 
 /**

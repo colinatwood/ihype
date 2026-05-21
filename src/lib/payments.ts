@@ -1,5 +1,5 @@
 export function isPaymentProcessingConfigured() {
-  return Boolean(process.env.STRIPE_SECRET_KEY?.trim());
+  return Boolean(process.env.STRIPE_SECRET_KEY?.trim().startsWith('sk_'));
 }
 
 export function assertPaymentProcessingConfigured() {
