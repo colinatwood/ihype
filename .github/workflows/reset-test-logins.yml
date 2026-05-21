@@ -17,7 +17,6 @@ jobs:
       DIRECT_URL: ${{ secrets.DIRECT_URL }}
       RESET_LOGIN_PASSWORD: ${{ secrets.TEMP_LOGIN_RESET_PASSWORD }}
       CONFIRM_RESET_TEST_LOGINS: ${{ github.event.inputs.confirm }}
-      NODE_ENV: production
     steps:
       - uses: actions/checkout@v4
 
@@ -29,3 +28,5 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npm run admin:reset-test-logins
+        env:
+          NODE_ENV: production
