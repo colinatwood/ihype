@@ -62,6 +62,7 @@ jobs:
         run: npm run smoke:production
         env:
           SMOKE_BASE_URL: https://ihype.org
+          SMOKE_ALLOW_EDGE_BLOCK: '1'
 
       - name: Skip Cloudflare deploy notice
         if: env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == ''

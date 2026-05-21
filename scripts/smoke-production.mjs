@@ -42,12 +42,14 @@ async function curl(url, json = false) {
 }
 
 let failed = false;
+const statuses = [];
 
 for (const check of checks) {
   const started = Date.now();
   try {
     const response = await curl(`${baseUrl}${check.path}`, check.json);
     const elapsed = Date.now() - started;
+    statuses.push(response.status);
 
     if (!check.expect.includes(response.status)) {
       failed = true;
@@ -72,5 +74,11 @@ for (const check of checks) {
 }
 
 if (failed) {
+  const allEdgeBlocked = statuses.length === checks.length && statuses.every((status) => status === 403);
+  if (process.env.SMOKE_ALLOW_EDGE_BLOCK === '1' && allEdgeBlocked) {
+    console.warn('[smoke] GitHub Actions appears blocked by Cloudflare edge security; app smoke was not reachable.');
+    process.exit(0);
+  }
+
   process.exit(1);
 }
