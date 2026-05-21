@@ -78,6 +78,12 @@ const nextConfig = {
   async redirects() {
     return [
       {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.ihype.org' }],
+        destination: 'https://ihype.org/:path*',
+        permanent: true
+      },
+      {
         source: '/auth',
         destination: '/login',
         permanent: false
