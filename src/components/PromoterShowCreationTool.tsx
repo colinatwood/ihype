@@ -11,82 +11,35 @@ import {
   type AdvertisingScope,
   type ShowMediaItem,
   type ShowProductionPlan,
-  type ShowSamplePad,
   type ShowSequenceItem,
   type VoiceOverCue
 } from '@/lib/show-composer';
-
-type ArtistLibraryEntry = {
-  id: string;
-  hexId: string;
-  title: string;
-  url: string;
-  notes: string | null;
-  mimeType?: string | null;
-  mediaType?: 'audio' | 'video';
-  previewImageUrl?: string | null;
-};
-
-type ArtistLibrary = {
-  profileId: string;
-  slug: string;
-  name: string;
-  heroImage: string | null;
-  entries: ArtistLibraryEntry[];
-};
-
-type PromoterIdentity = {
-  profileId: string;
-  name: string;
-  slug: string;
-};
-
-type VenueOption = {
-  profileId: string;
-  slug: string;
-  name: string;
-  addressLine1?: string | null;
-  city?: string | null;
-  stateRegion?: string | null;
-  country?: string | null;
-  postalCode?: string | null;
-};
-
-type PendingVoiceRecording = {
-  dataUrl: string;
-  durationSeconds: number;
-  mimeType: string;
-};
-
-type DraggedMediaPayload = {
-  source: 'library' | 'playlist';
-  mediaItem: ShowMediaItem;
-};
-
-type DraggedSamplePayload = {
-  sample: PadAssignment;
-};
-
-type PadMenuState = {
-  slotNumber: number;
-  x: number;
-  y: number;
-};
-
-type PadAssignment = ShowSamplePad & {
-  localOnly?: boolean;
-};
-
-type ShowSaveIntent = 'preview' | 'publish';
-type CreatorUtilityPanel = 'library' | 'voice' | 'queue' | 'setlist';
-type TimelineLaneItem = {
-  id: string;
-  label: string;
-  meta: string;
-  kind: 'media' | 'voice' | 'sample' | 'ad';
-};
-
-const PAD_COLORS = ['#ff6b6b', '#f59e0b', '#f4d03f', '#22c55e', '#23d0d8', '#3b82f6', '#8f5bff', '#ec4899'];
+import {
+  blobToDataUrl,
+  buildHexId,
+  buildPadLabel,
+  buildPadRefId,
+  buildSequenceLabel,
+  createClientId,
+  formatDurationLabel,
+  getDefaultPadColor,
+  getSupportedRecordingMimeType,
+  PAD_COLORS,
+  type ArtistLibrary,
+  type ArtistLibraryEntry,
+  type CreatorUtilityPanel,
+  type DraggedMediaPayload,
+  type DraggedSamplePayload,
+  type PadAssignment,
+  type PadMenuState,
+  type PendingVoiceRecording,
+  type PromoterIdentity,
+  type ShowSaveIntent,
+  type TimelineLaneItem,
+  type VenueOption
+} from './PromoterShowCreationUtils';
+import { PromoterShowCreationDeckCard } from './PromoterShowCreationDeckCard';
+import { PromoterShowCreationTimelineLane } from './PromoterShowCreationTimelineLane';
 
 type PromoterShowCreationToolProps = {
   artists: ArtistLibrary[];
@@ -95,89 +48,6 @@ type PromoterShowCreationToolProps = {
   venues?: VenueOption[];
   surface?: 'dashboard' | 'page';
 };
-
-const MICROPHONE_MIME_TYPES = [
-  'audio/webm;codecs=opus',
-  'audio/webm',
-  'audio/ogg;codecs=opus',
-  'audio/mp4'
-];
-
-function createClientId(prefix: string) {
-  return `${prefix}-${Math.random().toString(16).slice(2, 10)}`;
-}
-
-function buildSequenceLabel(kind: ShowSequenceItem['kind'], label: string) {
-  if (kind === 'VOICE_OVER') return `Voice-over: ${label}`;
-  if (kind === 'SAMPLE') return `Sample pad: ${label}`;
-  if (kind === 'AD') return `Ad break: ${label}`;
-  return `Media: ${label}`;
-}
-
-function buildPadRefId(slotNumber: number) {
-  return `pad-${slotNumber}`;
-}
-
-function buildPadLabel(slotNumber: number, title: string) {
-  return `Pad ${String(slotNumber).padStart(2, '0')} - ${title}`;
-}
-
-function buildHexId() {
-  return `0x${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`;
-}
-
-function getDefaultPadColor(slotNumber: number) {
-  return PAD_COLORS[(slotNumber - 1) % PAD_COLORS.length] ?? '#23d0d8';
-}
-
-function buildTimelineClipStyle(index: number, total: number) {
-  const safeTotal = Math.max(total, 1);
-  const laneSegment = 100 / safeTotal;
-  const width = Math.max(10, Math.min(26, laneSegment - 2));
-  const left = Math.min(88, index * laneSegment + 1);
-
-  return {
-    left: `${left}%`,
-    width: `${width}%`
-  } satisfies CSSProperties;
-}
-
-function formatDurationLabel(seconds?: number) {
-  if (!seconds) {
-    return 'open';
-  }
-
-  if (seconds < 60) {
-    return `${seconds}s`;
-  }
-
-  const minutes = Math.floor(seconds / 60);
-  const remainder = Math.round(seconds % 60);
-  return `${minutes}:${String(remainder).padStart(2, '0')}`;
-}
-
-function getSupportedRecordingMimeType() {
-  if (typeof MediaRecorder === 'undefined') {
-    return undefined;
-  }
-
-  return MICROPHONE_MIME_TYPES.find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
-}
-
-function blobToDataUrl(blob: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result);
-      } else {
-        reject(new Error('Could not prepare audio preview.'));
-      }
-    };
-    reader.onerror = () => reject(reader.error ?? new Error('Could not prepare audio preview.'));
-    reader.readAsDataURL(blob);
-  });
-}
 
 export function PromoterShowCreationTool({
   artists,
@@ -1302,75 +1172,6 @@ export function PromoterShowCreationTool({
     setMessage(`Loaded ${starterEntries.length} ${starterEntries.length === 1 ? 'item' : 'items'} from ${selectedHeadliner.name}.`);
   }
 
-  function renderTimelineLane(label: string, emptyLabel: string, items: TimelineLaneItem[]) {
-    return (
-      <div className="composer-timeline-lane">
-        <div className="composer-timeline-label">{label}</div>
-        <div className="composer-timeline-track">
-          {items.length ? (
-            items.map((item, index) => (
-              <span
-                className={`composer-timeline-clip ${item.kind}`}
-                key={item.id}
-                style={buildTimelineClipStyle(index, items.length)}
-                title={`${item.label} - ${item.meta}`}
-              >
-                <strong>{item.label}</strong>
-                <small>{item.meta}</small>
-              </span>
-            ))
-          ) : (
-            <span className="composer-timeline-empty">{emptyLabel}</span>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  function renderDeckCard(deck: 'A' | 'B', track: ShowMediaItem | null, level: number) {
-    return (
-      <div
-        className={
-          draggedMedia?.source === 'playlist'
-            ? 'composer-card composer-deck-card composer-player-card is-dragging'
-            : 'composer-card composer-deck-card composer-player-card'
-        }
-        onDragOver={handleDeckDragOver}
-        onDrop={(event) => handleDeckDrop(event, deck)}
-      >
-        <div className={workstationHeaderClassName}>
-          <div className={sectionBadgeClassName}>Deck {deck}</div>
-          <div className="composer-deck-screen">
-            <strong>{track?.title ?? `Deck ${deck}`}</strong>
-            <span>{track ? track.artistName : 'Drop from playlist'}</span>
-          </div>
-        </div>
-        <div className="composer-player-stage composer-player-stage-compact">
-          <div className="composer-song-screen">
-            <span className="composer-song-screen-label">Track</span>
-            <strong>{track?.title ?? 'Standby'}</strong>
-            <span>
-              {track
-                ? `${track.artistName} | song`
-                : 'Playlist drop zone'}
-            </span>
-            {track ? <div className="composer-media-code">{track.mediaId}</div> : null}
-          </div>
-          <div className="composer-jog-wheel">
-            <span>{level}%</span>
-          </div>
-          <div className="composer-transport">
-            <button className="button small secondary" onClick={() => playDeckTrack(deck, track)} type="button">
-              {track && currentTrack?.url === track.url && isPlaying ? 'Pause' : 'Play'}
-            </button>
-            <button className="button small secondary" onClick={() => cueDeckTrack(deck, track)} type="button">
-              Cue
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <section className="panel composer-panel composer-panel-streamlined">
@@ -1523,20 +1324,44 @@ export function PromoterShowCreationTool({
             </p>
           </div>
           <div className="composer-timeline-lanes">
-            {renderTimelineLane('Songs / video', 'Add artist media to start the show map.', mediaTimelineItems)}
-            {renderTimelineLane('Voice', 'Record or script a voice cue from the Voice tab.', voiceTimelineItems)}
-            {renderTimelineLane('Sampler', 'Assign a pad, then add it to the show flow.', sampleTimelineItems)}
-            {renderTimelineLane('Ads', 'Approved ad clips appear here when real inventory is configured.', adTimelineItems)}
+            <PromoterShowCreationTimelineLane label="Songs / video" emptyLabel="Add artist media to start the show map." items={mediaTimelineItems} />
+            <PromoterShowCreationTimelineLane label="Voice" emptyLabel="Record or script a voice cue from the Voice tab." items={voiceTimelineItems} />
+            <PromoterShowCreationTimelineLane label="Sampler" emptyLabel="Assign a pad, then add it to the show flow." items={sampleTimelineItems} />
+            <PromoterShowCreationTimelineLane label="Ads" emptyLabel="Approved ad clips appear here when real inventory is configured." items={adTimelineItems} />
           </div>
         </div>
 
         <div className="composer-grid composer-workstation-grid">
           <div className="composer-column composer-deck-column composer-deck-a">
-            {renderDeckCard('A', deckATrack, deckALevel)}
+            <PromoterShowCreationDeckCard
+              deck="A"
+              track={deckATrack}
+              level={deckALevel}
+              draggedMediaSource={draggedMedia?.source ?? null}
+              isCurrentTrackPlaying={Boolean(deckATrack && currentTrack?.url === deckATrack.url && isPlaying)}
+              workstationHeaderClassName={workstationHeaderClassName}
+              sectionBadgeClassName={sectionBadgeClassName}
+              onDragOver={handleDeckDragOver}
+              onDrop={handleDeckDrop}
+              onPlay={playDeckTrack}
+              onCue={cueDeckTrack}
+            />
           </div>
 
           <div className="composer-column composer-control-column composer-deck-column composer-deck-b">
-            {renderDeckCard('B', deckBTrack, deckBLevel)}
+            <PromoterShowCreationDeckCard
+              deck="B"
+              track={deckBTrack}
+              level={deckBLevel}
+              draggedMediaSource={draggedMedia?.source ?? null}
+              isCurrentTrackPlaying={Boolean(deckBTrack && currentTrack?.url === deckBTrack.url && isPlaying)}
+              workstationHeaderClassName={workstationHeaderClassName}
+              sectionBadgeClassName={sectionBadgeClassName}
+              onDragOver={handleDeckDragOver}
+              onDrop={handleDeckDrop}
+              onPlay={playDeckTrack}
+              onCue={cueDeckTrack}
+            />
           </div>
 
           <div className="composer-column composer-playlist-column composer-mixer-column">
