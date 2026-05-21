@@ -5,19 +5,34 @@ const execFileAsync = promisify(execFile);
 const baseUrl = (process.env.SMOKE_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'https://ihype.org').replace(/\/$/, '');
 
 const checks = [
-  { path: '/', expect: [200], head: true },
-  { path: '/login', expect: [200], head: true },
-  { path: '/shows', expect: [200], head: true },
-  { path: '/status', expect: [200], head: true },
+  { path: '/', expect: [200] },
+  { path: '/login', expect: [200] },
+  { path: '/shows', expect: [200] },
+  { path: '/status', expect: [200] },
   { path: '/api/health', expect: [200], json: true }
 ];
 
-async function curl(url, head = false) {
-  const args = ['-sS', '-L', '--max-time', '20', '-w', '\n%{http_code}'];
-  if (head) args.push('-I');
+async function curl(url, json = false) {
+  const args = [
+    '-sS',
+    '-L',
+    '--compressed',
+    '--max-time',
+    '20',
+    '-A',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+    '-H',
+    json
+      ? 'Accept: application/json'
+      : 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    '-H',
+    'Accept-Language: en-US,en;q=0.9',
+    '-w',
+    '\n%{http_code}'
+  ];
   args.push(url);
   const { stdout } = await execFileAsync('curl', args, {
-    maxBuffer: 1024 * 1024
+    maxBuffer: 5 * 1024 * 1024
   });
   const marker = stdout.lastIndexOf('\n');
   return {
@@ -31,7 +46,7 @@ let failed = false;
 for (const check of checks) {
   const started = Date.now();
   try {
-    const response = await curl(`${baseUrl}${check.path}`, check.head);
+    const response = await curl(`${baseUrl}${check.path}`, check.json);
     const elapsed = Date.now() - started;
 
     if (!check.expect.includes(response.status)) {
