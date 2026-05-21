@@ -1,4 +1,4 @@
-import { PrismaClient, ProfileType, Role } from '@prisma/client/wasm';
+import { PrismaClient, ProfileType, Role } from '@prisma/client/wasm.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 
