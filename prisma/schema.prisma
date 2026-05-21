@@ -338,6 +338,7 @@ model ContentReport {
   reason         String
   details        String?
   status         String   @default("OPEN")
+  note           String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   reporter       User?    @relation(fields: [reporterUserId], references: [id], onDelete: SetNull)
@@ -410,6 +411,11 @@ model Show {
   rsvps                  ShowRsvp[]
   attendees              ShowAttendee[]
   setlistProgress        Json?
+
+  @@index([creatorId])
+  @@index([status, startsAt])
+  @@index([venueProfileId, status])
+  @@index([headlinerProfileId, status])
 }
 
 model ShowAdvertisingConfig {
@@ -457,6 +463,9 @@ model TicketOrder {
   affiliatePromoterProfile   Profile?               @relation("AffiliatePromoterTicketOrders", fields: [affiliatePromoterProfileId], references: [id], onDelete: SetNull)
   tickets                    Ticket[]
   accountsPayableEntries     AccountsPayableEntry[]
+
+  @@index([showId, createdAt])
+  @@index([buyerUserId, createdAt])
 }
 
 model Ticket {
@@ -586,6 +595,7 @@ model HypeEvent {
   show      Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
 
   @@unique([userId, showId])
+  @@index([showId])
 }
 
 model ProfileHypeEvent {

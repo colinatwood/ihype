@@ -26,6 +26,9 @@ export async function POST(request: NextRequest) {
   if (!toProfileId || !trimmedMessage) {
     return NextResponse.json({ error: 'toProfileId and message are required.' }, { status: 400 });
   }
+  if (trimmedMessage.length < 10) {
+    return NextResponse.json({ error: 'Message must be at least 10 characters.' }, { status: 400 });
+  }
   if (trimmedMessage.length > 2000) {
     return NextResponse.json({ error: 'Message must be 2000 characters or fewer.' }, { status: 400 });
   }
