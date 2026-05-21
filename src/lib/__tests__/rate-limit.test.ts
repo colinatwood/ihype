@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { consumeRateLimit, rateLimitHeaders, rateLimitKey } from '../rate-limit';
 
 // Clear the in-process store between tests by consuming under a unique key prefix per test
@@ -45,16 +45,22 @@ describe('consumeRateLimit', () => {
   });
 
   it('resets after the window expires', async () => {
+    const start = Date.now();
+    vi.useFakeTimers();
+    vi.setSystemTime(start);
+
     const k = key();
-    const opts = { limit: 1, windowMs: 50 }; // 50ms window
+    const opts = { limit: 1, windowMs: 1000 }; // 1s window (KV TTL granularity is seconds)
     await consumeRateLimit(k, opts); // consume the only slot
     const blocked = await consumeRateLimit(k, opts);
     expect(blocked.allowed).toBe(false);
 
-    await new Promise((r) => setTimeout(r, 60)); // wait for window to expire
+    vi.setSystemTime(start + 1100); // advance past the 1s window
 
     const reset = await consumeRateLimit(k, opts);
     expect(reset.allowed).toBe(true);
+
+    vi.useRealTimers();
   });
 
   it('independent keys do not interfere', async () => {

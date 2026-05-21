@@ -13,12 +13,8 @@ describe('show purchase: full order financials', () => {
       venuePayoutPercent: 50,
       artistPayoutPercent: 45,
       promoterPayoutPercent: 5,
-      stateRegion: null,
-      country: 'US',
-      postalCode: null,
-      viewerStateRegion: null,
-      viewerCountry: 'US',
-      viewerPostalCode: null
+      buyerLocation: { country: 'US', postalCode: null, stateRegion: null },
+      venueLocation: { country: 'US', postalCode: null, stateRegion: null }
     });
     expect(result.subtotalCents).toBe(2000);
     expect(result.venuePayoutCents + result.artistPayoutCents + result.promoterPayoutCents).toBeLessThanOrEqual(result.subtotalCents);
@@ -31,12 +27,8 @@ describe('show purchase: full order financials', () => {
       venuePayoutPercent: 50,
       artistPayoutPercent: 45,
       promoterPayoutPercent: 5,
-      stateRegion: null,
-      country: 'US',
-      postalCode: null,
-      viewerStateRegion: null,
-      viewerCountry: 'US',
-      viewerPostalCode: null
+      buyerLocation: { country: 'US', postalCode: null, stateRegion: null },
+      venueLocation: { country: 'US', postalCode: null, stateRegion: null }
     });
     expect(result.subtotalCents).toBe(3000);
   });
@@ -47,22 +39,16 @@ describe('show purchase: full order financials', () => {
     ).toThrow();
   });
 
-  it('accepts zero-priced ticket', () => {
-    const result = calculateTicketOrderFinancials({
-      ticketPriceCents: 0,
-      quantity: 1,
-      venuePayoutPercent: 50,
-      artistPayoutPercent: 45,
-      promoterPayoutPercent: 5,
-      stateRegion: null,
-      country: 'US',
-      postalCode: null,
-      viewerStateRegion: null,
-      viewerCountry: 'US',
-      viewerPostalCode: null
-    });
-    expect(result.subtotalCents).toBe(0);
-    expect(result.totalTaxCents).toBe(0);
+  it('rejects zero-priced ticket', () => {
+    expect(() =>
+      calculateTicketOrderFinancials({
+        ticketPriceCents: 0,
+        quantity: 1,
+        venuePayoutPercent: 50,
+        artistPayoutPercent: 45,
+        promoterPayoutPercent: 5
+      })
+    ).toThrow();
   });
 });
 

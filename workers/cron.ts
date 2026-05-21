@@ -22,8 +22,29 @@ type CronJob = {
 };
 
 const JOBS: CronJob[] = [
-  { path: '/api/cron/expire-reservations', schedule: '*/5 * * * *' },
-  { path: '/api/cron/show-lifecycle', schedule: '* * * * *' },
+  // Infrastructure — every minute / every 5 min
+  { path: '/api/cron/show-lifecycle',       schedule: '* * * * *'    },
+  { path: '/api/cron/expire-reservations',  schedule: '*/5 * * * *'  },
+
+  // Health & monitoring — every 6 hours
+  { path: '/api/cron?job=health-check',     schedule: '0 */6 * * *'  },
+  { path: '/api/cron?job=db-health',        schedule: '0 */6 * * *'  },
+
+  // Daily jobs — staggered to avoid spikes
+  { path: '/api/cron?job=digest',           schedule: '0 8 * * *'    },
+  { path: '/api/cron?job=new-to-scene',     schedule: '0 10 * * *'   },
+  { path: '/api/cron?job=show-reminders',   schedule: '0 12 * * *'   },
+  { path: '/api/cron?job=onboarding',       schedule: '0 14 * * *'   },
+  { path: '/api/cron?job=expire-ads',       schedule: '0 2 * * *'    },
+  { path: '/api/cron?job=session-cleanup',  schedule: '0 3 * * *'    },
+  { path: '/api/cron?job=feature-shows',    schedule: '0 6 * * *'    },
+
+  // Weekly jobs — Monday morning
+  { path: '/api/cron?job=weekly-picks',       schedule: '0 9 * * 1'  },
+  { path: '/api/cron?job=artist-digest',      schedule: '0 9 * * 1'  },
+  { path: '/api/cron?job=admin-report',       schedule: '0 9 * * 1'  },
+  { path: '/api/cron?job=follow-digest',      schedule: '0 9 * * 1'  },
+  { path: '/api/cron?job=audit-log-rotate',   schedule: '0 4 * * 1'  },
 ];
 
 export default {
