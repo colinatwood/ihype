@@ -33,7 +33,6 @@ export function SearchBar() {
         action="/search"
         method="get"
         className="search-bar-desktop"
-        style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, maxWidth: 280, margin: '0 16px' }}
       >
         <input
           name="q"
