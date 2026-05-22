@@ -126,9 +126,20 @@ export default async function WorkbenchPage({
     <main className="container section" style={{ maxWidth: 1000 }}>
       <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28 }}>Workbench</h1>
 
-      <nav style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <nav style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         <Link href="/workbench?tab=analytics" className={`button small${tab === 'analytics' ? '' : ' secondary'}`}>Analytics</Link>
         <Link href="/workbench?tab=tickets" className={`button small${tab === 'tickets' ? '' : ' secondary'}`}>Tickets</Link>
+        <Link href="/workbench/saved" className="button small secondary">Saved tracks</Link>
+        <Link href="/workbench/history" className="button small secondary">History</Link>
+        <Link href="/workbench/receipts" className="button small secondary">Hype receipts</Link>
+        <Link href="/workbench/taste" className="button small secondary">Taste profile</Link>
+        <Link href="/workbench/scene" className="button small secondary">Scene map</Link>
+        <Link href="/workbench/growth" className="button small secondary">Artist growth</Link>
+        <Link href="/workbench/match" className="button small secondary">Taste match</Link>
+        <Link href="/workbench/streaks" className="button small secondary">Hype streaks</Link>
+        <Link href="/workbench/report" className="button small secondary">Report card</Link>
+        <Link href="/workbench/drift" className="button small secondary">Taste drift</Link>
+        <Link href="/workbench/venue-dna" className="button small secondary">Venue DNA</Link>
       </nav>
 
       {tab === 'analytics' && (

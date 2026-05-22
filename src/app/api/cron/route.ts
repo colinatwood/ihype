@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCronRequestAuthorized } from '@/lib/cron-auth';
 import { ADMIN_EMAIL } from '@/lib/env';
-import { pingCronAlive } from '@/lib/cron-health';
+import { pingCronAlive, WEEKLY_TTL } from '@/lib/cron-health';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -98,6 +98,7 @@ export async function GET(request: NextRequest) {
       for (const user of day7Users) {
         if (user.profileHypeEvents.length === 0) { try { await sendDay7Email(user.id); sent7++; } catch { /* continue */ } }
       }
+      await pingCronAlive('onboarding');
       return NextResponse.json({ ok: true, sent3, sent7 });
     }
 
@@ -175,13 +176,15 @@ export async function GET(request: NextRequest) {
         orderBy: { hypeCount: 'desc' },
         take: 5
       });
+      const unfeaturedIds = hotShows.filter(s => !s.tags.includes('featured')).map(s => s.id);
       let updated = 0;
-      for (const show of hotShows) {
-        if (!show.tags.includes('featured')) {
-          await db.show.update({ where: { id: show.id }, data: { tags: { push: 'featured' } } });
-          updated++;
-        }
+      if (unfeaturedIds.length > 0) {
+        await Promise.all(
+          unfeaturedIds.map(id => db.show.update({ where: { id }, data: { tags: { push: 'featured' } } }))
+        );
+        updated = unfeaturedIds.length;
       }
+      await pingCronAlive('feature-shows');
       return NextResponse.json({ ok: true, updated });
     }
 
@@ -198,13 +201,21 @@ export async function GET(request: NextRequest) {
         select: { id: true },
         take: 100
       });
+      const staleIds = stale.map(u => u.id);
+      const alreadyFlagged = staleIds.length
+        ? await db.auditLog.findMany({
+            where: { actorUserId: null, action: 'SPAM_FLAGGED', entityId: { in: staleIds } },
+            select: { entityId: true }
+          })
+        : [];
+      const flaggedSet = new Set(alreadyFlagged.map(l => l.entityId));
+      const toFlag = staleIds.filter(id => !flaggedSet.has(id));
       let flagged = 0;
-      for (const user of stale) {
-        const existing = await db.auditLog.findFirst({ where: { actorUserId: null, action: 'SPAM_FLAGGED', entityId: user.id } });
-        if (!existing) {
-          await db.auditLog.create({ data: { actorUserId: null, action: 'SPAM_FLAGGED', entityType: 'User', entityId: user.id, metadata: {} } });
-          flagged++;
-        }
+      if (toFlag.length > 0) {
+        await db.auditLog.createMany({
+          data: toFlag.map(id => ({ actorUserId: null, action: 'SPAM_FLAGGED', entityType: 'User', entityId: id, metadata: {} }))
+        });
+        flagged = toFlag.length;
       }
       return NextResponse.json({ ok: true, flagged });
     }
@@ -212,12 +223,14 @@ export async function GET(request: NextRequest) {
     case 'show-payouts': {
       const { triggerShowPayouts } = await import('@/lib/show-payouts');
       const result = await triggerShowPayouts();
+      await pingCronAlive('show-payouts');
       return NextResponse.json({ ok: true, ...result });
     }
 
     case 'artist-onboarding': {
       const { sendArtistOnboardingNudges } = await import('@/lib/artist-onboarding');
       const result = await sendArtistOnboardingNudges();
+      await pingCronAlive('artist-onboarding');
       return NextResponse.json({ ok: true, ...result });
     }
 
@@ -228,18 +241,21 @@ export async function GET(request: NextRequest) {
         where: { status: 'pending', createdAt: { lt: cutoff } },
         data: { status: 'expired' }
       });
+      await pingCronAlive('close-stale-bookings');
       return NextResponse.json({ ok: true, closed: result.count });
     }
 
     case 'follow-digest': {
       const { sendFollowDigest } = await import('@/lib/follow-digest');
       const result = await sendFollowDigest();
+      await pingCronAlive('follow-digest', WEEKLY_TTL);
       return NextResponse.json({ ok: true, ...result });
     }
 
     case 'session-cleanup': {
       const { db } = await import('@/lib/db');
       const result = await db.session.deleteMany({ where: { expires: { lt: new Date() } } });
+      await pingCronAlive('session-cleanup');
       return NextResponse.json({ ok: true, deleted: result.count });
     }
 
@@ -247,6 +263,7 @@ export async function GET(request: NextRequest) {
       const { db } = await import('@/lib/db');
       const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
       const result = await db.auditLog.deleteMany({ where: { createdAt: { lt: cutoff }, action: { notIn: ['PAYOUT_TRIGGERED', 'DMCA_TAKEDOWN', 'DMCA_PENDING_REVIEW'] } } });
+      await pingCronAlive('audit-log-rotate', WEEKLY_TTL);
       return NextResponse.json({ ok: true, deleted: result.count });
     }
 
@@ -265,6 +282,7 @@ export async function GET(request: NextRequest) {
       if (issues.length > 0) {
         await sendGenericEmail({ to: ADMIN_EMAIL, subject: `[iHYPE] Stripe Connect issues (${issues.length})`, text: issues.map(i => `${i.name}: onboarded=${i.stripeConnectOnboarded}, accountId=${i.stripeConnectAccountId ?? 'null'}`).join('\n'), html: `<p>${issues.map(i => `<strong>${i.name}</strong>: onboarded=${i.stripeConnectOnboarded}, accountId=${i.stripeConnectAccountId ?? 'null'}`).join('<br/>')}</p>` }).catch(() => {});
       }
+      await pingCronAlive('stripe-connect-health');
       return NextResponse.json({ ok: true, issues: issues.length });
     }
 

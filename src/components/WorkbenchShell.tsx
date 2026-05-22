@@ -6,8 +6,10 @@ import { AccessibilityControls } from '@/components/AccessibilityControls';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
 import { WorkbenchExtras } from '@/components/WorkbenchExtras';
+import { WidgetManager } from '@/components/WidgetManager';
 import { CoHeadlinerSuggestions } from '@/components/CoHeadlinerSuggestions';
 import { HypeHeatmap } from '@/components/HypeHeatmap';
+import { CITY_COORDS } from '@/lib/city-coords';
 import { PasskeyManager } from '@/components/AuthScreens';
 import { useToast } from '@/components/Toast';
 
@@ -1177,6 +1179,7 @@ function ViewHome({ data, prefs, setView, starterPack = [] }: { data: WorkbenchD
         activeProfileTypes={data.activeProfileTypes ?? []}
         profileId={data.profileId ?? null}
         profilePath={data.profilePath ?? null}
+        profileSlug={data.profilePath ? data.profilePath.split('/').pop() ?? null : null}
         userEmail={null}
       />
       <StarterPackPanel items={starterPack} />
@@ -2511,15 +2514,6 @@ function ViewArtist({ data }: { data: WorkbenchData }) {
         .then(r => r.json())
         .then((res: { cities: Array<{ city: string; stateRegion?: string | null; hype: number }> }) => {
           const maxHype = Math.max(...res.cities.map(c => c.hype), 1);
-          // Map to HypeHeatmapCity with rough US coordinate approximation
-          const CITY_COORDS: Record<string, { x: number; y: number }> = {
-            chicago: { x: .55, y: .42 }, brooklyn: { x: .81, y: .42 }, 'new york': { x: .81, y: .40 },
-            austin: { x: .45, y: .74 }, 'los angeles': { x: .13, y: .56 }, la: { x: .13, y: .56 },
-            seattle: { x: .10, y: .28 }, nashville: { x: .62, y: .58 }, denver: { x: .32, y: .44 },
-            atlanta: { x: .65, y: .65 }, miami: { x: .70, y: .85 }, portland: { x: .10, y: .30 },
-            boston: { x: .85, y: .35 }, detroit: { x: .65, y: .38 }, houston: { x: .47, y: .78 },
-            phoenix: { x: .25, y: .65 }, minneapolis: { x: .50, y: .32 }, 'san francisco': { x: .09, y: .50 },
-          };
           const mapped: import('@/components/HypeHeatmap').HypeHeatmapCity[] = res.cities.map((c, i) => {
             const key = c.city.toLowerCase();
             const coords = CITY_COORDS[key] ?? { x: 0.3 + (i * 0.07) % 0.5, y: 0.3 + (i * 0.05) % 0.4 };
@@ -2601,7 +2595,24 @@ function ViewArtist({ data }: { data: WorkbenchData }) {
 
       {tab === 'touring' && (
         <>
-          <HypeHeatmap cities={touringCities} venuePings={[]} suggestedRoute={touringCities.length >= 2 ? touringCities.slice(0, 3).map(c => c.name.slice(0, 3).toUpperCase()).join(' → ') : undefined} />
+          <HypeHeatmap
+            cities={touringCities}
+            venuePings={[]}
+            routeOrder={touringCities.length >= 2 ? (() => {
+              const unvisited = [...touringCities];
+              const route = [unvisited.splice(0, 1)[0]];
+              while (unvisited.length > 0) {
+                const last = route[route.length - 1];
+                let ni = 0, minD = Infinity;
+                for (let i = 0; i < unvisited.length; i++) {
+                  const d = Math.hypot(unvisited[i].x - last.x, unvisited[i].y - last.y);
+                  if (d < minD) { minD = d; ni = i; }
+                }
+                route.push(unvisited.splice(ni, 1)[0]);
+              }
+              return route.map(c => c.name);
+            })() : undefined}
+          />
           {data.profileId && <CoHeadlinerSuggestions profileId={data.profileId} />}
         </>
       )}
@@ -2917,6 +2928,20 @@ function PageBuilder({ data }: { data: WorkbenchData }) {
           <button className="wb-btn-ghost" onClick={() => { setWidgets(DEFAULT_WIDGETS); localStorage.removeItem(LAYOUT_KEY); }}>Reset</button>
         </div>
       </div>
+
+      {data.profileId && (data.profileType === 'ARTIST' || data.profileType === 'DJ') && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.1em', color: 'var(--wb-ink-3)', marginBottom: 8 }}>● OPTIONAL WIDGETS</div>
+          <p style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', margin: '0 0 12px' }}>
+            Add optional sections to your public profile — gear, influences, press, merch, and more.
+          </p>
+          <WidgetManager
+            profileId={data.profileId}
+            profileType={data.profileType}
+            initialConfig={{ enabled: [], data: {} }}
+          />
+        </div>
+      )}
     </div>
   );
 }

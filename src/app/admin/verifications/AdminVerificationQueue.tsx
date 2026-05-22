@@ -3,30 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-type VerificationProfile = {
-  id: string;
-  slug: string;
-  hexId: string;
-  name: string;
-  type: string;
-  city: string | null;
-  stateRegion: string | null;
-  country: string | null;
-  contactInfo: string | null;
-  verificationNotes: string | null;
-  verificationStatus: string;
-  verificationSubmittedAt: Date | string | null;
-  verificationReviewedAt: Date | string | null;
-  hypeCount: number;
-  owner: {
-    id: string;
-    email: string | null;
-    name: string | null;
-    username: string;
-    createdAt: Date | string;
-  };
-};
+import type { VerificationProfile } from '@/lib/types/admin';
 
 function formatDate(value: Date | string | null) {
   if (!value) return '—';

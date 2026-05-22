@@ -79,10 +79,15 @@ export default async function PromotersIndexPage({
         promoterProfileId: { not: null },
         ...getDemoCreatorExclusion()
       },
-      include: {
-        venueProfile: true,
-        headlinerProfile: true,
-        promoterProfile: true
+      select: {
+        id: true, title: true, slug: true, status: true, startsAt: true,
+        hypeCount: true, isTicketed: true, isRadioShow: true,
+        description: true, ticketPriceCents: true, ticketCapacity: true,
+        ticketsSoldCount: true, tags: true,
+        radioTracks: { select: { durationSecs: true } },
+        venueProfile: { select: { name: true, slug: true, city: true, stateRegion: true, country: true, postalCode: true, latitude: true, longitude: true } },
+        headlinerProfile: { select: { name: true, slug: true } },
+        promoterProfile: { select: { name: true, slug: true } }
       },
       orderBy: [{ startsAt: 'asc' }, { hypeCount: 'desc' }],
       take: 18

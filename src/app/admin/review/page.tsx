@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
 import { AdminNav } from '@/components/AdminNav';
 import { AdminVerificationQueue } from '@/app/admin/verifications/AdminVerificationQueue';
+import type { VerificationProfile } from '@/lib/types/admin';
 import React from 'react';
 
 export const metadata: Metadata = {
@@ -47,14 +48,6 @@ type Report = {
   reporter: { id: string; name: string | null; email: string | null } | null;
 };
 
-type VerificationProfile = {
-  id: string; slug: string; hexId: string; name: string; type: string;
-  city: string | null; stateRegion: string | null; country: string | null;
-  contactInfo: string | null; verificationNotes: string | null;
-  verificationStatus: string; verificationSubmittedAt: Date | null;
-  verificationReviewedAt: Date | null; hypeCount: number;
-  owner: { id: string; email: string | null; name: string | null; username: string; createdAt: Date };
-};
 
 export default async function AdminReviewPage({
   searchParams

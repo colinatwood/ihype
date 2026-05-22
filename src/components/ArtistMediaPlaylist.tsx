@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 import type { ArtistMediaEntry } from '@/lib/media';
 
@@ -11,18 +11,33 @@ type ArtistMediaPlaylistProps = {
   artworkUrl: string | null;
   entries: ArtistMediaEntry[];
   isOwner?: boolean;
+  profileId?: string;
+  playCountMap?: Record<string, number>;
 };
+
+type EditState = { title: string; notes: string; saving: boolean };
 
 export function ArtistMediaPlaylist({
   artistName,
   artistSlug,
   artworkUrl,
-  entries,
-  isOwner = false
+  entries: initialEntries,
+  isOwner = false,
+  profileId,
+  playCountMap = {}
 }: ArtistMediaPlaylistProps) {
   const router = useRouter();
   const { currentTrack, isPlaying, playTrack, togglePlayback } = useMediaPlayer();
   const [message, setMessage] = useState<string | null>(null);
+  const [entries, setEntries] = useState(initialEntries);
+  const [editing, setEditing] = useState<Record<string, EditState>>({});
+  const [freeUse, setFreeUse] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(entries.filter((e) => e.source === 'UPLOADED').map((e) => [e.hexId, e.freeUseEnabled ?? false]))
+  );
+
+  // Drag-to-reorder state
+  const dragIndexRef = useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const queue = useMemo<MediaTrack[]>(
     () =>
@@ -54,25 +69,105 @@ export function ArtistMediaPlaylist({
   }
 
   async function removeUpload(entry: ArtistMediaEntry) {
-    if (!window.confirm(`Remove ${entry.title} from your artist page?`)) {
-      return;
-    }
-
+    if (!window.confirm(`Remove ${entry.title} from your artist page?`)) return;
     try {
-      const response = await fetch(`/api/artist-media/${entry.hexId}`, {
-        method: 'DELETE'
-      });
+      const response = await fetch(`/api/artist-media/${entry.hexId}`, { method: 'DELETE' });
       const data = await response.json();
-
-      if (!response.ok) {
-        setMessage(data.error ?? 'Could not remove this upload.');
-        return;
-      }
-
+      if (!response.ok) { setMessage(data.error ?? 'Could not remove this upload.'); return; }
       setMessage(`${entry.title} removed.`);
       router.refresh();
     } catch {
       setMessage('Could not remove this upload.');
+    }
+  }
+
+  function startEdit(entry: ArtistMediaEntry) {
+    setEditing((prev) => ({ ...prev, [entry.hexId]: { title: entry.title, notes: entry.notes ?? '', saving: false } }));
+  }
+
+  function cancelEdit(hexId: string) {
+    setEditing((prev) => { const next = { ...prev }; delete next[hexId]; return next; });
+  }
+
+  async function saveEdit(hexId: string) {
+    const state = editing[hexId];
+    if (!state) return;
+    setEditing((prev) => ({ ...prev, [hexId]: { ...state, saving: true } }));
+    try {
+      const response = await fetch(`/api/artist-media/${hexId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: state.title, notes: state.notes })
+      });
+      const data = await response.json();
+      if (!response.ok) { setMessage(data.error ?? 'Could not save changes.'); setEditing((prev) => ({ ...prev, [hexId]: { ...state, saving: false } })); return; }
+      cancelEdit(hexId);
+      setMessage('Track updated.');
+      router.refresh();
+    } catch {
+      setMessage('Could not save changes.');
+      setEditing((prev) => ({ ...prev, [hexId]: { ...state, saving: false } }));
+    }
+  }
+
+  async function toggleFreeUse(hexId: string) {
+    const next = !freeUse[hexId];
+    setFreeUse((prev) => ({ ...prev, [hexId]: next }));
+    try {
+      const response = await fetch(`/api/artist-media/${hexId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ freeUseEnabled: next })
+      });
+      if (!response.ok) {
+        setFreeUse((prev) => ({ ...prev, [hexId]: !next }));
+        setMessage('Could not update free-use status.');
+      } else {
+        setMessage(next ? 'Free use enabled — promoters can add this to playlists.' : 'Free use disabled.');
+      }
+    } catch {
+      setFreeUse((prev) => ({ ...prev, [hexId]: !next }));
+      setMessage('Could not update free-use status.');
+    }
+  }
+
+  // Drag-to-reorder handlers (uploaded tracks only, owner only)
+  function onDragStart(index: number) {
+    dragIndexRef.current = index;
+  }
+
+  function onDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    setDragOverIndex(index);
+  }
+
+  function onDragEnd() {
+    setDragOverIndex(null);
+    dragIndexRef.current = null;
+  }
+
+  async function onDrop(e: React.DragEvent, dropIndex: number) {
+    e.preventDefault();
+    const from = dragIndexRef.current;
+    setDragOverIndex(null);
+    dragIndexRef.current = null;
+    if (from === null || from === dropIndex) return;
+
+    const next = [...entries];
+    const [moved] = next.splice(from, 1);
+    next.splice(dropIndex, 0, moved);
+    setEntries(next);
+
+    if (!profileId) return;
+    const uploadOrder = next.filter((e) => e.source === 'UPLOADED').map((e) => e.hexId);
+    try {
+      await fetch('/api/artist-media/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, order: uploadOrder })
+      });
+    } catch {
+      setMessage('Could not save track order.');
     }
   }
 
@@ -83,58 +178,119 @@ export function ArtistMediaPlaylist({
         const isCurrentTrack = currentTrack?.id === track.id;
         const isCurrentAndPlaying = isCurrentTrack && isPlaying;
         const entry = entries[index];
+        const editState = editing[entry.hexId];
+        const isEditingThis = Boolean(editState);
+        const canEdit = isOwner && entry.source === 'UPLOADED';
+        const canDrag = canEdit;
+        const playCount = playCountMap[entry.hexId];
+        const isDragTarget = dragOverIndex === index;
 
         return (
-          <article className={isCurrentTrack ? 'artist-media-card active' : 'artist-media-card'} key={track.id}>
+          <article
+            className={[
+              'artist-media-card',
+              isCurrentTrack ? 'active' : '',
+              isDragTarget ? 'drag-over' : ''
+            ].filter(Boolean).join(' ')}
+            key={track.id}
+            draggable={canDrag}
+            onDragStart={canDrag ? () => onDragStart(index) : undefined}
+            onDragOver={canDrag ? (e) => onDragOver(e, index) : undefined}
+            onDrop={canDrag ? (e) => onDrop(e, index) : undefined}
+            onDragEnd={canDrag ? onDragEnd : undefined}
+            style={isDragTarget ? { outline: '2px dashed var(--accent, #ff5029)', outlineOffset: 2 } : undefined}
+          >
             <div className="artist-media-card-copy">
+              {canDrag && (
+                <span
+                  className="artist-media-drag-handle"
+                  title="Drag to reorder"
+                  style={{ cursor: 'grab', opacity: 0.4, paddingRight: 6, userSelect: 'none', fontSize: '1rem' }}
+                >
+                  ⠿
+                </span>
+              )}
               <span className="artist-media-index">{String(index + 1).padStart(2, '0')}</span>
-              <div>
+              <div style={{ flex: 1 }}>
                 <div className="composer-media-code">{entry.hexId}</div>
-                <strong>{track.title}</strong>
-                <p className="meta">
-                  {artistName}
-                  {track.notes ? ` | ${track.notes}` : ''}
-                </p>
+
+                {isEditingThis ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                    <input
+                      autoFocus
+                      className="field"
+                      disabled={editState.saving}
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [entry.hexId]: { ...editState, title: e.target.value } }))}
+                      placeholder="Track title"
+                      style={{ fontSize: '0.875rem', padding: '4px 8px' }}
+                      value={editState.title}
+                    />
+                    <textarea
+                      disabled={editState.saving}
+                      onChange={(e) => setEditing((prev) => ({ ...prev, [entry.hexId]: { ...editState, notes: e.target.value } }))}
+                      placeholder="Version notes, live room details, release context…"
+                      rows={2}
+                      style={{ fontSize: '0.8rem', padding: '4px 8px', resize: 'vertical' }}
+                      value={editState.notes}
+                    />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button className="button small" disabled={editState.saving || !editState.title.trim()} onClick={() => saveEdit(entry.hexId)} type="button">
+                        {editState.saving ? 'Saving…' : 'Save'}
+                      </button>
+                      <button className="button small secondary" disabled={editState.saving} onClick={() => cancelEdit(entry.hexId)} type="button">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <strong>{track.title}</strong>
+                    <p className="meta">
+                      {artistName}
+                      {track.notes ? ` | ${track.notes}` : ''}
+                      {playCount ? ` · ${playCount} play${playCount === 1 ? '' : 's'}` : ''}
+                    </p>
+                    {canEdit && freeUse[entry.hexId] && (
+                      <span className="meta" style={{ fontSize: '0.7rem', opacity: 0.6 }}>Free use on</span>
+                    )}
+                  </>
+                )}
               </div>
             </div>
 
             <div className="artist-media-actions">
-              <button
-                className="button small"
-                onClick={() => {
-                  if (isCurrentTrack) {
-                    togglePlayback();
-                    return;
-                  }
-
-                  playTrack(track, queue);
-                }}
-                type="button"
-              >
-                {isCurrentAndPlaying ? 'Pause' : isCurrentTrack ? 'Resume' : 'Play in dock'}
-              </button>
-              <button
-                className="button small secondary"
-                onClick={() => copyToClipboard(entry.hexId, 'Media ID')}
-                type="button"
-              >
-                Copy ID
-              </button>
-              <button
-                className="button small secondary"
-                onClick={() => copyToClipboard(entry.shareUrl, 'Share link', { treatAsLink: true })}
-                type="button"
-              >
-                Copy link
-              </button>
-              <a className="button small secondary" href={track.url} rel="noreferrer" target="_blank">
-                Open audio
-              </a>
-              {isOwner && entry.source === 'UPLOADED' ? (
-                <button className="button small secondary" onClick={() => removeUpload(entry)} type="button">
-                  Delete
+              {!isEditingThis && (
+                <button
+                  className="button small"
+                  onClick={() => { if (isCurrentTrack) { togglePlayback(); return; } playTrack(track, queue); }}
+                  type="button"
+                >
+                  {isCurrentAndPlaying ? 'Pause' : isCurrentTrack ? 'Resume' : 'Play in dock'}
                 </button>
-              ) : null}
+              )}
+              {!isEditingThis && (
+                <>
+                  <button className="button small secondary" onClick={() => copyToClipboard(entry.hexId, 'Media ID')} type="button">Copy ID</button>
+                  <button className="button small secondary" onClick={() => copyToClipboard(entry.shareUrl, 'Share link', { treatAsLink: true })} type="button">Copy link</button>
+                  <a className="button small secondary" href={track.url} rel="noreferrer" target="_blank">Open audio</a>
+                  {canEdit && (
+                    <button className="button small secondary" onClick={() => startEdit(entry)} type="button">Edit</button>
+                  )}
+                  {canEdit && (
+                    <button
+                      className={`button small${freeUse[entry.hexId] ? '' : ' secondary'}`}
+                      onClick={() => toggleFreeUse(entry.hexId)}
+                      title={freeUse[entry.hexId] ? 'Disable free use' : 'Allow promoters to add this to playlists'}
+                      type="button"
+                    >
+                      {freeUse[entry.hexId] ? 'Free use ✓' : 'Free use'}
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button className="button small secondary" onClick={() => removeUpload(entry)} type="button">Delete</button>
+                  )}
+                </>
+              )}
             </div>
           </article>
         );

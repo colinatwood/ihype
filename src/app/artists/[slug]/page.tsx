@@ -26,6 +26,8 @@ import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideD
 import { SoundsLike } from '@/components/SoundsLike';
 import { StreamingLinks } from '@/components/StreamingLinks';
 import { getBaseUrl } from '@/lib/utils';
+import { ProfileWidgetsDisplay } from '@/components/ProfileWidgets';
+import { parseWidgetConfig } from '@/lib/widgets';
 
 const artistSections = ['about', 'media', 'merch'] as const;
 
@@ -133,8 +135,8 @@ export default async function ArtistPage({
       include: {
         owner: { select: { email: true, username: true } },
         mediaUploads: {
-          select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true },
-          orderBy: { createdAt: 'desc' }
+          select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, sortOrder: true },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
         }
       }
     })
@@ -145,7 +147,8 @@ export default async function ArtistPage({
   const profileSlug = profile.slug;
   const media = buildArtistMediaCollection(profile.mediaContent, profile.mediaUploads);
 
-  const [shows, viewerLocation, venues, fanHypeCount, journalEntries] = await Promise.all([
+  const uploadHexIds = profile.mediaUploads.map((u) => u.hexId);
+  const [shows, viewerLocation, venues, fanHypeCount, journalEntries, playCounts, firstBelievers, ownerHypes] = await Promise.all([
     db.show.findMany({
       where: {
         headlinerProfileId: profile.id,
@@ -190,8 +193,46 @@ export default async function ArtistPage({
       orderBy: { createdAt: 'desc' },
       take: 5,
       select: { id: true, createdAt: true, title: true, content: true }
+    }),
+    uploadHexIds.length > 0
+      ? db.mediaListen.groupBy({
+          by: ['mediaId'],
+          where: { mediaId: { in: uploadHexIds } },
+          _count: { _all: true }
+        })
+      : Promise.resolve([]),
+    db.profileHypeEvent.findMany({
+      where: { profileId: profile.id },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+      select: {
+        createdAt: true,
+        userId: true,
+        user: { select: { username: true, name: true, image: true } }
+      }
+    }),
+    // For listening stats widget: fetch owner's top genres from their hyped profiles
+    db.profileHypeEvent.findMany({
+      where: { userId: profile.ownerId },
+      select: { profile: { select: { genres: true, name: true } } },
+      take: 200
     })
   ]);
+
+  const playCountMap = new Map(playCounts.map((r) => [r.mediaId, r._count._all]));
+
+  const widgetConfig = parseWidgetConfig(profile.widgetConfig);
+  const ownerGenreCounts = new Map<string, number>();
+  for (const h of ownerHypes) {
+    for (const g of h.profile.genres) {
+      const k = g.toLowerCase().trim();
+      if (k) ownerGenreCounts.set(k, (ownerGenreCounts.get(k) ?? 0) + 1);
+    }
+  }
+  const listeningData = {
+    topGenres: [...ownerGenreCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5) as [string, number][],
+    topArtists: [...new Set(ownerHypes.map(h => h.profile.name))].slice(0, 3)
+  };
 
   const now = new Date();
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
@@ -249,6 +290,10 @@ export default async function ArtistPage({
     ...(profile.genres?.length ? { genre: profile.genres } : {}),
   };
 
+  const userHype = session?.user?.id
+    ? await db.profileHypeEvent.findUnique({ where: { userId_profileId: { userId: session.user.id, profileId: profile.id } }, select: { userId: true } })
+    : null;
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
@@ -294,7 +339,7 @@ export default async function ArtistPage({
               {profile.genre ? <span className="tag">{profile.genre}</span> : null}
             </div>
             <ProfileLinkShelf linksJson={profile.links ?? null} />
-            <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} entityLabel="artist" />
+            <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} initiallyHyped={!!userHype} entityLabel="artist" />
             <FollowButton profileId={profile.id} />
             {profile.contactInfo ? (
               <div className="cta-row" style={{ marginTop: 12 }}>
@@ -351,19 +396,25 @@ export default async function ArtistPage({
                 </div>
               ) : null}
               {journalEntries.length > 0 ? (
-                <div className="artist-copy">
-                  <strong>Recent updates</strong>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0 0', display: 'grid', gap: 10 }}>
-                    {journalEntries.map((entry) => (
-                      <li key={entry.id} style={{ borderTop: '1px solid var(--line)', paddingTop: 8 }}>
-                        <div style={{ fontWeight: 700 }}>{entry.title ?? 'Untitled'}</div>
-                        <div className="meta" style={{ fontSize: 11 }}>
-                          {new Date(entry.createdAt).toLocaleString()}
+                <div className="artist-copy" style={{ padding: '1rem 1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.4, fontFamily: 'var(--f-m, monospace)' }}>Road Journal</div>
+                      <div style={{ fontSize: '0.72rem', opacity: 0.4, marginTop: 2 }}>Thoughts from {profile.name}</div>
+                    </div>
+                    <span style={{ fontSize: '0.62rem', opacity: 0.3 }}>{journalEntries.length} {journalEntries.length === 1 ? 'entry' : 'entries'}</span>
+                  </div>
+                  <div style={{ display: 'grid', gap: 0 }}>
+                    {journalEntries.map((entry, i) => (
+                      <div key={entry.id} style={{ paddingTop: i > 0 ? 14 : 0, marginTop: i > 0 ? 14 : 0, borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 3 }}>{entry.title ?? 'Untitled'}</div>
+                        <div style={{ fontSize: '0.6rem', opacity: 0.35, marginBottom: 6, fontFamily: 'var(--f-m, monospace)' }}>
+                          {new Date(entry.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                         </div>
-                        <p style={{ margin: '4px 0 0', whiteSpace: 'pre-wrap' }}>{entry.content ?? ''}</p>
-                      </li>
+                        <p style={{ margin: 0, fontSize: '0.82rem', opacity: 0.75, whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>{entry.content ?? ''}</p>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               ) : null}
 
@@ -371,6 +422,20 @@ export default async function ArtistPage({
               {profile.tourContent ? (
                 <div className="artist-copy">{profile.tourContent}</div>
               ) : null}
+
+              {widgetConfig.enabled.length > 0 && (
+                <ProfileWidgetsDisplay
+                  config={widgetConfig}
+                  upcomingShows={upcomingShows.slice(0, 3).map(s => ({
+                    id: s.id,
+                    title: s.title,
+                    startsAt: s.startsAt.toISOString(),
+                    venueName: s.venueProfile?.name ?? undefined,
+                    slug: s.slug ?? undefined
+                  }))}
+                  listeningData={listeningData}
+                />
+              )}
 
               <NetworkEarthGlobe
                 description="Start from the visitor ZIP, highlight nearby venues, then zoom out to trace the artist tour path across current and previous show stops."
@@ -414,6 +479,8 @@ export default async function ArtistPage({
                   artworkUrl={artworkUrl}
                   entries={media.entries}
                   isOwner={isOwner}
+                  profileId={profile.id}
+                  playCountMap={Object.fromEntries(playCountMap)}
                 />
               ) : (
                 <div className="empty">
@@ -444,6 +511,62 @@ export default async function ArtistPage({
       <PeopleAlsoHype profileId={profile.id} />
       <SoundsLike profileId={profile.id} profileName={profile.name} />
       <StreamingLinks linksJson={profile.links ?? null} />
+      {firstBelievers.length > 0 ? (
+        <div style={{ marginTop: 24 }}>
+          <h3 style={{ marginBottom: 8 }}>First Believers</h3>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
+            {firstBelievers.map((believer, index) => {
+              const rank = index + 1;
+              const rankColor =
+                rank === 1 ? '#fbbf24' :
+                rank === 2 ? '#94a3b8' :
+                rank === 3 ? '#cd7f32' :
+                undefined;
+              const displayName = believer.user.username ? `@${believer.user.username}` : (believer.user.name ?? 'Fan');
+              return (
+                <li key={index} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, width: 24, color: rankColor }}>#{rank}</span>
+                  {believer.user.image ? (
+                    <img
+                      src={believer.user.image}
+                      alt={displayName}
+                      style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: rankColor ?? '#6b7280',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      color: '#fff',
+                      fontWeight: 700
+                    }}>
+                      {(believer.user.name ?? believer.user.username ?? '?').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>{displayName}</span>
+                  <span className="meta" style={{ fontSize: 11, marginLeft: 'auto' }}>
+                    {new Date(believer.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {session?.user?.id && (() => {
+            const idx = firstBelievers.findIndex((b) => b.userId === session.user?.id);
+            return idx !== -1 ? (
+              <p className="meta" style={{ marginTop: 8, fontSize: 12 }}>
+                You are fan #{idx + 1} of this artist
+              </p>
+            ) : null;
+          })()}
+        </div>
+      ) : null}
       <div style={{ marginTop: 16 }}>
         <ReportButton entityType="profile" entityId={profile.id} />
       </div>

@@ -150,6 +150,7 @@ model Profile {
   requestContent                String?
   recommendContent              String?
   topFiveContent                String?
+  widgetConfig                  String?
   addressLine1                  String?
   contactInfo                   String?
   hoursText                     String?

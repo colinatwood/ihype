@@ -17,12 +17,19 @@ export async function triggerShowPayouts(): Promise<{ processed: number }> {
     take: 20
   });
 
+  const showIds = completedShows.map(s => s.id);
+  const existingPayouts = showIds.length
+    ? await db.auditLog.findMany({
+        where: { action: 'PAYOUT_TRIGGERED', entityId: { in: showIds } },
+        select: { entityId: true }
+      })
+    : [];
+  const alreadyProcessed = new Set(existingPayouts.map(e => e.entityId));
+
   let processed = 0;
 
   for (const show of completedShows) {
-    // Check if already processed
-    const existing = await db.auditLog.findFirst({ where: { action: 'PAYOUT_TRIGGERED', entityId: show.id } });
-    if (existing) continue;
+    if (alreadyProcessed.has(show.id)) continue;
 
     const grossRevenue = show.ticketPriceCents * show.ticketsSoldCount;
     const platformFee = Math.round(grossRevenue * 0.05);

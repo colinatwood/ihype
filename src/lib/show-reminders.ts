@@ -32,6 +32,16 @@ export async function sendShowReminders(): Promise<{ sent: number }> {
     }
   });
 
+  // Pre-fetch all already-sent audit logs in one query
+  const showIds = shows.map(s => s.id);
+  const sentLogs = showIds.length
+    ? await db.auditLog.findMany({
+        where: { action: 'show_reminder_sent', entityType: 'show', entityId: { in: showIds } },
+        select: { actorUserId: true, entityId: true }
+      })
+    : [];
+  const sentSet = new Set(sentLogs.map(l => `${l.actorUserId}:${l.entityId}`));
+
   let sent = 0;
 
   for (const show of shows) {
@@ -41,17 +51,7 @@ export async function sendShowReminders(): Promise<{ sent: number }> {
       const user = follow.follower;
       if (!user.email) continue;
 
-      // Check if reminder already sent
-      const alreadySent = await db.auditLog.findFirst({
-        where: {
-          action: 'show_reminder_sent',
-          actorUserId: user.id,
-          entityType: 'show',
-          entityId: show.id
-        },
-        select: { id: true }
-      });
-      if (alreadySent) continue;
+      if (sentSet.has(`${user.id}:${show.id}`)) continue;
 
       try {
         const name = user.name ?? user.username;
