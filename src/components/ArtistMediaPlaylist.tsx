@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 import type { ArtistMediaEntry } from '@/lib/media';
 
@@ -11,6 +11,8 @@ type ArtistMediaPlaylistProps = {
   artworkUrl: string | null;
   entries: ArtistMediaEntry[];
   isOwner?: boolean;
+  profileId?: string;
+  playCountMap?: Record<string, number>;
 };
 
 type EditState = { title: string; notes: string; saving: boolean };
@@ -19,16 +21,23 @@ export function ArtistMediaPlaylist({
   artistName,
   artistSlug,
   artworkUrl,
-  entries,
-  isOwner = false
+  entries: initialEntries,
+  isOwner = false,
+  profileId,
+  playCountMap = {}
 }: ArtistMediaPlaylistProps) {
   const router = useRouter();
   const { currentTrack, isPlaying, playTrack, togglePlayback } = useMediaPlayer();
   const [message, setMessage] = useState<string | null>(null);
+  const [entries, setEntries] = useState(initialEntries);
   const [editing, setEditing] = useState<Record<string, EditState>>({});
   const [freeUse, setFreeUse] = useState<Record<string, boolean>>(
     () => Object.fromEntries(entries.filter((e) => e.source === 'UPLOADED').map((e) => [e.hexId, e.freeUseEnabled ?? false]))
   );
+
+  // Drag-to-reorder state
+  const dragIndexRef = useRef<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const queue = useMemo<MediaTrack[]>(
     () =>
@@ -122,6 +131,46 @@ export function ArtistMediaPlaylist({
     }
   }
 
+  // Drag-to-reorder handlers (uploaded tracks only, owner only)
+  function onDragStart(index: number) {
+    dragIndexRef.current = index;
+  }
+
+  function onDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    setDragOverIndex(index);
+  }
+
+  function onDragEnd() {
+    setDragOverIndex(null);
+    dragIndexRef.current = null;
+  }
+
+  async function onDrop(e: React.DragEvent, dropIndex: number) {
+    e.preventDefault();
+    const from = dragIndexRef.current;
+    setDragOverIndex(null);
+    dragIndexRef.current = null;
+    if (from === null || from === dropIndex) return;
+
+    const next = [...entries];
+    const [moved] = next.splice(from, 1);
+    next.splice(dropIndex, 0, moved);
+    setEntries(next);
+
+    if (!profileId) return;
+    const uploadOrder = next.filter((e) => e.source === 'UPLOADED').map((e) => e.hexId);
+    try {
+      await fetch('/api/artist-media/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, order: uploadOrder })
+      });
+    } catch {
+      setMessage('Could not save track order.');
+    }
+  }
+
   return (
     <div className="artist-media-list">
       {message ? <p className="meta">{message}</p> : null}
@@ -132,10 +181,35 @@ export function ArtistMediaPlaylist({
         const editState = editing[entry.hexId];
         const isEditingThis = Boolean(editState);
         const canEdit = isOwner && entry.source === 'UPLOADED';
+        const canDrag = canEdit;
+        const playCount = playCountMap[entry.hexId];
+        const isDragTarget = dragOverIndex === index;
 
         return (
-          <article className={isCurrentTrack ? 'artist-media-card active' : 'artist-media-card'} key={track.id}>
+          <article
+            className={[
+              'artist-media-card',
+              isCurrentTrack ? 'active' : '',
+              isDragTarget ? 'drag-over' : ''
+            ].filter(Boolean).join(' ')}
+            key={track.id}
+            draggable={canDrag}
+            onDragStart={canDrag ? () => onDragStart(index) : undefined}
+            onDragOver={canDrag ? (e) => onDragOver(e, index) : undefined}
+            onDrop={canDrag ? (e) => onDrop(e, index) : undefined}
+            onDragEnd={canDrag ? onDragEnd : undefined}
+            style={isDragTarget ? { outline: '2px dashed var(--accent, #ff5029)', outlineOffset: 2 } : undefined}
+          >
             <div className="artist-media-card-copy">
+              {canDrag && (
+                <span
+                  className="artist-media-drag-handle"
+                  title="Drag to reorder"
+                  style={{ cursor: 'grab', opacity: 0.4, paddingRight: 6, userSelect: 'none', fontSize: '1rem' }}
+                >
+                  ⠿
+                </span>
+              )}
               <span className="artist-media-index">{String(index + 1).padStart(2, '0')}</span>
               <div style={{ flex: 1 }}>
                 <div className="composer-media-code">{entry.hexId}</div>
@@ -174,6 +248,7 @@ export function ArtistMediaPlaylist({
                     <p className="meta">
                       {artistName}
                       {track.notes ? ` | ${track.notes}` : ''}
+                      {playCount ? ` · ${playCount} play${playCount === 1 ? '' : 's'}` : ''}
                     </p>
                     {canEdit && freeUse[entry.hexId] && (
                       <span className="meta" style={{ fontSize: '0.7rem', opacity: 0.6 }}>Free use on</span>

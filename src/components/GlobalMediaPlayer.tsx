@@ -88,6 +88,37 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
   const [duration, setDuration] = useState(0);
   const [volume, setVolumeState] = useState(0.85);
 
+  // Keyboard shortcuts: Space=play/pause, ←/→=seek ±10s, N=next, P=prev
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        setCurrentTrack((t) => { if (t) setIsPlaying((v) => !v); return t; });
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        const audio = audioRef.current;
+        if (audio) { audio.currentTime = Math.max(0, audio.currentTime - 10); setCurrentTime(audio.currentTime); }
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        const audio = audioRef.current;
+        if (audio && Number.isFinite(audio.duration)) { audio.currentTime = Math.min(audio.duration, audio.currentTime + 10); setCurrentTime(audio.currentTime); }
+      } else if (e.code === 'KeyN') {
+        e.preventDefault();
+        setQueue((prev) => { setCurrentIndex((ci) => { const next = ci >= 0 && ci < prev.length - 1 ? ci + 1 : ci; if (next !== ci) { setCurrentTrack(prev[next] ?? null); setIsPlaying(true); } return next; }); return prev; });
+      } else if (e.code === 'KeyP') {
+        e.preventDefault();
+        const audio = audioRef.current;
+        if (audio && audio.currentTime > 4) { audio.currentTime = 0; setCurrentTime(0); return; }
+        setQueue((prev) => { setCurrentIndex((ci) => { const p = ci > 0 ? ci - 1 : ci; if (p !== ci) { setCurrentTrack(prev[p] ?? null); setIsPlaying(true); } return p; }); return prev; });
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;

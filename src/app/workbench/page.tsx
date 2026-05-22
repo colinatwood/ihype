@@ -126,9 +126,10 @@ export default async function WorkbenchPage({
     <main className="container section" style={{ maxWidth: 1000 }}>
       <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28 }}>Workbench</h1>
 
-      <nav style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      <nav style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
         <Link href="/workbench?tab=analytics" className={`button small${tab === 'analytics' ? '' : ' secondary'}`}>Analytics</Link>
         <Link href="/workbench?tab=tickets" className={`button small${tab === 'tickets' ? '' : ' secondary'}`}>Tickets</Link>
+        <Link href="/workbench/saved" className="button small secondary">Saved tracks</Link>
       </nav>
 
       {tab === 'analytics' && (

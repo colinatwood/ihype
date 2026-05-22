@@ -133,8 +133,8 @@ export default async function ArtistPage({
       include: {
         owner: { select: { email: true, username: true } },
         mediaUploads: {
-          select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true },
-          orderBy: { createdAt: 'desc' }
+          select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, sortOrder: true },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
         }
       }
     })
@@ -145,7 +145,8 @@ export default async function ArtistPage({
   const profileSlug = profile.slug;
   const media = buildArtistMediaCollection(profile.mediaContent, profile.mediaUploads);
 
-  const [shows, viewerLocation, venues, fanHypeCount, journalEntries] = await Promise.all([
+  const uploadHexIds = profile.mediaUploads.map((u) => u.hexId);
+  const [shows, viewerLocation, venues, fanHypeCount, journalEntries, playCounts] = await Promise.all([
     db.show.findMany({
       where: {
         headlinerProfileId: profile.id,
@@ -190,8 +191,17 @@ export default async function ArtistPage({
       orderBy: { createdAt: 'desc' },
       take: 5,
       select: { id: true, createdAt: true, title: true, content: true }
-    })
+    }),
+    uploadHexIds.length > 0
+      ? db.mediaListen.groupBy({
+          by: ['mediaId'],
+          where: { mediaId: { in: uploadHexIds } },
+          _count: { _all: true }
+        })
+      : Promise.resolve([])
   ]);
+
+  const playCountMap = new Map(playCounts.map((r) => [r.mediaId, r._count._all]));
 
   const now = new Date();
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
@@ -418,6 +428,8 @@ export default async function ArtistPage({
                   artworkUrl={artworkUrl}
                   entries={media.entries}
                   isOwner={isOwner}
+                  profileId={profile.id}
+                  playCountMap={Object.fromEntries(playCountMap)}
                 />
               ) : (
                 <div className="empty">
