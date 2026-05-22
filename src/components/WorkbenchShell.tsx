@@ -258,6 +258,7 @@ const IcShows    = (p: {s?:number}) => <Ic s={p.s}><rect x="3" y="5" width="18" 
 const IcSeeds    = (p: {s?:number}) => <Ic s={p.s}><path d="M12 22V12M12 12C12 7 7 4 2 4c0 5 3 8 10 8zM12 12c0-5 5-8 10-8-0 5-3 8-10 8z"/></Ic>;
 const IcArtist   = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/><path d="M20 8l2 2-2 2M20 10h2"/></Ic>;
 const IcStudio   = (p: {s?:number}) => <Ic s={p.s}><path d="M6 3v18M18 3v18M3 6h18M3 12h18M3 18h18"/></Ic>;
+const IcMap      = (p: {s?:number}) => <Ic s={p.s}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></Ic>;
 const IcSettings = (p: {s?:number}) => <Ic s={p.s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></Ic>;
 export const IcPlay     = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20"/></svg>;
 export const IcPause    = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>;
@@ -279,7 +280,7 @@ export function WbSkeleton({ width, height, style }: { width?: number | string; 
   return <div className="wb-skeleton" style={{ width: width ?? '100%', height: height ?? 16, ...style }} />;
 }
 
-export type View = 'home' | 'discover' | 'seeds' | 'tickets' | 'studio' | 'artist' | 'venue' | 'settings' | 'inbox';
+export type View = 'home' | 'discover' | 'seeds' | 'tickets' | 'studio' | 'artist' | 'venue' | 'settings' | 'inbox' | 'hype-map';
 
 // ── Onboarding modal ───────────────────────────────────────────
 function OnboardingModal({ onDone }: { onDone: () => void }) {
@@ -346,8 +347,14 @@ export type StarterPackItem = {
   genre: string | null;
 };
 
+const VALID_VIEWS = new Set<View>(['home','discover','seeds','tickets','studio','artist','venue','settings','inbox','hype-map']);
+
 export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData; starterPack?: StarterPackItem[] }) {
-  const [view, setView] = useState<View>('home');
+  const [view, setView] = useState<View>(() => {
+    if (typeof window === 'undefined') return 'home';
+    const p = new URLSearchParams(window.location.search).get('view') as View | null;
+    return p && VALID_VIEWS.has(p) ? p : 'home';
+  });
   const [liveStats, setLiveStats] = useState({
     listeningNow: data.listeningNow,
     hypedToday: data.hypedToday,
@@ -448,8 +455,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
           {view === 'studio'   && <ViewRadioStudio />}
           {view === 'artist'   && <ViewArtist data={liveData} />}
           {view === 'venue'    && <ViewVenue data={liveData} />}
-          {view === 'settings' && <ViewSettings prefs={prefs} setPref={setPref} data={liveData} />}
-          {view === 'inbox'    && <ViewInbox data={liveData} setView={setView} />}
+          {view === 'settings'  && <ViewSettings prefs={prefs} setPref={setPref} data={liveData} />}
+          {view === 'inbox'     && <ViewInbox data={liveData} setView={setView} />}
+          {view === 'hype-map'  && <ViewHypeMap />}
         </main>
         {showQueue && <WbQueueRail data={liveData} />}
         <WbPlayerDock queueRailOn={prefs.queueRail} onToggleQueue={() => setPref('queueRail', !prefs.queueRail)} />
@@ -460,15 +468,16 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
 // ── Sidebar ────────────────────────────────────────────────────
 const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
-  { k: 'home',     label: 'Home',      Icon: IcHome },
-  { k: 'discover', label: 'Discover',  Icon: IcDiscover },
-  { k: 'seeds',    label: 'Seeds',     Icon: IcSeeds },
-  { k: 'tickets',  label: 'Live Events', Icon: IcTicket },
-  { k: 'studio',   label: 'Studio',    Icon: IcStudio },
+  { k: 'home',      label: 'Home',      Icon: IcHome },
+  { k: 'discover',  label: 'Discover',  Icon: IcDiscover },
+  { k: 'seeds',     label: 'Seeds',     Icon: IcSeeds },
+  { k: 'tickets',   label: 'Live Events', Icon: IcTicket },
+  { k: 'hype-map',  label: 'Hype Map',  Icon: IcMap },
+  { k: 'studio',    label: 'Studio',    Icon: IcStudio },
 ];
 
 function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobileOpen, isVerified }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean }) {
-  const isArtist = activeProfileTypes.includes('ARTIST');
+  const isArtist = activeProfileTypes.includes('ARTIST') || activeProfileTypes.includes('DJ');
   const isVenue  = activeProfileTypes.includes('VENUE');
   return (
     <aside className={`wb-sidebar${mobileOpen ? ' wb-sidebar-mobile-open' : ''}`}>
@@ -491,7 +500,7 @@ function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobile
         )}
       </div>
       {!isArtist && !isVenue && (
-        <SidebarBtn active={false} onClick={() => window.location.href = '/register'} label="Register as Artist/Venue" accent="#22e5d4">
+        <SidebarBtn active={false} onClick={() => setView('settings')} label="Set up artist or venue profile" accent="#22e5d4">
           <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
         </SidebarBtn>
       )}
@@ -534,6 +543,7 @@ function SidebarBtn({ active, onClick, label, children, accent }: { active: bool
 const VIEW_TITLES: Record<View, string> = {
   home: 'Home', discover: 'Discover', seeds: 'Seeds', tickets: 'Ticketing',
   studio: 'Studio', artist: 'Artist', venue: 'Venue', settings: 'Settings', inbox: 'Inbox',
+  'hype-map': 'Hype Map',
 };
 
 type SearchHit = { type: string; id: string; name: string; subtitle: string; slug?: string };
@@ -581,21 +591,15 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  function getHref(r: SearchHit) {
-    if (!r.slug) return null;
-    if (r.type === 'artist') return `/artists/${r.slug}`;
-    if (r.type === 'venue') return `/venues/${r.slug}`;
-    if (r.type === 'promoter') return `/promoters/${r.slug}`;
-    if (r.type === 'show') return `/shows/${r.slug}`;
-    return null;
-  }
-
   function handleSelect(r: SearchHit) {
     if (r.type === 'song') {
       playTrack({ id: r.id, title: r.name, artistName: r.subtitle.replace(/^by /, '').split(' / ')[0], url: `/api/media/${r.id}`, mediaId: r.id, artistProfileSlug: r.slug ?? null });
-    } else {
-      const href = getHref(r);
-      if (href) { window.location.href = href; return; }
+    } else if (r.type === 'artist' || r.type === 'promoter') {
+      setView('discover');
+    } else if (r.type === 'venue') {
+      setView('discover');
+    } else if (r.type === 'show') {
+      setView('tickets');
     }
     setOpen(false); setQ('');
   }
@@ -640,7 +644,6 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
         {open && results.length > 0 && (
           <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line-2)', borderRadius: 10, boxShadow: '0 16px 48px rgba(0,0,0,.5)', zIndex: 500, overflow: 'hidden', minWidth: 320 }}>
             {results.map(r => {
-              const href = getHref(r);
               const inner = (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 14px', cursor: 'pointer' }}
                   onClick={() => handleSelect(r)}>
@@ -651,9 +654,7 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
                   <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)', flexShrink: 0 }}>{r.subtitle}</span>
                 </div>
               );
-              return href
-                ? <a key={`${r.type}-${r.id}`} href={href} style={{ display: 'block', textDecoration: 'none', borderBottom: '1px solid var(--wb-line)' }} onClick={() => setOpen(false)}>{inner}</a>
-                : <div key={`${r.type}-${r.id}`} style={{ borderBottom: '1px solid var(--wb-line)' }}>{inner}</div>;
+              return <div key={`${r.type}-${r.id}`} style={{ borderBottom: '1px solid var(--wb-line)' }}>{inner}</div>;
             })}
           </div>
         )}
@@ -1100,6 +1101,18 @@ function RoleNextActionHub({ data, setView }: { data: WorkbenchData; setView: (v
         </div>
       ) : null}
     </section>
+  );
+}
+
+function ViewHypeMap() {
+  return (
+    <div className="wb-view-pad" style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 0 }}>
+      <iframe
+        src="/workbench/hype-map"
+        style={{ flex: 1, border: 'none', width: '100%', minHeight: 'calc(100vh - var(--wb-dock-h, 72px) - var(--wb-top-h, 48px))' }}
+        title="Hype Map"
+      />
+    </div>
   );
 }
 
