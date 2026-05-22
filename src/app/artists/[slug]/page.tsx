@@ -133,7 +133,7 @@ export default async function ArtistPage({
       include: {
         owner: { select: { email: true, username: true } },
         mediaUploads: {
-          select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true },
+          select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true },
           orderBy: { createdAt: 'desc' }
         }
       }

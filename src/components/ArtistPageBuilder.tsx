@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
+import { LinkedMediaBuilder } from '@/components/LinkedMediaBuilder';
 import { VisualDropStudio, type VisualDropStudioSlot } from '@/components/VisualDropStudio';
 import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety';
 import { getPreviewSnippet } from '@/lib/text';
@@ -587,14 +588,13 @@ export function ArtistPageBuilder({
                 <details className="artist-builder-advanced">
                   <summary>Advanced page details</summary>
                   <div className="artist-builder-advanced-fields">
-                    <label className="field">
-                      <span>Media notes</span>
-                      <textarea
-                        onChange={(event) => setFormValues((current) => ({ ...current, mediaContent: event.target.value }))}
-                        rows={4}
+                    <div className="field">
+                      <span>Linked media</span>
+                      <LinkedMediaBuilder
+                        onChange={(val) => setFormValues((current) => ({ ...current, mediaContent: val }))}
                         value={formValues.mediaContent}
                       />
-                    </label>
+                    </div>
 
                     <div className="artist-builder-control-grid">
                       <label className="field">
@@ -619,14 +619,13 @@ export function ArtistPageBuilder({
                 </details>
               ) : (
                 <>
-                  <label className="field">
-                    <span>Media notes</span>
-                    <textarea
-                      onChange={(event) => setFormValues((current) => ({ ...current, mediaContent: event.target.value }))}
-                      rows={4}
+                  <div className="field">
+                    <span>Linked media</span>
+                    <LinkedMediaBuilder
+                      onChange={(val) => setFormValues((current) => ({ ...current, mediaContent: val }))}
                       value={formValues.mediaContent}
                     />
-                  </label>
+                  </div>
 
                   <div className="artist-builder-control-grid">
                     <label className="field">

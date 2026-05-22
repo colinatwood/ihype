@@ -15,19 +15,11 @@ export async function PATCH(
   try {
     const { hexId } = await params;
     const body = await request.json().catch(() => ({}));
-    const freeUseEnabled = Boolean(body.freeUseEnabled);
 
     const asset = await withDbRetry(() =>
       db.artistMediaAsset.findUnique({
         where: { hexId },
-        select: {
-          id: true,
-          profile: {
-            select: {
-              ownerId: true
-            }
-          }
-        }
+        select: { id: true, profile: { select: { ownerId: true } } }
       })
     );
 
@@ -36,17 +28,19 @@ export async function PATCH(
     }
 
     if (!canManageOwnedResource(session, asset.profile.ownerId)) {
-      return NextResponse.json(
-        { error: 'Only the artist who owns this track can change its free-use status.' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Only the artist who owns this track can edit it.' }, { status: 403 });
     }
+
+    const data: Record<string, unknown> = {};
+    if ('freeUseEnabled' in body) data.freeUseEnabled = Boolean(body.freeUseEnabled);
+    if ('title' in body && typeof body.title === 'string' && body.title.trim()) data.title = body.title.trim().slice(0, 200);
+    if ('notes' in body) data.notes = typeof body.notes === 'string' ? body.notes.trim().slice(0, 5000) || null : null;
 
     const updated = await withDbRetry(() =>
       db.artistMediaAsset.update({
         where: { id: asset.id },
-        data: { freeUseEnabled },
-        select: { hexId: true, freeUseEnabled: true }
+        data,
+        select: { hexId: true, title: true, notes: true, freeUseEnabled: true }
       })
     );
 
