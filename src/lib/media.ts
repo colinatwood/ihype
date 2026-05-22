@@ -11,6 +11,7 @@ export type ArtistMediaEntry = {
   fileSizeBytes?: number | null;
   createdAt?: Date | null;
   previewImageUrl?: string | null;
+  freeUseEnabled?: boolean;
 };
 
 export type ParsedArtistMediaContent = {
@@ -25,6 +26,7 @@ export type ArtistMediaUploadRecord = {
   mimeType: string;
   fileSizeBytes: number;
   createdAt: Date;
+  freeUseEnabled?: boolean;
 };
 
 export function getArtistMediaApiPath(hexId: string) {
@@ -155,7 +157,8 @@ export function buildUploadedArtistMediaEntries(uploads: ArtistMediaUploadRecord
       mediaType: inferMediaType({ mimeType: upload.mimeType, url: streamUrl }),
       mimeType: upload.mimeType,
       fileSizeBytes: upload.fileSizeBytes,
-      createdAt: upload.createdAt
+      createdAt: upload.createdAt,
+      freeUseEnabled: upload.freeUseEnabled ?? false
     };
   });
 }
