@@ -177,7 +177,6 @@ export async function GET(request: NextRequest) {
 
     case 'feature-shows': {
       const { db } = await import('@/lib/db');
-      // Find shows with high hype in last 24h
       const hotShows = await db.show.findMany({
         where: { status: 'SCHEDULED', startsAt: { gte: new Date() } },
         select: { id: true, hypeCount: true, tags: true },
