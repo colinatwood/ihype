@@ -176,12 +176,13 @@ export async function GET(request: NextRequest) {
         orderBy: { hypeCount: 'desc' },
         take: 5
       });
+      const unfeaturedIds = hotShows.filter(s => !s.tags.includes('featured')).map(s => s.id);
       let updated = 0;
-      for (const show of hotShows) {
-        if (!show.tags.includes('featured')) {
-          await db.show.update({ where: { id: show.id }, data: { tags: { push: 'featured' } } });
-          updated++;
-        }
+      if (unfeaturedIds.length > 0) {
+        await Promise.all(
+          unfeaturedIds.map(id => db.show.update({ where: { id }, data: { tags: { push: 'featured' } } }))
+        );
+        updated = unfeaturedIds.length;
       }
       await pingCronAlive('feature-shows');
       return NextResponse.json({ ok: true, updated });
@@ -200,13 +201,21 @@ export async function GET(request: NextRequest) {
         select: { id: true },
         take: 100
       });
+      const staleIds = stale.map(u => u.id);
+      const alreadyFlagged = staleIds.length
+        ? await db.auditLog.findMany({
+            where: { actorUserId: null, action: 'SPAM_FLAGGED', entityId: { in: staleIds } },
+            select: { entityId: true }
+          })
+        : [];
+      const flaggedSet = new Set(alreadyFlagged.map(l => l.entityId));
+      const toFlag = staleIds.filter(id => !flaggedSet.has(id));
       let flagged = 0;
-      for (const user of stale) {
-        const existing = await db.auditLog.findFirst({ where: { actorUserId: null, action: 'SPAM_FLAGGED', entityId: user.id } });
-        if (!existing) {
-          await db.auditLog.create({ data: { actorUserId: null, action: 'SPAM_FLAGGED', entityType: 'User', entityId: user.id, metadata: {} } });
-          flagged++;
-        }
+      if (toFlag.length > 0) {
+        await db.auditLog.createMany({
+          data: toFlag.map(id => ({ actorUserId: null, action: 'SPAM_FLAGGED', entityType: 'User', entityId: id, metadata: {} }))
+        });
+        flagged = toFlag.length;
       }
       return NextResponse.json({ ok: true, flagged });
     }

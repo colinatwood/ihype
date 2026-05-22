@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { jaccardMapSimilarity } from '@/lib/similarity';
 
 export const metadata: Metadata = { title: 'Taste Drift · iHYPE Workbench' };
 export const dynamic = 'force-dynamic';
@@ -52,14 +53,6 @@ function topN<T>(map: Map<T, number>, n: number): T[] {
   return [...map.entries()].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => k);
 }
 
-function jaccard(a: Map<string, number>, b: Map<string, number>): number {
-  const setA = new Set(a.keys());
-  const setB = new Set(b.keys());
-  const intersection = [...setA].filter(k => setB.has(k)).length;
-  const union = new Set([...setA, ...setB]).size;
-  if (union === 0) return 1;
-  return intersection / union;
-}
 
 function countHypesInWindow(hypes: { createdAt: Date }[], start: Date, end: Date): number {
   return hypes.filter(h => h.createdAt >= start && h.createdAt <= end).length;
@@ -100,7 +93,7 @@ export default async function TasteDriftPage({ searchParams }: { searchParams: P
 
   const enoughData = nowCount >= 5 && thenCount >= 5;
 
-  const jaccardScore = enoughData ? jaccard(thenGenres, nowGenres) : null;
+  const jaccardScore = enoughData ? jaccardMapSimilarity(thenGenres, nowGenres) : null;
   const driftScore = jaccardScore !== null ? Math.round((1 - jaccardScore) * 100) : null;
 
   const nowSet = new Set(nowGenres.keys());
