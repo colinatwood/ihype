@@ -71,7 +71,15 @@ export async function GET(request: NextRequest) {
       }
       const cronHealth = await checkCronHealth();
       if (cronHealth.stale.length > 0) {
-        await sendGenericEmail({ to: ADMIN_EMAIL, subject: '[iHYPE] Stale cron jobs detected', text: `These cron jobs haven't run in 48h: ${cronHealth.stale.join(', ')}`, html: `<p>Stale crons: <strong>${cronHealth.stale.join(', ')}</strong></p>` }).catch(() => {});
+        try {
+          const { kvGet, kvPut } = await import('@/lib/kv');
+          const lastCronAlert = await kvGet<number>('health-alert:stale-crons');
+          const shouldAlert = !lastCronAlert || Date.now() - lastCronAlert > 24 * 60 * 60 * 1000;
+          if (shouldAlert) {
+            await sendGenericEmail({ to: ADMIN_EMAIL, subject: '[iHYPE] Stale cron jobs detected', text: `These cron jobs haven't run in their expected window: ${cronHealth.stale.join(', ')}`, html: `<p>Stale crons: <strong>${cronHealth.stale.join(', ')}</strong></p>` }).catch(() => {});
+            await kvPut('health-alert:stale-crons', Date.now(), { ex: 24 * 60 * 60 });
+          }
+        } catch { /* KV unavailable */ }
       }
       return NextResponse.json({ ...snapshot, cronHealth }, {
         status: snapshot.status === 'ok' ? 200 : 503,
@@ -140,7 +148,7 @@ export async function GET(request: NextRequest) {
     case 'weekly-picks': {
       const { sendWeeklyPicksEmails } = await import('@/lib/weekly-picks');
       const result = await sendWeeklyPicksEmails();
-      await pingCronAlive('weekly-picks');
+      await pingCronAlive('weekly-picks', WEEKLY_TTL);
       return NextResponse.json({ ok: true, ...result });
     }
 
