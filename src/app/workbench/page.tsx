@@ -136,6 +136,10 @@ export default async function WorkbenchPage({
         <Link href="/workbench/scene" className="button small secondary">Scene map</Link>
         <Link href="/workbench/growth" className="button small secondary">Artist growth</Link>
         <Link href="/workbench/match" className="button small secondary">Taste match</Link>
+        <Link href="/workbench/streaks" className="button small secondary">Hype streaks</Link>
+        <Link href="/workbench/report" className="button small secondary">Report card</Link>
+        <Link href="/workbench/drift" className="button small secondary">Taste drift</Link>
+        <Link href="/workbench/venue-dna" className="button small secondary">Venue DNA</Link>
       </nav>
 
       {tab === 'analytics' && (

@@ -146,7 +146,7 @@ export default async function ArtistPage({
   const media = buildArtistMediaCollection(profile.mediaContent, profile.mediaUploads);
 
   const uploadHexIds = profile.mediaUploads.map((u) => u.hexId);
-  const [shows, viewerLocation, venues, fanHypeCount, journalEntries, playCounts] = await Promise.all([
+  const [shows, viewerLocation, venues, fanHypeCount, journalEntries, playCounts, firstBelievers] = await Promise.all([
     db.show.findMany({
       where: {
         headlinerProfileId: profile.id,
@@ -198,7 +198,17 @@ export default async function ArtistPage({
           where: { mediaId: { in: uploadHexIds } },
           _count: { _all: true }
         })
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    db.profileHypeEvent.findMany({
+      where: { profileId: profile.id },
+      orderBy: { createdAt: 'asc' },
+      take: 10,
+      select: {
+        createdAt: true,
+        userId: true,
+        user: { select: { username: true, name: true, image: true } }
+      }
+    })
   ]);
 
   const playCountMap = new Map(playCounts.map((r) => [r.mediaId, r._count._all]));
@@ -460,6 +470,62 @@ export default async function ArtistPage({
       <PeopleAlsoHype profileId={profile.id} />
       <SoundsLike profileId={profile.id} profileName={profile.name} />
       <StreamingLinks linksJson={profile.links ?? null} />
+      {firstBelievers.length > 0 ? (
+        <div style={{ marginTop: 24 }}>
+          <h3 style={{ marginBottom: 8 }}>First Believers</h3>
+          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
+            {firstBelievers.map((believer, index) => {
+              const rank = index + 1;
+              const rankColor =
+                rank === 1 ? '#fbbf24' :
+                rank === 2 ? '#94a3b8' :
+                rank === 3 ? '#cd7f32' :
+                undefined;
+              const displayName = believer.user.username ? `@${believer.user.username}` : (believer.user.name ?? 'Fan');
+              return (
+                <li key={index} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontWeight: 700, fontSize: 13, width: 24, color: rankColor }}>#{rank}</span>
+                  {believer.user.image ? (
+                    <img
+                      src={believer.user.image}
+                      alt={displayName}
+                      style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: rankColor ?? '#6b7280',
+                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      color: '#fff',
+                      fontWeight: 700
+                    }}>
+                      {(believer.user.name ?? believer.user.username ?? '?').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>{displayName}</span>
+                  <span className="meta" style={{ fontSize: 11, marginLeft: 'auto' }}>
+                    {new Date(believer.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {session?.user?.id && (() => {
+            const idx = firstBelievers.findIndex((b) => b.userId === session.user?.id);
+            return idx !== -1 ? (
+              <p className="meta" style={{ marginTop: 8, fontSize: 12 }}>
+                You are fan #{idx + 1} of this artist
+              </p>
+            ) : null;
+          })()}
+        </div>
+      ) : null}
       <div style={{ marginTop: 16 }}>
         <ReportButton entityType="profile" entityId={profile.id} />
       </div>
