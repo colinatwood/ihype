@@ -9,6 +9,7 @@ import { WorkbenchExtras } from '@/components/WorkbenchExtras';
 import { WidgetManager } from '@/components/WidgetManager';
 import { CoHeadlinerSuggestions } from '@/components/CoHeadlinerSuggestions';
 import { HypeHeatmap } from '@/components/HypeHeatmap';
+import { CITY_COORDS } from '@/lib/city-coords';
 import { PasskeyManager } from '@/components/AuthScreens';
 import { useToast } from '@/components/Toast';
 
@@ -2513,15 +2514,6 @@ function ViewArtist({ data }: { data: WorkbenchData }) {
         .then(r => r.json())
         .then((res: { cities: Array<{ city: string; stateRegion?: string | null; hype: number }> }) => {
           const maxHype = Math.max(...res.cities.map(c => c.hype), 1);
-          // Map to HypeHeatmapCity with rough US coordinate approximation
-          const CITY_COORDS: Record<string, { x: number; y: number }> = {
-            chicago: { x: .55, y: .42 }, brooklyn: { x: .81, y: .42 }, 'new york': { x: .81, y: .40 },
-            austin: { x: .45, y: .74 }, 'los angeles': { x: .13, y: .56 }, la: { x: .13, y: .56 },
-            seattle: { x: .10, y: .28 }, nashville: { x: .62, y: .58 }, denver: { x: .32, y: .44 },
-            atlanta: { x: .65, y: .65 }, miami: { x: .70, y: .85 }, portland: { x: .10, y: .30 },
-            boston: { x: .85, y: .35 }, detroit: { x: .65, y: .38 }, houston: { x: .47, y: .78 },
-            phoenix: { x: .25, y: .65 }, minneapolis: { x: .50, y: .32 }, 'san francisco': { x: .09, y: .50 },
-          };
           const mapped: import('@/components/HypeHeatmap').HypeHeatmapCity[] = res.cities.map((c, i) => {
             const key = c.city.toLowerCase();
             const coords = CITY_COORDS[key] ?? { x: 0.3 + (i * 0.07) % 0.5, y: 0.3 + (i * 0.05) % 0.4 };

@@ -3,32 +3,10 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { CITY_COORDS } from '@/lib/city-coords';
 
 export const metadata: Metadata = { title: 'Scene Map · iHYPE Workbench' };
 export const dynamic = 'force-dynamic';
-
-// US-centric dot map coordinates (0–1 scale, x=left→right, y=top→bottom)
-const CITY_COORDS: Record<string, { x: number; y: number }> = {
-  'chicago': { x: .55, y: .42 }, 'brooklyn': { x: .81, y: .42 }, 'new york': { x: .81, y: .42 },
-  'new york city': { x: .81, y: .42 }, 'nyc': { x: .81, y: .42 }, 'austin': { x: .45, y: .74 },
-  'los angeles': { x: .13, y: .56 }, 'la': { x: .13, y: .56 }, 'seattle': { x: .10, y: .28 },
-  'nashville': { x: .62, y: .58 }, 'denver': { x: .32, y: .44 }, 'atlanta': { x: .66, y: .64 },
-  'miami': { x: .72, y: .84 }, 'houston': { x: .46, y: .80 }, 'dallas': { x: .47, y: .74 },
-  'portland': { x: .10, y: .30 }, 'phoenix': { x: .25, y: .66 }, 'minneapolis': { x: .50, y: .34 },
-  'detroit': { x: .64, y: .38 }, 'philadelphia': { x: .79, y: .44 }, 'boston': { x: .84, y: .38 },
-  'san francisco': { x: .08, y: .50 }, 'sf': { x: .08, y: .50 }, 'new orleans': { x: .57, y: .78 },
-  'kansas city': { x: .51, y: .53 }, 'cleveland': { x: .68, y: .40 }, 'pittsburgh': { x: .72, y: .42 },
-  'charlotte': { x: .70, y: .58 }, 'raleigh': { x: .74, y: .56 }, 'richmond': { x: .76, y: .50 },
-  'dc': { x: .77, y: .48 }, 'washington': { x: .77, y: .48 }, 'baltimore': { x: .78, y: .47 },
-  'columbus': { x: .67, y: .44 }, 'indianapolis': { x: .62, y: .46 }, 'memphis': { x: .59, y: .63 },
-  'louisville': { x: .64, y: .50 }, 'omaha': { x: .46, y: .46 }, 'salt lake city': { x: .24, y: .46 },
-  'las vegas': { x: .20, y: .60 }, 'san diego': { x: .16, y: .64 }, 'sacramento': { x: .10, y: .48 },
-  'albuquerque': { x: .32, y: .62 }, 'tucson': { x: .27, y: .72 }, 'el paso': { x: .35, y: .78 },
-  'oklahoma city': { x: .49, y: .62 }, 'san antonio': { x: .47, y: .82 }, 'jacksonville': { x: .72, y: .72 },
-  'tampa': { x: .70, y: .78 }, 'orlando': { x: .72, y: .76 }, 'st. louis': { x: .57, y: .50 },
-  'milwaukee': { x: .58, y: .38 }, 'cincinnati': { x: .66, y: .46 }, 'buffalo': { x: .76, y: .38 },
-  'norfolk': { x: .78, y: .52 }, 'hartford': { x: .83, y: .40 },
-};
 
 export default async function SceneMapPage() {
   const session = await auth();
