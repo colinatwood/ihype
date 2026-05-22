@@ -94,13 +94,8 @@ export default async function HomePage() {
   const userId = session.user.id;
   const role = session.user.role as string | null | undefined;
 
-  const profileTypeMap: Record<string, ProfileType> = {
-    ARTIST: 'ARTIST', DJ: 'DJ', VENUE: 'VENUE', FAN: 'LISTENER'
-  };
-  const preferredType = role ? (profileTypeMap[role] ?? null) : null;
-
   const profile = await db.profile.findFirst({
-    where: preferredType ? { ownerId: userId, type: preferredType } : { ownerId: userId },
+    where: { ownerId: userId },
     select: {
       id: true,
       type: true,
@@ -128,7 +123,7 @@ export default async function HomePage() {
     orderBy: { createdAt: 'asc' }
   });
 
-  if (!profile) redirect('/login');
+  if (!profile) redirect('/register');
 
   const now = new Date();
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
