@@ -131,6 +131,11 @@ export default async function WorkbenchPage({
         <Link href="/workbench?tab=tickets" className={`button small${tab === 'tickets' ? '' : ' secondary'}`}>Tickets</Link>
         <Link href="/workbench/saved" className="button small secondary">Saved tracks</Link>
         <Link href="/workbench/history" className="button small secondary">History</Link>
+        <Link href="/workbench/receipts" className="button small secondary">Hype receipts</Link>
+        <Link href="/workbench/taste" className="button small secondary">Taste profile</Link>
+        <Link href="/workbench/scene" className="button small secondary">Scene map</Link>
+        <Link href="/workbench/growth" className="button small secondary">Artist growth</Link>
+        <Link href="/workbench/match" className="button small secondary">Taste match</Link>
       </nav>
 
       {tab === 'analytics' && (
