@@ -26,6 +26,8 @@ import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideD
 import { SoundsLike } from '@/components/SoundsLike';
 import { StreamingLinks } from '@/components/StreamingLinks';
 import { getBaseUrl } from '@/lib/utils';
+import { ProfileWidgetsDisplay } from '@/components/ProfileWidgets';
+import { parseWidgetConfig } from '@/lib/widgets';
 
 const artistSections = ['about', 'media', 'merch'] as const;
 
@@ -146,7 +148,7 @@ export default async function ArtistPage({
   const media = buildArtistMediaCollection(profile.mediaContent, profile.mediaUploads);
 
   const uploadHexIds = profile.mediaUploads.map((u) => u.hexId);
-  const [shows, viewerLocation, venues, fanHypeCount, journalEntries, playCounts, firstBelievers] = await Promise.all([
+  const [shows, viewerLocation, venues, fanHypeCount, journalEntries, playCounts, firstBelievers, ownerHypes] = await Promise.all([
     db.show.findMany({
       where: {
         headlinerProfileId: profile.id,
@@ -208,10 +210,29 @@ export default async function ArtistPage({
         userId: true,
         user: { select: { username: true, name: true, image: true } }
       }
+    }),
+    // For listening stats widget: fetch owner's top genres from their hyped profiles
+    db.profileHypeEvent.findMany({
+      where: { userId: profile.ownerId },
+      select: { profile: { select: { genres: true, name: true } } },
+      take: 200
     })
   ]);
 
   const playCountMap = new Map(playCounts.map((r) => [r.mediaId, r._count._all]));
+
+  const widgetConfig = parseWidgetConfig(profile.widgetConfig);
+  const ownerGenreCounts = new Map<string, number>();
+  for (const h of ownerHypes) {
+    for (const g of h.profile.genres) {
+      const k = g.toLowerCase().trim();
+      if (k) ownerGenreCounts.set(k, (ownerGenreCounts.get(k) ?? 0) + 1);
+    }
+  }
+  const listeningData = {
+    topGenres: [...ownerGenreCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5) as [string, number][],
+    topArtists: [...new Set(ownerHypes.map(h => h.profile.name))].slice(0, 3)
+  };
 
   const now = new Date();
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
@@ -401,6 +422,20 @@ export default async function ArtistPage({
               {profile.tourContent ? (
                 <div className="artist-copy">{profile.tourContent}</div>
               ) : null}
+
+              {widgetConfig.enabled.length > 0 && (
+                <ProfileWidgetsDisplay
+                  config={widgetConfig}
+                  upcomingShows={upcomingShows.slice(0, 3).map(s => ({
+                    id: s.id,
+                    title: s.title,
+                    startsAt: s.startsAt.toISOString(),
+                    venueName: s.venueProfile?.name ?? undefined,
+                    slug: s.slug ?? undefined
+                  }))}
+                  listeningData={listeningData}
+                />
+              )}
 
               <NetworkEarthGlobe
                 description="Start from the visitor ZIP, highlight nearby venues, then zoom out to trace the artist tour path across current and previous show stops."

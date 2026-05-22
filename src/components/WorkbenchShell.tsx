@@ -6,6 +6,7 @@ import { AccessibilityControls } from '@/components/AccessibilityControls';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
 import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
 import { WorkbenchExtras } from '@/components/WorkbenchExtras';
+import { WidgetManager } from '@/components/WidgetManager';
 import { CoHeadlinerSuggestions } from '@/components/CoHeadlinerSuggestions';
 import { HypeHeatmap } from '@/components/HypeHeatmap';
 import { PasskeyManager } from '@/components/AuthScreens';
@@ -2918,6 +2919,20 @@ function PageBuilder({ data }: { data: WorkbenchData }) {
           <button className="wb-btn-ghost" onClick={() => { setWidgets(DEFAULT_WIDGETS); localStorage.removeItem(LAYOUT_KEY); }}>Reset</button>
         </div>
       </div>
+
+      {data.profileId && (data.profileType === 'ARTIST' || data.profileType === 'DJ') && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.1em', color: 'var(--wb-ink-3)', marginBottom: 8 }}>● OPTIONAL WIDGETS</div>
+          <p style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', margin: '0 0 12px' }}>
+            Add optional sections to your public profile — gear, influences, press, merch, and more.
+          </p>
+          <WidgetManager
+            profileId={data.profileId}
+            profileType={data.profileType}
+            initialConfig={{ enabled: [], data: {} }}
+          />
+        </div>
+      )}
     </div>
   );
 }
