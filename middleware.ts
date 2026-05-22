@@ -66,6 +66,29 @@ export default auth((request) => {
     return NextResponse.redirect(new URL('/auth/landing', request.url));
   }
 
+  // Logged-in users stay inside the shell — redirect standalone pages to /home with appropriate view
+  if (request.auth) {
+    const p = request.nextUrl.pathname;
+    const shellRedirects: Record<string, string> = {
+      '/artists':   '/home?view=discover',
+      '/promoters': '/home?view=discover',
+      '/venues':    '/home?view=discover',
+      '/fans':      '/home?view=discover',
+      '/shows':     '/home?view=tickets',
+      '/radio':     '/home?view=studio',
+      '/search':    '/home',
+      '/discover':  '/home?view=discover',
+      '/playlists': '/home',
+      '/collab':    '/home',
+      '/workbench': '/home',
+      '/settings':  '/home?view=settings',
+    };
+    const target = shellRedirects[p];
+    if (target) {
+      return NextResponse.redirect(new URL(target, request.url));
+    }
+  }
+
   return NextResponse.next();
 });
 
