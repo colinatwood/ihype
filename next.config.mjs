@@ -135,7 +135,7 @@ const nextConfig = {
       },
       {
         source: '/ihype-rec-engine.html',
-        destination: '/artists',
+        destination: '/home',
         permanent: false
       },
       {
@@ -145,7 +145,7 @@ const nextConfig = {
       },
       {
         source: '/ihype-show-creator.html',
-        destination: '/promoters?module=show-creator',
+        destination: '/home',
         permanent: false
       },
       {
@@ -160,17 +160,17 @@ const nextConfig = {
       },
       {
         source: '/ihype-media.html',
-        destination: '/artists?module=tour-creator',
+        destination: '/home',
         permanent: false
       },
       {
         source: '/ihype-show.html',
-        destination: '/promoters?module=show-creator',
+        destination: '/home',
         permanent: false
       },
       {
         source: '/ihype-search.html',
-        destination: '/artists',
+        destination: '/home',
         permanent: false
       },
       {
@@ -190,17 +190,17 @@ const nextConfig = {
       },
       {
         source: '/trending',
-        destination: '/discover?tab=trending',
+        destination: '/home',
         permanent: true
       },
       {
         source: '/leaderboard',
-        destination: '/discover?tab=fans',
+        destination: '/home',
         permanent: true
       },
       {
         source: '/playlists/curated',
-        destination: '/playlists',
+        destination: '/home',
         permanent: true
       },
       {
@@ -225,22 +225,77 @@ const nextConfig = {
       },
       {
         source: '/settings/notifications',
-        destination: '/settings',
+        destination: '/home',
         permanent: true
       },
       {
         source: '/settings/data',
-        destination: '/settings',
+        destination: '/home',
         permanent: true
       },
       {
         source: '/workbench/analytics',
-        destination: '/workbench?tab=analytics',
+        destination: '/home',
         permanent: true
       },
       {
         source: '/workbench/tickets',
-        destination: '/workbench?tab=tickets',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/artists',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/fans',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/promoters',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/venues',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/playlists',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/settings',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/discover',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/radio',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/workbench',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/workbench/:path*',
+        destination: '/home',
+        permanent: true
+      },
+      {
+        source: '/collab',
+        destination: '/home',
         permanent: true
       },
       {
@@ -250,17 +305,17 @@ const nextConfig = {
       },
       {
         source: '/show-creator',
-        destination: '/promoters?module=show-creator',
+        destination: '/home',
         permanent: false
       },
       {
         source: '/media',
-        destination: '/artists',
+        destination: '/home',
         permanent: false
       },
       {
         source: '/search',
-        destination: '/artists',
+        destination: '/home',
         permanent: false
       },
       {
@@ -310,7 +365,7 @@ const nextConfig = {
       },
       {
         source: '/listeners',
-        destination: '/fans',
+        destination: '/home',
         permanent: true
       },
       {
