@@ -323,12 +323,10 @@ export function LoginScreen({
             />
           </label>
           <label className="field">
-            <span>Password</span>
+            <span>Password <small style={{ opacity: 0.6 }}>(leave blank if you signed up with passkey)</small></span>
             <input
               autoComplete="current-password"
-              minLength={8}
               onChange={(event) => setPassword(event.target.value)}
-              required
               type="password"
               value={password}
             />

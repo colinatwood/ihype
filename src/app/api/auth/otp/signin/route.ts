@@ -75,6 +75,7 @@ export async function POST(request: Request) {
     const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token';
 
     const now = Math.floor(Date.now() / 1000);
+    const emailVerified = challenge.user.emailVerified ?? (user.emailVerified ? new Date() : null);
     const token = await encode({
       token: {
         sub: user.id,
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
         email: user.email,
         picture: user.image,
         role: user.role,
+        emailVerified: emailVerified?.toISOString() ?? null,
         iat: now,
         exp: now + SESSION_MAX_AGE,
         jti: crypto.randomUUID()

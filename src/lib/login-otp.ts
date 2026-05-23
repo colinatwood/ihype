@@ -25,13 +25,22 @@ export async function createLoginOtpChallenge({
     where: { OR: [{ email: normalizedIdentifier }, { username: normalizedIdentifier }, { phone: normalizedIdentifier }] }
   });
 
-  if (!user?.passwordHash) {
+  if (!user) {
     await waitForInvalidCredential();
     return null;
   }
 
-  const passwordValid = await bcrypt.compare(password, user.passwordHash);
-  if (!passwordValid) {
+  // Users who registered via passkey/OAuth have no password hash.
+  // For them, the OTP itself is sufficient proof (their email is already verified).
+  // For password-having accounts, require the password before sending OTP.
+  if (user.passwordHash) {
+    const passwordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!passwordValid) {
+      await waitForInvalidCredential();
+      return null;
+    }
+  } else if (!user.emailVerified) {
+    // No password AND no email verification — block to prevent account enumeration
     await waitForInvalidCredential();
     return null;
   }
