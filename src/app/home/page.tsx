@@ -6,8 +6,24 @@ import { detectRequestLocation } from '@/lib/request-location';
 import type { ProfileType } from '@prisma/client/wasm';
 import { WorkbenchShell, type WorkbenchData, type WbStat, type WbTrack, type WbShow, type WbActivity, type WbNotification } from '@/components/WorkbenchShell';
 import { getDiscoveryStreak } from '@/lib/streaks';
+import { kvGet, kvPut } from '@/lib/kv';
 
 export const dynamic = 'force-dynamic';
+
+// ── KV cache keys and TTLs ────────────────────────────────────────
+const RADIO_CACHE_KEY = 'wb:radio-shows:v1';
+const RADIO_TTL = 300; // 5 minutes
+
+const STARTER_PACK_CACHE_KEY = 'wb:starter-pack:v1';
+const STARTER_PACK_TTL = 600; // 10 minutes
+
+// ── Timeout wrapper ───────────────────────────────────────────────
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms))
+  ]);
+}
 
 // ── helpers ──────────────────────────────────────────────────────
 
@@ -203,25 +219,39 @@ export default async function HomePage() {
     ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
     : userName.slice(0, 2).toUpperCase();
 
-  // ── Radio shows (real ones if DJ, else discover feed shows) ──
+  // ── Radio shows (KV-cached for 5 min; they rarely change) ──
   let radioShows: WorkbenchData['radioShows'] = [];
-  const radioRows = await db.show.findMany({
-    where: { isRadioShow: true, status: { not: 'CANCELED' } },
-    include: { promoterProfile: { select: { name: true } } },
-    orderBy: { startsAt: 'asc' },
-    take: 6
-  });
-  radioShows = radioRows.map((r, i) => ({
-    id: r.id,
-    name: r.title,
-    host: (r.promoterProfile as { name: string } | null)?.name ?? 'iHYPE Radio',
-    time: r.startsAt.toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }),
-    next: r.startsAt > now ? r.startsAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'live now',
-    live: r.status === 'LIVE',
-    listeners: 0,
-    color: COLORS[i % COLORS.length],
-    desc: r.description ?? `A radio show on iHYPE featuring independent artists.`,
-  }));
+  type CachedRadioShow = {
+    id: string; name: string; host: string; time: string; next: string;
+    live: boolean; listeners: number; color: string; desc: string;
+  };
+  const cachedRadio = await kvGet<CachedRadioShow[]>(RADIO_CACHE_KEY).catch(() => null);
+  if (cachedRadio) {
+    radioShows = cachedRadio;
+  } else {
+    const radioRows = await withTimeout(
+      db.show.findMany({
+        where: { isRadioShow: true, status: { not: 'CANCELED' } },
+        include: { promoterProfile: { select: { name: true } } },
+        orderBy: { startsAt: 'asc' },
+        take: 6
+      }),
+      3000,
+      []
+    );
+    radioShows = radioRows.map((r, i) => ({
+      id: r.id,
+      name: r.title,
+      host: (r.promoterProfile as { name: string } | null)?.name ?? 'iHYPE Radio',
+      time: r.startsAt.toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }),
+      next: r.startsAt > now ? r.startsAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'live now',
+      live: r.status === 'LIVE',
+      listeners: 0,
+      color: COLORS[i % COLORS.length],
+      desc: r.description ?? `A radio show on iHYPE featuring independent artists.`,
+    }));
+    await kvPut(RADIO_CACHE_KEY, JSON.stringify(radioShows), { ex: RADIO_TTL }).catch(() => {});
+  }
 
   // ── Tickets from upcoming shows ──
   const wbTickets = eventsResult.upcoming.slice(0, 3).map((s) => ({
@@ -234,51 +264,60 @@ export default async function HomePage() {
     code: `iH-${s.id.slice(0, 8).toUpperCase()}`,
   }));
 
-  // ── Life stats ──
+  // ── Life stats (3-second timeout; non-critical) ──
   const [totalHype, totalEarnings, songsPlayed, eventsAttended] = await Promise.all([
-    db.profileHypeEvent.count({ where: { profileId: profile.id } }).catch(() => 0),
-    db.ticketOrder.aggregate({ where: { buyerUserId: userId }, _sum: { subtotalCents: true } }).then(r => Math.round((r._sum.subtotalCents ?? 0) / 100)).catch(() => 0),
-    db.mediaListen.count({ where: { userId } }).catch(() => 0),
-    db.ticketOrder.count({ where: { buyerUserId: userId, status: 'CAPTURED' } }).catch(() => 0),
+    withTimeout(db.profileHypeEvent.count({ where: { profileId: profile.id } }).catch(() => 0), 3000, 0),
+    withTimeout(db.ticketOrder.aggregate({ where: { buyerUserId: userId }, _sum: { subtotalCents: true } }).then(r => Math.round((r._sum.subtotalCents ?? 0) / 100)).catch(() => 0), 3000, 0),
+    withTimeout(db.mediaListen.count({ where: { userId } }).catch(() => 0), 3000, 0),
+    withTimeout(db.ticketOrder.count({ where: { buyerUserId: userId, status: 'CAPTURED' } }).catch(() => 0), 3000, 0),
   ]);
   const lifeStats = { totalHype, totalEarnings, songsPlayed, eventsAttended };
 
   const pendingVenueRequestCount = profile.type === 'VENUE'
-    ? await db.venueConnectionRequest.count({ where: { venueProfileId: profile.id, status: 'PENDING' } }).catch(() => 0)
+    ? await withTimeout(db.venueConnectionRequest.count({ where: { venueProfileId: profile.id, status: 'PENDING' } }).catch(() => 0), 3000, 0)
     : 0;
   const referralStats = profile.type === 'DJ'
-    ? await Promise.all([
-        db.ticketOrder.count({ where: { affiliatePromoterProfileId: profile.id, status: { not: 'VOID' } } }),
-        db.ticketOrder.aggregate({
-          where: { affiliatePromoterProfileId: profile.id, status: { not: 'VOID' } },
-          _sum: { totalChargeCents: true, promoterPayoutCents: true }
-        })
-      ]).then(([buyers, sums]) => ({
-        clicks: buyers,
-        buyers,
-        grossCents: sums._sum.totalChargeCents ?? 0,
-        payoutCents: sums._sum.promoterPayoutCents ?? 0
-      })).catch(() => ({ clicks: 0, buyers: 0, grossCents: 0, payoutCents: 0 }))
+    ? await withTimeout(
+        Promise.all([
+          db.ticketOrder.count({ where: { affiliatePromoterProfileId: profile.id, status: { not: 'VOID' } } }),
+          db.ticketOrder.aggregate({
+            where: { affiliatePromoterProfileId: profile.id, status: { not: 'VOID' } },
+            _sum: { totalChargeCents: true, promoterPayoutCents: true }
+          })
+        ]).then(([buyers, sums]) => ({
+          clicks: buyers,
+          buyers,
+          grossCents: sums._sum.totalChargeCents ?? 0,
+          payoutCents: sums._sum.promoterPayoutCents ?? 0
+        })).catch(() => ({ clicks: 0, buyers: 0, grossCents: 0, payoutCents: 0 })),
+        3000,
+        { clicks: 0, buyers: 0, grossCents: 0, payoutCents: 0 }
+      )
     : undefined;
 
   // ── Fan activity feed (recent uploads + upcoming shows from hyped profiles) ──
+  // Wrapped in a 3-second timeout so a slow query doesn't block the page.
   let fanActivityFeed: WbActivity[] = [];
   if (profile.type === 'LISTENER') {
-    const hypedProfiles = await db.profileHypeEvent.findMany({
-      where: { userId },
-      select: { profileId: true },
-      take: 50
-    }).catch(() => [] as { profileId: string }[]);
+    const hypedProfiles = await withTimeout(
+      db.profileHypeEvent.findMany({
+        where: { userId },
+        select: { profileId: true },
+        take: 50
+      }).catch(() => [] as { profileId: string }[]),
+      3000,
+      [] as { profileId: string }[]
+    );
     const hypedIds = hypedProfiles.map(h => h.profileId);
     if (hypedIds.length > 0) {
       const [recentUploads, upcomingFromHyped] = await Promise.all([
-        db.artistMediaAsset.findMany({
+        withTimeout(db.artistMediaAsset.findMany({
           where: { profileId: { in: hypedIds }, createdAt: { gte: thirtyDaysAgo } },
           include: { profile: { select: { name: true, slug: true } } },
           orderBy: { createdAt: 'desc' },
           take: 12
-        }).catch(() => []),
-        db.show.findMany({
+        }).catch(() => []), 3000, []),
+        withTimeout(db.show.findMany({
           where: {
             status: { not: 'CANCELED' },
             startsAt: { gte: now },
@@ -291,7 +330,7 @@ export default async function HomePage() {
           include: { venueProfile: { select: { name: true } }, headlinerProfile: { select: { name: true } } },
           orderBy: { startsAt: 'asc' },
           take: 8
-        }).catch(() => [])
+        }).catch(() => []), 3000, [])
       ]);
       type UploadRow = { title: string; createdAt: Date; profile: { name: string; slug: string } | null };
       type FanShowRow = { title: string; startsAt: Date; venueProfile: { name: string } | null; headlinerProfile: { name: string } | null };
@@ -424,27 +463,38 @@ export default async function HomePage() {
     }).length,
   };
 
-  // Starter pack: only fetched if the user has no signal yet.
-  const userTotalHype = await db.hypeEvent.count({ where: { userId } }).catch(() => 0);
-  let starterPack: Array<{ id: string; name: string; slug: string; hypeCount: number; city: string | null; genre: string | null }> = [];
+  // Starter pack: only fetched if the user has no signal yet (KV-cached for 10 min).
+  const userTotalHype = await withTimeout(db.hypeEvent.count({ where: { userId } }).catch(() => 0), 3000, 0);
+  type StarterPackEntry = { id: string; name: string; slug: string; hypeCount: number; city: string | null; genre: string | null };
+  let starterPack: StarterPackEntry[] = [];
   if (userTotalHype === 0 && profile.type === 'LISTENER') {
-    const top = await db.profile.findMany({
-      where: { type: 'ARTIST' },
-      orderBy: [{ verified: 'desc' }, { hypeCount: 'desc' }],
-      take: 6,
-      select: { id: true, name: true, slug: true, hypeCount: true, city: true, genres: true }
-    }).catch(() => []);
-    starterPack = top.map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      hypeCount: p.hypeCount,
-      city: p.city,
-      genre: p.genres[0] ?? null,
-    }));
+    const cachedStarter = await kvGet<StarterPackEntry[]>(STARTER_PACK_CACHE_KEY).catch(() => null);
+    if (cachedStarter) {
+      starterPack = cachedStarter;
+    } else {
+      const top = await withTimeout(
+        db.profile.findMany({
+          where: { type: 'ARTIST' },
+          orderBy: [{ verified: 'desc' }, { hypeCount: 'desc' }],
+          take: 6,
+          select: { id: true, name: true, slug: true, hypeCount: true, city: true, genres: true }
+        }).catch(() => []),
+        3000,
+        []
+      );
+      starterPack = top.map((p) => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        hypeCount: p.hypeCount,
+        city: p.city,
+        genre: p.genres[0] ?? null,
+      }));
+      await kvPut(STARTER_PACK_CACHE_KEY, JSON.stringify(starterPack), { ex: STARTER_PACK_TTL }).catch(() => {});
+    }
   }
 
-  const discoveryStreak = await getDiscoveryStreak(session.user.id).catch(() => 0);
+  const discoveryStreak = await withTimeout(getDiscoveryStreak(session.user.id).catch(() => 0), 3000, 0);
 
   return <WorkbenchShell data={wbData} starterPack={starterPack} />;
 }
