@@ -56,7 +56,7 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
 
       - name: Build for Cloudflare Workers
-        run: npm run build
+        run: npm run cf:build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXT_PUBLIC_BASE_URL: https://ihype.org
