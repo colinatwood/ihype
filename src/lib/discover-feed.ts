@@ -4,6 +4,7 @@ import type { DirectoryBrowserProfile, DirectoryMediaSearchEntry } from '@/compo
 import type { RequestLocation } from '@/lib/request-location';
 import { buildArtistMediaCollection } from '@/lib/media';
 import { demoUserEmails, shouldHideDemoContent } from '@/lib/runtime-flags';
+import { kvGet, kvPut } from '@/lib/kv';
 
 export type DiscoverSpotlightProfile = DirectoryBrowserProfile & {
   scopeLabel: string;
@@ -99,11 +100,11 @@ export function isRegionalMatch(
   );
 }
 
-function formatCreatedAt(value: Date) {
+function formatCreatedAt(value: Date | string) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric'
-  }).format(value);
+  }).format(new Date(value));
 }
 
 function toDirectoryProfile(profile: SpotlightProfileRecord): DirectoryBrowserProfile {
@@ -153,8 +154,8 @@ function sortByLocalRegional<T extends SpotlightProfileRecord>(profiles: T[], lo
   });
 }
 
-export async function getSharedDiscoverFeed(viewerLocation: RequestLocation | null) {
-  const [artistProfiles, promoterProfiles] = await withDbRetry(() =>
+async function fetchProfilesFromDb(): Promise<[SpotlightProfileRecord[], SpotlightProfileRecord[]]> {
+  return withDbRetry(() =>
     db.$transaction([
       db.profile.findMany({
         where: profileWhere('ARTIST'),
@@ -169,10 +170,33 @@ export async function getSharedDiscoverFeed(viewerLocation: RequestLocation | nu
         ...spotlightProfileArgs
       })
     ])
-  ).catch((error) => {
-    console.error('Falling back to empty discover feed', error);
-    return [[], []] as [SpotlightProfileRecord[], SpotlightProfileRecord[]];
-  });
+  );
+}
+
+export async function getSharedDiscoverFeed(viewerLocation: RequestLocation | null) {
+  // Cache the raw profile arrays for null-location requests (5-min TTL)
+  let artistProfiles: SpotlightProfileRecord[];
+  let promoterProfiles: SpotlightProfileRecord[];
+
+  if (!viewerLocation) {
+    try {
+      const cached = await kvGet<{ a: SpotlightProfileRecord[]; p: SpotlightProfileRecord[] }>('discover-feed:v1');
+      if (cached) {
+        artistProfiles = cached.a;
+        promoterProfiles = cached.p;
+      } else {
+        [artistProfiles, promoterProfiles] = await fetchProfilesFromDb().catch(() => [[], []] as [SpotlightProfileRecord[], SpotlightProfileRecord[]]);
+        await kvPut('discover-feed:v1', JSON.stringify({ a: artistProfiles, p: promoterProfiles }), { ex: 300 }).catch(() => {});
+      }
+    } catch {
+      [artistProfiles, promoterProfiles] = await fetchProfilesFromDb().catch(() => [[], []] as [SpotlightProfileRecord[], SpotlightProfileRecord[]]);
+    }
+  } else {
+    [artistProfiles, promoterProfiles] = await fetchProfilesFromDb().catch((error) => {
+      console.error('Falling back to empty discover feed', error);
+      return [[], []] as [SpotlightProfileRecord[], SpotlightProfileRecord[]];
+    });
+  }
 
   const hypedNearMe = sortByLocalRegional(artistProfiles, viewerLocation)
     .filter((profile) => isLocalMatch(profile, viewerLocation) || isRegionalMatch(profile, viewerLocation) || !viewerLocation)
@@ -181,13 +205,13 @@ export async function getSharedDiscoverFeed(viewerLocation: RequestLocation | nu
 
   const newArtists = artistProfiles
     .filter((profile) => isLocalMatch(profile, viewerLocation) || !viewerLocation)
-    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
     .slice(0, 6)
     .map((profile) => withScopeLabel(profile, viewerLocation));
 
   const newPromoters = promoterProfiles
     .filter((profile) => isLocalMatch(profile, viewerLocation) || isRegionalMatch(profile, viewerLocation) || !viewerLocation)
-    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
     .slice(0, 6)
     .map((profile) => withScopeLabel(profile, viewerLocation));
 
