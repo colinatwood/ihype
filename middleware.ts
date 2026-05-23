@@ -12,19 +12,7 @@ const legacyRouteRedirects: Record<string, string> = {
   '/ihype-home.html': '/',
   '/ihype-homepage.html': '/',
   '/ihype-promise.html': '/',
-  '/ihype-hype-engine.html': '/hype',
-  '/ihype-rec-engine.html': '/auth/landing?module=recommendation-engine',
-  '/ihype-ticketing.html': '/tickets',
-  '/ihype-show-creator.html': '/promoters?module=show-creator',
-  '/ihype-page-customizer.html': '/dashboard',
-  '/ihype-profile.html': '/dashboard',
-  '/ihype-media.html': '/artists?module=tour-creator',
-  '/ihype-show.html': '/promoters?module=show-creator',
-  '/ihype-search.html': '/auth/landing?module=recommendation-engine',
-  '/ihype-governance.html': '/trust',
-  '/ihype-investor.html': '/promise',
-  '/ihype-beta.html': '/launch-readiness',
-  '/discover': '/auth/landing?module=recommendation-engine',
+  '/ihype-hype-engine.html': '/',
   '/index.html': '/'
 };
 
@@ -61,29 +49,6 @@ export default auth((request) => {
 
   if (request.auth && request.nextUrl.pathname === '/login') {
     return NextResponse.redirect(new URL('/auth/landing', request.url));
-  }
-
-  // Logged-in users stay inside the shell — redirect standalone pages to /home with appropriate view
-  if (request.auth) {
-    const p = request.nextUrl.pathname;
-    const shellRedirects: Record<string, string> = {
-      '/artists':   '/home?view=discover',
-      '/promoters': '/home?view=discover',
-      '/venues':    '/home?view=discover',
-      '/fans':      '/home?view=discover',
-      '/shows':     '/home?view=tickets',
-      '/radio':     '/home?view=studio',
-      '/search':    '/home',
-      '/discover':  '/home?view=discover',
-      '/playlists': '/home',
-      '/collab':    '/home',
-      '/workbench': '/home',
-      '/settings':  '/home?view=settings',
-    };
-    const target = shellRedirects[p];
-    if (target) {
-      return NextResponse.redirect(new URL(target, request.url));
-    }
   }
 
   return NextResponse.next();

@@ -68,6 +68,16 @@ commits that would be lost from each side and ask before proceeding.
 - Keep redirects pointing to deleted pages updated in the same PR that deletes
   the page.
 
+## Workbench-only UI rule — DO NOT VIOLATE
+
+**`/home` with `WorkbenchShell` is the ONLY authenticated UI.** There is no other dashboard, no role-selection screen, no module picker.
+
+- Every logged-in user (fan, artist, DJ, venue, admin) lands at `/home` and sees `WorkbenchShell`.
+- `WorkbenchShell` is `position: fixed; inset: 0` — it is the entire screen. Do NOT render any content outside it in `home/page.tsx`.
+- Do NOT create new standalone pages for authenticated features. Add a new `view` inside `WorkbenchShell` instead.
+- Do NOT recreate `/artists`, `/promoters`, `/venues`, `/fans`, `/discover`, `/playlists`, `/collab`, `/settings`, or `/radio` as full pages for authenticated users. The middleware already redirects logged-in users from these paths to `/home`.
+- The old role-based layout with separate user-type pages and module choices is permanently retired. Never restore it.
+
 ### Vercel build script
 
 `vercel-build` runs migrations through `scripts/prisma-migrate-retry.mjs` before

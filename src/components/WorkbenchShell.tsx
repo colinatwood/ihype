@@ -216,6 +216,7 @@ export type WorkbenchData = {
   isVerified?: boolean;
   verificationRequested?: boolean;
   lifeStats?: { totalHype: number; totalEarnings: number; songsPlayed: number; eventsAttended: number };
+  isAdmin?: boolean;
 };
 
 // ── Default prefs ──────────────────────────────────────────────
@@ -445,7 +446,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       <div className="wb-root">
         {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
         {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} />
+        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} isAdmin={liveData.isAdmin} />
         <WbTopbar view={view} data={liveData} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
         <main className="wb-main">
           {view === 'home'     && <ViewHome data={liveData} prefs={prefs} setView={setView} starterPack={starterPack} />}
@@ -476,7 +477,7 @@ const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
   { k: 'studio',    label: 'Studio',    Icon: IcStudio },
 ];
 
-function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobileOpen, isVerified }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean }) {
+function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobileOpen, isVerified, isAdmin }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean; isAdmin?: boolean }) {
   const isArtist = activeProfileTypes.includes('ARTIST') || activeProfileTypes.includes('DJ');
   const isVenue  = activeProfileTypes.includes('VENUE');
   return (
@@ -505,6 +506,11 @@ function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobile
         </SidebarBtn>
       )}
       <div className="wb-sb-foot">
+        {isAdmin && (
+          <a href="/admin" className="wb-sb-btn" style={{ color: 'var(--wb-ink-3)', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }} title="Admin panel">
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </a>
+        )}
         <SidebarBtn active={view === 'settings'} onClick={() => setView('settings')} label="Settings" accent="rgba(255,255,255,.4)">
           <IcSettings s={18} />
         </SidebarBtn>
