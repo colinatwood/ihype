@@ -447,6 +447,7 @@ export default async function HomePage() {
     },
     isVerified: profile.isVerified,
     verificationRequested: profile.verificationRequested,
+    isAdmin: role === 'ADMIN',
     profilePath: profileHref(profile.type, profile.slug),
     pendingVenueRequestCount,
     profileCompletion,

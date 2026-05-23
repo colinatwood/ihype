@@ -30,10 +30,6 @@ export async function getDefaultLandingPathForUser({
   module?: DiscoverModuleId;
 }) {
   void module;
-  if (role === 'ADMIN') {
-    return '/admin';
-  }
-
   const hasProfile = await db.profile.findFirst({
     where: { ownerId: userId },
     select: { id: true },
