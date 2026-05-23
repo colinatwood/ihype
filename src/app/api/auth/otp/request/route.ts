@@ -7,7 +7,7 @@ import { readClientAddress } from '@/lib/request-meta';
 
 const schema = z.object({
   identifier: z.string().trim().min(1),
-  password: z.string().min(1)
+  password: z.string().default('')
 });
 
 export async function POST(request: Request) {
