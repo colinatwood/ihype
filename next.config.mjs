@@ -352,11 +352,11 @@ const nextConfig = {
       },
       {
         source: '/login',
-        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' }]
+        headers: [{ key: 'Cache-Control', value: 'no-store' }]
       },
       {
         source: '/forgot',
-        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' }]
+        headers: [{ key: 'Cache-Control', value: 'no-store' }]
       },
       {
         source: '/media',
@@ -364,15 +364,7 @@ const nextConfig = {
       },
       {
         source: '/register/:path*',
-        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' }]
-      },
-      {
-        source: '/forgot',
-        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
-      },
-      {
-        source: '/media',
-        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }]
+        headers: [{ key: 'Cache-Control', value: 'no-store' }]
       },
       {
         source: '/search',
