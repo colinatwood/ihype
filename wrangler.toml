@@ -51,4 +51,4 @@ binding = "WORKER_SELF_REFERENCE"
 service = "ihype"
 
 [build]
-command = "npm run cf:build"
+command = "npm run build"
