@@ -294,7 +294,7 @@ export function WbSkeleton({ width, height, style }: { width?: number | string; 
   return <div className="wb-skeleton" style={{ width: width ?? '100%', height: height ?? 16, ...style }} />;
 }
 
-export type View = 'home' | 'discover' | 'seeds' | 'tickets' | 'studio' | 'artist' | 'venue' | 'settings' | 'inbox' | 'hype-map' | 'scene-graph' | 'money-flow' | 'governance' | 'setlist';
+export type View = 'home' | 'discover' | 'seeds' | 'tickets' | 'studio' | 'artist' | 'venue' | 'settings' | 'inbox' | 'hype-map' | 'scene-graph' | 'money-flow' | 'governance' | 'setlist' | 'news';
 
 // ── Onboarding modal ───────────────────────────────────────────
 function OnboardingModal({ onDone }: { onDone: () => void }) {
@@ -361,7 +361,7 @@ export type StarterPackItem = {
   genre: string | null;
 };
 
-const VALID_VIEWS = new Set<View>(['home','discover','seeds','tickets','studio','artist','venue','settings','inbox','hype-map','scene-graph','money-flow','governance','setlist']);
+const VALID_VIEWS = new Set<View>(['home','discover','seeds','tickets','studio','artist','venue','settings','inbox','hype-map','scene-graph','money-flow','governance','setlist','news']);
 
 function getRoleDefaultView(activeProfileTypes: string[]): View {
   if (activeProfileTypes.includes('ARTIST') || activeProfileTypes.includes('DJ')) return 'artist';
@@ -644,6 +644,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
           {view === 'money-flow' && <ViewMoneyFlow data={liveData} />}
           {view === 'governance' && <ViewGovernance />}
           {view === 'setlist'    && <ViewSetlistBuilder data={liveData} />}
+          {view === 'news'       && <ViewNews />}
         </main>
         {showQueue && <WbQueueRail data={liveData} />}
         <WbPlayerDock queueRailOn={prefs.queueRail} onToggleQueue={() => setPref('queueRail', !prefs.queueRail)} />
@@ -743,12 +744,55 @@ function SidebarBtn({ active, onClick, label, children, accent }: { active: bool
   );
 }
 
+// ── News ticker ────────────────────────────────────────────────
+const STATIC_HEADLINES = [
+  'Nala Sinephro confirms world tour dates — Chicago added to run',
+  'iHYPE hits $0 platform fees for 3rd consecutive year',
+  'Friko selling out venues across the Midwest this summer',
+  'New feature: Hype Futures — stake your support on rising artists',
+  'Bar Italia announces surprise EP drop Friday midnight',
+  'Empty Bottle Chicago announces expanded outdoor stage for summer',
+  'Mk.gee hype count crosses 50,000 — fastest on platform',
+  'Governance vote passes: venue payout share raised to 15%',
+  'Setlist Builder beta now live — fans vote, artists lock the order',
+  'Deeper headlines Pitchfork Music Festival side stage Saturday',
+];
+
+type NewsItem = { id: string; headline: string; source: string; time: string };
+
+function useNewsItems(): NewsItem[] {
+  const [items, setItems] = useState<NewsItem[]>(() =>
+    STATIC_HEADLINES.map((h, i) => ({ id: String(i), headline: h, source: 'iHYPE', time: `${i + 1}h ago` }))
+  );
+  useEffect(() => {
+    // In production this would fetch /api/news; for now rotate static headlines every 2 min
+    const id = setInterval(() => {
+      setItems(prev => [...prev.slice(1), prev[0]]);
+    }, 120000);
+    return () => clearInterval(id);
+  }, []);
+  return items;
+}
+
+function NewsTicker({ onClickNews }: { onClickNews: () => void }) {
+  const items = useNewsItems();
+  const text = items.map(i => `● ${i.headline}`).join('     ');
+  return (
+    <div className="wb-news-ticker" onClick={onClickNews} title="Click for full news feed" role="button" tabIndex={0} onKeyDown={e => { if (e.key === 'Enter') onClickNews(); }}>
+      <span className="wb-news-ticker-label">NEWS</span>
+      <div className="wb-news-ticker-track">
+        <span className="wb-news-ticker-text">{text}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{text}</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Topbar ─────────────────────────────────────────────────────
 const VIEW_TITLES: Record<View, string> = {
   home: 'Home', discover: 'Discover', seeds: 'Seeds', tickets: 'Ticketing',
   studio: 'Studio', artist: 'Artist', venue: 'Venue', settings: 'Settings', inbox: 'Inbox',
   'hype-map': 'Hype Map', 'scene-graph': 'Scene Graph', 'money-flow': 'Money Flow',
-  governance: 'Governance', setlist: 'Setlist Builder',
+  governance: 'Governance', setlist: 'Setlist Builder', news: 'Music News',
 };
 
 type SearchHit = { type: string; id: string; name: string; subtitle: string; slug?: string };
@@ -836,7 +880,8 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
   }
 
   return (
-    <header className="wb-topbar">
+    <header className="wb-topbar-wrap">
+      <div className="wb-topbar">
       <button className="wb-hamburger" onClick={onHamburger} aria-label="Toggle navigation">
         <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
@@ -913,6 +958,8 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
           </div>
         )}
       </div>
+      </div>
+      <NewsTicker onClickNews={() => setView('news')} />
     </header>
   );
 }
@@ -1095,13 +1142,15 @@ function WbQueueRail({ data }: { data: WorkbenchData }) {
 }
 
 // ── Mobile nav ─────────────────────────────────────────────────
+const IcNewspaper = (p: {s?:number}) => <Ic s={p.s}><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7h10M7 11h10M7 15h6"/></Ic>;
+
 function WbMobileNav({ view, setView }: { view: View; setView: (v: View) => void }) {
   const tabs: Array<{ v: View; label: string; icon: React.ReactNode }> = [
     { v: 'home',     label: 'Home',     icon: <IcBolt s={18} /> },
     { v: 'discover', label: 'Discover', icon: <IcDiscover s={18} /> },
     { v: 'tickets',  label: 'Shows',    icon: <IcTicket s={18} /> },
     { v: 'studio',   label: 'Studio',   icon: <IcRadio s={18} /> },
-    { v: 'settings', label: 'Settings', icon: <IcSettings s={18} /> },
+    { v: 'news',     label: 'News',     icon: <IcNewspaper s={18} /> },
   ];
   return (
     <nav className="wb-mobile-nav" aria-label="Main navigation">
@@ -4168,6 +4217,58 @@ function ViewSetlistBuilder({ data }: { data: WorkbenchData }) {
       </div>
       <div style={{ marginTop: 16, fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>
         Drag songs to reorder · Vote for songs you want in the set · 🔒 = locked by artist
+      </div>
+    </div>
+  );
+}
+
+// ── News View ──────────────────────────────────────────────────
+function ViewNews() {
+  const items = useNewsItems();
+  const categories = ['All', 'Platform', 'Artists', 'Shows', 'Industry'] as const;
+  const [cat, setCat] = useState<typeof categories[number]>('All');
+
+  const categorized: Record<typeof categories[number], NewsItem[]> = {
+    All: items,
+    Platform: items.filter((_, i) => i % 5 === 0 || i % 5 === 3),
+    Artists:  items.filter((_, i) => i % 5 === 1 || i % 5 === 4),
+    Shows:    items.filter((_, i) => i % 5 === 2),
+    Industry: items.filter((_, i) => i % 5 === 4),
+  };
+  const filtered = categorized[cat].length > 0 ? categorized[cat] : items;
+
+  return (
+    <div className="wb-view-pad">
+      <div className="wb-greet">
+        <div>
+          <div className="wb-eyebrow" style={{ color: 'var(--wb-accent)' }}>● LIVE · MUSIC · PLATFORM NEWS</div>
+          <h1 className="wb-page-title">Music News</h1>
+          <p className="wb-page-sub">What's happening in your scene, on the platform, and across the industry.</p>
+        </div>
+      </div>
+      <div className="wb-tabs" style={{ marginBottom: 20 }}>
+        {categories.map(c => (
+          <button key={c} onClick={() => setCat(c)} className={`wb-tab${cat === c ? ' wb-tab-active' : ''}`}>{c}</button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {filtered.map((item, i) => (
+          <div key={item.id} className="wb-panel" style={{ padding: '16px 20px', animation: 'wb-card-in 0.25s ease both', animationDelay: `${i * 30}ms` }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 8, background: `hsl(${(i * 47) % 360}, 60%, 25%)`, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>
+                {['🎵','🎤','🎟','🏛','📢','⚡','🎸','🌟','🔥','💿'][i % 10]}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, color: 'var(--wb-ink)', lineHeight: 1.4, marginBottom: 6 }}>{item.headline}</div>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-accent)' }}>{item.source}</span>
+                  <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>{item.time}</span>
+                  <button style={{ marginLeft: 'auto', background: 'none', border: '1px solid var(--wb-line-2)', borderRadius: 6, padding: '3px 10px', color: 'var(--wb-ink-3)', cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 10 }}>Read more →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
