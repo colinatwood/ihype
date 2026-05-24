@@ -289,6 +289,30 @@ export const IcCheck    = (p: {s?:number}) => <Ic {...p}><polyline points="20 6 
 export const IcArrow    = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
 export const IcDot      = ({ c = 'currentColor', s = 8 }: {c?:string; s?:number}) => <svg width={s} height={s} viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill={c}/></svg>;
 
+// ── QR placeholder SVG ─────────────────────────────────────────
+function WbQrSvg() {
+  return (
+    <svg width={160} height={160} viewBox="0 0 80 80" fill="#000">
+      {[[0,0],[60,0],[0,60]].map(([x,y],i)=>(
+        <g key={i}><rect x={x} y={y} width="20" height="20" fill="none" stroke="#000" strokeWidth="3"/><rect x={x+6} y={y+6} width="8" height="8"/></g>
+      ))}
+      {Array.from({length:80}).map((_,i)=>{
+        const x = 24+(i%10)*4, y = 24+Math.floor(i/10)*4;
+        return (i*13+7)%3===0 ? <rect key={i} x={x} y={y} width="3" height="3"/> : null;
+      })}
+    </svg>
+  );
+}
+
+// ── Profile color palette ──────────────────────────────────────
+const PROFILE_COLORS = ['#ff3e9a', '#b983ff', '#22e5d4', '#ff5029', '#7fb3ff', '#ffb84a'];
+
+function profileColor(id: string): string {
+  let n = 0;
+  for (let i = 0; i < id.length; i++) n = (n + id.charCodeAt(i)) % PROFILE_COLORS.length;
+  return PROFILE_COLORS[n];
+}
+
 // ── Skeleton loader ────────────────────────────────────────────
 export function WbSkeleton({ width, height, style }: { width?: number | string; height?: number | string; style?: React.CSSProperties }) {
   return <div className="wb-skeleton" style={{ width: width ?? '100%', height: height ?? 16, ...style }} />;
@@ -1987,15 +2011,7 @@ function TicketFlipCard({ ticket, onTransfer }: { ticket: WbTicket; onTransfer: 
         {/* Back — QR full screen */}
         <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#fff', borderRadius: 12 }}>
           <div className="wb-qr-box" style={{ background: '#fff', border: 'none' }}>
-            <svg width={160} height={160} viewBox="0 0 80 80" fill="#000">
-              {[[0,0],[60,0],[0,60]].map(([x,y],i)=>(
-                <g key={i}><rect x={x} y={y} width="20" height="20" fill="none" stroke="#000" strokeWidth="3"/><rect x={x+6} y={y+6} width="8" height="8"/></g>
-              ))}
-              {Array.from({length:80}).map((_,i)=>{
-                const x = 24+(i%10)*4, y = 24+Math.floor(i/10)*4;
-                return (i*13+7)%3===0 ? <rect key={i} x={x} y={y} width="3" height="3"/> : null;
-              })}
-            </svg>
+            <WbQrSvg />
           </div>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#333', textAlign: 'center' }}>{ticket.code}</div>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: '#888' }}>Tap to flip back</div>
@@ -2811,14 +2827,6 @@ type DiscoverData = {
   venues: DiscoverProfile[];
   djs: DiscoverProfile[];
 };
-
-const PROFILE_COLORS = ['#ff3e9a', '#b983ff', '#22e5d4', '#ff5029', '#7fb3ff', '#ffb84a'];
-
-function profileColor(id: string): string {
-  let n = 0;
-  for (let i = 0; i < id.length; i++) n = (n + id.charCodeAt(i)) % PROFILE_COLORS.length;
-  return PROFILE_COLORS[n];
-}
 
 function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
   const [tab, setTab] = useState<'artists'|'venues'|'djs'>('artists');
@@ -3778,14 +3786,6 @@ function GhostListeners({ count }: { count: number }) {
       {count > 8 && <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>+{count - 8}</span>}
       <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>listening now</span>
     </div>
-  );
-}
-
-// ── Hype Wave ──────────────────────────────────────────────────
-function HypeWave({ active }: { active: boolean }) {
-  if (!active) return null;
-  return (
-    <div style={{ position: 'absolute', inset: -4, borderRadius: 12, pointerEvents: 'none', animation: 'hype-wave 1.2s ease-out forwards' }} aria-hidden="true" />
   );
 }
 
