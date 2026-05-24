@@ -4,18 +4,6 @@ import { authConfig } from '@/lib/auth.config';
 
 const { auth } = NextAuth(authConfig);
 
-const legacyRouteRedirects: Record<string, string> = {
-  '/ihype-auth.html': '/login',
-  '/ihype-login.html': '/login',
-  '/ihype-register.html': '/register',
-  '/ihype-forgot.html': '/forgot',
-  '/ihype-home.html': '/',
-  '/ihype-homepage.html': '/',
-  '/ihype-promise.html': '/',
-  '/ihype-hype-engine.html': '/',
-  '/index.html': '/'
-};
-
 function isLocalHost(hostname: string) {
   const normalizedHost = hostname.split(':')[0]?.toLowerCase() ?? hostname.toLowerCase();
   return normalizedHost === 'localhost' || normalizedHost === '127.0.0.1' || normalizedHost.endsWith('.localhost');
@@ -34,11 +22,6 @@ export default auth((request) => {
     const secureUrl = request.nextUrl.clone();
     secureUrl.protocol = 'https:';
     return NextResponse.redirect(secureUrl, 308);
-  }
-
-  const legacyRedirectTarget = legacyRouteRedirects[request.nextUrl.pathname];
-  if (legacyRedirectTarget) {
-    return NextResponse.redirect(new URL(legacyRedirectTarget, request.url), 308);
   }
 
   if (request.nextUrl.pathname.startsWith('/dashboard') && !request.auth) {

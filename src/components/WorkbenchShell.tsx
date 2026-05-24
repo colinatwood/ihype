@@ -289,6 +289,30 @@ export const IcCheck    = (p: {s?:number}) => <Ic {...p}><polyline points="20 6 
 export const IcArrow    = ({ s = 14 }: {s?:number}) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
 export const IcDot      = ({ c = 'currentColor', s = 8 }: {c?:string; s?:number}) => <svg width={s} height={s} viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill={c}/></svg>;
 
+// ── QR placeholder SVG ─────────────────────────────────────────
+function WbQrSvg() {
+  return (
+    <svg width={160} height={160} viewBox="0 0 80 80" fill="#000">
+      {[[0,0],[60,0],[0,60]].map(([x,y],i)=>(
+        <g key={i}><rect x={x} y={y} width="20" height="20" fill="none" stroke="#000" strokeWidth="3"/><rect x={x+6} y={y+6} width="8" height="8"/></g>
+      ))}
+      {Array.from({length:80}).map((_,i)=>{
+        const x = 24+(i%10)*4, y = 24+Math.floor(i/10)*4;
+        return (i*13+7)%3===0 ? <rect key={i} x={x} y={y} width="3" height="3"/> : null;
+      })}
+    </svg>
+  );
+}
+
+// ── Profile color palette ──────────────────────────────────────
+const PROFILE_COLORS = ['#ff3e9a', '#b983ff', '#22e5d4', '#ff5029', '#7fb3ff', '#ffb84a'];
+
+function profileColor(id: string): string {
+  let n = 0;
+  for (let i = 0; i < id.length; i++) n = (n + id.charCodeAt(i)) % PROFILE_COLORS.length;
+  return PROFILE_COLORS[n];
+}
+
 // ── Skeleton loader ────────────────────────────────────────────
 export function WbSkeleton({ width, height, style }: { width?: number | string; height?: number | string; style?: React.CSSProperties }) {
   return <div className="wb-skeleton" style={{ width: width ?? '100%', height: height ?? 16, ...style }} />;
@@ -1797,10 +1821,10 @@ function ViewHome({ data, prefs, setView, starterPack = [] }: { data: WorkbenchD
       {/* Lifetime heuristics */}
       <div className="wb-stat-row" style={{ marginTop: 14 }}>
         {[
-          { l: 'TOTAL HYPE GIVEN', v: (data.lifeStats?.totalHype ?? 3841).toLocaleString(),   d: 'all time',          c: '#ff3e9a' },
-          { l: 'TOTAL EARNINGS',   v: `$${(data.lifeStats?.totalEarnings ?? 9240).toLocaleString()}`, d: 'lifetime payouts', c: '#ffb84a' },
-          { l: 'SONGS PLAYED',     v: (data.lifeStats?.songsPlayed ?? 12447).toLocaleString(), d: 'all time listens',  c: '#b983ff' },
-          { l: 'EVENTS ATTENDED',  v: String(data.lifeStats?.eventsAttended ?? 28),            d: 'past tickets',      c: '#22e5d4' },
+          { l: 'TOTAL HYPE GIVEN', v: (data.lifeStats?.totalHype ?? 0).toLocaleString(),   d: 'all time',          c: '#ff3e9a' },
+          { l: 'TOTAL EARNINGS',   v: `$${(data.lifeStats?.totalEarnings ?? 0).toLocaleString()}`, d: 'lifetime payouts', c: '#ffb84a' },
+          { l: 'SONGS PLAYED',     v: (data.lifeStats?.songsPlayed ?? 0).toLocaleString(), d: 'all time listens',  c: '#b983ff' },
+          { l: 'EVENTS ATTENDED',  v: String(data.lifeStats?.eventsAttended ?? 0),            d: 'past tickets',      c: '#22e5d4' },
         ].map(s => (
           <div key={s.l} className="wb-stat-card">
             <div className="wb-stat-l">{s.l}</div>
@@ -2811,14 +2835,6 @@ type DiscoverData = {
   venues: DiscoverProfile[];
   djs: DiscoverProfile[];
 };
-
-const PROFILE_COLORS = ['#ff3e9a', '#b983ff', '#22e5d4', '#ff5029', '#7fb3ff', '#ffb84a'];
-
-function profileColor(id: string): string {
-  let n = 0;
-  for (let i = 0; i < id.length; i++) n = (n + id.charCodeAt(i)) % PROFILE_COLORS.length;
-  return PROFILE_COLORS[n];
-}
 
 function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
   const [tab, setTab] = useState<'artists'|'venues'|'djs'>('artists');
