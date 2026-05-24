@@ -350,12 +350,20 @@ export type StarterPackItem = {
 
 const VALID_VIEWS = new Set<View>(['home','discover','seeds','tickets','studio','artist','venue','settings','inbox','hype-map']);
 
+function getRoleDefaultView(activeProfileTypes: string[]): View {
+  if (activeProfileTypes.includes('ARTIST') || activeProfileTypes.includes('DJ')) return 'artist';
+  if (activeProfileTypes.includes('VENUE')) return 'venue';
+  return 'home';
+}
+
 export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData; starterPack?: StarterPackItem[] }) {
   const [view, setView] = useState<View>(() => {
     if (typeof window === 'undefined') return 'home';
     const p = new URLSearchParams(window.location.search).get('view') as View | null;
     if (p && VALID_VIEWS.has(p)) return p;
     try { const saved = localStorage.getItem('ihype-wb-view') as View | null; if (saved && VALID_VIEWS.has(saved)) return saved; } catch {}
+    // First visit: route to role-appropriate view
+    try { if (!localStorage.getItem('ihype-wb-view')) return getRoleDefaultView(data.activeProfileTypes); } catch {}
     return 'home';
   });
   const [liveStats, setLiveStats] = useState({
@@ -386,6 +394,22 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   // Persist last active view
   useEffect(() => { try { localStorage.setItem('ihype-wb-view', view); } catch {} }, [view]);
 
+  // Prefetch API data for adjacent views in background
+  useEffect(() => {
+    const VIEW_APIS: Partial<Record<View, string>> = {
+      discover: '/api/discover',
+      tickets: '/api/shows?limit=20',
+      seeds: '/api/seeds/recommendations',
+    };
+    const SWIPE: View[] = ['home','discover','seeds','tickets','studio','settings'];
+    const idx = SWIPE.indexOf(view);
+    const adjacent = [SWIPE[idx - 1], SWIPE[idx + 1]].filter(Boolean) as View[];
+    adjacent.forEach(v => {
+      const url = VIEW_APIS[v];
+      if (url) fetch(url, { priority: 'low' } as RequestInit).catch(() => {});
+    });
+  }, [view]);
+
   useEffect(() => {
     setLiveStats({
       listeningNow: data.listeningNow,
@@ -412,7 +436,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     };
 
     void poll();
-    const id = setInterval(poll, 30000);
+    const id = setInterval(poll, 60000);
 
     return () => {
       active = false;
@@ -708,15 +732,45 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
   );
 }
 
+// ── Hype burst particle ────────────────────────────────────────
+function HypeBurst({ active }: { active: boolean }) {
+  const particles = [0,1,2,3,4,5];
+  if (!active) return null;
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }} aria-hidden="true">
+      {particles.map(i => (
+        <div key={i} style={{
+          position: 'absolute', left: '50%', top: '50%',
+          width: 6, height: 6, borderRadius: '50%',
+          background: i % 2 === 0 ? '#ff3e9a' : 'var(--wb-accent)',
+          animation: `hype-burst-${i % 3} 0.55s ease-out forwards`,
+          transformOrigin: 'center',
+        }} />
+      ))}
+    </div>
+  );
+}
+
 // ── Player dock ────────────────────────────────────────────────
 function WbPlayerDock({ queueRailOn, onToggleQueue }: { queueRailOn: boolean; onToggleQueue: () => void }) {
   const { currentTrack, isPlaying, currentTime, duration, volume, togglePlayback, playNext, playPrevious, seekTo, setVolume, queue } = useMediaPlayer();
   const [hypedTrackIds, setHypedTrackIds] = useState<Set<string>>(new Set());
+  const [burstTrackId, setBurstTrackId] = useState<string | null>(null);
+  const toast = useToast();
+
   function handleHype() {
     if (!currentTrack) return;
     if (hypedTrackIds.has(currentTrack.id)) return;
-    setHypedTrackIds(s => new Set(s).add(currentTrack.id));
-    fetch('/api/hype', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetType: 'media', targetId: currentTrack.id }) }).catch(() => {});
+    const trackId = currentTrack.id;
+    const newCount = (currentTrack as MediaTrack & { hypeCount?: number }).hypeCount ?? 0;
+    setHypedTrackIds(s => new Set(s).add(trackId));
+    setBurstTrackId(trackId);
+    setTimeout(() => setBurstTrackId(null), 600);
+    // Milestone toasts
+    const milestones = [100, 500, 1000];
+    const hit = milestones.find(m => newCount < m && newCount + 1 >= m);
+    if (hit) toast.push(`🎉 ${hit} hypes on "${currentTrack.title}"!`, 'success');
+    fetch('/api/hype', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetType: 'media', targetId: trackId }) }).catch(() => {});
   }
 
   const progress = duration > 0 ? currentTime / duration : 0;
@@ -746,7 +800,11 @@ function WbPlayerDock({ queueRailOn, onToggleQueue }: { queueRailOn: boolean; on
           <div className="wb-dock-artist">{currentTrack?.artistName ?? 'Pick a track to start'}</div>
         </div>
         {currentTrack && (
-          <button className="wb-heart-btn" title="Hype this track" onClick={handleHype} style={{ color: hypedTrackIds.has(currentTrack.id) ? '#ff3e9a' : undefined }}><IcHeart s={14} c={hypedTrackIds.has(currentTrack.id) ? '#ff3e9a' : 'currentColor'} /></button>
+          <button className="wb-heart-btn" title="Hype this track" onClick={handleHype}
+            style={{ color: hypedTrackIds.has(currentTrack.id) ? '#ff3e9a' : undefined, position: 'relative' }}>
+            <IcHeart s={14} c={hypedTrackIds.has(currentTrack.id) ? '#ff3e9a' : 'currentColor'} />
+            <HypeBurst active={burstTrackId === currentTrack.id} />
+          </button>
         )}
       </div>
       <div className="wb-dock-c">
@@ -1215,15 +1273,114 @@ function ViewInbox({ data, setView }: { data: WorkbenchData; setView: (v: View) 
   );
 }
 
+function ShareCardModal({ data, onClose }: { data: WorkbenchData; onClose: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [downloaded, setDownloaded] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const W = 800, H = 420;
+    canvas.width = W; canvas.height = H;
+
+    // Background
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#0a0805');
+    grad.addColorStop(1, '#1a0d0a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Accent stripe
+    ctx.fillStyle = '#ff5029';
+    ctx.fillRect(0, 0, 4, H);
+
+    // iHYPE wordmark
+    ctx.font = 'bold 28px "Arial", sans-serif';
+    ctx.fillStyle = '#f0ebe5';
+    ctx.fillText('i', 32, 52);
+    ctx.fillStyle = '#ff5029';
+    ctx.fillText('HYPE', 48, 52);
+
+    // Name
+    ctx.font = 'bold 38px "Arial", sans-serif';
+    ctx.fillStyle = '#f0ebe5';
+    ctx.fillText(data.userName, 32, 120);
+
+    // Stats
+    const stats = [
+      { label: 'HYPE THIS WEEK', value: data.stats[0]?.value ?? '0' },
+      { label: 'EVENTS ATTENDED', value: String(data.lifeStats?.eventsAttended ?? 0) },
+      { label: 'SONGS PLAYED', value: (data.lifeStats?.songsPlayed ?? 0).toLocaleString() },
+    ];
+    stats.forEach((s, i) => {
+      const x = 32 + i * 240;
+      ctx.font = '10px "Courier New", monospace';
+      ctx.fillStyle = '#5a5048';
+      ctx.fillText(s.label, x, 200);
+      ctx.font = 'bold 36px "Arial", sans-serif';
+      ctx.fillStyle = i === 0 ? '#ff3e9a' : '#22e5d4';
+      ctx.fillText(s.value, x, 245);
+    });
+
+    // Scene badge
+    ctx.font = '11px "Courier New", monospace';
+    ctx.fillStyle = '#ff5029';
+    ctx.fillText(`● ${data.city.toUpperCase()} SCENE`, 32, 310);
+
+    // CTA
+    ctx.font = '13px "Courier New", monospace';
+    ctx.fillStyle = '#5a5048';
+    ctx.fillText('ihype.org', 32, 390);
+  }, [data]);
+
+  function download() {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `ihype-${data.userName.replace(/\s+/g, '-').toLowerCase()}.png`;
+    a.click();
+    setDownloaded(true);
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.8)', backdropFilter: 'blur(6px)' }}>
+      <div style={{ background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line-2)', borderRadius: 14, padding: '28px 32px', maxWidth: 880, width: '95%', boxShadow: '0 24px 64px rgba(0,0,0,.6)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.08em', color: 'var(--wb-ink-3)' }}>SHARE CARD</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--wb-ink-3)', cursor: 'pointer', fontSize: 20 }}>×</button>
+        </div>
+        <canvas ref={canvasRef} style={{ width: '100%', borderRadius: 8, border: '1px solid var(--wb-line)' }} />
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button className="wb-btn-prime" onClick={download} style={{ flex: 1 }}>{downloaded ? '✓ Downloaded!' : 'Download PNG'}</button>
+          <button className="wb-btn-ghost" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ViewHome({ data, prefs, setView, starterPack = [] }: { data: WorkbenchData; prefs: Prefs; setView: (v: View) => void; starterPack?: StarterPackItem[] }) {
   const { playTrack, currentTrack } = useMediaPlayer();
   const [copied, setCopied] = useState(false);
+  const [showShareCard, setShowShareCard] = useState(false);
   const now = new Date();
   const hour = now.getHours();
   const tod = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
-  const greeting = prefs.greeting === 'minimal' ? data.userName : prefs.greeting === 'data'
-    ? `${data.stats[0]?.value ?? '—'} hypes this week.`
-    : `Good ${tod}, ${data.userName}.`;
+  const smartGreeting = (() => {
+    if (prefs.greeting === 'minimal') return data.userName;
+    if (prefs.greeting === 'data') return `${data.stats[0]?.value ?? '—'} hypes this week.`;
+    // warm: pick the most relevant signal
+    const showTonight = data.shows.find(s => s.status === 'TONIGHT');
+    if (showTonight) return `${showTonight.name} is tonight, ${data.userName}.`;
+    const topStat = data.stats[0];
+    if (topStat && topStat.value !== '0' && topStat.delta.startsWith('+')) return `${topStat.value} ${topStat.label.toLowerCase()} this week.`;
+    if (data.showsTonight > 0) return `${data.showsTonight} show${data.showsTonight > 1 ? 's' : ''} happening tonight.`;
+    return `Good ${tod}, ${data.userName}.`;
+  })();
+  const greeting = smartGreeting;
   const shareProfile = () => {
     const profileUrl = new URL(data.profilePath ?? '/', window.location.origin).toString();
     navigator.clipboard.writeText(profileUrl).catch(() => {});
@@ -1233,6 +1390,7 @@ function ViewHome({ data, prefs, setView, starterPack = [] }: { data: WorkbenchD
 
   return (
     <div className="wb-view-pad">
+      {showShareCard && <ShareCardModal data={data} onClose={() => setShowShareCard(false)} />}
       {/* Greeting */}
       <div className="wb-greet">
         <div>
@@ -1246,6 +1404,7 @@ function ViewHome({ data, prefs, setView, starterPack = [] }: { data: WorkbenchD
           <button className="wb-btn-prime" onClick={() => setView('studio')}><IcBolt s={12} /> Start a radio show</button>
           <button className="wb-btn-ghost" onClick={() => setView('tickets')}>Browse events →</button>
           <button className="wb-btn-ghost" onClick={shareProfile}>{copied ? 'Copied!' : 'Share your profile →'}</button>
+          <button className="wb-btn-ghost" onClick={() => setShowShareCard(true)}>Share card ↗</button>
         </div>
       </div>
 
@@ -1376,11 +1535,11 @@ function ViewHome({ data, prefs, setView, starterPack = [] }: { data: WorkbenchD
             <button className="wb-link-btn" onClick={() => setView('seeds')}>Discover more →</button>
           </div>
           <div className="wb-tracks-grid">
-            {data.tracks.slice(0, 6).map(t => {
+            {data.tracks.slice(0, 6).map((t, i) => {
               const active = currentTrack?.id === t.id;
               const mt: MediaTrack = { id: t.id, title: t.title, artistName: t.artistName, url: t.mediaUrl, artistProfileSlug: t.artistSlug };
               return (
-                <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)' }}>
+                <button key={t.id} onClick={() => playTrack(mt)} className="wb-track-card" style={{ borderColor: active ? t.color : 'var(--wb-line)', animation: 'wb-card-in 0.3s ease both', animationDelay: `${i * 40}ms` }}>
                   <div className="wb-track-art" style={{ background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }}>
                     <div className="wb-track-play"><IcPlay s={12} /></div>
                     <div className="wb-track-hype"><IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}</div>
@@ -1566,6 +1725,15 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferEmail, setTransferEmail] = useState('');
   const [transferSent, setTransferSent] = useState(false);
+  const [rsvpIds, setRsvpIds] = useState<Set<string>>(new Set());
+  const toast = useToast();
+
+  function handleRsvp(showId: string, showName: string) {
+    if (rsvpIds.has(showId)) return;
+    setRsvpIds(s => { const n = new Set(s); n.add(showId); return n; });
+    toast.push(`You're going to ${showName}!`, 'success');
+    fetch('/api/hype', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetType: 'show', targetId: showId }) }).catch(() => {});
+  }
 
   return (
     <div className="wb-view-pad">
@@ -1638,7 +1806,7 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
                 <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: '#22e5d4', marginTop: 3 }}>{s.reason}</div>
               </div>
               <div style={{ fontFamily: 'var(--f-d)', fontSize: 20, fontWeight: 700 }}>${s.price}</div>
-              <button className="wb-btn-prime">Get ticket</button>
+              <button className="wb-btn-prime" style={{ opacity: rsvpIds.has(s.id) ? 0.5 : 1 }} onClick={() => handleRsvp(s.id, s.name)} disabled={rsvpIds.has(s.id)}>{rsvpIds.has(s.id) ? '✓ Going' : 'Get ticket'}</button>
             </div>
           ))}
         </div>
@@ -1654,7 +1822,7 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
                 <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-2)', marginTop: 4 }}>{s.date} · {s.time} · ♡ {s.hype}</div>
               </div>
               <div style={{ fontFamily: 'var(--f-d)', fontSize: 20, fontWeight: 700 }}>{s.price > 0 ? `$${s.price}` : 'Free'}</div>
-              <button className="wb-btn-prime" onClick={() => setTab('mine')}>Get ticket</button>
+              <button className="wb-btn-prime" style={{ opacity: rsvpIds.has(s.id) ? 0.5 : 1 }} onClick={() => handleRsvp(s.id, s.name)} disabled={rsvpIds.has(s.id)}>{rsvpIds.has(s.id) ? '✓ Going' : 'Get ticket'}</button>
             </div>
           ))}
           {data.shows.length === 0 && (
@@ -2400,6 +2568,15 @@ function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
   const [tab, setTab] = useState<'artists'|'venues'|'djs'>('artists');
   const [discoverData, setDiscoverData] = useState<DiscoverData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+  const toast = useToast();
+
+  function handleFollow(id: string, name: string) {
+    if (followedIds.has(id)) return;
+    setFollowedIds(s => { const n = new Set(s); n.add(id); return n; });
+    toast.push(`Following ${name}`);
+    fetch('/api/hype', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ targetType: 'profile', targetId: id }) }).catch(() => {});
+  }
 
   useEffect(() => {
     fetch('/api/discover')
@@ -2451,7 +2628,7 @@ function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18, color: '#ff3e9a' }}>{a.hypeCount.toLocaleString()} <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 400, color: 'var(--wb-ink-3)' }}>hype</span></span>
-                  <button className="wb-btn-prime" style={{ padding: '6px 14px', fontSize: 11 }}>＋ Follow</button>
+                  <button className="wb-btn-prime" style={{ padding: '6px 14px', fontSize: 11, opacity: followedIds.has(a.id) ? 0.5 : 1 }} onClick={() => handleFollow(a.id, a.name)} disabled={followedIds.has(a.id)}>{followedIds.has(a.id) ? '✓ Following' : '＋ Follow'}</button>
                 </div>
               </div>
             );
