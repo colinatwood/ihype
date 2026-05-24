@@ -13,6 +13,19 @@ import { CITY_COORDS } from '@/lib/city-coords';
 import { PasskeyManager } from '@/components/AuthScreens';
 import { useToast } from '@/components/Toast';
 
+// ── Keyboard shortcut hook ─────────────────────────────────────
+function useKey(key: string, handler: (e: KeyboardEvent) => void, deps: React.DependencyList = []) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      handler(e);
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+}
+
 // ── Drag context ───────────────────────────────────────────────
 const DragTrackCtx = createContext<{
   dragging: MediaTrack | null;
@@ -356,6 +369,75 @@ function getRoleDefaultView(activeProfileTypes: string[]): View {
   return 'home';
 }
 
+// ── Confetti burst (first hype) ────────────────────────────────
+function ConfettiBurst({ onDone }: { onDone: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d')!;
+    const colors = ['#ff5029','#ff3e9a','#b983ff','#22e5d4','#ffb84a','#7fb3ff'];
+    const pieces = Array.from({ length: 80 }, () => ({
+      x: Math.random() * canvas.width, y: -10,
+      vx: (Math.random() - 0.5) * 6, vy: Math.random() * 4 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rot: Math.random() * Math.PI * 2, rotV: (Math.random() - 0.5) * 0.2,
+      w: 8 + Math.random() * 8, h: 4 + Math.random() * 4,
+    }));
+    let frame = 0;
+    let raf: number;
+    function draw() {
+      ctx.clearRect(0, 0, canvas!.width, canvas!.height);
+      for (const p of pieces) {
+        p.x += p.vx; p.y += p.vy; p.rot += p.rotV;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = Math.max(0, 1 - frame / 90);
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+      frame++;
+      if (frame < 100) raf = requestAnimationFrame(draw); else onDone();
+    }
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [onDone]);
+  return <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 999 }} />;
+}
+
+// ── Scene leaderboard ticker ───────────────────────────────────
+type LeaderEntry = { name: string; hype: number; color: string };
+function SceneTicker({ city }: { city: string }) {
+  const [leaders, setLeaders] = useState<LeaderEntry[]>([]);
+  useEffect(() => {
+    fetch('/api/discover?limit=3')
+      .then(r => r.json())
+      .then((d: { artists?: Array<{ name: string; hypeCount: number; id: string }> }) => {
+        if (!d.artists) return;
+        setLeaders(d.artists.slice(0, 3).map(a => ({ name: a.name, hype: a.hypeCount, color: profileColor(a.id) })));
+      })
+      .catch(() => {});
+  }, [city]);
+  if (leaders.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, overflow: 'hidden', minWidth: 0 }}>
+      <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.12em', color: 'var(--wb-ink-3)', flexShrink: 0 }}>HOT IN {city.split(',')[0].toUpperCase()}</span>
+      {leaders.map((l, i) => (
+        <span key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)' }}>#{i + 1}</span>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: l.color, flexShrink: 0 }} />
+          <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 11, color: 'var(--wb-ink)', whiteSpace: 'nowrap' }}>{l.name}</span>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: '#ff3e9a' }}>{l.hype.toLocaleString()}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData; starterPack?: StarterPackItem[] }) {
   const [view, setView] = useState<View>(() => {
     if (typeof window === 'undefined') return 'home';
@@ -371,6 +453,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     hypedToday: data.hypedToday,
   });
   const [onboarded, setOnboarded] = useState(true); // true until mount check
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [hypedEver, setHypedEver] = useState(false);
+  const [streakDays, setStreakDays] = useState(0);
   const [prefs, setPrefs] = useState<Prefs>(() => {
     if (typeof window === 'undefined') return DEFAULT_PREFS;
     try {
@@ -454,6 +539,55 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     }
   }, []);
 
+  // Hype streak tracking
+  useEffect(() => {
+    try {
+      const ever = localStorage.getItem('ihype-hyped-ever');
+      setHypedEver(!!ever);
+      const streakRaw = localStorage.getItem('ihype-streak');
+      const streak = streakRaw ? JSON.parse(streakRaw) as { days: number; lastDate: string } : null;
+      if (streak) {
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        if (streak.lastDate === today || streak.lastDate === yesterday) setStreakDays(streak.days);
+      }
+    } catch {}
+  }, []);
+
+  const recordHype = useCallback(() => {
+    try {
+      const today = new Date().toDateString();
+      if (!hypedEver) {
+        localStorage.setItem('ihype-hyped-ever', '1');
+        setHypedEver(true);
+        setShowConfetti(true);
+      }
+      const streakRaw = localStorage.getItem('ihype-streak');
+      const streak = streakRaw ? JSON.parse(streakRaw) as { days: number; lastDate: string } : null;
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      let newDays = 1;
+      if (streak?.lastDate === today) newDays = streak.days;
+      else if (streak?.lastDate === yesterday) newDays = streak.days + 1;
+      localStorage.setItem('ihype-streak', JSON.stringify({ days: newDays, lastDate: today }));
+      setStreakDays(newDays);
+    } catch {}
+  }, [hypedEver]);
+
+  // Keyboard nav: J/K for tracks, H to hype, G+D to go Discover, G+H to go Home etc.
+  const lastKeyRef = useRef<string>('');
+  const { playNext, playPrevious, togglePlayback } = useMediaPlayer();
+  useKey('j', () => playNext(), [playNext]);
+  useKey('k', () => playPrevious(), [playPrevious]);
+  useKey(' ', (e) => { e.preventDefault(); togglePlayback(); }, [togglePlayback]);
+  useKey('g', () => { lastKeyRef.current = 'g'; setTimeout(() => { lastKeyRef.current = ''; }, 1000); }, []);
+  useKey('d', () => { if (lastKeyRef.current === 'g') { setView('discover'); lastKeyRef.current = ''; } }, []);
+  useKey('h', (e) => {
+    if (lastKeyRef.current === 'g') { setView('home'); lastKeyRef.current = ''; return; }
+    // H = hype current track (handled in dock; just record streak here)
+    void e;
+    recordHype();
+  }, [recordHype]);
+
   const setPref = useCallback((key: string, val: unknown) => {
     setPrefs(p => {
       if (key === '__reset__') return DEFAULT_PREFS;
@@ -490,9 +624,10 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   return (
     <DragTrackProvider>
       <div className="wb-root">
+        {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
         {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
         {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} isAdmin={liveData.isAdmin} />
+        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} isAdmin={liveData.isAdmin} streakDays={streakDays} />
         <WbTopbar view={view} data={liveData} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
         <main className="wb-main" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           {view === 'home'     && <ViewHome data={liveData} prefs={prefs} setView={setView} starterPack={starterPack} />}
@@ -524,7 +659,7 @@ const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
   { k: 'studio',    label: 'Studio',    Icon: IcStudio },
 ];
 
-function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobileOpen, isVerified, isAdmin }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean; isAdmin?: boolean }) {
+function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobileOpen, isVerified, isAdmin, streakDays }: { view: View; setView: (v: View) => void; pinned: string[]; initials: string; accent: string; activeProfileTypes: string[]; mobileOpen?: boolean; onMobileClose?: () => void; isVerified?: boolean; isAdmin?: boolean; streakDays?: number }) {
   const isArtist = activeProfileTypes.includes('ARTIST') || activeProfileTypes.includes('DJ');
   const isVenue  = activeProfileTypes.includes('VENUE');
   return (
@@ -565,6 +700,9 @@ function WbSidebar({ view, setView, initials, accent, activeProfileTypes, mobile
           <div className="wb-sb-avatar" title={`${initials}`}>{initials}</div>
           {isVerified && (
             <span style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: '#22c55e', border: '2px solid var(--wb-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 6, color: '#fff', fontWeight: 700 }}>✓</span>
+          )}
+          {(streakDays ?? 0) >= 2 && (
+            <span title={`${streakDays}-day hype streak`} style={{ position: 'absolute', top: -4, right: -4, background: '#ff5029', color: '#fff', fontSize: 8, fontFamily: 'var(--f-m)', fontWeight: 700, borderRadius: 6, padding: '1px 4px', border: '1px solid var(--wb-bg)', whiteSpace: 'nowrap' }}>🔥{streakDays}</span>
           )}
         </div>
       </div>
@@ -612,6 +750,25 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
   const inputRef = useRef<HTMLInputElement>(null);
   const { playTrack } = useMediaPlayer();
   const [unreadCount, setUnreadCount] = useState(data.notifications?.filter(n => n.unread).length ?? 0);
+  const [savedSearches, setSavedSearches] = useState<string[]>(() => {
+    try { return JSON.parse(localStorage.getItem('ihype-saved-searches') ?? '[]') as string[]; } catch { return []; }
+  });
+
+  function saveSearch(term: string) {
+    setSavedSearches(prev => {
+      const next = [term, ...prev.filter(s => s !== term)].slice(0, 5);
+      try { localStorage.setItem('ihype-saved-searches', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
+
+  function removeSavedSearch(term: string) {
+    setSavedSearches(prev => {
+      const next = prev.filter(s => s !== term);
+      try { localStorage.setItem('ihype-saved-searches', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }
   useEffect(() => {
     fetch('/api/notifications?unread=true&limit=1')
       .then(r => r.ok ? r.json() : null)
@@ -660,6 +817,7 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
     } else if (r.type === 'show') {
       setView('tickets');
     }
+    if (q.trim()) saveSearch(q.trim());
     setOpen(false); setQ('');
   }
 
@@ -675,6 +833,8 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
         <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', letterSpacing: '.04em' }}>{VIEW_TITLES[view]}</span>
         <span className="wb-top-dot" />
         <span style={{ color: '#22e5d4', display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}><IcDot c="#22e5d4" s={6} /> {data.listeningNow.toLocaleString()} listening</span>
+        <span className="wb-top-dot" />
+        <SceneTicker city={data.city} />
         <span className="wb-top-dot" />
         <span style={{ fontSize: 11, color: 'var(--wb-ink-3)' }}>{data.hypedToday} hyped today</span>
         <span style={{ position: 'relative', display: 'inline-flex' }}>
@@ -698,13 +858,24 @@ function WbTopbar({ view, data, onHamburger, setView }: { view: View; data: Work
           className="wb-search-input"
           value={q}
           onChange={e => setQ(e.target.value)}
-          onFocus={() => results.length > 0 && setOpen(true)}
+          onFocus={() => { if (results.length > 0) setOpen(true); else if (!q.trim() && savedSearches.length > 0) setOpen(true); }}
           autoComplete="off"
         />
         {busy
           ? <span style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid var(--wb-line-2)', borderTopColor: 'var(--wb-accent)', animation: 'spin 0.7s linear infinite', flexShrink: 0 }} />
           : <><span className="wb-kbd">⌘</span><span className="wb-kbd">K</span></>
         }
+        {open && !q.trim() && savedSearches.length > 0 && (
+          <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line-2)', borderRadius: 10, boxShadow: '0 16px 48px rgba(0,0,0,.5)', zIndex: 500, overflow: 'hidden', minWidth: 280 }}>
+            <div style={{ padding: '8px 14px 4px', fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.1em', color: 'var(--wb-ink-3)' }}>SAVED SEARCHES</div>
+            {savedSearches.map(s => (
+              <div key={s} style={{ display: 'flex', alignItems: 'center', borderBottom: '1px solid var(--wb-line)' }}>
+                <div style={{ flex: 1, padding: '8px 14px', cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink)' }} onClick={() => { setQ(s); setOpen(false); }}>{s}</div>
+                <button onClick={() => removeSavedSearch(s)} style={{ background: 'none', border: 'none', color: 'var(--wb-ink-3)', cursor: 'pointer', padding: '0 12px', fontSize: 16 }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
         {open && results.length > 0 && (
           <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0, background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line-2)', borderRadius: 10, boxShadow: '0 16px 48px rgba(0,0,0,.5)', zIndex: 500, overflow: 'hidden', minWidth: 320 }}>
             {results.map(r => {
@@ -1716,6 +1887,54 @@ const ViewRadio = memo(function ViewRadio({ data, setView }: { data: WorkbenchDa
 });
 
 // ── View: Ticketing ────────────────────────────────────────────
+function TicketFlipCard({ ticket, onTransfer }: { ticket: WbTicket; onTransfer: () => void }) {
+  const [flipped, setFlipped] = useState(false);
+  return (
+    <div style={{ perspective: 1000 }} onClick={() => setFlipped(f => !f)}>
+      <div className="wb-hero-ticket" style={{ transition: 'transform 0.45s', transformStyle: 'preserve-3d', transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)', cursor: 'pointer', position: 'relative' }}>
+        {/* Front */}
+        <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}>
+          <div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: '#22e5d4', letterSpacing: '.14em', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <IcDot c="#22e5d4" s={7} /> CONFIRMED
+            </div>
+            <h2 className="wb-hero-name">{ticket.showName}</h2>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink-2)', letterSpacing: '.06em' }}>{ticket.date}</div>
+            <div className="wb-hero-facts">
+              <div><div className="wb-fact-l">SEAT</div><div className="wb-fact-v">{ticket.seat}</div></div>
+              <div><div className="wb-fact-l">PAID</div><div className="wb-fact-v">${ticket.price.toFixed(2)}</div></div>
+              <div><div className="wb-fact-l">CODE</div><div className="wb-fact-v" style={{ fontFamily: 'var(--f-m)' }}>{ticket.code}</div></div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 22, flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
+              <button className="wb-btn-prime" onClick={() => setFlipped(true)}>Show QR →</button>
+              <button className="wb-btn-ghost" onClick={onTransfer}>Transfer</button>
+              <button className="wb-btn-ghost">Add to Wallet</button>
+              <button className="wb-btn-danger">Request refund</button>
+            </div>
+            <div style={{ marginTop: 10, fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)' }}>Tap card to flip and see QR</div>
+          </div>
+        </div>
+        {/* Back — QR full screen */}
+        <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#fff', borderRadius: 12 }}>
+          <div className="wb-qr-box" style={{ background: '#fff', border: 'none' }}>
+            <svg width={160} height={160} viewBox="0 0 80 80" fill="#000">
+              {[[0,0],[60,0],[0,60]].map(([x,y],i)=>(
+                <g key={i}><rect x={x} y={y} width="20" height="20" fill="none" stroke="#000" strokeWidth="3"/><rect x={x+6} y={y+6} width="8" height="8"/></g>
+              ))}
+              {Array.from({length:80}).map((_,i)=>{
+                const x = 24+(i%10)*4, y = 24+Math.floor(i/10)*4;
+                return (i*13+7)%3===0 ? <rect key={i} x={x} y={y} width="3" height="3"/> : null;
+              })}
+            </svg>
+          </div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#333', textAlign: 'center' }}>{ticket.code}</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: '#888' }}>Tap to flip back</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: { data: WorkbenchData; activeProfileTypes: string[] }) {
   const canCreateEvents = activeProfileTypes.some(r => r === 'ARTIST' || r === 'VENUE');
   const isDJ = activeProfileTypes.includes('DJ');
@@ -1836,40 +2055,7 @@ const ViewTicketing = memo(function ViewTicketing({ data, activeProfileTypes }: 
           {upcoming && (
             <div style={{ marginBottom: 18 }}>
               <div className="wb-eyebrow-xs" style={{ marginBottom: 10 }}>NEXT UP</div>
-              <div className="wb-hero-ticket">
-                <div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: '#22e5d4', letterSpacing: '.14em', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <IcDot c="#22e5d4" s={7} /> CONFIRMED
-                  </div>
-                  <h2 className="wb-hero-name">{upcoming.showName}</h2>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--wb-ink-2)', letterSpacing: '.06em' }}>{upcoming.date}</div>
-                  <div className="wb-hero-facts">
-                    <div><div className="wb-fact-l">SEAT</div><div className="wb-fact-v">{upcoming.seat}</div></div>
-                    <div><div className="wb-fact-l">PAID</div><div className="wb-fact-v">${upcoming.price.toFixed(2)}</div></div>
-                    <div><div className="wb-fact-l">CODE</div><div className="wb-fact-v" style={{ fontFamily: 'var(--f-m)' }}>{upcoming.code}</div></div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, marginTop: 22, flexWrap: 'wrap' }}>
-                    <button className="wb-btn-prime">Show at door →</button>
-                    <button className="wb-btn-ghost" onClick={() => { setShowTransfer(true); setTransferSent(false); setTransferEmail(''); }}>Transfer</button>
-                    <button className="wb-btn-ghost">Add to Wallet</button>
-                    <button className="wb-btn-danger">Request refund</button>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                  <div className="wb-qr-box">
-                    <svg width={100} height={100} viewBox="0 0 80 80" fill="currentColor">
-                      {[[0,0],[60,0],[0,60]].map(([x,y],i)=>(
-                        <g key={i}><rect x={x} y={y} width="20" height="20" fill="none" stroke="currentColor" strokeWidth="3"/><rect x={x+6} y={y+6} width="8" height="8"/></g>
-                      ))}
-                      {Array.from({length:80}).map((_,i)=>{
-                        const x = 24+(i%10)*4, y = 24+Math.floor(i/10)*4;
-                        return (i*13+7)%3===0 ? <rect key={i} x={x} y={y} width="3" height="3"/> : null;
-                      })}
-                    </svg>
-                  </div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--wb-ink-3)', textAlign: 'center', maxWidth: 120 }}>Signed by iHYPE · scan with venue app</div>
-                </div>
-              </div>
+              <TicketFlipCard ticket={upcoming} onTransfer={() => { setShowTransfer(true); setTransferSent(false); setTransferEmail(''); }} />
             </div>
           )}
           <div className="wb-panel">
@@ -2569,6 +2755,7 @@ function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
   const [discoverData, setDiscoverData] = useState<DiscoverData | null>(null);
   const [loading, setLoading] = useState(true);
   const [followedIds, setFollowedIds] = useState<Set<string>>(new Set());
+  const [mood, setMood] = useState(50); // 0=chill, 100=hype
   const toast = useToast();
 
   function handleFollow(id: string, name: string) {
@@ -2586,7 +2773,9 @@ function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
       .finally(() => setLoading(false));
   }, []);
 
-  const artists = discoverData?.artists ?? [];
+  const allArtists = discoverData?.artists ?? [];
+  // Mood filter: sort by hypeCount (high mood = high hype first, low mood = reverse)
+  const artists = [...allArtists].sort((a, b) => mood >= 50 ? b.hypeCount - a.hypeCount : a.hypeCount - b.hypeCount);
   const venues = discoverData?.venues ?? [];
   const djs = discoverData?.djs ?? [];
 
@@ -2599,10 +2788,20 @@ function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
           <p className="wb-page-sub">Artists, venues, and DJs curated from your listen history, hypes, and scene.</p>
         </div>
       </div>
-      <div className="wb-tabs" style={{ marginBottom: 20 }}>
-        {(['artists','venues','djs'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} className={`wb-tab${tab===t?' wb-tab-active':''}`} style={{ textTransform: 'capitalize' }}>{t}</button>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div className="wb-tabs" style={{ margin: 0 }}>
+          {(['artists','venues','djs'] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} className={`wb-tab${tab===t?' wb-tab-active':''}`} style={{ textTransform: 'capitalize' }}>{t}</button>
+          ))}
+        </div>
+        {tab === 'artists' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 'auto' }}>
+            <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>Chill</span>
+            <input type="range" min={0} max={100} value={mood} onChange={e => setMood(Number(e.target.value))}
+              style={{ width: 100, accentColor: 'var(--wb-accent)', cursor: 'pointer' }} title="Mood: chill → hype" />
+            <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-accent)' }}>Hype</span>
+          </div>
+        )}
       </div>
 
       {loading && (
@@ -3335,9 +3534,46 @@ function ViewSettings({ prefs, setPref, data }: { prefs: Prefs; setPref: (k: str
         </div>
       )}
 
+      <div style={{ marginTop: 32 }}>
+        <ExportDataSection data={data} />
+      </div>
+
       <div className="wb-footnote">
         Preferences live in this browser's localStorage. Your data stays on your device — keys never leave your control.
       </div>
+    </div>
+  );
+}
+
+function ExportDataSection({ data }: { data: WorkbenchData }) {
+  const [exported, setExported] = useState(false);
+  function doExport() {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      profile: { name: data.userName, city: data.city, type: data.profileType },
+      stats: data.stats,
+      lifeStats: data.lifeStats,
+      tickets: data.tickets,
+      shows: data.shows,
+      tracks: data.tracks.map(t => ({ id: t.id, title: t.title, artist: t.artistName, hypes: t.hypeCount })),
+      activity: data.activity,
+      referralStats: data.referralStats,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ihype-data-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setExported(true);
+    setTimeout(() => setExported(false), 3000);
+  }
+  return (
+    <div style={{ background: 'var(--wb-bg-2)', border: '1px solid var(--wb-line)', borderRadius: 10, padding: '18px 20px' }}>
+      <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--wb-ink)', marginBottom: 6 }}>Export my data</div>
+      <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--wb-ink-3)', marginBottom: 14, lineHeight: 1.6 }}>Download a JSON file with your stats, tickets, hype history, and activity. No account data is included — purely your iHYPE record.</div>
+      <button className="wb-btn-ghost" onClick={doExport}>{exported ? '✓ Downloaded!' : 'Download JSON'}</button>
     </div>
   );
 }
