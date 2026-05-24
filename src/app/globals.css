@@ -15097,3 +15097,23 @@ html.high-contrast p {
     font-size: max(16px, 1em) !important;
   }
 }
+
+/* ── Hype burst animation ────────────────────────────────────────── */
+@keyframes hype-burst-0 {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+  100% { transform: translate(-50%,-120%) scale(1); opacity: 0; }
+}
+@keyframes hype-burst-1 {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+  100% { transform: translate(60%,-80%) scale(1); opacity: 0; }
+}
+@keyframes hype-burst-2 {
+  0%   { transform: translate(-50%,-50%) scale(0); opacity: 1; }
+  100% { transform: translate(-160%,-80%) scale(1); opacity: 0; }
+}
+
+/* ── Track card staggered entrance ──────────────────────────────── */
+@keyframes wb-card-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
