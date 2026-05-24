@@ -6,7 +6,7 @@ export const maxDuration = 60;
 
 /**
  * GET /api/cron/show-lifecycle
- * Vercel Cron — runs every minute.
+ * Cloudflare Cron Trigger - runs every minute.
  * Transitions shows between SCHEDULED → LIVE → ENDED based on startsAt/endsAt.
  * Guarded by CRON_SECRET so only the configured scheduler can invoke it.
  */
