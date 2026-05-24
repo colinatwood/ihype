@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation';
 import { LoginScreen } from '@/components/AuthScreens';
+import { auth } from '@/lib/auth';
 
 export const metadata = {
   title: 'Sign in | iHYPE.org',
@@ -10,6 +12,11 @@ export default async function LoginPage({
 }: {
   searchParams?: Promise<{ identifier?: string; registered?: string }>;
 }) {
+  const session = await auth();
+  if (session?.user?.id) {
+    redirect('/auth/landing');
+  }
+
   const resolvedSearchParams = searchParams ? await searchParams : {};
 
   return (

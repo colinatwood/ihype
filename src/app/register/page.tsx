@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation';
 import { RegisterScreen } from '@/components/AuthScreens';
+import { auth } from '@/lib/auth';
 
 export const metadata = {
   title: 'Join free | iHYPE.org',
@@ -22,6 +24,11 @@ export default async function RegisterPage({
 }: {
   searchParams?: Promise<{ role?: string | string[] }>;
 }) {
+  const session = await auth();
+  if (session?.user?.id) {
+    redirect('/auth/landing');
+  }
+
   const params = searchParams ? await searchParams : undefined;
   return <RegisterScreen initialRole={getInitialRole(params?.role)} />;
 }

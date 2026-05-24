@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     }
 
     // next-auth v5 uses __Secure- prefix for session token (not __Host-)
-    // salt must match options.cookies.sessionToken.name used by the middleware/auth()
+    // salt must match options.cookies.sessionToken.name used by auth()
     const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token';
 
     const now = Math.floor(Date.now() / 1000);
