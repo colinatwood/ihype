@@ -19,7 +19,8 @@
         "analyze": "ANALYZE=true npm run build",
         "cf:build": "opennextjs-cloudflare build",
         "cf:dev": "wrangler pages dev",
-        "cf:deploy": "wrangler pages deploy"
+        "cf:deploy": "node scripts/guard-github-deploy-source.mjs pages && wrangler pages deploy .open-next/assets --project-name=ihype --branch=main",
+        "cf:deploy:cron": "node scripts/guard-github-deploy-source.mjs cron && wrangler deploy --config wrangler.cron.toml"
     },
     "dependencies": {
         "@auth/prisma-adapter": "2.11.2",
