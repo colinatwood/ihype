@@ -433,28 +433,18 @@ function ConfettiBurst({ onDone }: { onDone: () => void }) {
   return <canvas ref={canvasRef} style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 999 }} />;
 }
 
-// ── Discover API cache ─────────────────────────────────────────
-type _DiscoverCacheEntry = { data: { artists?: Array<{ name: string; hypeCount: number; id: string; location?: string }>; venues?: Array<{ id: string; name: string; location?: string; hypeCount: number; capacity?: number }>; djs?: Array<{ id: string; name: string; location?: string; hypeCount: number }> } | null; ts: number };
-const _discoverCache: _DiscoverCacheEntry = { data: null, ts: 0 };
-async function fetchDiscover(): Promise<_DiscoverCacheEntry['data']> {
-  if (_discoverCache.data && Date.now() - _discoverCache.ts < 30000) return _discoverCache.data;
-  try {
-    const r = await fetch('/api/discover');
-    const d = await r.json() as _DiscoverCacheEntry['data'];
-    _discoverCache.data = d; _discoverCache.ts = Date.now();
-    return d;
-  } catch { return _discoverCache.data; }
-}
-
 // ── Scene leaderboard ticker ───────────────────────────────────
 type LeaderEntry = { name: string; hype: number; color: string };
 function SceneTicker({ city }: { city: string }) {
   const [leaders, setLeaders] = useState<LeaderEntry[]>([]);
   useEffect(() => {
-    fetchDiscover().then(d => {
-      if (!d?.artists) return;
-      setLeaders(d.artists.slice(0, 3).map(a => ({ name: a.name, hype: a.hypeCount, color: profileColor(a.id) })));
-    }).catch(() => {});
+    fetch('/api/discover?limit=3')
+      .then(r => r.json())
+      .then((d: { artists?: Array<{ name: string; hypeCount: number; id: string }> }) => {
+        if (!d.artists) return;
+        setLeaders(d.artists.slice(0, 3).map(a => ({ name: a.name, hype: a.hypeCount, color: profileColor(a.id) })));
+      })
+      .catch(() => {});
   }, [city]);
   if (leaders.length === 0) return null;
   return (
@@ -2021,7 +2011,15 @@ function TicketFlipCard({ ticket, onTransfer }: { ticket: WbTicket; onTransfer: 
         {/* Back — QR full screen */}
         <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(180deg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, background: '#fff', borderRadius: 12 }}>
           <div className="wb-qr-box" style={{ background: '#fff', border: 'none' }}>
-            <WbQrSvg />
+            <svg width={160} height={160} viewBox="0 0 80 80" fill="#000">
+              {[[0,0],[60,0],[0,60]].map(([x,y],i)=>(
+                <g key={i}><rect x={x} y={y} width="20" height="20" fill="none" stroke="#000" strokeWidth="3"/><rect x={x+6} y={y+6} width="8" height="8"/></g>
+              ))}
+              {Array.from({length:80}).map((_,i)=>{
+                const x = 24+(i%10)*4, y = 24+Math.floor(i/10)*4;
+                return (i*13+7)%3===0 ? <rect key={i} x={x} y={y} width="3" height="3"/> : null;
+              })}
+            </svg>
           </div>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#333', textAlign: 'center' }}>{ticket.code}</div>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: '#888' }}>Tap to flip back</div>
@@ -3792,6 +3790,14 @@ function GhostListeners({ count }: { count: number }) {
       {count > 8 && <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>+{count - 8}</span>}
       <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--wb-ink-3)' }}>listening now</span>
     </div>
+  );
+}
+
+// ── Hype Wave ──────────────────────────────────────────────────
+function HypeWave({ active }: { active: boolean }) {
+  if (!active) return null;
+  return (
+    <div style={{ position: 'absolute', inset: -4, borderRadius: 12, pointerEvents: 'none', animation: 'hype-wave 1.2s ease-out forwards' }} aria-hidden="true" />
   );
 }
 
