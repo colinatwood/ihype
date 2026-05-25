@@ -10,7 +10,7 @@ export function isSafeLocalRedirect(path: string | null | undefined): path is st
 export function resolvePostAuthRedirect(path: string | null | undefined): string {
   if (!isSafeLocalRedirect(path)) return WORKBENCH_PATH;
   if (path === '/login' || path.startsWith('/login?')) return WORKBENCH_PATH;
-  if (path === '/auth/landing' || path.startsWith('/auth/landing?')) return WORKBENCH_PATH;
+  if (path.startsWith('/auth/')) return WORKBENCH_PATH;
   if (path === '/workbench' || path.startsWith('/workbench?')) return WORKBENCH_PATH;
   if (path === '/dashboard' || path.startsWith('/dashboard?')) return WORKBENCH_PATH;
   return path;
