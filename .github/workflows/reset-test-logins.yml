@@ -13,7 +13,7 @@ env:
 jobs:
   reset:
     runs-on: ubuntu-latest
-    environment: Production - ihype
+    environment: Production – ihype
     if: github.event.inputs.confirm == 'reset test logins'
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}

@@ -13,7 +13,7 @@ env:
 jobs:
   seed:
     runs-on: ubuntu-latest
-    environment: Production - ihype
+    environment: Production – ihype
     if: github.event.inputs.confirm == 'seed ihype launch'
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
