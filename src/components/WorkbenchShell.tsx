@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useRef, createContext, useCont
 import Image from 'next/image';
 import { AccessibilityControls } from '@/components/AccessibilityControls';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
-import { SeedsSwipeStack, type SeedsSwipeStackSeed, type SeedsSwipeStackTrack } from '@/components/SeedsSwipeStack';
 import { WorkbenchExtras } from '@/components/WorkbenchExtras';
 import { WidgetManager } from '@/components/WidgetManager';
 import { CoHeadlinerSuggestions } from '@/components/CoHeadlinerSuggestions';
@@ -12,6 +11,8 @@ import { HypeHeatmap } from '@/components/HypeHeatmap';
 import { CITY_COORDS } from '@/lib/city-coords';
 import { PasskeyManager } from '@/components/AuthScreens';
 import { useToast } from '@/components/Toast';
+import { RadioShowCreator } from '@/components/RadioShowCreator';
+import { SeedsGamifiedView, type SeedsGamifiedSeed } from '@/components/SeedsGamifiedView';
 
 // ── Keyboard shortcut hook ─────────────────────────────────────
 function useKey(key: string, handler: (e: KeyboardEvent) => void, deps: React.DependencyList = []) {
@@ -387,10 +388,8 @@ export type StarterPackItem = {
 
 const VALID_VIEWS = new Set<View>(['home','discover','seeds','tickets','studio','artist','venue','settings','inbox','hype-map','scene-graph','money-flow','governance','setlist','news']);
 
-function getRoleDefaultView(activeProfileTypes: string[]): View {
-  if (activeProfileTypes.includes('ARTIST') || activeProfileTypes.includes('DJ')) return 'artist';
-  if (activeProfileTypes.includes('VENUE')) return 'venue';
-  return 'home';
+function getRoleDefaultView(_activeProfileTypes: string[]): View {
+  return 'seeds';
 }
 
 // ── Confetti burst (first hype) ────────────────────────────────
@@ -464,13 +463,11 @@ function SceneTicker({ city }: { city: string }) {
 
 export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData; starterPack?: StarterPackItem[] }) {
   const [view, setView] = useState<View>(() => {
-    if (typeof window === 'undefined') return 'home';
+    if (typeof window === 'undefined') return 'seeds';
     const p = new URLSearchParams(window.location.search).get('view') as View | null;
     if (p && VALID_VIEWS.has(p)) return p;
     try { const saved = localStorage.getItem('ihype-wb-view') as View | null; if (saved && VALID_VIEWS.has(saved)) return saved; } catch {}
-    // First visit: route to role-appropriate view
-    try { if (!localStorage.getItem('ihype-wb-view')) return getRoleDefaultView(data.activeProfileTypes); } catch {}
-    return 'home';
+    return getRoleDefaultView(data.activeProfileTypes);
   });
   const [liveStats, setLiveStats] = useState({
     listeningNow: data.listeningNow,
@@ -510,7 +507,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       tickets: '/api/shows?limit=20',
       seeds: '/api/seeds/recommendations',
     };
-    const SWIPE: View[] = ['home','discover','seeds','tickets','studio','settings'];
+    const SWIPE: View[] = ['seeds','home','discover','tickets','studio','settings'];
     const idx = SWIPE.indexOf(view);
     const adjacent = [SWIPE[idx - 1], SWIPE[idx + 1]].filter(Boolean) as View[];
     adjacent.forEach(v => {
@@ -628,7 +625,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const liveData: WorkbenchData = { ...data, ...liveStats };
 
-  const SWIPE_VIEWS: View[] = ['home', 'discover', 'seeds', 'tickets', 'studio', 'settings'];
+  const SWIPE_VIEWS: View[] = ['seeds', 'home', 'discover', 'tickets', 'studio', 'settings'];
   const touchStartRef = useRef<{ x: number; t: number } | null>(null);
   function handleTouchStart(e: React.TouchEvent) {
     touchStartRef.current = { x: e.touches[0].clientX, t: Date.now() };
@@ -651,14 +648,14 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
         {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
         {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} isAdmin={liveData.isAdmin} streakDays={streakDays} />
+        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['seeds', 'home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} isAdmin={liveData.isAdmin} streakDays={streakDays} />
         <WbTopbar view={view} data={liveData} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
         <main className="wb-main" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           {view === 'home'     && <ViewHome data={liveData} prefs={prefs} setView={setView} starterPack={starterPack} />}
           {view === 'discover' && <ViewDiscover data={liveData} />}
           {view === 'seeds'    && <ViewSeeds data={liveData} />}
           {view === 'tickets'  && <ViewTicketing data={liveData} activeProfileTypes={liveData.activeProfileTypes} />}
-          {view === 'studio'   && <ViewRadioStudio />}
+          {view === 'studio'   && <RadioShowCreator />}
           {view === 'artist'   && <ViewArtist data={liveData} />}
           {view === 'venue'    && <ViewVenue data={liveData} />}
           {view === 'settings'  && <ViewSettings prefs={prefs} setPref={setPref} data={liveData} />}
@@ -685,9 +682,9 @@ const IcVote = (p: {s?:number}) => <Ic s={p.s}><path d="M18 20V10M12 20V4M6 20v-
 const IcList = (p: {s?:number}) => <Ic s={p.s}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></Ic>;
 
 const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
+  { k: 'seeds',        label: 'Seeds',        Icon: IcSeeds },
   { k: 'home',         label: 'Home',         Icon: IcHome },
   { k: 'discover',     label: 'Discover',     Icon: IcDiscover },
-  { k: 'seeds',        label: 'Seeds',        Icon: IcSeeds },
   { k: 'tickets',      label: 'Live Events',  Icon: IcTicket },
   { k: 'hype-map',     label: 'Hype Map',     Icon: IcMap },
   { k: 'studio',       label: 'Studio',       Icon: IcStudio },
@@ -1170,11 +1167,11 @@ const IcNewspaper = (p: {s?:number}) => <Ic s={p.s}><rect x="3" y="3" width="18"
 
 function WbMobileNav({ view, setView }: { view: View; setView: (v: View) => void }) {
   const tabs: Array<{ v: View; label: string; icon: React.ReactNode }> = [
-    { v: 'home',     label: 'Home',     icon: <IcBolt s={18} /> },
-    { v: 'discover', label: 'Discover', icon: <IcDiscover s={18} /> },
+    { v: 'seeds',    label: 'Seeds',    icon: <IcSeeds s={18} /> },
+    { v: 'home',     label: 'Home',     icon: <IcHome s={18} /> },
     { v: 'tickets',  label: 'Shows',    icon: <IcTicket s={18} /> },
     { v: 'studio',   label: 'Studio',   icon: <IcRadio s={18} /> },
-    { v: 'news',     label: 'News',     icon: <IcNewspaper s={18} /> },
+    { v: 'discover', label: 'Discover', icon: <IcDiscover s={18} /> },
   ];
   return (
     <nav className="wb-mobile-nav" aria-label="Main navigation">
@@ -2968,98 +2965,57 @@ function ViewDiscover({ data: _data }: { data: WorkbenchData }) {
 
 // ── View: Seeds ─────────────────────────────────────────────────
 function ViewSeeds({ data }: { data: WorkbenchData }) {
-  const [seeds, setSeeds] = useState<SeedsSwipeStackSeed[]>([]);
-  const [tracks, setTracks] = useState<SeedsSwipeStackTrack[]>([]);
+  const [gamifiedSeeds, setGamifiedSeeds] = useState<SeedsGamifiedSeed[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGenres, setSelectedGenres] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const raw = window.localStorage.getItem('ihype:seed-genres');
-      if (!raw) return [];
-      const parsed = JSON.parse(raw) as unknown;
-      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-    } catch {
-      return [];
-    }
-  });
+  const toast = useToast();
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem('ihype:seed-genres', JSON.stringify(selectedGenres));
-    } catch {
-      // ignore
-    }
-  }, [selectedGenres]);
-
-  useEffect(() => {
-    const fallbackTracks = data.tracks.map(t => ({
-      id: t.id, title: t.title, artistName: t.artistName, album: t.album,
-      color: t.color, durationLabel: t.duration, hypeCount: t.hypeCount,
-    }));
-    const fallbackSeeds = fallbackTracks.map(t => ({
+    const fallback: SeedsGamifiedSeed[] = data.tracks.map(t => ({
       id: t.id,
-      trackId: t.id,
-      reason: 'From your discover feed',
+      title: t.title,
+      artistName: t.artistName,
+      color: t.color,
+      hypedCount: t.hypeCount,
     }));
 
-    const qs = selectedGenres.length ? `?genres=${encodeURIComponent(selectedGenres.join(','))}` : '';
-    setLoading(true);
-    fetch(`/api/discover/seeds${qs}`)
+    fetch('/api/discover/seeds')
       .then(r => {
         if (!r.ok) throw new Error('Could not load seeds');
         return r.json();
       })
-      .then((res: { seeds: Array<{ id: string; trackId: string; title?: string; artistName?: string; reason?: string }> }) => {
+      .then((res: { seeds: Array<{ id: string; trackId: string; title?: string; artistName?: string; city?: string; vibe?: string }> }) => {
         const seedRows = Array.isArray(res.seeds) ? res.seeds : [];
-        const fetchedSeeds: SeedsSwipeStackSeed[] = seedRows.map(s => ({
+        const fetched: SeedsGamifiedSeed[] = seedRows.map(s => ({
           id: s.id,
-          trackId: s.trackId,
-          reason: s.reason,
-        }));
-        const fetchedTracks: SeedsSwipeStackTrack[] = seedRows.map(s => ({
-          id: s.trackId,
           title: s.title ?? 'Untitled',
           artistName: s.artistName ?? 'Unknown Artist',
+          city: s.city,
+          vibe: s.vibe,
           color: '#b983ff',
-          durationLabel: '–:––',
-          hypeCount: 0,
         }));
-        setSeeds(fetchedSeeds);
-        setTracks(fetchedTracks);
+        setGamifiedSeeds(fetched.length > 0 ? fetched : fallback);
       })
       .catch(() => {
-        setSeeds(fallbackSeeds);
-        setTracks(fallbackTracks);
+        setGamifiedSeeds(fallback);
       })
       .finally(() => setLoading(false));
-  }, [data.tracks, selectedGenres]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const toast = useToast();
   if (loading) {
     return (
-      <div style={{ padding: '24px 32px 32px' }}>
-        <div className="animate-pulse" style={{ display: 'flex', gap: 32, alignItems: 'flex-start' }}>
-          <div style={{ width: 340, height: 440, borderRadius: 16, background: 'var(--bg-2, #1a1612)' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flex: 1 }}>
-            <div style={{ height: 44, borderRadius: 10, background: 'var(--bg-2, #1a1612)' }} />
-            <div style={{ height: 44, borderRadius: 10, background: 'var(--bg-2, #1a1612)' }} />
-            <div style={{ height: 44, borderRadius: 10, background: 'var(--bg-2, #1a1612)' }} />
-            <div style={{ height: 100, borderRadius: 10, background: 'var(--bg-2, #1a1612)', marginTop: 8 }} />
-          </div>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <div className="animate-pulse" style={{ width: 380, height: 500, borderRadius: 20, background: 'var(--wb-bg-2, #1a1612)' }} />
       </div>
     );
   }
+
   return (
-    <SeedsSwipeStack
-      seeds={seeds}
-      tracks={tracks}
-      selectedGenres={selectedGenres}
-      onGenresChange={setSelectedGenres}
-      onSave={seed => { toast.push('Saved to library', 'success'); void fetch(`/api/discover/seeds/${seed.id}/save`, { method: 'POST' }); }}
-      onSkip={seed => { toast.push('Skipped'); void fetch(`/api/discover/seeds/${seed.id}/skip`, { method: 'POST' }); }}
-      onHype={seed => { toast.push('Hyped!', 'success'); void fetch(`/api/discover/seeds/${seed.id}/hype`, { method: 'POST' }); }}
+    <SeedsGamifiedView
+      seeds={gamifiedSeeds}
+      onHype={id => { toast.push('Hyped!', 'success'); void fetch(`/api/discover/seeds/${id}/hype`, { method: 'POST' }); }}
+      onSave={id => { toast.push('Saved to library', 'success'); void fetch(`/api/discover/seeds/${id}/save`, { method: 'POST' }); }}
+      onSkip={id => { void fetch(`/api/discover/seeds/${id}/skip`, { method: 'POST' }); }}
     />
   );
 }
