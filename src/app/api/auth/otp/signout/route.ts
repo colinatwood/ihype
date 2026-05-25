@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
+import { getAuthSessionCookieName } from '@/lib/auth-session';
 
 export async function POST() {
   const isProduction = process.env.NODE_ENV === 'production';
-  const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token';
 
   const response = NextResponse.json({ ok: true });
   response.cookies.set({
-    name: cookieName,
+    name: getAuthSessionCookieName(),
     value: '',
     httpOnly: true,
     sameSite: 'lax',

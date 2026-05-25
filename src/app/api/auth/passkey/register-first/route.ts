@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { encode } from 'next-auth/jwt';
 import { db } from '@/lib/db';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
+import { buildAuthSessionCookie } from '@/lib/auth-session';
 import { getPasskeyRegistrationOptions, verifyPasskeyRegistration } from '@/lib/passkey';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 
-const SESSION_MAX_AGE = 12 * 60 * 60;
 // Only allow passkey registration for accounts created in the last 10 minutes
 const MAX_AGE_MS = 10 * 60 * 1000;
 
@@ -87,31 +87,11 @@ export async function POST(request: Request) {
   const clearCookie = (resp: NextResponse) => { resp.cookies.delete('pk_reg_first_challenge'); return resp; };
   if (!ok) return clearCookie(NextResponse.json({ error: 'Passkey registration failed.' }, { status: 400 }));
 
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) return clearCookie(NextResponse.json({ error: 'Server misconfiguration.' }, { status: 500 }));
+  const sessionCookie = await buildAuthSessionCookie(user);
+  if (!sessionCookie) return clearCookie(NextResponse.json({ error: 'Server misconfiguration.' }, { status: 500 }));
 
-  const isProduction = process.env.NODE_ENV === 'production';
-  const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token';
-  const now = Math.floor(Date.now() / 1000);
-
-  const token = await encode({
-    token: {
-      sub: user.id,
-      name: user.name,
-      email: user.email,
-      picture: user.image,
-      role: user.role,
-      emailVerified: user.emailVerified?.toISOString() ?? null,
-      iat: now,
-      exp: now + SESSION_MAX_AGE,
-      jti: crypto.randomUUID(),
-    },
-    secret,
-    salt: cookieName,
-  });
-
-  const resp = NextResponse.json({ redirect: '/auth/landing' });
-  resp.cookies.set({ name: cookieName, value: token, httpOnly: true, sameSite: 'lax', path: '/', secure: isProduction, maxAge: SESSION_MAX_AGE });
+  const resp = NextResponse.json({ redirect: WORKBENCH_PATH });
+  resp.cookies.set(sessionCookie);
   clearCookie(resp);
   return resp;
 }

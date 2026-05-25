@@ -51,8 +51,8 @@ export function BottomTabBar() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  // Hide on workbench (has its own nav)
-  if (pathname.startsWith('/workbench')) return null;
+  // Hide on the authenticated workbench (it has its own nav).
+  if (pathname === '/home' || pathname.startsWith('/workbench')) return null;
 
   const role = (session?.user as { role?: string } | undefined)?.role ?? '';
   const showRadio = RADIO_ROLES.has(role);

@@ -5,7 +5,9 @@
   "packageManager": "npm@10.9.2",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run guard:design",
     "build": "next build --webpack",
+    "guard:design": "node scripts/guard-claude-design.mjs",
     "start": "next start",
     "lint": "tsc --noEmit",
     "test": "vitest run",

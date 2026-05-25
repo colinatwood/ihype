@@ -1,11 +1,10 @@
 import { redirect } from 'next/navigation';
-import { encode } from 'next-auth/jwt';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
+import { buildAuthSessionCookie } from '@/lib/auth-session';
 
 export const dynamic = 'force-dynamic';
-
-const SESSION_MAX_AGE = 12 * 60 * 60;
 
 export default async function MagicLinkPage({
   searchParams
@@ -29,40 +28,11 @@ export default async function MagicLinkPage({
 
   await db.magicLinkToken.update({ where: { id: record.id }, data: { used: true } });
 
-  const secret = process.env.AUTH_SECRET;
-  if (!secret) redirect('/login?error=server_error');
-
-  const isProduction = process.env.NODE_ENV === 'production';
-  const cookieName = isProduction ? '__Secure-authjs.session-token' : 'authjs.session-token';
-  const now = Math.floor(Date.now() / 1000);
-  const user = record.user;
-
-  const sessionToken = await encode({
-    token: {
-      sub: user.id,
-      name: user.name,
-      email: user.email,
-      picture: user.image,
-      role: user.role,
-      emailVerified: user.emailVerified?.toISOString() ?? null,
-      iat: now,
-      exp: now + SESSION_MAX_AGE,
-      jti: crypto.randomUUID()
-    },
-    secret,
-    salt: cookieName
-  });
+  const sessionCookie = await buildAuthSessionCookie(record.user);
+  if (!sessionCookie) redirect('/login?error=server_error');
 
   const jar = await cookies();
-  jar.set({
-    name: cookieName,
-    value: sessionToken,
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    secure: isProduction,
-    maxAge: SESSION_MAX_AGE
-  });
+  jar.set(sessionCookie);
 
-  redirect('/home');
+  redirect(WORKBENCH_PATH);
 }

@@ -8,8 +8,8 @@ This repository contains a production-oriented Next.js app for hosting artist, D
 - Keep the app compatible with Vercel deployment and Prisma migrations.
 - Preserve the current stack unless a task explicitly requires a replacement.
 - Treat environment variables and secrets as external configuration. Never hardcode secrets.
-- Preserve the newer Claude-derived signed-in visual schema. Do not replace the role landing pages with older listener/dashboard/directory layouts.
-- Keep auth redirects and role module links working while updating visuals. The safe path is to keep role pages wrapped by `ProfileDirectoryPage`, keep `RoleModuleSubheader`, and keep role-aware routing in `src/lib/account-routing.ts`.
+- Preserve the newer Claude-derived signed-in visual schema. `/home` is the canonical authenticated workbench and should continue to render `WorkbenchShell`.
+- Keep auth redirects pointed at `/home` for users with profiles. Treat `/workbench` and `/dashboard` as legacy aliases that redirect to `/home`, not as separate authenticated applications.
 
 ## Stack expectations
 - Framework: Next.js App Router

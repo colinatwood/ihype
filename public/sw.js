@@ -11,15 +11,15 @@ const STATIC_ASSETS = [
 
 const CORE_PAGES = [
   '/',
-  '/home',
-  '/artists',
   '/shows',
-  '/trending',
   '/hype',
   '/tickets'
 ];
 
 const NETWORK_ONLY_PATHS = [
+  '/home',
+  '/workbench',
+  '/dashboard',
   '/login',
   '/register',
   '/forgot',

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { AdminNav } from '@/components/AdminNav';
 import { auth } from '@/lib/auth';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
 
@@ -28,7 +29,7 @@ export default async function AdminAuditPage({
 }) {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
-  if (!isAdminSession(session)) redirect('/auth/landing');
+  if (!isAdminSession(session)) redirect(WORKBENCH_PATH);
 
   const sp = searchParams ? await searchParams : {};
   const action = sp.action?.trim() || undefined;

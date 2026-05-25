@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { MarketingSeedsPreview, type MarketingSeedPreviewItem } from '@/components/MarketingSeedsPreview';
 import { auth } from '@/lib/auth';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 import { getHealthSnapshot } from '@/lib/health';
 import { getHomePageData } from '@/lib/public-data';
 
@@ -35,7 +36,7 @@ export default async function MarketingPage() {
     getHomePageData()
   ]);
   if (session?.user) {
-    redirect('/home');
+    redirect(WORKBENCH_PATH);
   }
 
   const liveUserCount = health.database.ok && 'users' in health.database

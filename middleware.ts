@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authConfig } from '@/lib/auth.config';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 
 const { auth } = NextAuth(authConfig);
 
@@ -24,14 +25,16 @@ export default auth((request) => {
     return NextResponse.redirect(secureUrl, 308);
   }
 
-  if (request.nextUrl.pathname.startsWith('/dashboard') && !request.auth) {
+  const pathname = request.nextUrl.pathname;
+
+  if ((pathname === WORKBENCH_PATH || pathname.startsWith('/dashboard')) && !request.auth) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', `${request.nextUrl.pathname}${request.nextUrl.search}`);
+    loginUrl.searchParams.set('callbackUrl', `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (request.auth && request.nextUrl.pathname === '/login') {
-    return NextResponse.redirect(new URL('/auth/landing', request.url));
+  if (request.auth && pathname === '/login') {
+    return NextResponse.redirect(new URL(WORKBENCH_PATH, request.url));
   }
 
   return NextResponse.next();

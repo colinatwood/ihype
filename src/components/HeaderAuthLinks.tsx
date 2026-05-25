@@ -43,7 +43,7 @@ export function HeaderAuthLinks() {
       <div className="nav-auth-slot nav-auth-cluster">
         <div className="nav-links nav-links-auth nav-links-compact">
           <NotificationBell />
-          <Link className="nav-user-pill" href={accountHref} aria-label={`Open account dashboard for ${displayName}`}>
+          <Link className="nav-user-pill" href={accountHref} aria-label={`Open workbench for ${displayName}`}>
             <span className="nav-user-avatar" aria-hidden="true">
               {displayName.charAt(0).toUpperCase()}
             </span>

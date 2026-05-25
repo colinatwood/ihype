@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { AdminNav } from '@/components/AdminNav';
 import { AdminJournalEditor } from '@/components/AdminJournalEditor';
 import { auth } from '@/lib/auth';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
 import { recordAuditEvent } from '@/lib/audit';
@@ -38,7 +39,7 @@ async function seedSamplePost() {
 export default async function AdminJournalPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
-  if (!isAdminSession(session)) redirect('/auth/landing');
+  if (!isAdminSession(session)) redirect(WORKBENCH_PATH);
 
   const posts = await db.auditLog.findMany({
     where: { action: 'editorial_post' },

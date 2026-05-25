@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import type { ProfileType } from '@prisma/client/wasm';
-import type { DiscoverModuleId } from '@/lib/discover-modules';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 
 export function getProfilePathForType(type: ProfileType, slug: string) {
   if (type === 'DJ') return `/promoters/${slug}`;
@@ -16,25 +16,16 @@ export function getDiscoverPathForType(type: ProfileType) {
   return '/artists';
 }
 
-export function getRoleLandingPathForType(type: ProfileType, module: DiscoverModuleId = 'tool-hub') {
-  return `${getDiscoverPathForType(type)}?module=${module}`;
-}
-
 export async function getDefaultLandingPathForUser({
-  userId,
-  role,
-  module
+  userId
 }: {
   userId: string;
-  role: string | null | undefined;
-  module?: DiscoverModuleId;
 }) {
-  void module;
   const hasProfile = await db.profile.findFirst({
     where: { ownerId: userId },
     select: { id: true },
     orderBy: { createdAt: 'asc' }
   });
 
-  return hasProfile ? '/home' : '/register';
+  return hasProfile ? WORKBENCH_PATH : '/register';
 }

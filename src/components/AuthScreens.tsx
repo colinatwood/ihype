@@ -6,6 +6,7 @@ import type { FormEvent, ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import { postJson } from '@/lib/api-client';
+import { resolvePostAuthRedirect } from '@/lib/auth-redirects';
 
 type RoleOption = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
 type AuthMethod = 'email' | 'passkey';
@@ -97,14 +98,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 }
 
 
-function getAuthLandingPath(redirect?: string) {
-  if (!redirect || redirect.startsWith('/auth/landing')) {
-    return '/auth/landing?module=tool-hub';
-  }
-
-  return redirect;
-}
-
 function trackSignupFunnel(event: string, metadata: SignupFunnelMetadata = {}) {
   if (typeof window === 'undefined') {
     return;
@@ -182,7 +175,9 @@ export function LoginScreen({
     setError('');
     setIsSubmitting(true);
     try {
-      const optRes = await fetch('/api/auth/passkey/auth');
+      const callbackUrl = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('callbackUrl') : null;
+      const query = callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : '';
+      const optRes = await fetch(`/api/auth/passkey/auth${query}`);
       if (!optRes.ok) {
         const errBody = await optRes.json().catch(() => ({}));
         throw new Error(typeof errBody.error === 'string' ? errBody.error : 'Could not start passkey sign-in.');
@@ -194,7 +189,7 @@ export function LoginScreen({
       const assertion = await startAuthentication(options);
       const payload = await postJson<{ redirect?: string }>('/api/auth/passkey/auth', assertion);
       trackSignupFunnel('login_passkey_success', { method: 'passkey', step: 'login', ...getPasskeyDiagnostics() });
-      window.location.href = getAuthLandingPath(payload.redirect);
+      window.location.href = resolvePostAuthRedirect(payload.redirect);
     } catch (err) {
       const reason = getErrorMessage(err, 'Passkey sign-in failed. Please try again or use email code.');
       trackSignupFunnel('login_passkey_failed', { method: 'passkey', step: 'login', reason, ...getPasskeyDiagnostics(err) });
@@ -233,7 +228,7 @@ export function LoginScreen({
     try {
       const payload = await postJson<{ redirect?: string }>('/api/auth/otp/signin', { challengeId, otp });
       trackSignupFunnel('login_email_code_success', { method: 'email', step: 'login' });
-      window.location.href = getAuthLandingPath(payload.redirect);
+      window.location.href = resolvePostAuthRedirect(payload.redirect);
     } catch (err) {
       const reason = getErrorMessage(err, 'Could not verify that code.');
       trackSignupFunnel('login_email_code_verify_failed', { method: 'email', step: 'login', reason });
@@ -530,7 +525,7 @@ export function RegisterScreen({
     const credential = await startRegistration(options);
     const verifyRes = await postJson<{ redirect?: string }>('/api/auth/passkey/register-first', credential);
     trackSignupFunnel('passkey_success', { role, method: 'passkey', step: 'register', variant: signupVariant, ...getPasskeyDiagnostics() });
-    window.location.href = getAuthLandingPath(verifyRes.redirect);
+    window.location.href = resolvePostAuthRedirect(verifyRes.redirect);
   }
 
   async function createAccount(event: FormEvent<HTMLFormElement>) {
@@ -613,7 +608,7 @@ export function RegisterScreen({
     try {
       const payload = await postJson<{ redirect?: string }>('/api/auth/otp/signin', { challengeId, otp });
       trackSignupFunnel('email_code_success', { role, method: 'email', step: 'register', variant: signupVariant });
-      window.location.href = getAuthLandingPath(payload.redirect);
+      window.location.href = resolvePostAuthRedirect(payload.redirect);
     } catch (err) {
       const reason = getErrorMessage(err, 'Could not verify that code.');
       trackSignupFunnel('email_code_verify_failed', { role, method: 'email', step: 'register', reason, variant: signupVariant });
@@ -653,7 +648,7 @@ export function RegisterScreen({
 
       // Step 4: verify and receive session
       const verifyRes = await postJson<{ redirect?: string }>('/api/auth/passkey/register-first', credential);
-      window.location.href = verifyRes.redirect || '/auth/landing';
+      window.location.href = resolvePostAuthRedirect(verifyRes.redirect);
     } catch (err) {
       setStep('form');
       setError(getErrorMessage(err, 'Could not create account.'));

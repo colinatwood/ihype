@@ -16,7 +16,7 @@ jobs:
   deploy:
     name: Build and deploy
     runs-on: ubuntu-latest
-    environment: Production – ihype
+    environment: Production - ihype
     permissions:
       contents: read
       deployments: write
@@ -36,6 +36,12 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Design guard
+        run: npm run guard:design
 
       - name: Run tests
         run: npm test

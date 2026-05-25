@@ -11,7 +11,7 @@ export default async function AdvertiserDashboard() {
   if (!session?.user?.id) redirect('/login');
   // Ad submissions lack a submitterUserId field, so non-admin users would see
   // all advertisers' data. Gate to admins until that migration lands.
-  if (!isAdminSession(session)) redirect('/workbench');
+  if (!isAdminSession(session)) redirect('/home');
 
   const ads = await db.adSubmission.findMany({
     orderBy: { createdAt: 'desc' },

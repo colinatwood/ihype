@@ -196,7 +196,7 @@ export function DiscoverTicketHubPanel({
         </div>
       ) : (
         <DiscoverEmptyState
-          actionHref="/auth/landing?module=tool-hub"
+          actionHref="/home?view=tickets"
           actionLabel="Open tool hub"
           detail="When a venue opens verified ticketing, serialized QR tickets will appear here automatically."
           title="No ticketed shows are open yet."

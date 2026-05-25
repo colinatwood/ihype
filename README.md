@@ -86,7 +86,7 @@ These demo accounts are for local development and controlled staging only. Produ
 - Add observability, background jobs, chat moderation, and rate limiting before trusting the internet with it. The internet is not a serious place.
 - Public signup reserves `@ihype.org` email addresses for internal use only.
 - Optional invite-only signup is controlled by `FEATURE_REQUIRE_INVITE_CODE=true` and comma-separated `BETA_INVITE_CODES`.
-- Auth, signup, and dashboard pages are intentionally marked `noindex`.
+- Auth, signup, and workbench pages are intentionally marked `noindex`.
 - The Prisma seed is for local/demo data only and refuses production runs unless `ALLOW_PRODUCTION_SEEDING=true` is explicitly set.
 - Production starter content uses `.github/workflows/seed-launch-content.yml` and requires the manual confirmation phrase `seed ihype launch`.
 - Post-deploy smoke tests run against `/api/health`, `/`, `/login`, `/shows`, and `/status`.

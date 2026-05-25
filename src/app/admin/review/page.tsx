@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
 import { AdminNav } from '@/components/AdminNav';
@@ -56,7 +57,7 @@ export default async function AdminReviewPage({
 }) {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
-  if (!isAdminSession(session)) redirect('/auth/landing');
+  if (!isAdminSession(session)) redirect(WORKBENCH_PATH);
 
   const resolved = searchParams ? await searchParams : {};
   const rawTab = resolved.tab;

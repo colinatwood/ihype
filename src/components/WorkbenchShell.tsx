@@ -1490,12 +1490,8 @@ function RoleNextActionHub({ data, setView }: { data: WorkbenchData; setView: (v
 
 function ViewHypeMap() {
   return (
-    <div className="wb-view-pad" style={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 0 }}>
-      <iframe
-        src="/workbench/hype-map"
-        style={{ flex: 1, border: 'none', width: '100%', minHeight: 'calc(100vh - var(--wb-dock-h, 72px) - var(--wb-top-h, 48px))' }}
-        title="Hype Map"
-      />
+    <div className="wb-view-pad">
+      <HypeHeatmap cities={[]} venuePings={[]} />
     </div>
   );
 }

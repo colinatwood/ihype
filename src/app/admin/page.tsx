@@ -12,6 +12,7 @@ import { getRateLimitMetrics } from '@/lib/rate-limit';
 import { isBlobMediaStorageConfigured } from '@/lib/media-storage';
 import { isPaymentProcessingConfigured } from '@/lib/payments';
 import { isAdminSession } from '@/lib/permissions';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 import {
   areDemoLoginsEnabledRuntime,
   getRuntimeFlag,
@@ -46,7 +47,7 @@ export default async function AdminPage() {
   }
 
   if (!isAdminSession(session)) {
-    redirect('/auth/landing');
+    redirect(WORKBENCH_PATH);
   }
 
   const funnelSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);

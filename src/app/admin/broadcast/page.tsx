@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
+import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 import { isAdminSession } from '@/lib/permissions';
 import { AdminNav } from '@/components/AdminNav';
 import { AdminBroadcastForm } from '@/components/AdminBroadcastForm';
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export default async function AdminBroadcastPage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/login');
-  if (!isAdminSession(session)) redirect('/auth/landing');
+  if (!isAdminSession(session)) redirect(WORKBENCH_PATH);
 
   return (
     <main className="container section admin-console">

@@ -7,10 +7,13 @@ on:
         description: 'Type: reset test logins'
         required: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   reset:
     runs-on: ubuntu-latest
-    environment: Production – ihype
+    environment: Production - ihype
     if: github.event.inputs.confirm == 'reset test logins'
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}

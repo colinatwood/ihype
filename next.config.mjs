@@ -395,7 +395,7 @@ const nextConfig = {
       },
       {
         source: '/home',
-        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }]
+        headers: [{ key: 'Cache-Control', value: 'no-store' }]
       },
       {
         source: '/hype',
@@ -409,6 +409,11 @@ const nextConfig = {
         source: '/login',
         headers: [{ key: 'Cache-Control', value: 'no-store' }]
       },
+      {
+        source: '/api/auth/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-store' }]
+      },
+
       {
         source: '/forgot',
         headers: [{ key: 'Cache-Control', value: 'no-store' }]

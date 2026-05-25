@@ -72,6 +72,8 @@ commits that would be lost from each side and ask before proceeding.
 
 **`/home` with `WorkbenchShell` is the ONLY authenticated UI.** There is no other dashboard, no role-selection screen, no module picker.
 
+- `/workbench` and `/dashboard` are legacy aliases only. Keep them redirected to `/home`; do not build new pages there.
+- `/home` must stay `Cache-Control: no-store` and network-only in the service worker because it is user-specific.
 - Every logged-in user (fan, artist, DJ, venue, admin) lands at `/home` and sees `WorkbenchShell`.
 - `WorkbenchShell` is `position: fixed; inset: 0` — it is the entire screen. Do NOT render any content outside it in `home/page.tsx`.
 - Do NOT create new standalone pages for authenticated features. Add a new `view` inside `WorkbenchShell` instead.
