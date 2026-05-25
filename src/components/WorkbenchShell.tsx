@@ -12,6 +12,7 @@ import { HypeHeatmap } from '@/components/HypeHeatmap';
 import { CITY_COORDS } from '@/lib/city-coords';
 import { PasskeyManager } from '@/components/AuthScreens';
 import { useToast } from '@/components/Toast';
+import { RadioShowCreator } from '@/components/RadioShowCreator';
 
 // ── Keyboard shortcut hook ─────────────────────────────────────
 function useKey(key: string, handler: (e: KeyboardEvent) => void, deps: React.DependencyList = []) {
@@ -658,7 +659,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
           {view === 'discover' && <ViewDiscover data={liveData} />}
           {view === 'seeds'    && <ViewSeeds data={liveData} />}
           {view === 'tickets'  && <ViewTicketing data={liveData} activeProfileTypes={liveData.activeProfileTypes} />}
-          {view === 'studio'   && <ViewRadioStudio />}
+          {view === 'studio'   && <RadioShowCreator />}
           {view === 'artist'   && <ViewArtist data={liveData} />}
           {view === 'venue'    && <ViewVenue data={liveData} />}
           {view === 'settings'  && <ViewSettings prefs={prefs} setPref={setPref} data={liveData} />}
