@@ -10,6 +10,8 @@ describe('auth redirects', () => {
   it('normalizes transitional auth routes to workbench', () => {
     expect(resolvePostAuthRedirect('/auth/landing')).toBe(WORKBENCH_PATH);
     expect(resolvePostAuthRedirect('/auth/landing?module=tool-hub')).toBe(WORKBENCH_PATH);
+    expect(resolvePostAuthRedirect('/auth/magic')).toBe(WORKBENCH_PATH);
+    expect(resolvePostAuthRedirect('/auth/magic?token=abc')).toBe(WORKBENCH_PATH);
     expect(resolvePostAuthRedirect('/workbench')).toBe(WORKBENCH_PATH);
     expect(resolvePostAuthRedirect('/workbench?tool=settings')).toBe(WORKBENCH_PATH);
     expect(resolvePostAuthRedirect('/dashboard')).toBe(WORKBENCH_PATH);

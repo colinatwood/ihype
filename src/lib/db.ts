@@ -68,7 +68,14 @@ function getConnectionString() {
 }
 
 function makePrisma(url: string) {
-  const adapter = new PrismaPg({ connectionString: url });
+  const adapter = new PrismaPg({
+    connectionString: url,
+    // Fail fast instead of hanging the Worker until Cloudflare's 30s timeout fires.
+    connectionTimeoutMillis: 5000,
+    // Each Worker invocation handles one request; one connection is enough.
+    max: 1,
+    idleTimeoutMillis: 10000,
+  });
   return new PrismaClient({ adapter });
 }
 
