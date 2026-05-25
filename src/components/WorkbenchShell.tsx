@@ -388,10 +388,8 @@ export type StarterPackItem = {
 
 const VALID_VIEWS = new Set<View>(['home','discover','seeds','tickets','studio','artist','venue','settings','inbox','hype-map','scene-graph','money-flow','governance','setlist','news']);
 
-function getRoleDefaultView(activeProfileTypes: string[]): View {
-  if (activeProfileTypes.includes('ARTIST') || activeProfileTypes.includes('DJ')) return 'artist';
-  if (activeProfileTypes.includes('VENUE')) return 'venue';
-  return 'home';
+function getRoleDefaultView(_activeProfileTypes: string[]): View {
+  return 'seeds';
 }
 
 // ── Confetti burst (first hype) ────────────────────────────────
@@ -465,13 +463,11 @@ function SceneTicker({ city }: { city: string }) {
 
 export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData; starterPack?: StarterPackItem[] }) {
   const [view, setView] = useState<View>(() => {
-    if (typeof window === 'undefined') return 'home';
+    if (typeof window === 'undefined') return 'seeds';
     const p = new URLSearchParams(window.location.search).get('view') as View | null;
     if (p && VALID_VIEWS.has(p)) return p;
     try { const saved = localStorage.getItem('ihype-wb-view') as View | null; if (saved && VALID_VIEWS.has(saved)) return saved; } catch {}
-    // First visit: route to role-appropriate view
-    try { if (!localStorage.getItem('ihype-wb-view')) return getRoleDefaultView(data.activeProfileTypes); } catch {}
-    return 'home';
+    return getRoleDefaultView(data.activeProfileTypes);
   });
   const [liveStats, setLiveStats] = useState({
     listeningNow: data.listeningNow,
@@ -511,7 +507,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       tickets: '/api/shows?limit=20',
       seeds: '/api/seeds/recommendations',
     };
-    const SWIPE: View[] = ['home','discover','seeds','tickets','studio','settings'];
+    const SWIPE: View[] = ['seeds','home','discover','tickets','studio','settings'];
     const idx = SWIPE.indexOf(view);
     const adjacent = [SWIPE[idx - 1], SWIPE[idx + 1]].filter(Boolean) as View[];
     adjacent.forEach(v => {
@@ -629,7 +625,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const liveData: WorkbenchData = { ...data, ...liveStats };
 
-  const SWIPE_VIEWS: View[] = ['home', 'discover', 'seeds', 'tickets', 'studio', 'settings'];
+  const SWIPE_VIEWS: View[] = ['seeds', 'home', 'discover', 'tickets', 'studio', 'settings'];
   const touchStartRef = useRef<{ x: number; t: number } | null>(null);
   function handleTouchStart(e: React.TouchEvent) {
     touchStartRef.current = { x: e.touches[0].clientX, t: Date.now() };
@@ -652,7 +648,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         {showConfetti && <ConfettiBurst onDone={() => setShowConfetti(false)} />}
         {!onboarded && <OnboardingModal onDone={() => setOnboarded(true)} />}
         {sidebarOpen && <div className="wb-sidebar-overlay" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
-        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} isAdmin={liveData.isAdmin} streakDays={streakDays} />
+        <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['seeds', 'home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} isAdmin={liveData.isAdmin} streakDays={streakDays} />
         <WbTopbar view={view} data={liveData} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
         <main className="wb-main" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
           {view === 'home'     && <ViewHome data={liveData} prefs={prefs} setView={setView} starterPack={starterPack} />}
@@ -686,9 +682,9 @@ const IcVote = (p: {s?:number}) => <Ic s={p.s}><path d="M18 20V10M12 20V4M6 20v-
 const IcList = (p: {s?:number}) => <Ic s={p.s}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></Ic>;
 
 const NAV_ITEMS: { k: View; label: string; Icon: React.FC<{s?:number}> }[] = [
+  { k: 'seeds',        label: 'Seeds',        Icon: IcSeeds },
   { k: 'home',         label: 'Home',         Icon: IcHome },
   { k: 'discover',     label: 'Discover',     Icon: IcDiscover },
-  { k: 'seeds',        label: 'Seeds',        Icon: IcSeeds },
   { k: 'tickets',      label: 'Live Events',  Icon: IcTicket },
   { k: 'hype-map',     label: 'Hype Map',     Icon: IcMap },
   { k: 'studio',       label: 'Studio',       Icon: IcStudio },
@@ -1171,11 +1167,11 @@ const IcNewspaper = (p: {s?:number}) => <Ic s={p.s}><rect x="3" y="3" width="18"
 
 function WbMobileNav({ view, setView }: { view: View; setView: (v: View) => void }) {
   const tabs: Array<{ v: View; label: string; icon: React.ReactNode }> = [
-    { v: 'home',     label: 'Home',     icon: <IcBolt s={18} /> },
-    { v: 'discover', label: 'Discover', icon: <IcDiscover s={18} /> },
+    { v: 'seeds',    label: 'Seeds',    icon: <IcSeeds s={18} /> },
+    { v: 'home',     label: 'Home',     icon: <IcHome s={18} /> },
     { v: 'tickets',  label: 'Shows',    icon: <IcTicket s={18} /> },
     { v: 'studio',   label: 'Studio',   icon: <IcRadio s={18} /> },
-    { v: 'news',     label: 'News',     icon: <IcNewspaper s={18} /> },
+    { v: 'discover', label: 'Discover', icon: <IcDiscover s={18} /> },
   ];
   return (
     <nav className="wb-mobile-nav" aria-label="Main navigation">
