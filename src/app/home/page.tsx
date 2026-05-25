@@ -105,34 +105,38 @@ export default async function HomePage() {
   const userId = session.user.id;
   const role = session.user.role as string | null | undefined;
 
-  const profile = await db.profile.findFirst({
-    where: { ownerId: userId },
-    select: {
-      id: true,
-      type: true,
-      slug: true,
-      name: true,
-      hexId: true,
-      hypeCount: true,
-      city: true,
-      stateRegion: true,
-      headline: true,
-      bio: true,
-      avatarImage: true,
-      genres: true,
-      contactInfo: true,
-      addressLine1: true,
-      postalCode: true,
-      country: true,
-      latitude: true,
-      longitude: true,
-      hoursText: true,
-      songUploadCount: true,
-      isVerified: true,
-      verificationRequested: true
-    },
-    orderBy: { createdAt: 'asc' }
-  });
+  const profile = await withTimeout(
+    db.profile.findFirst({
+      where: { ownerId: userId },
+      select: {
+        id: true,
+        type: true,
+        slug: true,
+        name: true,
+        hexId: true,
+        hypeCount: true,
+        city: true,
+        stateRegion: true,
+        headline: true,
+        bio: true,
+        avatarImage: true,
+        genres: true,
+        contactInfo: true,
+        addressLine1: true,
+        postalCode: true,
+        country: true,
+        latitude: true,
+        longitude: true,
+        hoursText: true,
+        songUploadCount: true,
+        isVerified: true,
+        verificationRequested: true
+      },
+      orderBy: { createdAt: 'asc' }
+    }),
+    5000,
+    null
+  );
 
   if (!profile) redirect('/register');
 
@@ -142,8 +146,8 @@ export default async function HomePage() {
   const [discoverFeed, viewerLocation, rawStats, eventsResult] = await Promise.all([
     getSharedDiscoverFeed(null),
     detectRequestLocation(),
-    fetchStats(profile, userId, thirtyDaysAgo, now),
-    fetchEvents(profile, userId, now)
+    withTimeout(fetchStats(profile, userId, thirtyDaysAgo, now), 8000, []),
+    withTimeout(fetchEvents(profile, userId, now), 8000, { upcoming: [] as Awaited<ReturnType<typeof fetchEvents>>['upcoming'], past: [] as Awaited<ReturnType<typeof fetchEvents>>['past'] }),
   ]);
 
   const city = profile.city
@@ -206,10 +210,10 @@ export default async function HomePage() {
   // Lazily merge fan feed below — variable referenced after the block that builds it.
 
   // ── Determine active profile types for role-conditional sidebar items ──
-  const allProfileRows = await db.profile.findMany({
+  const allProfileRows = await withTimeout(db.profile.findMany({
     where: { ownerId: userId },
     select: { type: true }
-  });
+  }), 3000, []);
   const activeProfileTypes = allProfileRows.map(p => p.type);
 
   // ── User name / initials ──
