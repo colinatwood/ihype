@@ -67,7 +67,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Server misconfiguration.' }, { status: 500 });
     }
 
-    const response = NextResponse.json({ redirect: WORKBENCH_PATH });
+    const redirectPath =
+      challenge.user.role === 'ADMIN' ? '/admin' : WORKBENCH_PATH;
+    const response = NextResponse.json({ redirect: redirectPath });
     response.cookies.set(sessionCookie);
 
     return response;
