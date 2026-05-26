@@ -71,22 +71,22 @@ export default async function AdminPage() {
     revenueAgg,
     recentShows
   ] = await Promise.all([
-    db.user.count(),
-    db.profile.count(),
-    db.profile.count({ where: { verificationStatus: 'PENDING' } }),
-    db.contentReport.count({ where: { status: 'OPEN' } }),
-    db.supportRequest.count({ where: { status: 'OPEN' } }),
-    db.artistMediaAsset.count(),
-    db.ticketOrder.count(),
+    db.user.count().catch(() => 0),
+    db.profile.count().catch(() => 0),
+    db.profile.count({ where: { verificationStatus: 'PENDING' } }).catch(() => 0),
+    db.contentReport.count({ where: { status: 'OPEN' } }).catch(() => 0),
+    db.supportRequest.count({ where: { status: 'OPEN' } }).catch(() => 0),
+    db.artistMediaAsset.count().catch(() => 0),
+    db.ticketOrder.count().catch(() => 0),
     db.contentReport.findMany({
       orderBy: { createdAt: 'desc' },
       take: 6,
       include: { reporter: { select: { email: true, username: true } } }
-    }),
+    }).catch(() => []),
     db.supportRequest.findMany({
       orderBy: { createdAt: 'desc' },
       take: 6
-    }),
+    }).catch(() => []),
     db.profile.findMany({
       where: { verificationStatus: 'PENDING' },
       orderBy: { verificationSubmittedAt: 'desc' },
@@ -99,37 +99,37 @@ export default async function AdminPage() {
         verificationNotes: true,
         verificationSubmittedAt: true
       }
-    }),
+    }).catch(() => []),
     db.emailDeliveryLog.findMany({
       orderBy: { createdAt: 'desc' },
       take: 6
-    }),
+    }).catch(() => []),
     db.auditLog.findMany({
       orderBy: { createdAt: 'desc' },
       take: 8,
       include: { actor: { select: { email: true, username: true } } }
-    }),
+    }).catch(() => []),
     db.user.findMany({
       orderBy: { createdAt: 'desc' },
       take: 6,
       select: { email: true, username: true, role: true, createdAt: true }
-    }),
+    }).catch(() => []),
     db.auditLog.findMany({
       where: { action: { startsWith: 'signup_funnel:' }, createdAt: { gte: funnelSince } },
       orderBy: { createdAt: 'desc' },
       take: 250,
       select: { action: true, metadata: true }
-    }),
+    }).catch(() => []),
     getHealthSnapshot(),
     db.ticketOrder.findMany({
       take: 10,
       orderBy: { createdAt: 'desc' },
       include: { show: { select: { title: true } } }
-    }),
+    }).catch(() => []),
     db.ticketOrder.aggregate({
       where: { status: 'CAPTURED' },
       _sum: { totalChargeCents: true }
-    }),
+    }).catch(() => ({ _sum: { totalChargeCents: null } })),
     db.show.findMany({
       take: 8,
       orderBy: { createdAt: 'desc' },
@@ -137,7 +137,7 @@ export default async function AdminPage() {
         venueProfile: { select: { name: true } },
         _count: { select: { tickets: true } }
       }
-    })
+    }).catch(() => [])
   ]);
 
   const [

@@ -86,6 +86,10 @@ const globalForPrisma = globalThis as unknown as {
   prismaConnectionString?: string;
 };
 
+// Cache one PrismaClient per CF request so all db.* calls within the same
+// request share a single connection rather than each spawning their own.
+const cfRequestCache = new WeakMap<object, DbClient>();
+
 function getDb() {
   const url = getConnectionString();
   if (!url) {
@@ -93,7 +97,19 @@ function getDb() {
   }
 
   if (hasCloudflareContext()) {
-    return makePrisma(url);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getCloudflareContext } = require('@opennextjs/cloudflare');
+      const ctx = getCloudflareContext() as object;
+      let client = cfRequestCache.get(ctx);
+      if (!client) {
+        client = makePrisma(url);
+        cfRequestCache.set(ctx, client);
+      }
+      return client;
+    } catch {
+      return makePrisma(url);
+    }
   }
 
   if (!globalForPrisma.prisma || globalForPrisma.prismaConnectionString !== url) {
