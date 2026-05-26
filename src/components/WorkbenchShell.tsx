@@ -815,7 +815,7 @@ const VIEW_TITLES: Record<View, string> = {
   home: 'Home', discover: 'Discover', seeds: 'Seeds', tickets: 'Ticketing',
   studio: 'Studio', artist: 'Artist', venue: 'Venue', settings: 'Settings', inbox: 'Inbox',
   'hype-map': 'Hype Map', 'scene-graph': 'Scene Graph', 'money-flow': 'Money Flow',
-  governance: 'Governance', setlist: 'Setlist Builder', news: 'Music News',
+  governance: 'Governance', setlist: 'Setlist Builder', news: 'Music News', admin: 'Admin',
 };
 
 type SearchHit = { type: string; id: string; name: string; subtitle: string; slug?: string };
