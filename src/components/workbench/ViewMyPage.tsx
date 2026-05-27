@@ -62,6 +62,7 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   const [referral, setReferral] = useState<{ link: string; count: number } | null>(null);
   const [copied, setCopied] = useState(false);
   const [anniversaryDismissed, setAnniversaryDismissed] = useState(false);
+  const [streakData, setStreakData] = useState<{ streak: number; daysActive: number } | null>(null);
 
   const handleHype = async (showId: string) => {
     if (hypedIds.has(showId)) return; // already hyped
@@ -81,6 +82,13 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
     fetch('/api/referral')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.referralLink) setReferral({ link: d.referralLink, count: d.referralCount ?? 0 }); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/hype-streak')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setStreakData({ streak: d.streak ?? 0, daysActive: d.daysActive ?? 0 }); })
       .catch(() => {});
   }, []);
 
@@ -151,8 +159,8 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
         </div>
       </div>
 
-      {/* Stat tiles — 4-col */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
+      {/* Stat tiles — 4-col + streak card */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr) auto', gap: 14, marginBottom: 20, alignItems: 'stretch' }}>
         {[
           { k: 'Weekly Listens', v: '2,284', d: <><span style={{ color: '#22e5d4' }}>↑ 18%</span> vs last week</> },
           { k: 'Seed Save Rate', v: '26%', d: '88 saves on Sundown' },
@@ -165,6 +173,41 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
             <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', marginTop: 4 }}>{s.d}</div>
           </div>
         ))}
+        {/* Hype Streak card */}
+        {streakData !== null && (() => {
+          const s = streakData.streak;
+          const emoji = s >= 30 ? '⚡' : '🔥';
+          const glowBox = s >= 30
+            ? '0 0 0 2px #b983ff'
+            : s >= 7 ? '0 0 0 2px #f5d060' : undefined;
+          return (
+            <div style={{
+              padding: '14px 18px',
+              border: '1px solid rgba(255,80,41,.25)',
+              borderRadius: 12,
+              background: 'linear-gradient(135deg, rgba(255,80,41,.15), rgba(255,184,74,.08))',
+              boxShadow: glowBox,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              minWidth: 110, textAlign: 'center',
+            }}>
+              {s === 0 ? (
+                <>
+                  <div style={{ fontSize: 28, lineHeight: 1 }}>🔥</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', marginTop: 8, maxWidth: 120, lineHeight: 1.4 }}>Start your streak — hype something today</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 32, lineHeight: 1 }}>{emoji}</div>
+                  <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 32, letterSpacing: '-.02em', lineHeight: 1, color: 'var(--ink)', marginTop: 4 }}>{s}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.1em', textTransform: 'uppercase', marginTop: 4 }}>day streak</div>
+                  {streakData.daysActive > s && (
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{streakData.daysActive} days active</div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       {/* Referral link */}
