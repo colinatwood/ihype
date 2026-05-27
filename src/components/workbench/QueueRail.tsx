@@ -4,8 +4,8 @@ import React from 'react';
 import type { WbTrack } from '@/components/WorkbenchShell';
 import { IcDot, IcHeart } from './icons';
 
-export function QueueRail({ tracks, currentIdx, onPick }: {
-  tracks: WbTrack[]; currentIdx: number; onPick: (i: number) => void;
+export function QueueRail({ tracks, currentIdx, onPick, onClear }: {
+  tracks: WbTrack[]; currentIdx: number; onPick: (i: number) => void; onClear?: () => void;
 }) {
   const durMin = tracks.reduce((a, t) => a + t.durationSec, 0);
   return (
@@ -22,7 +22,10 @@ export function QueueRail({ tracks, currentIdx, onPick }: {
             {tracks.length} tracks · {Math.floor(durMin / 60)}m
           </div>
         </div>
-        <button style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.1em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+        <button
+          onClick={() => { if (window.confirm('Clear the queue?')) onClear?.(); }}
+          style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.1em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer' }}
+        >Clear</button>
       </div>
 
       {/* List */}

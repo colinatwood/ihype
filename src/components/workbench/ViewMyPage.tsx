@@ -115,11 +115,28 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
               <button key={t.id} onClick={() => onPickTrack(i)} style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
                 borderBottom: '1px solid var(--line)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                borderLeft: i === currentIdx ? '3px solid var(--accent)' : '3px solid transparent',
               }}>
-                <span style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 13, color: 'var(--ink-3)', width: 20, flexShrink: 0 }}>{String(i + 1).padStart(2, '0')}</span>
+                <span style={{ width: 20, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {i === currentIdx ? (
+                    <div style={{ width: 20, display: 'flex', alignItems: 'flex-end', gap: 2, height: 14 }}>
+                      {[0,1,2].map(b => (
+                        <span key={b} style={{
+                          flex: 1, background: 'var(--accent)', borderRadius: 1,
+                          animation: `eq ${0.6 + b * 0.15}s ease-in-out infinite alternate`,
+                          height: '100%',
+                        }} />
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 13, color: 'var(--ink-3)', width: 20 }}>
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                  )}
+                </span>
                 <div style={{ width: 32, height: 32, borderRadius: 5, background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, flexShrink: 0, borderBottom: 'none' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
+                  <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: i === currentIdx ? 'var(--accent)' : 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
                   <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2, letterSpacing: '.04em' }}>{t.artistName} · {t.album}</div>
                 </div>
                 <button

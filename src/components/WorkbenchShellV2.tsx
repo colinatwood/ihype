@@ -250,7 +250,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
         {/* Queue rail */}
         {showQueue && (
-          <QueueRail tracks={tracks} currentIdx={currentIdx} onPick={onPickTrack} />
+          <QueueRail tracks={tracks} currentIdx={currentIdx} onPick={onPickTrack} onClear={() => { setCurrentIdx(0); setPlaying(false); }} />
         )}
 
         {/* Player dock */}

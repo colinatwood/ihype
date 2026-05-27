@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { View } from './types';
 
 export const TAB_ICONS: Record<string, React.ReactNode> = {
@@ -27,6 +28,7 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
   notifCount: number;
   notifications?: Array<{ id: string; body: string; link?: string; type: string; createdAt: string }>;
 }) {
+  const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
 
   useEffect(() => {
@@ -154,7 +156,7 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
               ) : (
                 notifications.map(n => (
                   <div key={n.id}
-                    onClick={() => { if (n.link) window.location.href = n.link; setNotifOpen(false); }}
+                    onClick={() => { if (n.link) router.push(n.link); setNotifOpen(false); }}
                     style={{
                       padding: '12px 16px', borderBottom: '1px solid var(--line)', cursor: n.link ? 'pointer' : 'default',
                       display: 'flex', gap: 10, alignItems: 'flex-start',
