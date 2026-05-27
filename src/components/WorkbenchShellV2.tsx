@@ -195,7 +195,6 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
   // Seeds state
   const [seedPlaying, setSeedPlaying] = useState(false);
-  const [seedCardIdx, setSeedCardIdx] = useState(0);
 
   // Toast
   const [toast, setToast] = useState<string | null>(null);
@@ -208,9 +207,10 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
   const onSeedSave = useCallback((idx: number) => {
     const saved = tracks[idx];
-    setCurrentIdx(idx);
-    setPlaying(true);
-    setSeedCardIdx(ci => ci + 1);
+    if (idx >= 0 && saved) {
+      setCurrentIdx(idx);
+      setPlaying(true);
+    }
     setSeedPlaying(false);
     if (saved) showToast(`"${saved.title}" saved to queue`);
   }, [tracks, showToast]);
@@ -256,12 +256,8 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       }
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-      if (view === 'seeds') {
-        if (e.key === 'ArrowLeft')  { setSeedCardIdx(ci => ci + 1); setSeedPlaying(false); }
-        if (e.key === 'ArrowUp')    { onSeedSave(seedCardIdx % Math.max(tracks.length, 1)); }
-        if (e.key === ' ')          { e.preventDefault(); setSeedPlaying(p => !p); }
-        if (e.key === 'ArrowRight') { setSeedCardIdx(ci => Math.max(0, ci - 1)); }
-      } else {
+      // Seeds keyboard shortcuts are handled inside ViewSeeds
+      if (view !== 'seeds') {
         if (e.key === ' ')          { e.preventDefault(); setPlaying(p => !p); }
         if (e.key === 'ArrowRight') { onNext(); }
         if (e.key === 'ArrowLeft')  { onPrev(); }
@@ -269,7 +265,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [view, seedCardIdx, tracks.length, onSeedSave, onNext, onPrev, searchOpen, shortcutsOpen]);
+  }, [view, onNext, onPrev, searchOpen, shortcutsOpen]);
 
   const track = tracks[currentIdx] ?? tracks[0];
   const showDock = prefs.stickyDock && track;
@@ -282,7 +278,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const viewEl = (() => {
     switch (view) {
       case 'me':       return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
-      case 'seeds':    return <ViewErrorBoundary viewName="Seeds"><ViewSeeds data={data} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} seedCardIdx={seedCardIdx} onSave={onSeedSave} /></ViewErrorBoundary>;
+      case 'seeds':    return <ViewErrorBoundary viewName="Seeds"><ViewSeeds data={data} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSave={onSeedSave} /></ViewErrorBoundary>;
       case 'radio':    return <ViewErrorBoundary viewName="Radio"><ViewRadio data={data} onPickTrack={onPickTrack} /></ViewErrorBoundary>;
       case 'studio':   return <ViewErrorBoundary viewName="Studio"><ViewStudio data={data} /></ViewErrorBoundary>;
       case 'tickets':  return <ViewErrorBoundary viewName="Live Events"><ViewTickets data={data} /></ViewErrorBoundary>;
