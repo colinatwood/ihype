@@ -151,11 +151,11 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
       </div>
 
       {/* Tabs */}
-      <nav style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
+      <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
         {TABS.map(tab => {
           const active = view === tab.k;
           return (
-            <button key={tab.k} onClick={() => setView(tab.k)} style={{
+            <button key={tab.k} onClick={() => setView(tab.k)} aria-current={active ? 'page' : undefined} style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px',
               borderRadius: 8, cursor: 'pointer', border: 'none',
               color: active ? 'var(--ink)' : 'var(--ink-2)',
@@ -577,16 +577,16 @@ function ViewSeeds({
 
           {/* Controls */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 24 }}>
-            <button title="Skip (ArrowLeft)" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,107,90,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ff6b5a' }}>
+            <button title="Skip (ArrowLeft)" aria-label="Skip seed" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,107,90,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ff6b5a' }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
-            <button title="Play/Pause (Space)" onClick={() => setSeedPlaying(!seedPlaying)} style={{ width: 56, height: 56, borderRadius: '50%', background: seedPlaying ? 'rgba(34,229,212,.1)' : 'var(--bg-2)', border: `1px solid ${seedPlaying ? 'rgba(34,229,212,.6)' : 'var(--line-2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: seedPlaying ? '#22e5d4' : 'var(--ink-2)' }}>
+            <button title="Play/Pause (Space)" aria-label={seedPlaying ? 'Pause' : 'Play'} onClick={() => setSeedPlaying(!seedPlaying)} style={{ width: 56, height: 56, borderRadius: '50%', background: seedPlaying ? 'rgba(34,229,212,.1)' : 'var(--bg-2)', border: `1px solid ${seedPlaying ? 'rgba(34,229,212,.6)' : 'var(--line-2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: seedPlaying ? '#22e5d4' : 'var(--ink-2)' }}>
               {seedPlaying ? <IcPause s={20} /> : <IcPlay s={20} />}
             </button>
-            <button title="Save — loads into dock (ArrowUp)" onClick={() => onSave?.(seedCardIdx % Math.max(data.tracks.length, 1))} style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
+            <button title="Save — loads into dock (ArrowUp)" aria-label="Save seed to queue" onClick={() => onSave?.(seedCardIdx % Math.max(data.tracks.length, 1))} style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 5l14 7-14 7V5z" fill="currentColor" opacity=".2"/><path d="M5 5l14 7-14 7V5z"/></svg>
             </button>
-            <button title="HYPE it (ArrowRight)" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,62,154,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--pink)' }}>
+            <button title="HYPE it (ArrowRight)" aria-label="Hype this track" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,62,154,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--pink)' }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
             </button>
           </div>
@@ -724,7 +724,7 @@ function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress, setPro
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, letterSpacing: '-.005em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>{track.title}</div>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.04em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artistName} · <span style={{ color: 'var(--ink-4)' }}>{track.album}</span></div>
         </div>
-        <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99, color: '#ff3e9a', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer', flexShrink: 0 }}>
+        <button aria-label="Hype this track" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99, color: '#ff3e9a', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer', flexShrink: 0 }}>
           <IcHeart s={14} c="#ff3e9a" /> {track.hypeCount}
         </button>
       </div>
@@ -758,8 +758,8 @@ function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress, setPro
 
       {/* Right: 340px — queue + vol */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14 }}>
-        <button title="Queue" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcQueue s={14} /></button>
-        <button title="Volume" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcVol s={14} /></button>
+        <button title="Queue" aria-label="Queue" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcQueue s={14} /></button>
+        <button title="Volume" aria-label="Volume" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcVol s={14} /></button>
         <div style={{ width: 80, height: 4, background: 'rgba(255,255,255,.06)', borderRadius: 99, position: 'relative' }}>
           <div style={{ position: 'absolute', inset: 0, width: '65%', background: 'var(--ink-2)', borderRadius: 99 }} />
         </div>
