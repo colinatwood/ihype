@@ -43,6 +43,33 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
             <span style={{ flex: 1 }} />
             <button style={{ padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', background: 'var(--bg-2)', cursor: 'pointer' }}>Sort · by HYPE ↓</button>
           </div>
+          {data.shows.length === 0 && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 16, padding: '64px 32px', textAlign: 'center',
+              border: '1px dashed var(--line-2)', borderRadius: 14, background: 'var(--bg-2)',
+            }}>
+              <div style={{ fontSize: 52 }}>🎪</div>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 24, letterSpacing: '-.02em', color: 'var(--ink)' }}>No shows yet in your city</div>
+              <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', maxWidth: '36ch', lineHeight: 1.55 }}>
+                Be the first to list a show in Chicago. Artists and venues keep 45% each — no platform fee, ever.
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button
+                  onClick={() => router.push('/home')}
+                  style={{ padding: '10px 20px', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: '#fff', background: 'linear-gradient(135deg, var(--accent), var(--pink, #ff3e9a))' }}
+                >
+                  Create a show
+                </button>
+                <button
+                  style={{ padding: '10px 20px', border: '1px solid var(--line-2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', background: 'none', letterSpacing: '.04em' }}
+                  onClick={() => { /* widen filter — no-op for now */ }}
+                >
+                  Widen filter
+                </button>
+              </div>
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
             {data.shows.map(s => {
               const pct = s.capacity > 0 ? (s.sold / s.capacity) * 100 : 0;

@@ -19,7 +19,7 @@ import { ViewRadio } from './workbench/ViewRadio';
 import { ViewTickets } from './workbench/ViewTickets';
 import { ViewStudio } from './workbench/ViewStudio';
 import { ViewSettings } from './workbench/ViewSettings';
-import { Toast, WelcomeDialog } from './workbench/Overlays';
+import { Toast, WelcomeDialog, KeyboardShortcutsDialog } from './workbench/Overlays';
 import { ViewErrorBoundary } from './workbench/ErrorBoundary';
 import { SearchOverlay } from './workbench/SearchOverlay';
 
@@ -233,6 +233,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   // Search overlay state
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Keyboard shortcuts dialog state
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -242,8 +245,13 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         setSearchOpen(p => !p);
         return;
       }
-      if (e.key === 'Escape' && searchOpen) {
-        setSearchOpen(false);
+      if (e.key === 'Escape') {
+        if (shortcutsOpen) { setShortcutsOpen(false); return; }
+        if (searchOpen) { setSearchOpen(false); return; }
+      }
+      if (e.key === '?' && !searchOpen && !shortcutsOpen) {
+        e.preventDefault();
+        setShortcutsOpen(p => !p);
         return;
       }
       const tag = (e.target as HTMLElement)?.tagName;
@@ -261,7 +269,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [view, seedCardIdx, tracks.length, onSeedSave, onNext, onPrev, searchOpen]);
+  }, [view, seedCardIdx, tracks.length, onSeedSave, onNext, onPrev, searchOpen, shortcutsOpen]);
 
   const track = tracks[currentIdx] ?? tracks[0];
   const showDock = prefs.stickyDock && track;
@@ -318,6 +326,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
             activeProfileTypes={data.activeProfileTypes}
             onSettings={() => navigateTo('settings')}
             onSearch={() => setSearchOpen(true)}
+            onShortcuts={() => setShortcutsOpen(true)}
             badges={{
               seeds: data.tracks.length > 0 ? String(data.tracks.length) : undefined,
               radio: data.radioShows.some(r => r.live) ? 'LIVE' : undefined,
@@ -365,6 +374,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
       {toast && <Toast message={toast} onUndo={() => { setPlaying(false); setCurrentIdx(0); setToast(null); }} />}
       {showWelcome && <WelcomeDialog onDismiss={() => { localStorage.setItem('ihype-welcome-seen', '1'); setShowWelcome(false); }} />}
+      {shortcutsOpen && <KeyboardShortcutsDialog onDismiss={() => setShortcutsOpen(false)} />}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
