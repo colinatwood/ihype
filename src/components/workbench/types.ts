@@ -4,7 +4,10 @@
 export type View = 'me' | 'seeds' | 'radio' | 'studio' | 'tickets' | 'settings';
 
 // ── Prefs ─────────────────────────────────────────────────────
+export const PREFS_VERSION = 2; // bump when DEFAULT_PREFS schema changes
+
 export const DEFAULT_PREFS = {
+  _v: PREFS_VERSION,
   accent: '#ff5029',
   density: 'cozy' as 'compact' | 'cozy' | 'comfy',
   queueRail: true,
@@ -22,7 +25,15 @@ export const DEFAULT_PREFS = {
 export function loadPrefs() {
   try {
     const s = localStorage.getItem('ihype-prefs-v2');
-    return s ? { ...DEFAULT_PREFS, ...JSON.parse(s) } : DEFAULT_PREFS;
+    if (!s) return DEFAULT_PREFS;
+    const stored = JSON.parse(s);
+    // If version mismatch, merge stored values with new defaults
+    // (keeps user's accent/density choices, adds any new fields)
+    if (stored._v !== PREFS_VERSION) {
+      const merged = { ...DEFAULT_PREFS, ...stored, _v: PREFS_VERSION };
+      return merged;
+    }
+    return { ...DEFAULT_PREFS, ...stored };
   } catch { return DEFAULT_PREFS; }
 }
 

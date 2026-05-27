@@ -64,61 +64,61 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       return MOCK_DATA;
     }
 
-    // Fetch user's ticket orders
-    const ticketOrders = await db.ticketOrder.findMany({
-      where: { buyerUserId: userId, status: { in: ['RESERVED', 'CAPTURED'] } },
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true, confirmationCode: true, status: true,
-        show: {
-          select: {
-            id: true, title: true, startsAt: true, ticketPriceCents: true,
-            venueProfile: { select: { name: true } },
+    // Fetch remaining data in parallel — none of these depend on each other
+    const [ticketOrders, hypeEvents, profileHypes, radioShows] = await Promise.all([
+      // Fetch user's ticket orders
+      db.ticketOrder.findMany({
+        where: { buyerUserId: userId, status: { in: ['RESERVED', 'CAPTURED'] } },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true, confirmationCode: true, status: true,
+          show: {
+            select: {
+              id: true, title: true, startsAt: true, ticketPriceCents: true,
+              venueProfile: { select: { name: true } },
+            },
+          },
+          tickets: {
+            take: 1,
+            select: { id: true, serializedId: true, status: true, holderName: true },
           },
         },
-        tickets: {
-          take: 1,
-          select: { id: true, serializedId: true, status: true, holderName: true },
+      }),
+      // Fetch hype events (shows this user hyped) for activity
+      db.hypeEvent.findMany({
+        where: { userId },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true, createdAt: true,
+          show: { select: { title: true } },
         },
-      },
-    });
-
-    // Fetch hype events (shows this user hyped) for activity
-    const hypeEvents = await db.hypeEvent.findMany({
-      where: { userId },
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true, createdAt: true,
-        show: { select: { title: true } },
-      },
-    });
-
-    // Fetch incoming hypes on user's profiles
-    const profileHypes = await db.profileHypeEvent.findMany({
-      where: {
-        profile: { ownerId: userId },
-      },
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        createdAt: true,
-        profile: { select: { name: true } },
-      },
-    }).catch(() => []);
-
-    // Fetch radio shows (user-created)
-    const radioShows = await db.show.findMany({
-      where: { creatorId: userId, isRadioShow: true },
-      take: 5,
-      orderBy: { startsAt: 'desc' },
-      select: {
-        id: true, title: true, status: true, startsAt: true,
-        headlinerProfile: { select: { name: true } },
-      },
-    });
+      }),
+      // Fetch incoming hypes on user's profiles
+      db.profileHypeEvent.findMany({
+        where: {
+          profile: { ownerId: userId },
+        },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          createdAt: true,
+          profile: { select: { name: true } },
+        },
+      }).catch(() => [] as { id: string; createdAt: Date; profile: { name: string } | null }[]),
+      // Fetch radio shows (user-created)
+      db.show.findMany({
+        where: { creatorId: userId, isRadioShow: true },
+        take: 5,
+        orderBy: { startsAt: 'desc' },
+        select: {
+          id: true, title: true, status: true, startsAt: true,
+          headlinerProfile: { select: { name: true } },
+        },
+      }),
+    ]);
 
     // ── Shape the response ──────────────────────────────────────
 
