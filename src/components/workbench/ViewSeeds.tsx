@@ -22,40 +22,49 @@ export function ViewSeeds({
   // SeedsGamifiedView is kept for future embedded use
   void SeedsGamifiedView;
 
+  const SEEN_KEY = 'ihype-seeds-seen-v1';
+
+  function loadSeen(): string[] {
+    try { return JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]'); } catch { return []; }
+  }
+  function saveSeen(ids: string[]) {
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify(ids.slice(-200))); } catch {} // keep last 200
+  }
+
   const [discoveryTracks, setDiscoveryTracks] = useState<WorkbenchData['tracks']>([]);
   const [loadingDiscover, setLoadingDiscover] = useState(true);
   const [hypedIds, setHypedIds] = useState<Set<string>>(new Set());
+  const [seenIds, setSeenIds] = useState<string[]>([]);
+
+  useEffect(() => { setSeenIds(loadSeen()); }, []);
 
   useEffect(() => {
-    fetch('/api/discover')
+    fetch(`/api/discover/tracks?seen=${seenIds.join(',')}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        // /api/discover returns { artists, venues, djs } — use artists as track-like entries
-        const raw: Record<string, unknown>[] = Array.isArray(d) ? d : (d?.tracks ?? d?.assets ?? d?.artists ?? []);
-        if (raw.length > 0) {
-          setDiscoveryTracks(raw.map((t: Record<string, unknown>, i: number) => ({
-            id: String(t.id ?? t.hexId ?? i),
-            title: String(t.title ?? t.name ?? 'Untitled'),
-            artistName: String(t.artistName ?? t.artist ?? t.name ?? 'Unknown Artist'),
-            duration: String(t.duration ?? '3:00'),
-            durationSec: Number(t.durationSec ?? t.durationSecs ?? 180),
-            hypeCount: Number(t.hypeCount ?? 0),
-            color: (t.color as string) ?? '#ff5029',
-            album: String(t.album ?? t.city ?? 'Single'),
-            mediaUrl: String(t.mediaUrl ?? t.storageUrl ?? ''),
-          })));
-        }
+        const tracks = d?.tracks ?? [];
+        if (tracks.length > 0) setDiscoveryTracks(tracks);
       })
       .catch(() => {})
       .finally(() => setLoadingDiscover(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const markSeen = (id: string) => {
+    setSeenIds(prev => {
+      const next = [...prev, id];
+      saveSeen(next);
+      return next;
+    });
+  };
 
   const handleHype = async (trackId: string) => {
     if (hypedIds.has(trackId)) return;
     setHypedIds(prev => new Set([...prev, trackId]));
+    markSeen(trackId);
     // TODO: wire to show hype once track→show mapping is available
     // The /api/hype endpoint expects { targetType: 'show'|'profile', targetId: cuid }
-    // Discovery tracks from /api/discover are profiles, so we use targetType: 'profile'
+    // Discovery tracks from /api/discover/tracks are media assets, so we use targetType: 'profile'
     try {
       await fetch('/api/hype', {
         method: 'POST',
@@ -213,13 +222,13 @@ export function ViewSeeds({
 
           {/* Controls */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 24 }}>
-            <button title="Skip (ArrowLeft)" aria-label="Skip seed" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,107,90,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ff6b5a' }}>
+            <button title="Skip (ArrowLeft)" aria-label="Skip seed" onClick={() => frontTrack && markSeen(frontTrack.id)} style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,107,90,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ff6b5a' }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
             <button title="Play/Pause (Space)" aria-label={seedPlaying ? 'Pause' : 'Play'} onClick={() => setSeedPlaying(!seedPlaying)} style={{ width: 56, height: 56, borderRadius: '50%', background: seedPlaying ? 'rgba(34,229,212,.1)' : 'var(--bg-2)', border: `1px solid ${seedPlaying ? 'rgba(34,229,212,.6)' : 'var(--line-2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: seedPlaying ? '#22e5d4' : 'var(--ink-2)' }}>
               {seedPlaying ? <IcPause s={20} /> : <IcPlay s={20} />}
             </button>
-            <button title="Save — loads into dock (ArrowUp)" aria-label="Save seed to queue" onClick={() => onSave?.(seedCardIdx % Math.max(seedTracks.length, 1))} style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
+            <button title="Save — loads into dock (ArrowUp)" aria-label="Save seed to queue" onClick={() => { onSave?.(seedCardIdx % Math.max(seedTracks.length, 1)); if (frontTrack) markSeen(frontTrack.id); }} style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 5l14 7-14 7V5z" fill="currentColor" opacity=".2"/><path d="M5 5l14 7-14 7V5z"/></svg>
             </button>
             <button
