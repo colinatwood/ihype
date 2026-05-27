@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
+import { SeedsGamifiedView } from '@/components/SeedsGamifiedView';
 
 // ── Re-export types that home/page.tsx imports ────────────────
 export type { WbStat, WbTrack, WbShow, WbActivity, WbNotification, WbRadioShow, WorkbenchData } from './WorkbenchShell';
@@ -9,7 +10,7 @@ export type { Prefs } from './WorkbenchShell';
 import type { WorkbenchData, WbTrack, WbRadioShow } from './WorkbenchShell';
 
 // ── View type (v2 simplified) ─────────────────────────────────
-type View = 'home' | 'radio' | 'library' | 'tickets' | 'discover' | 'studio' | 'settings';
+type View = 'me' | 'seeds' | 'radio' | 'studio' | 'tickets' | 'settings';
 
 // ── Prefs ─────────────────────────────────────────────────────
 const DEFAULT_PREFS = {
