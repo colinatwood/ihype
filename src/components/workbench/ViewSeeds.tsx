@@ -60,6 +60,54 @@ export function ViewSeeds({
   const [sessionStats, setSessionStats] = useState({ saved: 0, skipped: 0, hyped: 0, xp: 0 });
   const [actionedIds, setActionedIds] = useState<Set<string>>(new Set());
 
+  // ── Battle mode ───────────────────────────────────────────────
+  type BattleTrack = { id: string; title: string; artistName: string; hypeCount: number; color: string };
+  const [battleOpen, setBattleOpen] = useState(false);
+  const [battle, setBattle] = useState<{ a: BattleTrack; b: BattleTrack; endsAt: string } | null>(null);
+  const [voted, setVoted] = useState<'a' | 'b' | null>(null);
+  const [loadingBattle, setLoadingBattle] = useState(false);
+  const [voteBounce, setVoteBounce] = useState<'a' | 'b' | null>(null);
+
+  const openBattle = async () => {
+    setBattleOpen(true);
+    setVoted(null);
+    setBattle(null);
+    setVoteBounce(null);
+    setLoadingBattle(true);
+    try {
+      const res = await fetch('/api/discover/battle');
+      const d = await res.json() as { battle: { a: BattleTrack; b: BattleTrack; endsAt: string } | null };
+      setBattle(d.battle);
+    } catch {
+      setBattle(null);
+    } finally {
+      setLoadingBattle(false);
+    }
+  };
+
+  const voteBattle = async (side: 'a' | 'b') => {
+    if (voted || !battle) return;
+    setVoted(side);
+    setVoteBounce(side);
+    setTimeout(() => setVoteBounce(null), 600);
+    const track = side === 'a' ? battle.a : battle.b;
+    try {
+      await fetch('/api/hype', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetType: 'media', targetId: track.id }),
+      });
+    } catch { /* non-blocking */ }
+  };
+
+  const battleCountdown = (endsAt: string) => {
+    const ms = new Date(endsAt).getTime() - Date.now();
+    if (ms <= 0) return 'Battle ended';
+    const h = Math.floor(ms / 3_600_000);
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    return `Battle ends in ${h}h ${m}m`;
+  };
+
   // ── Audio (Web Audio API fallback tone) ───────────────────────
   const audioCtxRef = useRef<AudioContext | null>(null);
   const oscRef = useRef<OscillatorNode | null>(null);
@@ -227,6 +275,79 @@ export function ViewSeeds({
   // ── Render ────────────────────────────────────────────────────
   return (
     <div style={{ padding: '32px 48px 48px', maxWidth: 1600, margin: '0 auto' }}>
+      {/* Battle Modal */}
+      {battleOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,8,5,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={e => { if (e.target === e.currentTarget) setBattleOpen(false); }}>
+          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-2)', borderRadius: 18, padding: '32px 36px', maxWidth: 640, width: '90vw', position: 'relative' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 26, letterSpacing: '-.02em', color: 'var(--ink)' }}>⚔️ Battle Mode</div>
+                {battle && <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>{battleCountdown(battle.endsAt)}</div>}
+              </div>
+              <button onClick={() => setBattleOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 22, lineHeight: 1, padding: 4 }}>×</button>
+            </div>
+
+            {loadingBattle ? (
+              /* Loading skeleton */
+              <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                {[0, 1].map(i => (
+                  <div key={i} style={{ flex: 1, height: 180, borderRadius: 12, background: 'var(--bg-3)', animation: 'pulse 1.4s ease-in-out infinite' }} />
+                ))}
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--bg-3)', flexShrink: 0 }} />
+              </div>
+            ) : !battle ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 14 }}>
+                Not enough tracks for a battle yet. Check back soon!
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: 16, alignItems: 'stretch' }}>
+                  {(['a', 'b'] as const).map((side, si) => {
+                    const track = side === 'a' ? battle.a : battle.b;
+                    const isVoted = voted === side;
+                    const isBouncing = voteBounce === side;
+                    return (
+                      <React.Fragment key={side}>
+                        {si === 1 && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: 40 }}>
+                            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--ink-3)', background: 'var(--bg-3)', border: '1px solid var(--line-2)', borderRadius: '50%', width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>VS</div>
+                          </div>
+                        )}
+                        <button
+                          onClick={() => voteBattle(side)}
+                          disabled={!!voted}
+                          style={{
+                            flex: 1, border: isVoted ? '2px solid #b983ff' : '1px solid var(--line-2)',
+                            borderRadius: 12, padding: '20px 16px', background: isVoted ? 'rgba(185,131,255,.12)' : 'var(--bg-3)',
+                            cursor: voted ? 'default' : 'pointer', textAlign: 'left', transition: 'all .2s',
+                            transform: isBouncing ? 'scale(1.06)' : 'scale(1)',
+                            boxShadow: isVoted ? '0 0 0 2px rgba(185,131,255,.4)' : undefined,
+                          }}
+                        >
+                          <div style={{ width: 36, height: 36, borderRadius: 8, background: track.color || '#333', marginBottom: 12 }} />
+                          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 16, letterSpacing: '-.01em', color: 'var(--ink)', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.title}</div>
+                          <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', marginBottom: 8 }}>{track.artistName}</div>
+                          <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            🔥 {(track.hypeCount ?? 0).toLocaleString()} hypes
+                          </div>
+                          {isVoted && (
+                            <div style={{ marginTop: 10, fontFamily: 'var(--f-m)', fontWeight: 700, fontSize: 13, color: '#b983ff', letterSpacing: '.06em' }}>✓ You voted!</div>
+                          )}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+                {!voted && (
+                  <div style={{ textAlign: 'center', marginTop: 18, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)' }}>Click a card to cast your vote</div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* View head */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, marginBottom: 28, paddingBottom: 18, borderBottom: '1px solid var(--line)' }}>
@@ -242,6 +363,12 @@ export function ViewSeeds({
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, position: 'relative' }}>
+          <button
+            onClick={openBattle}
+            style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: '#b983ff', border: '1px solid rgba(185,131,255,.35)', background: 'rgba(185,131,255,.08)' }}
+          >
+            ⚔️ Battle
+          </button>
           <button
             onClick={() => setShowGenrePicker(p => !p)}
             style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: genreFilter.length ? 'var(--accent)' : 'var(--ink-2)', border: genreFilter.length ? '1px solid rgba(255,80,41,.4)' : '1px solid transparent', background: 'none' }}
