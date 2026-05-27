@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { MOCK_DATA } from '@/lib/workbench-mock';
 import type { WorkbenchData } from '@/components/WorkbenchShellV2';
 import type { Metadata } from 'next';
+import { getWorkbenchData as fetchWorkbenchData } from '@/lib/getWorkbenchData';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,19 +35,7 @@ async function getWorkbenchData(): Promise<WorkbenchData> {
   try {
     const session = await auth();
     if (!session?.user?.id) return MOCK_DATA;
-
-    // Fetch from our own API route (keeps all Prisma logic in one place)
-    // Use relative URL with headers forwarded
-    const { headers } = await import('next/headers');
-    const hdrs = await headers();
-    const host = hdrs.get('host') ?? 'localhost:3000';
-    const proto = host.startsWith('localhost') ? 'http' : 'https';
-    const res = await fetch(`${proto}://${host}/api/workbench-data`, {
-      headers: { cookie: hdrs.get('cookie') ?? '' },
-      cache: 'no-store',
-    });
-    if (!res.ok) return MOCK_DATA;
-    return res.json();
+    return await fetchWorkbenchData(session.user.id);
   } catch {
     return MOCK_DATA;
   }
