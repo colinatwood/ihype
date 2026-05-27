@@ -120,6 +120,11 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       }),
     ]);
 
+    // Count songs played by this user
+    const songsPlayedCount = await db.mediaListen.count({
+      where: { userId },
+    }).catch(() => 0);
+
     // ── Shape the response ──────────────────────────────────────
 
     const primaryProfile = user.profiles[0];
@@ -262,7 +267,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       lifeStats: {
         totalHype,
         totalEarnings: pendingCents / 100,
-        songsPlayed: 0,
+        songsPlayed: songsPlayedCount,
         eventsAttended: 0,
       },
     };

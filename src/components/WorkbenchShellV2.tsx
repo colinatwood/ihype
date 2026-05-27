@@ -139,6 +139,29 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     return () => clearInterval(iv);
   }, [playing, currentIdx, tracks]);
 
+  // Record play events via /api/media-listens
+  const lastRecordedIdx = useRef<number>(-1);
+  useEffect(() => {
+    if (!playing) return;
+    const track = tracks[currentIdx];
+    if (!track || lastRecordedIdx.current === currentIdx) return;
+    lastRecordedIdx.current = currentIdx;
+    fetch('/api/media-listens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mediaId: track.id,
+        title: track.title,
+        mediaUrl: track.mediaUrl || 'https://ihype.org',
+        artistName: track.artistName,
+      }),
+    }).catch(() => {});
+  }, [playing, currentIdx, tracks]);
+
+  useEffect(() => {
+    if (!playing) lastRecordedIdx.current = -1;
+  }, [playing]);
+
   // Seek when progress is set externally (scrubber click)
   const onSeekProgress = useCallback((ratio: number) => {
     const audio = audioRef.current;

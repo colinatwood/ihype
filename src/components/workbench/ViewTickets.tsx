@@ -72,6 +72,24 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                       <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 26, letterSpacing: '-.02em', color: 'var(--ink)' }}>${s.price}</div>
                       <button onClick={() => router.push(`/shows/${s.id}`)} style={{ padding: '9px 16px', background: 'var(--ink)', color: 'var(--bg)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', border: 'none', cursor: 'pointer' }}>Get ticket →</button>
+                      <button
+                        aria-label="Share show"
+                        onClick={async () => {
+                          const url = `${window.location.origin}/shows/${s.id}`;
+                          if (navigator.share) {
+                            try { await navigator.share({ title: s.name, text: `${s.name} at ${s.venue}`, url }); } catch {}
+                          } else {
+                            await navigator.clipboard.writeText(url).catch(() => {});
+                          }
+                        }}
+                        style={{ background: 'none', border: '1px solid var(--line)', borderRadius: 6, cursor: 'pointer', color: 'var(--ink-2)', padding: '7px 10px', display: 'flex', alignItems: 'center' }}
+                        title="Share show"
+                      >
+                        <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                        </svg>
+                      </button>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, marginTop: 2, borderTop: '1px solid var(--line)', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em' }}>
                       <span>${(s.price * 0.45).toFixed(2)} → artist</span>
