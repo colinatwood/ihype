@@ -1,9 +1,59 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import type { WorkbenchData } from '@/components/WorkbenchShell';
+import React, { useState, useEffect, useCallback } from 'react';
+import type { WorkbenchData, WbTicket } from '@/components/WorkbenchShell';
 import { IcHeart, IcCheck } from './icons';
 import { Panel, TrackCard } from './primitives';
+
+const STUB_ACCENT_PALETTE = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#4af0b0'];
+
+function TicketStubQR({ code }: { code: string }) {
+  const cells = Array.from({ length: 16 }, (_, i) => {
+    const ch = code.charCodeAt(i % code.length);
+    return (ch + i) % 2 === 0;
+  });
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, width: 40, height: 40, flexShrink: 0 }}>
+      {cells.map((on, i) => (
+        <div key={i} style={{ borderRadius: 1, background: on ? 'var(--accent)' : 'var(--bg-3)' }} />
+      ))}
+    </div>
+  );
+}
+
+function TicketStub({ ticket, accentColor }: { ticket: WbTicket; accentColor: string }) {
+  const dateStr = new Date(ticket.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return (
+    <div style={{
+      position: 'relative',
+      display: 'flex',
+      borderRadius: '8px 8px 0 0',
+      border: '1px solid var(--line-2)',
+      borderBottom: '2px dashed var(--line-2)',
+      background: `repeating-linear-gradient(135deg, var(--bg-2) 0px, var(--bg-2) 8px, var(--bg-3) 8px, var(--bg-3) 9px)`,
+      overflow: 'hidden',
+      minHeight: 90,
+    }}>
+      {/* Left accent strip */}
+      <div style={{ width: 4, background: accentColor, flexShrink: 0 }} />
+      {/* Main content */}
+      <div style={{ flex: 1, padding: '10px 12px', minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', letterSpacing: '-.01em' }}>{ticket.showName}</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', marginTop: 4 }}>{dateStr}</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>Chicago, IL · {ticket.seat}</div>
+        <div style={{ fontFamily: 'monospace', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', marginTop: 8 }}>
+          iHYPE • NO PLATFORM FEE • 45/45/10
+        </div>
+      </div>
+      {/* Dashed divider */}
+      <div style={{ width: 1, borderLeft: '2px dashed var(--line-2)', margin: '8px 0', flexShrink: 0 }} />
+      {/* QR side */}
+      <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <TicketStubQR code={ticket.code} />
+      </div>
+    </div>
+  );
+}
 
 export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   data: WorkbenchData; onPickTrack: (i: number) => void; currentIdx: number;
@@ -11,6 +61,7 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   const [hypedIds, setHypedIds] = useState<Set<string>>(new Set());
   const [referral, setReferral] = useState<{ link: string; count: number } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [anniversaryDismissed, setAnniversaryDismissed] = useState(false);
 
   const handleHype = async (showId: string) => {
     if (hypedIds.has(showId)) return; // already hyped
@@ -152,6 +203,30 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
         </div>
       )}
 
+      {/* Artist Anniversary Card */}
+      {!anniversaryDismissed && data.lifeStats && data.lifeStats.totalHype > 0 && (
+        <div style={{
+          position: 'relative',
+          padding: '16px 20px',
+          marginBottom: 14,
+          borderRadius: 14,
+          border: '1px solid rgba(255,80,41,.2)',
+          background: 'linear-gradient(135deg, rgba(255,80,41,.12), rgba(185,131,255,.08))',
+        }}>
+          <button
+            onClick={() => setAnniversaryDismissed(true)}
+            style={{ position: 'absolute', top: 10, right: 12, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 16, lineHeight: 1, padding: 4 }}
+            aria-label="Dismiss"
+          >✕</button>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--ink)', marginBottom: 6, letterSpacing: '-.01em' }}>
+            🎂 1 year on iHYPE
+          </div>
+          <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+            {data.lifeStats.totalHype.toLocaleString()} hypes, {data.lifeStats.eventsAttended} events attended, {data.lifeStats.songsPlayed.toLocaleString()} songs played. Thanks for being part of the scene.
+          </div>
+        </div>
+      )}
+
       {/* Two-col: Top 5 + Activity */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20, marginBottom: 14 }}>
         <Panel title="Top 5 — this week" link="Curated · updates Sundays">
@@ -238,6 +313,22 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
             <TrackCard key={t.id} track={t} active={i === currentIdx} onClick={() => onPickTrack(i)} />
           ))}
         </div>
+      </Panel>
+
+      {/* Ticket Stubs */}
+      <Panel title="🎟️ Your Ticket Stubs" style={{ marginBottom: 14 }}>
+        {data.tickets.length === 0 ? (
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 14 }}>
+            <div style={{ fontSize: 32, marginBottom: 10 }}>🎟️</div>
+            Your stubs will appear here after your first show
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14, padding: '14px 16px' }}>
+            {data.tickets.map((tk, i) => (
+              <TicketStub key={tk.id} ticket={tk} accentColor={STUB_ACCENT_PALETTE[i % STUB_ACCENT_PALETTE.length]} />
+            ))}
+          </div>
+        )}
       </Panel>
 
       {/* Your roles */}
