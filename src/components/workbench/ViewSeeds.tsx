@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { WorkbenchData } from '@/components/WorkbenchShell';
 import { SeedsGamifiedView } from '@/components/SeedsGamifiedView';
 import { IcPlay, IcPause } from './icons';
@@ -22,8 +22,54 @@ export function ViewSeeds({
   // SeedsGamifiedView is kept for future embedded use
   void SeedsGamifiedView;
 
+  const [discoveryTracks, setDiscoveryTracks] = useState<WorkbenchData['tracks']>([]);
+  const [loadingDiscover, setLoadingDiscover] = useState(true);
+  const [hypedIds, setHypedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    fetch('/api/discover')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        // /api/discover returns { artists, venues, djs } — use artists as track-like entries
+        const raw: Record<string, unknown>[] = Array.isArray(d) ? d : (d?.tracks ?? d?.assets ?? d?.artists ?? []);
+        if (raw.length > 0) {
+          setDiscoveryTracks(raw.map((t: Record<string, unknown>, i: number) => ({
+            id: String(t.id ?? t.hexId ?? i),
+            title: String(t.title ?? t.name ?? 'Untitled'),
+            artistName: String(t.artistName ?? t.artist ?? t.name ?? 'Unknown Artist'),
+            duration: String(t.duration ?? '3:00'),
+            durationSec: Number(t.durationSec ?? t.durationSecs ?? 180),
+            hypeCount: Number(t.hypeCount ?? 0),
+            color: (t.color as string) ?? '#ff5029',
+            album: String(t.album ?? t.city ?? 'Single'),
+            mediaUrl: String(t.mediaUrl ?? t.storageUrl ?? ''),
+          })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDiscover(false));
+  }, []);
+
+  const handleHype = async (trackId: string) => {
+    if (hypedIds.has(trackId)) return;
+    setHypedIds(prev => new Set([...prev, trackId]));
+    // TODO: wire to show hype once track→show mapping is available
+    // The /api/hype endpoint expects { targetType: 'show'|'profile', targetId: cuid }
+    // Discovery tracks from /api/discover are profiles, so we use targetType: 'profile'
+    try {
+      await fetch('/api/hype', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetType: 'profile', targetId: trackId }),
+      });
+    } catch {
+      setHypedIds(prev => { const n = new Set(prev); n.delete(trackId); return n; });
+    }
+  };
+
   // Determine which track to show on the front card
-  const frontTrack = data.tracks.length > 0 ? data.tracks[seedCardIdx % data.tracks.length] : null;
+  const seedTracks = discoveryTracks.length > 0 ? discoveryTracks : data.tracks;
+  const frontTrack = seedTracks.length > 0 ? seedTracks[seedCardIdx % seedTracks.length] : null;
 
   // Web Audio API tone generator (220Hz sine, 0.08 gain, 15s)
   useEffect(() => {
@@ -99,7 +145,11 @@ export function ViewSeeds({
 
         {/* Center col — card stack + controls */}
         <div>
-          {data.tracks.length === 0 ? (
+          {loadingDiscover && discoveryTracks.length === 0 ? (
+            <div style={{ height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 13 }}>
+              Loading seeds…
+            </div>
+          ) : seedTracks.length === 0 ? (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               height: 380, gap: 16, textAlign: 'center'
@@ -169,11 +219,23 @@ export function ViewSeeds({
             <button title="Play/Pause (Space)" aria-label={seedPlaying ? 'Pause' : 'Play'} onClick={() => setSeedPlaying(!seedPlaying)} style={{ width: 56, height: 56, borderRadius: '50%', background: seedPlaying ? 'rgba(34,229,212,.1)' : 'var(--bg-2)', border: `1px solid ${seedPlaying ? 'rgba(34,229,212,.6)' : 'var(--line-2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: seedPlaying ? '#22e5d4' : 'var(--ink-2)' }}>
               {seedPlaying ? <IcPause s={20} /> : <IcPlay s={20} />}
             </button>
-            <button title="Save — loads into dock (ArrowUp)" aria-label="Save seed to queue" onClick={() => onSave?.(seedCardIdx % Math.max(data.tracks.length, 1))} style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
+            <button title="Save — loads into dock (ArrowUp)" aria-label="Save seed to queue" onClick={() => onSave?.(seedCardIdx % Math.max(seedTracks.length, 1))} style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 5l14 7-14 7V5z" fill="currentColor" opacity=".2"/><path d="M5 5l14 7-14 7V5z"/></svg>
             </button>
-            <button title="HYPE it (ArrowRight)" aria-label="Hype this track" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,62,154,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--pink)' }}>
-              <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
+            <button
+              title="HYPE it (ArrowRight)"
+              aria-label="Hype this track"
+              onClick={() => frontTrack && handleHype(frontTrack.id)}
+              style={{
+                width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)',
+                border: `1px solid ${frontTrack && hypedIds.has(frontTrack.id) ? 'rgba(255,62,154,.8)' : 'rgba(255,62,154,.4)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                color: frontTrack && hypedIds.has(frontTrack.id) ? '#ff3e9a' : 'var(--pink)',
+              }}
+            >
+              <svg width={22} height={22} viewBox="0 0 24 24" fill={frontTrack && hypedIds.has(frontTrack.id) ? '#ff3e9a' : 'currentColor'}>
+                <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/>
+              </svg>
             </button>
           </div>
           <div style={{ textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em', marginTop: 14, textTransform: 'uppercase' }}>← Skip · ↑ Save · → Hype · Space Play/Pause</div>

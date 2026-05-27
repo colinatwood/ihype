@@ -69,7 +69,7 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                       <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 26, letterSpacing: '-.02em', color: 'var(--ink)' }}>${s.price}</div>
-                      <button style={{ padding: '9px 16px', background: 'var(--ink)', color: 'var(--bg)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', border: 'none', cursor: 'pointer' }}>Get ticket →</button>
+                      <button onClick={() => window.location.href = `/shows/${s.id}`} style={{ padding: '9px 16px', background: 'var(--ink)', color: 'var(--bg)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', border: 'none', cursor: 'pointer' }}>Get ticket →</button>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, marginTop: 2, borderTop: '1px solid var(--line)', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em' }}>
                       <span>${(s.price * 0.45).toFixed(2)} → artist</span>
@@ -149,7 +149,7 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
                   borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.08em',
                   color: tk.status === 'CONFIRMED' ? '#22e5d4' : '#ffb84a',
                 }}>{tk.status}</div>
-                <button style={{ color: 'var(--ink-3)', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcArrow s={12} /></button>
+                <button onClick={() => window.location.href = `/tickets/${tk.id}`} style={{ color: 'var(--ink-3)', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcArrow s={12} /></button>
               </div>
             ))}
             {data.tickets.length === 0 && (

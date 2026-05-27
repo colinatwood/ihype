@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { WorkbenchData } from '@/components/WorkbenchShell';
 import { IcHeart, IcCheck } from './icons';
 import { Panel, TrackCard } from './primitives';
@@ -8,6 +8,22 @@ import { Panel, TrackCard } from './primitives';
 export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   data: WorkbenchData; onPickTrack: (i: number) => void; currentIdx: number;
 }) {
+  const [hypedIds, setHypedIds] = useState<Set<string>>(new Set());
+
+  const handleHype = async (showId: string) => {
+    if (hypedIds.has(showId)) return; // already hyped
+    setHypedIds(prev => new Set([...prev, showId]));
+    try {
+      await fetch('/api/hype', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetType: 'show', targetId: showId }),
+      });
+    } catch {
+      // revert on failure
+      setHypedIds(prev => { const n = new Set(prev); n.delete(showId); return n; });
+    }
+  };
   const heroStats = [
     { v: (data.lifeStats?.totalHype ?? 1284).toLocaleString(), k: 'HYPE Given', accent: true },
     { v: '842', k: 'Received', accent: false },
@@ -106,9 +122,12 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
                   <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2, letterSpacing: '.04em' }}>{t.artistName} · {t.album}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--f-m)', fontSize: 13, color: '#ff3e9a', flexShrink: 0 }}>
-                  <IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}
-                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); handleHype(t.id); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--f-m)', fontSize: 13, color: hypedIds.has(t.id) ? '#ff3e9a' : 'var(--ink-3)', flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  <IcHeart s={10} c={hypedIds.has(t.id) ? '#ff3e9a' : 'var(--ink-3)'} /> {t.hypeCount + (hypedIds.has(t.id) ? 1 : 0)}
+                </button>
                 <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', flexShrink: 0, minWidth: 32, textAlign: 'right' }}>{t.duration}</div>
               </button>
             ))}

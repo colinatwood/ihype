@@ -20,6 +20,7 @@ import { ViewTickets } from './workbench/ViewTickets';
 import { ViewStudio } from './workbench/ViewStudio';
 import { ViewSettings } from './workbench/ViewSettings';
 import { Toast, WelcomeDialog } from './workbench/Overlays';
+import { ViewErrorBoundary } from './workbench/ErrorBoundary';
 
 // ─────────────────────────────────────────────────────────────
 // StarterPack type (for compat with home/page.tsx)
@@ -35,7 +36,15 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   void starterPack;
   const [view, setView] = useState<View>('me');
   const [prevView, setPrevView] = useState<View>('me');
-  const navigateTo = (v: View) => { if (v !== view) setPrevView(view); setView(v); };
+  const mainRef = useRef<HTMLDivElement>(null);
+  const navigateTo = (v: View) => {
+    if (v !== view) setPrevView(view);
+    setView(v);
+    // Reset scroll position on tab switch
+    setTimeout(() => {
+      if (mainRef.current) mainRef.current.scrollTop = 0;
+    }, 0);
+  };
   const [prefs, setPrefs] = useState<typeof DEFAULT_PREFS>(DEFAULT_PREFS);
   const [mounted, setMounted] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -127,10 +136,16 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
   // Notification count
   const [notifCount, setNotifCount] = useState(0);
+  const [notifications, setNotifications] = useState<Array<{ id: string; body: string; link?: string; type: string; createdAt: string }>>([]);
   useEffect(() => {
     fetch('/api/notifications')
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.notifications) setNotifCount(d.notifications.length); })
+      .then(d => {
+        if (d?.notifications) {
+          setNotifCount(d.notifications.length);
+          setNotifications(d.notifications);
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -164,13 +179,13 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
   const viewEl = (() => {
     switch (view) {
-      case 'me':       return <ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} />;
-      case 'seeds':    return <ViewSeeds data={data} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} seedCardIdx={seedCardIdx} onSave={onSeedSave} />;
-      case 'radio':    return <ViewRadio data={data} onPickTrack={onPickTrack} />;
-      case 'studio':   return <ViewStudio data={data} />;
-      case 'tickets':  return <ViewTickets data={data} />;
-      case 'settings': return <ViewSettings prefs={prefs} setPref={setPref} data={data} onBack={() => navigateTo(prevView)} />;
-      default:         return <ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} />;
+      case 'me':       return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
+      case 'seeds':    return <ViewErrorBoundary viewName="Seeds"><ViewSeeds data={data} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} seedCardIdx={seedCardIdx} onSave={onSeedSave} /></ViewErrorBoundary>;
+      case 'radio':    return <ViewErrorBoundary viewName="Radio"><ViewRadio data={data} onPickTrack={onPickTrack} /></ViewErrorBoundary>;
+      case 'studio':   return <ViewErrorBoundary viewName="Studio"><ViewStudio data={data} /></ViewErrorBoundary>;
+      case 'tickets':  return <ViewErrorBoundary viewName="Live Events"><ViewTickets data={data} /></ViewErrorBoundary>;
+      case 'settings': return <ViewErrorBoundary viewName="Settings"><ViewSettings prefs={prefs} setPref={setPref} data={data} onBack={() => navigateTo(prevView)} /></ViewErrorBoundary>;
+      default:         return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
     }
   })();
 
@@ -218,7 +233,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         </div>
 
         {/* Main content */}
-        <main role="main" style={{
+        <main ref={mainRef} role="main" style={{
           gridColumn: 1, gridRow: 2,
           overflowY: isSeeds ? 'hidden' : 'auto',
           overflowX: 'hidden',

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { View } from './types';
 
 export const TAB_ICONS: Record<string, React.ReactNode> = {
@@ -19,13 +19,25 @@ export const TABS: { k: View; label: string }[] = [
   { k: 'tickets',  label: 'Ticketing' },
 ];
 
-export function AppTopbar({ view, setView, listeningNow, initials, userName, activeProfileTypes, onSettings, badges, notifCount }: {
+export function AppTopbar({ view, setView, listeningNow, initials, userName, activeProfileTypes, onSettings, badges, notifCount, notifications }: {
   view: View; setView: (v: View) => void;
   listeningNow: number; initials: string; userName: string;
   activeProfileTypes: string[]; onSettings: () => void;
   badges: Record<string, string | undefined>;
   notifCount: number;
+  notifications?: Array<{ id: string; body: string; link?: string; type: string; createdAt: string }>;
 }) {
+  const [notifOpen, setNotifOpen] = useState(false);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const handler = (_e: MouseEvent) => {
+      setNotifOpen(false);
+    };
+    const t = setTimeout(() => window.addEventListener('click', handler), 100);
+    return () => { clearTimeout(t); window.removeEventListener('click', handler); };
+  }, [notifOpen]);
+
   return (
     <header style={{
       height: 'var(--top-h)', borderBottom: '1px solid var(--line)',
@@ -98,25 +110,67 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22e5d4', boxShadow: '0 0 8px #22e5d4', animation: 'pulse 1.8s infinite', display: 'inline-block' }} />
           {listeningNow.toLocaleString()} listening
         </span>
-        <button aria-label="Notifications" style={{
-          position: 'relative', width: 32, height: 32, borderRadius: 7,
-          background: 'none', border: 'none', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--ink-2)',
-        }}>
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
-          {notifCount > 0 && (
-            <span style={{
-              position: 'absolute', top: 4, right: 4,
-              minWidth: 14, height: 14, borderRadius: 99, padding: '0 3px',
-              background: '#ff3e9a', color: '#fff',
-              fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>{notifCount > 9 ? '9+' : String(notifCount)}</span>
+        <div style={{ position: 'relative' }}>
+          <button aria-label="Notifications" aria-expanded={notifOpen} onClick={() => setNotifOpen(o => !o)} style={{
+            position: 'relative', width: 32, height: 32, borderRadius: 7,
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--ink-2)',
+          }}>
+            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            {notifCount > 0 && (
+              <span style={{
+                position: 'absolute', top: 4, right: 4,
+                minWidth: 14, height: 14, borderRadius: 99, padding: '0 3px',
+                background: '#ff3e9a', color: '#fff',
+                fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>{notifCount > 9 ? '9+' : String(notifCount)}</span>
+            )}
+          </button>
+          {notifOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 100,
+              width: 320, maxHeight: 400, overflowY: 'auto',
+              background: 'var(--bg-2)', border: '1px solid var(--line-2)', borderRadius: 12,
+              boxShadow: '0 8px 32px rgba(0,0,0,.4)',
+            }}>
+              <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>Notifications</span>
+                <button
+                  onClick={async () => {
+                    await fetch('/api/notifications', { method: 'POST' });
+                    setNotifOpen(false);
+                  }}
+                  style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '.04em' }}
+                >Mark all read</button>
+              </div>
+              {(!notifications || notifications.length === 0) ? (
+                <div style={{ padding: '32px 16px', textAlign: 'center', fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-3)' }}>
+                  All caught up ✓
+                </div>
+              ) : (
+                notifications.map(n => (
+                  <div key={n.id}
+                    onClick={() => { if (n.link) window.location.href = n.link; setNotifOpen(false); }}
+                    style={{
+                      padding: '12px 16px', borderBottom: '1px solid var(--line)', cursor: n.link ? 'pointer' : 'default',
+                      display: 'flex', gap: 10, alignItems: 'flex-start',
+                    }}
+                  >
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', marginTop: 5, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink)', lineHeight: 1.4 }}>{n.body}</div>
+                      <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{n.type}</div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           )}
-        </button>
+        </div>
         <button onClick={onSettings} aria-label="Open settings" style={{
           display: 'flex', alignItems: 'center', gap: 10, padding: '5px 10px 5px 5px',
           borderRadius: 99, background: 'var(--bg-3)', border: '1px solid var(--line-2)',
