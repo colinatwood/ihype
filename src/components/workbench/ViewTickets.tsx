@@ -9,6 +9,7 @@ import { StatCard } from './primitives';
 export const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData }) {
   const router = useRouter();
   const [tab, setTab] = useState<'browse' | 'mine' | 'selling' | 'scan'>('browse');
+  const [activeFilter, setActiveFilter] = useState<'ALL' | 'CHICAGO' | 'THIS WEEK' | 'UNDER $20'>('CHICAGO');
   const tabs = [['browse','Browse'],['mine','My tickets'],['selling','Selling'],['scan','Scan / verify']] as const;
 
   return (
@@ -34,16 +35,27 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
         </div>
       </div>
 
-      {tab === 'browse' && (
+      {tab === 'browse' && (() => {
+        const filteredShows = data.shows.filter(s => {
+          if (activeFilter === 'CHICAGO') return true; // city not available on WbShow — show all
+          if (activeFilter === 'UNDER $20') return s.price < 20;
+          if (activeFilter === 'THIS WEEK') return s.status === 'TONIGHT' || s.status === 'UPCOMING';
+          return true;
+        });
+        return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {['ALL CITIES','CHICAGO','THIS WEEK','UNDER $20'].map((f, i) => (
-              <button key={f} style={{ padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.12em', cursor: 'pointer', background: i === 1 ? 'var(--bg-4)' : 'var(--bg-2)', color: i === 1 ? 'var(--ink)' : 'var(--ink-2)', borderColor: i === 1 ? 'var(--line-2)' : 'var(--line)' }}>{f}</button>
-            ))}
+            {(['ALL CITIES', 'CHICAGO', 'THIS WEEK', 'UNDER $20'] as const).map((f) => {
+              const filterKey = f === 'ALL CITIES' ? 'ALL' : f as typeof activeFilter;
+              const isActive = activeFilter === filterKey;
+              return (
+                <button key={f} onClick={() => setActiveFilter(filterKey)} style={{ padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.12em', cursor: 'pointer', background: isActive ? 'var(--bg-4)' : 'var(--bg-2)', color: isActive ? 'var(--ink)' : 'var(--ink-2)', borderColor: isActive ? 'var(--line-2)' : 'var(--line)' }}>{f}</button>
+              );
+            })}
             <span style={{ flex: 1 }} />
             <button style={{ padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', background: 'var(--bg-2)', cursor: 'pointer' }}>Sort · by HYPE ↓</button>
           </div>
-          {data.shows.length === 0 && (
+          {filteredShows.length === 0 && (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               gap: 16, padding: '64px 32px', textAlign: 'center',
@@ -63,7 +75,7 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
                 </button>
                 <button
                   style={{ padding: '10px 20px', border: '1px solid var(--line-2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', background: 'none', letterSpacing: '.04em' }}
-                  onClick={() => { /* widen filter — no-op for now */ }}
+                  onClick={() => setActiveFilter('ALL')}
                 >
                   Widen filter
                 </button>
@@ -71,7 +83,7 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
             </div>
           )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
-            {data.shows.map(s => {
+            {filteredShows.map(s => {
               const pct = s.capacity > 0 ? (s.sold / s.capacity) * 100 : 0;
               const statusColor = s.status === 'TONIGHT' ? '#22e5d4' : s.status === 'NEAR SOLD' ? '#ffb84a' : '#b983ff';
               const color = ['#ff5029','#b983ff','#22e5d4','#ff3e9a'][data.shows.indexOf(s) % 4];
@@ -129,7 +141,8 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
             })}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {tab === 'mine' && (
         <div>

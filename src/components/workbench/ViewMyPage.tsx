@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { WorkbenchData } from '@/components/WorkbenchShell';
 import { IcHeart, IcCheck } from './icons';
 import { Panel, TrackCard } from './primitives';
@@ -9,6 +9,8 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   data: WorkbenchData; onPickTrack: (i: number) => void; currentIdx: number;
 }) {
   const [hypedIds, setHypedIds] = useState<Set<string>>(new Set());
+  const [referral, setReferral] = useState<{ link: string; count: number } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleHype = async (showId: string) => {
     if (hypedIds.has(showId)) return; // already hyped
@@ -24,6 +26,13 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
       setHypedIds(prev => { const n = new Set(prev); n.delete(showId); return n; });
     }
   };
+  useEffect(() => {
+    fetch('/api/referral')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.referralLink) setReferral({ link: d.referralLink, count: d.referralCount ?? 0 }); })
+      .catch(() => {});
+  }, []);
+
   const heroStats = [
     { v: (data.lifeStats?.totalHype ?? 1284).toLocaleString(), k: 'HYPE Given', accent: true },
     { v: '842', k: 'Received', accent: false },
@@ -106,6 +115,42 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
           </div>
         ))}
       </div>
+
+      {/* Referral link */}
+      {referral && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
+          border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)',
+          marginBottom: 14,
+        }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.18em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>
+              Your referral link · {referral.count} signup{referral.count !== 1 ? 's' : ''}
+            </div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {referral.link}
+            </div>
+          </div>
+          <button
+            onClick={async () => {
+              await navigator.clipboard.writeText(referral.link).catch(() => {});
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            style={{
+              padding: '8px 14px', borderRadius: 7, border: copied ? '1px solid rgba(34,229,212,.4)' : '1px solid var(--line-2)',
+              fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.06em', cursor: 'pointer',
+              background: copied ? 'rgba(34,229,212,.08)' : 'var(--bg-3)',
+              color: copied ? '#22e5d4' : 'var(--ink-2)', transition: 'all .2s', flexShrink: 0,
+            }}
+          >
+            {copied ? '✓ Copied' : 'Copy link'}
+          </button>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', flexShrink: 0, textAlign: 'right', maxWidth: 100, lineHeight: 1.4 }}>
+            Earn 10% of each ticket sale
+          </div>
+        </div>
+      )}
 
       {/* Two-col: Top 5 + Activity */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20, marginBottom: 14 }}>

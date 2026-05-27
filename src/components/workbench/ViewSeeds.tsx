@@ -49,6 +49,7 @@ export function ViewSeeds({
   // ── Deck state ────────────────────────────────────────────────
   const [deck, setDeck] = useState<SeedTrack[]>([]);
   const [loadingDiscover, setLoadingDiscover] = useState(true);
+  const [deckExhausted, setDeckExhausted] = useState(false);
   const [genreFilter, setGenreFilter] = useState<string[]>([]);
   const [showGenrePicker, setShowGenrePicker] = useState(false);
 
@@ -86,6 +87,11 @@ export function ViewSeeds({
       // Fall back to discover/tracks shape if storageUrl is present
       setDeck(seeds);
       setDeckIdx(0);
+      if (seeds.length === 0) {
+        setDeckExhausted(true);
+      } else {
+        setDeckExhausted(false);
+      }
     } catch {
       // Fallback: use data.tracks from workbench data
       const fallback: SeedTrack[] = data.tracks.map(t => ({
@@ -310,12 +316,23 @@ export function ViewSeeds({
             <div style={{ height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 13 }}>
               Loading seeds…
             </div>
+          ) : deckExhausted && genreFilter.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 380, gap: 16, textAlign: 'center' }}>
+              <div style={{ fontSize: 48 }}>🎉</div>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 22, color: 'var(--ink)' }}>You&apos;ve reviewed everything</div>
+              <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', maxWidth: '28ch', lineHeight: 1.5 }}>
+                Check back tomorrow 🎉
+              </div>
+              <button onClick={() => fetchDeck(genreFilter, [])} style={{ marginTop: 8, padding: '10px 20px', borderRadius: 8, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, var(--accent), var(--pink))' }}>
+                Refresh
+              </button>
+            </div>
           ) : deck.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 380, gap: 16, textAlign: 'center' }}>
               <div style={{ fontSize: 48 }}>🌱</div>
-              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 22, color: 'var(--ink)' }}>No seeds yet</div>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 22, color: 'var(--ink)' }}>No seeds for this genre</div>
               <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', maxWidth: '28ch', lineHeight: 1.5 }}>
-                No new uploads in your area. {genreFilter.length ? 'Try clearing the genre filter.' : 'Check back soon.'}
+                Try clearing the genre filter.
               </div>
               {genreFilter.length > 0 && (
                 <button onClick={() => setGenreFilter([])} style={{ marginTop: 8, padding: '10px 20px', borderRadius: 8, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, var(--accent), var(--pink))' }}>
@@ -415,7 +432,7 @@ export function ViewSeeds({
                 </div>
               </div>
             )) : (
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', padding: '8px 0', textAlign: 'center' }}>Loading more…</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', padding: '8px 0', textAlign: 'center' }}>{deckExhausted ? 'Deck complete' : 'Loading more…'}</div>
             )}
           </div>
 
