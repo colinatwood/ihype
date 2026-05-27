@@ -1,6 +1,7 @@
 'use client';
 
 import { WorkbenchShell } from '@/components/WorkbenchShellV2';
+import { WorkbenchMobile } from '@/components/WorkbenchMobile';
 import type { WorkbenchData } from '@/components/WorkbenchShellV2';
 
 const MOCK_DATA: WorkbenchData = {
@@ -65,5 +66,24 @@ const MOCK_DATA: WorkbenchData = {
 };
 
 export default function HomePage() {
-  return <WorkbenchShell data={MOCK_DATA} />;
+  return (
+    <>
+      {/* Desktop/tablet: ≥640px */}
+      <div className="wb-desktop">
+        <WorkbenchShell data={MOCK_DATA} />
+      </div>
+      {/* Mobile: <640px */}
+      <div className="wb-mobile">
+        <WorkbenchMobile data={MOCK_DATA} />
+      </div>
+      <style>{`
+        .wb-desktop { display: block; }
+        .wb-mobile  { display: none;  }
+        @media (max-width: 639px) {
+          .wb-desktop { display: none;  }
+          .wb-mobile  { display: block; }
+        }
+      `}</style>
+    </>
+  );
 }
