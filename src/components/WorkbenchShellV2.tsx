@@ -100,6 +100,14 @@ const IcQR = ({ s = 60 }: { s?: number }) => (
 // ─────────────────────────────────────────────────────────────
 // App Topbar (logo + tabs + stats + user chip)
 // ─────────────────────────────────────────────────────────────
+const TAB_ICONS: Record<string, React.ReactNode> = {
+  me: <svg width={14} height={14} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="6" r="2.5"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>,
+  seeds: <svg width={14} height={14} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2c2 3 4 4 4 7a4 4 0 1 1-8 0c0-3 2-4 4-7Z"/></svg>,
+  radio: <svg width={14} height={14} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/><circle cx="8" cy="8" r=".6" fill="currentColor"/></svg>,
+  studio: <svg width={14} height={14} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="12" height="8" rx="1.5"/><path d="M5 8h1M8 6v4M11 7v2"/></svg>,
+  tickets: <svg width={14} height={14} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2 6a1.5 1.5 0 0 0 0 3v3h12V9a1.5 1.5 0 0 0 0-3V3H2v3Z"/><path d="M9 3v10" strokeDasharray="1.4 1.4"/></svg>,
+};
+
 const TABS: { k: View; label: string; badge?: string }[] = [
   { k: 'me',       label: 'My Page' },
   { k: 'seeds',    label: 'Seeds',     badge: '12' },
@@ -149,13 +157,14 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
               display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px',
               borderRadius: 8, cursor: 'pointer', border: 'none',
               color: active ? 'var(--ink)' : 'var(--ink-2)',
-              background: active ? 'transparent' : 'transparent',
+              background: 'transparent',
               fontFamily: 'var(--f-b)', fontWeight: 600, fontSize: 13, letterSpacing: '-.005em',
               position: 'relative', transition: 'color .15s, background .15s',
             }}
               onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,.03)'; (e.currentTarget as HTMLButtonElement).style.color = active ? 'var(--ink)' : '#f0ebe5'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = active ? 'var(--ink)' : 'var(--ink-2)'; }}
             >
+              {TAB_ICONS[tab.k]}
               {tab.label}
               {tab.badge && (
                 <span style={{
@@ -212,21 +221,37 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
 function ViewMyPage({ data, onPickTrack, currentIdx }: {
   data: WorkbenchData; onPickTrack: (i: number) => void; currentIdx: number;
 }) {
+  const heroStats = [
+    { v: (data.lifeStats?.totalHype ?? 1284).toLocaleString(), k: 'HYPE Given', accent: true },
+    { v: '842', k: 'Received', accent: false },
+    { v: String(data.lifeStats?.eventsAttended ?? 23), k: 'Shows Attended', accent: false },
+    { v: '7', k: 'Top-5 Slots', accent: false },
+  ];
+
   return (
     <div style={{ padding: '32px 48px 48px', maxWidth: 1600, margin: '0 auto' }}>
-      {/* Hero */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 32, marginBottom: 28, paddingBottom: 24, borderBottom: '1px solid var(--line)' }}>
+      {/* Hero — 3-col grid */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '200px 1fr auto', gap: 28, alignItems: 'center',
+        padding: 26, borderRadius: 14,
+        background: 'linear-gradient(135deg, var(--bg-2), var(--bg-3))',
+        border: '1px solid var(--line-2)', position: 'relative', overflow: 'hidden', marginBottom: 28,
+      }}>
+        {/* Radial glow */}
+        <div style={{ position: 'absolute', top: '-40%', right: '-10%', width: '50%', height: '200%', background: 'radial-gradient(ellipse, rgba(255,80,41,.18), transparent 60%)', pointerEvents: 'none', zIndex: 0 }} />
         {/* Portrait */}
         <div style={{
-          width: 96, height: 96, borderRadius: 16, flexShrink: 0,
-          background: 'linear-gradient(135deg, #ff3e9a, var(--accent))',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--f-m)', fontWeight: 700, fontSize: 28, color: '#0a0805',
-        }}>{data.userInitials}</div>
+          width: 200, height: 200, borderRadius: 14, flexShrink: 0,
+          background: 'linear-gradient(135deg, var(--accent) 0%, #ff3e9a 50%, #b983ff 100%)',
+          position: 'relative', overflow: 'hidden',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1,
+        }}>
+          <span style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 90, color: '#0a0805', letterSpacing: '-.04em', mixBlendMode: 'overlay', opacity: .85, lineHeight: 1 }}>{data.userInitials}</span>
+        </div>
 
-        {/* Identity */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        {/* Identity col */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, zIndex: 1 }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
             {data.activeProfileTypes.slice(0, 2).map(r => {
               const roleColors: Record<string, string> = { LISTENER: '#b983ff', ARTIST: '#ff5029', VENUE: '#22e5d4', DJ: '#ff3e9a' };
               const c = roleColors[r] ?? '#9e9080';
@@ -238,45 +263,40 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
             })}
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, background: 'rgba(255,184,74,.12)', border: '1px solid rgba(255,184,74,.28)', fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', color: '#ffb84a' }}>⚡ LEVEL 14</span>
           </div>
-          <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 38, letterSpacing: '-.025em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>{data.userName} {data.userInitials.length > 2 ? '' : data.userInitials[1] ? data.userInitials : ''}</h1>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 6 }}>@{data.userName.toLowerCase().replace(/\s/g, '.')} · {data.city} · Joined Mar '25</div>
-          <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, lineHeight: 1.5, maxWidth: 480 }}>Halflight EP out now. Writing the next thing in a basement on Western Ave. Recommendations open.</p>
+          <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 46, letterSpacing: '-.03em', lineHeight: .95, margin: 0, color: 'var(--ink)' }}>{data.userName}</h1>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.08em' }}>@{data.userName.toLowerCase().replace(/\s/g, '.')} · {data.city} · Joined Mar &apos;25</div>
+          <p style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontSize: 17, color: 'var(--ink-2)', marginTop: 6, lineHeight: 1.4, maxWidth: '50ch' }}>Halflight EP out now. Writing the next thing in a basement on Western Ave. Recommendations open.</p>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'flex', gap: 24, flexShrink: 0 }}>
-          {[
-            { v: (data.lifeStats?.totalHype ?? 1284).toLocaleString(), k: 'HYPE Given' },
-            { v: '842', k: 'Received' },
-            { v: String(data.lifeStats?.eventsAttended ?? 23), k: 'Shows Attended' },
-            { v: '7', k: 'Top-5 Slots' },
-          ].map(s => (
-            <div key={s.k} style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.02em', color: 'var(--ink)', lineHeight: 1 }}>{s.v}</div>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.14em', marginTop: 4 }}>{s.k}</div>
+        {/* Stats 2×2 grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, auto)', gap: '18px 28px', zIndex: 1 }}>
+          {heroStats.map(s => (
+            <div key={s.k} style={{ textAlign: 'right' }}>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 30, letterSpacing: '-.02em', lineHeight: 1, color: s.accent ? 'var(--accent)' : 'var(--ink)' }}>{s.v}</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.16em', textTransform: 'uppercase', marginTop: 6 }}>{s.k}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Stat tiles */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 18 }}>
+      {/* Stat tiles — 4-col */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 20 }}>
         {[
-          { k: 'Weekly Listens', v: '2,284', d: <><span style={{ color: '#22e5d4' }}>↑ 18%</span> vs last week</>, },
+          { k: 'Weekly Listens', v: '2,284', d: <><span style={{ color: '#22e5d4' }}>↑ 18%</span> vs last week</> },
           { k: 'Seed Save Rate', v: '26%', d: '88 saves on Sundown' },
           { k: 'Next Payout', v: '$2,460', d: 'releases Jun 24' },
           { k: 'Next Show', v: 'Jun 18', d: 'Empty Bottle · 9PM' },
         ].map(s => (
           <div key={s.k} style={{ padding: '14px 16px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)' }}>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 8 }}>{s.k}</div>
-            <div style={{ fontFamily: 'var(--f-d)', fontSize: 28, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)', lineHeight: 1 }}>{s.v}</div>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.02em', marginTop: 6, color: 'var(--ink-2)' }}>{s.d}</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.14em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{s.k}</div>
+            <div style={{ fontFamily: 'var(--f-d)', fontSize: 24, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)', lineHeight: 1, marginTop: 6 }}>{s.v}</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-2)', marginTop: 4 }}>{s.d}</div>
           </div>
         ))}
       </div>
 
       {/* Two-col: Top 5 + Activity */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20, marginBottom: 14 }}>
         <Panel title="Top 5 — this week" link="Curated · updates Sundays">
           <div style={{ padding: '4px 0' }}>
             {data.tracks.slice(0, 5).map((t, i) => (
@@ -367,22 +387,144 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
 }
 
 // ─────────────────────────────────────────────────────────────
-// ViewSeeds
+// ViewSeeds — 3-col layout matching design
 // ─────────────────────────────────────────────────────────────
-function ViewSeeds({ data }: { data: WorkbenchData }) {
+function ViewSeeds({ data: _data }: { data: WorkbenchData }) {
+  const waveHeights = [30,55,80,42,90,70,48,88,62,35,78,55,92,40,68,82,48,30,62,88];
+  // SeedsGamifiedView is kept for future embedded use
+  void SeedsGamifiedView;
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Header bar */}
-      <div style={{ flexShrink: 0, padding: '8px 24px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-2)' }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <IcDot c="var(--accent)" s={7} /> SEEDS · DISCOVER · NEW ARTISTS
+    <div style={{ padding: '32px 48px 48px', maxWidth: 1600, margin: '0 auto' }}>
+      {/* View head */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, marginBottom: 28, paddingBottom: 18, borderBottom: '1px solid var(--line)' }}>
+        <div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.18em', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>DISCOVER · 15–30s clips · Chicago</div>
+          <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 38, letterSpacing: '-.025em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Seeds <em style={{ fontFamily: "'Instrument Serif',serif", fontStyle: 'italic', fontWeight: 400, color: 'var(--ink-2)' }}>— decide in 15 seconds.</em></h1>
+          <p style={{ fontFamily: "'Instrument Serif',serif", fontStyle: 'italic', fontSize: 17, color: 'var(--ink-2)', marginTop: 8, maxWidth: '60ch' }}>Hand-cut hooks from new uploads. Save it, hype it, skip it. Save-rate becomes the algorithm.</p>
         </div>
-        <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--ink-4)', display: 'inline-block' }} />
-        <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)' }}>Swipe right to HYPE · left to skip · down to save</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <button style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: 'var(--ink-2)', border: '1px solid transparent', background: 'none' }}>⚙ Filters</button>
+          <button style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: 'var(--ink-2)', border: '1px solid transparent', background: 'none' }}>Local · Chicago ▾</button>
+        </div>
       </div>
-      {/* Gamified view fills remaining space */}
-      <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-        <SeedsGamifiedView />
+
+      {/* 3-col seeds stage */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px 1fr', gap: 30, alignItems: 'flex-start', paddingTop: 8 }}>
+
+        {/* Left col */}
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>TODAY&apos;S DECK</div>
+          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 10, padding: 14 }}>
+            {[
+              { k: 'Reviewed', v: '4 / 12', c: 'var(--ink)' },
+              { k: 'Saved', v: '+3', c: '#22e5d4' },
+              { k: 'Skipped', v: '1', c: '#ff6b5a' },
+              { k: 'Hyped', v: '2', c: 'var(--pink)' },
+            ].map(r => (
+              <div key={r.k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', fontFamily: 'var(--f-m)', fontSize: 11 }}>
+                <span style={{ color: 'var(--ink-3)', letterSpacing: '.08em' }}>{r.k}</span>
+                <span style={{ color: r.c, fontWeight: 600 }}>{r.v}</span>
+              </div>
+            ))}
+            <div style={{ borderTop: '1px dashed var(--line)', paddingTop: 10, marginTop: 6, display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--f-m)', fontSize: 11 }}>
+              <span style={{ color: 'var(--ink-3)', letterSpacing: '.08em' }}>XP earned</span>
+              <span style={{ color: '#ffb84a', fontWeight: 600 }}>+42 XP</span>
+            </div>
+          </div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginTop: 18, marginBottom: 4 }}>DAILY QUEST</div>
+          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14 }}>Save 5 seeds today</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              {[true,true,true,false,false].map((filled, i) => (
+                <span key={i} style={{ flex: 1, height: 6, borderRadius: 99, background: filled ? 'var(--accent)' : 'var(--bg-3)' }} />
+              ))}
+            </div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.06em' }}>3 / 5 · 60 XP + Seed Curator badge</div>
+          </div>
+        </aside>
+
+        {/* Center col — card stack + controls */}
+        <div>
+          <div style={{ position: 'relative', width: '100%', aspectRatio: '380/520', margin: '0 auto' }}>
+            {/* behind-2 */}
+            <div style={{ position: 'absolute', inset: 0, borderRadius: 22, overflow: 'hidden', boxShadow: '0 30px 60px -10px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06)', transformOrigin: 'center bottom', transform: 'translateY(26px) scale(.88)', opacity: .28, zIndex: 0, background: 'linear-gradient(135deg, #22e5d4, #7fb3ff)' }} />
+            {/* behind-1 */}
+            <div style={{ position: 'absolute', inset: 0, borderRadius: 22, overflow: 'hidden', boxShadow: '0 30px 60px -10px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06)', transformOrigin: 'center bottom', transform: 'translateY(14px) scale(.94)', opacity: .55, zIndex: 1, background: 'linear-gradient(135deg, #b983ff, #ff3e9a)' }} />
+            {/* front card */}
+            <div style={{ position: 'absolute', inset: 0, borderRadius: 22, overflow: 'hidden', boxShadow: '0 30px 60px -10px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06)', zIndex: 5 }}>
+              {/* Art bg */}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #ff5029 0%, #ff3e9a 60%, #221c16 100%)' }} />
+              {/* Overlay gradient */}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.75) 100%)' }} />
+              {/* Tags */}
+              <div style={{ position: 'absolute', top: 18, left: 18, right: 18, display: 'flex', justifyContent: 'space-between', gap: 8, zIndex: 3 }}>
+                <span style={{ padding: '5px 10px', borderRadius: 99, background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(8px)', fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', fontWeight: 700, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />SEED · 22s
+                </span>
+                <span style={{ padding: '5px 10px', borderRadius: 99, background: 'rgba(255,255,255,.18)', fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', fontWeight: 700, color: '#fff' }}>CHICAGO</span>
+              </div>
+              {/* Waveform */}
+              <div style={{ position: 'absolute', bottom: 170, left: 24, right: 24, height: 36, display: 'flex', alignItems: 'flex-end', gap: 3, zIndex: 3 }}>
+                {waveHeights.map((h, i) => (
+                  <i key={i} style={{ flex: 1, background: 'rgba(255,255,255,.55)', borderRadius: 99, display: 'block', height: `${h}%` }} />
+                ))}
+              </div>
+              {/* Body */}
+              <div style={{ position: 'absolute', bottom: 60, left: 22, right: 22, zIndex: 3, color: '#fff' }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 32, letterSpacing: '-.03em', lineHeight: .95, textShadow: '0 2px 12px rgba(0,0,0,.4)' }}>Slow Burn</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'rgba(255,255,255,.8)', letterSpacing: '.1em', marginTop: 6, textTransform: 'uppercase' }}>The Lowriders · Side Roads</div>
+                <div style={{ fontFamily: "'Instrument Serif',serif", fontStyle: 'italic', fontSize: 16, color: 'rgba(255,255,255,.9)', marginTop: 14, lineHeight: 1.35, borderLeft: '2px solid var(--accent)', paddingLeft: 10 }}>&ldquo;It only really lands at 1:48 — that&apos;s the seed.&rdquo;</div>
+              </div>
+              {/* Footer */}
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(255,255,255,.08)', fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.08em', color: 'rgba(255,255,255,.7)' }}>
+                <span>♥ 211 hype</span>
+                <span>48 saves · 21 skips</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 24 }}>
+            <button title="Skip" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,107,90,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ff6b5a' }}>
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+            <button title="Replay" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid var(--line-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--ink-2)' }}>
+              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5"/></svg>
+            </button>
+            <button title="Save" style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
+              <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 5l14 7-14 7V5z" fill="currentColor" opacity=".2"/><path d="M5 5l14 7-14 7V5z"/></svg>
+            </button>
+            <button title="HYPE it" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,62,154,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--pink)' }}>
+              <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
+            </button>
+          </div>
+          <div style={{ textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.14em', marginTop: 14, textTransform: 'uppercase' }}>← Skip · ↑ Save · → Hype · Space Replay</div>
+        </div>
+
+        {/* Right col */}
+        <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>UP NEXT</div>
+          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[
+              { title: 'Cassette Heart', artist: 'Juno North', dur: '24s', grad: 'linear-gradient(135deg,#b983ff,#7fb3ff)', op: 1 },
+              { title: 'Halflight', artist: 'Maya Reyes', dur: '20s', grad: 'linear-gradient(135deg,#22e5d4,#b983ff)', op: 1 },
+              { title: 'Underpass', artist: 'Saint Hex', dur: '27s', grad: 'linear-gradient(135deg,#7fb3ff,#ff5029)', op: 0.6 },
+            ].map(t => (
+              <div key={t.title} style={{ display: 'grid', gridTemplateColumns: '42px 1fr', gap: 10, alignItems: 'center', opacity: t.op }}>
+                <div style={{ width: 42, height: 42, borderRadius: 6, background: t.grad }} />
+                <div>
+                  <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13 }}>{t.title}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.06em' }}>{t.artist} · {t.dur}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginTop: 18, marginBottom: 4 }}>WHY THIS SEED?</div>
+          <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 10, padding: 14, fontFamily: 'var(--f-b)', fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+            You hyped <span style={{ color: 'var(--accent)', fontWeight: 600 }}>3 tracks</span> from The Lowriders this month. This is from their unreleased EP <em style={{ fontFamily: "'Instrument Serif',serif" }}>&ldquo;Side Roads&rdquo;</em> — promoter test pressing.
+          </div>
+        </aside>
+
       </div>
     </div>
   );
@@ -465,77 +607,68 @@ function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress, setPro
 }) {
   return (
     <footer style={{
-      gridColumn: '2 / -1', height: 'var(--player-h)',
-      borderTop: '1px solid var(--line)',
+      display: 'grid', gridTemplateColumns: '340px 1fr 340px', alignItems: 'center', gap: 24, padding: '0 22px',
       background: 'linear-gradient(180deg, var(--bg-2), var(--bg))',
-      display: 'flex', alignItems: 'center', padding: '0 18px', gap: 18, flexShrink: 0,
+      borderTop: '1px solid var(--line-2)', position: 'relative',
+      gridColumn: '1 / -1',
     }}>
-      {/* Left: art + info + hype */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: 320, flexShrink: 0 }}>
-        <div style={{
-          width: 46, height: 46, borderRadius: 6, flexShrink: 0, position: 'relative', overflow: 'hidden',
-          background: `linear-gradient(135deg, ${track.color}, ${track.color}80)`,
-        }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,.3), transparent 60%)' }} />
+      {/* Top gradient accent line */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, var(--accent), #ff3e9a, transparent)', opacity: .5, pointerEvents: 'none' }} />
+
+      {/* Left: 340px — art + info + hype */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+        <div style={{ width: 52, height: 52, borderRadius: 7, flexShrink: 0, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${track.color}, ${track.color}80)` }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,.3), transparent 60%)' }} />
+          {playing && (
+            <div style={{ position: 'absolute', bottom: 6, left: 6, display: 'flex', gap: 2, alignItems: 'flex-end', height: 10, zIndex: 2 }}>
+              {[{ dur: '1.1s' }, { dur: '.9s' }, { dur: '1.3s' }].map((b, i) => (
+                <i key={i} style={{ width: 2, background: '#fff', borderRadius: 99, display: 'block', height: 3, animation: `eq ${b.dur} infinite` }} />
+              ))}
+            </div>
+          )}
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, letterSpacing: '-.005em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>{track.title}</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.04em', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artistName} · <span style={{ color: 'var(--ink-4)' }}>{track.album}</span></div>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, letterSpacing: '-.005em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>{track.title}</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.04em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artistName} · <span style={{ color: 'var(--ink-4)' }}>{track.album}</span></div>
         </div>
-        <button style={{
-          display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px',
-          border: '1px solid rgba(255,62,154,.3)', borderRadius: 99,
-          background: 'rgba(255,62,154,.05)', color: '#ff3e9a',
-          cursor: 'pointer', flexShrink: 0,
-        }}>
-          <IcHeart s={14} c="#ff3e9a" /> <span style={{ fontFamily: 'var(--f-m)', fontSize: 11 }}>{track.hypeCount}</span>
+        <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99, color: '#ff3e9a', fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer', flexShrink: 0 }}>
+          <IcHeart s={14} c="#ff3e9a" /> {track.hypeCount}
         </button>
       </div>
 
-      {/* Center: controls + scrubber */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {[
-            { title: 'Shuffle', el: <IcShuffle s={14} /> },
-            { title: 'Previous', el: <IcSkipP s={14} />, action: onPrev },
-          ].map(b => (
-            <button key={b.title} onClick={b.action} title={b.title} style={{ width: 28, height: 28, borderRadius: 6, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>{b.el}</button>
-          ))}
-          <button onClick={onToggle} style={{
-            width: 32, height: 32, borderRadius: '50%', background: 'var(--ink)', color: 'var(--bg)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer',
-          }}>
+      {/* Center: controls + scrub */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button title="Shuffle" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcShuffle s={14} /></button>
+          <button title="Previous" onClick={onPrev} style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcSkipP s={14} /></button>
+          <button onClick={onToggle} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--ink)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
             {playing ? <IcPause s={14} /> : <IcPlay s={14} />}
           </button>
-          {[
-            { title: 'Next', el: <IcSkipN s={14} />, action: onNext },
-            { title: 'Repeat', el: <IcRepeat s={14} /> },
-          ].map(b => (
-            <button key={b.title} onClick={b.action} title={b.title} style={{ width: 28, height: 28, borderRadius: 6, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>{b.el}</button>
-          ))}
+          <button title="Next" onClick={onNext} style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcSkipN s={14} /></button>
+          <button title="Repeat" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcRepeat s={14} /></button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', maxWidth: 540 }}>
-          <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', minWidth: 32, textAlign: 'center' }}>{fmtTime(progress * track.durationSec)}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 540 }}>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 34, textAlign: 'center' }}>{fmtTime(progress * track.durationSec)}</span>
           <div
-            style={{ flex: 1, height: 3, background: 'rgba(255,255,255,.06)', borderRadius: 2, position: 'relative', cursor: 'pointer' }}
+            style={{ flex: 1, height: 4, background: 'rgba(255,255,255,.06)', borderRadius: 99, position: 'relative', cursor: 'pointer', overflow: 'visible' }}
             onClick={e => {
               const r = e.currentTarget.getBoundingClientRect();
               setProgress(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)));
             }}
           >
-            <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: 'var(--ink)', borderRadius: 2 }} />
-            <div style={{ position: 'absolute', top: '50%', left: `${progress * 100}%`, transform: 'translate(-50%, -50%)', width: 9, height: 9, borderRadius: '50%', background: 'var(--ink)' }} />
+            <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: 'linear-gradient(90deg, var(--accent), #ff3e9a)', borderRadius: 99 }} />
+            <div style={{ position: 'absolute', top: '50%', left: `${progress * 100}%`, transform: 'translate(-50%, -50%)', width: 11, height: 11, borderRadius: '50%', background: '#fff', boxShadow: '0 0 0 3px rgba(255,255,255,.15)' }} />
           </div>
-          <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', minWidth: 32, textAlign: 'center' }}>{track.duration}</span>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 34, textAlign: 'center' }}>{track.duration}</span>
         </div>
       </div>
 
-      {/* Right: queue + volume */}
-      <div style={{ width: 180, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10, flexShrink: 0 }}>
-        <button title="Queue" style={{ width: 28, height: 28, borderRadius: 6, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcQueue s={14} /></button>
-        <button title="Volume" style={{ width: 28, height: 28, borderRadius: 6, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcVol s={14} /></button>
-        <div style={{ width: 70, height: 3, background: 'rgba(255,255,255,.06)', borderRadius: 2, position: 'relative' }}>
-          <div style={{ position: 'absolute', inset: 0, width: '60%', background: 'var(--ink-2)', borderRadius: 2 }} />
+      {/* Right: 340px — queue + vol */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14 }}>
+        <button title="Queue" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcQueue s={14} /></button>
+        <button title="Volume" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcVol s={14} /></button>
+        <div style={{ width: 80, height: 4, background: 'rgba(255,255,255,.06)', borderRadius: 99, position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: 0, width: '65%', background: 'var(--ink-2)', borderRadius: 99 }} />
         </div>
       </div>
     </footer>
@@ -1514,58 +1647,71 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   if (!mounted) return null;
 
   return (
-    <div
-      className="wb-shell"
-      style={{
-        position: 'fixed', inset: 0, display: 'grid',
-        gridTemplateColumns: colTemplate,
-        gridTemplateRows: rowTemplate,
-        background: 'var(--bg)',
-        fontFamily: 'var(--f-b)',
-        color: 'var(--ink)',
-      }}
-    >
-      {/* Topbar with integrated tabs — spans all columns */}
-      <div style={{ gridColumn: '1 / -1', gridRow: 1 }}>
-        <AppTopbar
-          view={view}
-          setView={setView}
-          listeningNow={data.listeningNow}
-          initials={data.userInitials}
-          userName={data.userName}
-          activeProfileTypes={data.activeProfileTypes}
-          onSettings={() => setView('settings')}
-        />
+    <>
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        @keyframes eq { 0%,100% { height: 3px; } 50% { height: 10px; } }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+        .wb-view-anim { animation: fadeIn .35s ease-out both; }
+      `}</style>
+      <div
+        className="wb-shell"
+        style={{
+          position: 'fixed', inset: 0, display: 'grid',
+          gridTemplateColumns: colTemplate,
+          gridTemplateRows: rowTemplate,
+          background: 'var(--bg)',
+          fontFamily: 'var(--f-b)',
+          color: 'var(--ink)',
+        }}
+      >
+        {/* Topbar with integrated tabs — spans all columns */}
+        <div style={{ gridColumn: '1 / -1', gridRow: 1 }}>
+          <AppTopbar
+            view={view}
+            setView={setView}
+            listeningNow={data.listeningNow}
+            initials={data.userInitials}
+            userName={data.userName}
+            activeProfileTypes={data.activeProfileTypes}
+            onSettings={() => setView('settings')}
+          />
+        </div>
+
+        {/* Main content */}
+        <main style={{
+          gridColumn: 1, gridRow: 2,
+          overflowY: isSeeds ? 'hidden' : 'auto',
+          overflowX: 'hidden',
+          background: 'var(--bg)', minHeight: 0,
+          fontSize: `calc(14px * var(--density, 1))`,
+          position: 'relative',
+        }}>
+          {/* Radial glow at top */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 200, background: 'radial-gradient(ellipse at 50% -50%, rgba(255,80,41,.07), transparent 60%)', pointerEvents: 'none', zIndex: 0 }} />
+          <div key={view} className="wb-view-anim" style={{ position: 'relative', zIndex: 1 }}>
+            {viewEl}
+          </div>
+        </main>
+
+        {/* Queue rail (non-seeds views only) */}
+        {showQueue && (
+          <QueueRail tracks={tracks} currentIdx={currentIdx} onPick={onPickTrack} />
+        )}
+
+        {/* Player dock */}
+        {showDock && track && (
+          <PlayerDock
+            track={track}
+            playing={playing}
+            onToggle={() => setPlaying(p => !p)}
+            onNext={onNext}
+            onPrev={onPrev}
+            progress={progress}
+            setProgress={setProgress}
+          />
+        )}
       </div>
-
-      {/* Main content */}
-      <main style={{
-        gridColumn: 1, gridRow: 2,
-        overflowY: isSeeds ? 'hidden' : 'auto',
-        overflowX: 'hidden',
-        background: 'var(--bg)', minHeight: 0,
-        fontSize: `calc(14px * var(--density, 1))`,
-      }}>
-        {viewEl}
-      </main>
-
-      {/* Queue rail (non-seeds views only) */}
-      {showQueue && (
-        <QueueRail tracks={tracks} currentIdx={currentIdx} onPick={onPickTrack} />
-      )}
-
-      {/* Player dock */}
-      {showDock && track && (
-        <PlayerDock
-          track={track}
-          playing={playing}
-          onToggle={() => setPlaying(p => !p)}
-          onNext={onNext}
-          onPrev={onPrev}
-          progress={progress}
-          setProgress={setProgress}
-        />
-      )}
-    </div>
+    </>
   );
 }
