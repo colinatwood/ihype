@@ -54,7 +54,7 @@ function WMPill({ children, tone = 'soft', style }: { children: React.ReactNode;
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
       padding: '3px 7px', borderRadius: 99,
-      fontFamily: T.fm, fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
+      fontFamily: T.fm, fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
       background: t.bg, color: t.fg, border: `1px solid ${t.bd}`, ...style,
     }}>{children}</span>
   );
@@ -64,7 +64,7 @@ function WMPill({ children, tone = 'soft', style }: { children: React.ReactNode;
 function WMChip({ children, accent = false, style }: { children: React.ReactNode; accent?: boolean; style?: React.CSSProperties }) {
   return (
     <button style={{
-      padding: '7px 11px', borderRadius: 7, fontFamily: T.fm, fontSize: 10, fontWeight: 600,
+      padding: '7px 11px', borderRadius: 7, fontFamily: T.fm, fontSize: 12, fontWeight: 600,
       letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer',
       background: accent ? T.ink : 'transparent', color: accent ? T.bg : T.ink2,
       border: accent ? `1px solid ${T.ink}` : `1px solid ${T.line2}`,
@@ -79,7 +79,7 @@ function WMViewHead({ eyebrow, title, italic, sub, actions }: {
 }) {
   return (
     <div style={{ padding: '18px 18px 14px', borderBottom: `1px solid ${T.line}`, marginBottom: 16 }}>
-      <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.2em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>{eyebrow}</div>
+      <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.2em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>{eyebrow}</div>
       <h1 style={{ fontFamily: T.fd, fontWeight: 800, letterSpacing: '-.025em', lineHeight: 1, fontSize: 28, margin: 0 }}>
         {title}{italic && <em style={{ fontFamily: T.fs, fontStyle: 'italic', fontWeight: 400, color: T.ink2 }}> {italic}</em>}
       </h1>
@@ -138,29 +138,29 @@ function WMTopBar({ tab, listeningNow, userName, initials }: {
           <span style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 15, letterSpacing: '-.03em', lineHeight: 1, display: 'flex', alignItems: 'baseline', gap: 1, color: T.ink }}>
             iHYPE<span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: T.accent, transform: 'translateY(-7px)' }} />
           </span>
-          <span style={{ display: 'block', fontFamily: T.fm, fontSize: 8, color: T.ink3, letterSpacing: '.18em', marginTop: 2, textTransform: 'uppercase' }}>
+          <span style={{ display: 'block', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.18em', marginTop: 2, textTransform: 'uppercase' }}>
             {titles[tab]}
           </span>
         </span>
       </div>
 
-      <div style={{ justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 6, fontFamily: T.fm, fontSize: 10, color: T.ink2 }}>
+      <div style={{ justifySelf: 'center', display: 'flex', alignItems: 'center', gap: 6, fontFamily: T.fm, fontSize: 12, color: T.ink2 }}>
         <span className="wm-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: T.teal, boxShadow: `0 0 8px ${T.teal}`, display: 'inline-block' }} />
         {listeningNow.toLocaleString()}
       </div>
 
       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-        <button style={{ width: 32, height: 32, borderRadius: 8, background: 'transparent', border: `1px solid ${T.line}`, color: T.ink2, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+        <button aria-label="Search" style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: 8, background: 'transparent', border: `1px solid ${T.line}`, color: T.ink2, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
           <span style={{ width: 14, height: 14 }}>{WMIcon.search}</span>
         </button>
-        <button style={{ width: 32, height: 32, borderRadius: 8, background: 'transparent', border: `1px solid ${T.line}`, color: T.ink2, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, position: 'relative' }}>
+        <button aria-label="Notifications" style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: 8, background: 'transparent', border: `1px solid ${T.line}`, color: T.ink2, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, position: 'relative' }}>
           <span style={{ width: 14, height: 14 }}>{WMIcon.bell}</span>
           <span style={{ position: 'absolute', top: 5, right: 5, width: 6, height: 6, borderRadius: '50%', background: T.accent }} />
         </button>
         <span style={{
           width: 30, height: 30, borderRadius: '50%',
           background: `linear-gradient(135deg,${T.pink},${T.accent})`,
-          color: T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 11,
+          color: T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 13,
           display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: '-.02em',
         }}>{initials}</span>
       </div>
@@ -193,18 +193,19 @@ function WMMiniPlayer({ track, playing, onToggle, progress }: {
       </div>
       <div style={{ minWidth: 0 }}>
         <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 13, letterSpacing: '-.005em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: T.ink }}>{track.title}</div>
-        <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink2, marginTop: 2, letterSpacing: '.04em' }}>{track.artistName} <span style={{ color: T.ink4 }}>·</span> {track.album}</div>
+        <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2, marginTop: 2, letterSpacing: '.04em' }}>{track.artistName} <span style={{ color: T.ink4 }}>·</span> {track.album}</div>
         <div style={{ marginTop: 5, height: 2, borderRadius: 99, background: 'rgba(255,255,255,.06)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: `linear-gradient(90deg,${T.accent},${T.pink})`, borderRadius: 99 }} />
         </div>
       </div>
-      <button style={{
+      <button aria-label="Hype this track" style={{
         display: 'flex', alignItems: 'center', gap: 4, padding: '5px 9px',
         border: `1px solid rgba(255,62,154,.3)`, borderRadius: 99, color: T.pink,
-        fontFamily: T.fm, fontSize: 10, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer',
+        fontFamily: T.fm, fontSize: 12, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer',
+        minHeight: 44, minWidth: 44,
       }}>♥ {track.hypeCount}</button>
-      <button onClick={onToggle} style={{
-        width: 36, height: 36, borderRadius: '50%', background: T.ink, color: T.bg,
+      <button onClick={onToggle} aria-label={playing ? "Pause" : "Play"} style={{
+        width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: '50%', background: T.ink, color: T.bg,
         border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
       }}>
         {playing

@@ -146,7 +146,7 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, letterSpacing: '-.03em', lineHeight: 1, color: 'var(--ink)', display: 'flex', alignItems: 'baseline', gap: 1 }}>
             iHYPE<span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', transform: 'translateY(-9px)', marginLeft: 1 }} />
           </div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', marginTop: 3 }}>workbench</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', marginTop: 3 }}>workbench</div>
         </div>
       </div>
 
@@ -173,7 +173,7 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   minWidth: 18, height: 18, padding: '0 5px', borderRadius: 99,
                   background: active ? 'rgba(255,80,41,.16)' : 'var(--bg-3)',
-                  fontFamily: 'var(--f-m)', fontSize: 9,
+                  fontFamily: 'var(--f-m)', fontSize: 12,
                   color: active ? 'var(--accent)' : 'var(--ink-2)', fontWeight: 700, letterSpacing: '.04em',
                 }}>{badges[tab.k]}</span>
               )}
@@ -191,11 +191,11 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
 
       {/* Right: listening + user */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', paddingRight: 14, borderRight: '1px solid var(--line)', marginRight: 6 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', paddingRight: 14, borderRight: '1px solid var(--line)', marginRight: 6 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22e5d4', boxShadow: '0 0 8px #22e5d4', animation: 'pulse 1.8s infinite', display: 'inline-block' }} />
           {listeningNow.toLocaleString()} listening
         </span>
-        <button style={{
+        <button aria-label="Notifications" style={{
           position: 'relative', width: 32, height: 32, borderRadius: 7,
           background: 'none', border: 'none', cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -209,12 +209,12 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
               position: 'absolute', top: 4, right: 4,
               minWidth: 14, height: 14, borderRadius: 99, padding: '0 3px',
               background: '#ff3e9a', color: '#fff',
-              fontFamily: 'var(--f-m)', fontSize: 8, fontWeight: 700,
+              fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>{notifCount > 9 ? '9+' : String(notifCount)}</span>
           )}
         </button>
-        <button onClick={onSettings} style={{
+        <button onClick={onSettings} aria-label="Open settings" style={{
           display: 'flex', alignItems: 'center', gap: 10, padding: '5px 10px 5px 5px',
           borderRadius: 99, background: 'var(--bg-3)', border: '1px solid var(--line-2)',
           cursor: 'pointer', transition: 'border-color .15s',
@@ -223,13 +223,13 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
             width: 28, height: 28, borderRadius: '50%',
             background: 'linear-gradient(135deg, #ff3e9a, var(--accent))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 11, color: '#0a0805',
+            fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 13, color: '#0a0805',
           }}>{initials}</span>
           <div>
             <div style={{ fontFamily: 'var(--f-b)', fontWeight: 600, fontSize: 12, color: 'var(--ink)', lineHeight: 1 }}>{userName}</div>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.08em', marginTop: 2 }}>{activeProfileTypes.slice(0, 2).join(' + ')}</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.08em', marginTop: 2 }}>{activeProfileTypes.slice(0, 2).join(' + ')}</div>
           </div>
-          <span style={{ padding: '3px 7px', borderRadius: 99, background: 'rgba(255,184,74,.12)', color: '#ffb84a', fontFamily: 'var(--f-m)', fontSize: 9, fontWeight: 700, letterSpacing: '.08em', border: '1px solid rgba(255,184,74,.28)' }}>LVL 14</span>
+          <span style={{ padding: '3px 7px', borderRadius: 99, background: 'rgba(255,184,74,.12)', color: '#ffb84a', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', border: '1px solid rgba(255,184,74,.28)' }}>LVL 14</span>
         </button>
       </div>
     </header>
@@ -277,12 +277,12 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
               const roleColors: Record<string, string> = { LISTENER: '#b983ff', ARTIST: '#ff5029', VENUE: '#22e5d4', DJ: '#ff3e9a' };
               const c = roleColors[r] ?? '#9e9080';
               return (
-                <span key={r} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 99, background: 'var(--bg-3)', border: '1px solid var(--line-2)', fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', color: 'var(--ink)' }}>
+                <span key={r} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 99, background: 'var(--bg-3)', border: '1px solid var(--line-2)', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.1em', color: 'var(--ink)' }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: c, display: 'inline-block' }} />{r}
                 </span>
               );
             })}
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, background: 'rgba(255,184,74,.12)', border: '1px solid rgba(255,184,74,.28)', fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', color: '#ffb84a' }}>⚡ LEVEL 14</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, background: 'rgba(255,184,74,.12)', border: '1px solid rgba(255,184,74,.28)', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.06em', color: '#ffb84a' }}>⚡ LEVEL 14</span>
           </div>
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 46, letterSpacing: '-.03em', lineHeight: .95, margin: 0, color: 'var(--ink)' }}>{data.userName}</h1>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.08em' }}>@{data.userName.toLowerCase().replace(/\s/g, '.')} · {data.city} · Joined Mar &apos;25</div>
@@ -294,7 +294,7 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
           {heroStats.map(s => (
             <div key={s.k} style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 30, letterSpacing: '-.02em', lineHeight: 1, color: s.accent ? 'var(--accent)' : 'var(--ink)' }}>{s.v}</div>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.16em', textTransform: 'uppercase', marginTop: 6 }}>{s.k}</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.16em', textTransform: 'uppercase', marginTop: 6 }}>{s.k}</div>
             </div>
           ))}
         </div>
@@ -303,7 +303,7 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
           {heroStats.map(s => (
             <div key={s.k} style={{ textAlign: 'left' }}>
               <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 22, letterSpacing: '-.02em', lineHeight: 1, color: s.accent ? 'var(--accent)' : 'var(--ink)' }}>{s.v}</div>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.16em', textTransform: 'uppercase', marginTop: 4 }}>{s.k}</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.16em', textTransform: 'uppercase', marginTop: 4 }}>{s.k}</div>
             </div>
           ))}
         </div>
@@ -318,9 +318,9 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
           { k: 'Next Show', v: 'Jun 18', d: 'Empty Bottle · 9PM' },
         ].map(s => (
           <div key={s.k} style={{ padding: '14px 16px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)' }}>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.14em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{s.k}</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.14em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{s.k}</div>
             <div style={{ fontFamily: 'var(--f-d)', fontSize: 24, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)', lineHeight: 1, marginTop: 6 }}>{s.v}</div>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-2)', marginTop: 4 }}>{s.d}</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', marginTop: 4 }}>{s.d}</div>
           </div>
         ))}
       </div>
@@ -338,12 +338,12 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
                 <div style={{ width: 32, height: 32, borderRadius: 5, background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, flexShrink: 0, borderBottom: 'none' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2, letterSpacing: '.04em' }}>{t.artistName} · {t.album}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2, letterSpacing: '.04em' }}>{t.artistName} · {t.album}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff3e9a', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--f-m)', fontSize: 13, color: '#ff3e9a', flexShrink: 0 }}>
                   <IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}
                 </div>
-                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', flexShrink: 0, minWidth: 32, textAlign: 'right' }}>{t.duration}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', flexShrink: 0, minWidth: 32, textAlign: 'right' }}>{t.duration}</div>
               </button>
             ))}
           </div>
@@ -357,7 +357,7 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid var(--line)' }}>
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor[a.kind] || 'var(--ink-3)', flexShrink: 0 }} />
                   <div style={{ flex: 1, fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink)' }}>{a.text}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', flexShrink: 0 }}>{a.time}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', flexShrink: 0 }}>{a.time}</div>
                 </div>
               );
             })}
@@ -397,12 +397,12 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
                 <div style={{ width: 8, height: 8, borderRadius: 2, background: col, flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{info.label}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 2 }}>{info.sub}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 2 }}>{info.sub}</div>
                 </div>
                 <button style={{
                   display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px',
                   border: `1px solid ${active ? col + '40' : 'var(--line-2)'}`, borderRadius: 99,
-                  fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.04em',
+                  fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.04em',
                   color: active ? col : 'var(--ink-2)', background: 'none', cursor: 'pointer',
                 }}>
                   {active ? <><IcCheck s={11} /> active</> : 'add →'}
@@ -466,13 +466,13 @@ function ViewSeeds({
       {/* View head */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, marginBottom: 28, paddingBottom: 18, borderBottom: '1px solid var(--line)' }}>
         <div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.18em', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>DISCOVER · 15–30s clips · Chicago</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.18em', fontWeight: 700, marginBottom: 8, textTransform: 'uppercase' }}>DISCOVER · 15–30s clips · Chicago</div>
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 38, letterSpacing: '-.025em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Seeds <em style={{ fontFamily: "'Instrument Serif',serif", fontStyle: 'italic', fontWeight: 400, color: 'var(--ink-2)' }}>— decide in 15 seconds.</em></h1>
           <p style={{ fontFamily: "'Instrument Serif',serif", fontStyle: 'italic', fontSize: 17, color: 'var(--ink-2)', marginTop: 8, maxWidth: '60ch' }}>Hand-cut hooks from new uploads. Save it, hype it, skip it. Save-rate becomes the algorithm.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <button style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: 'var(--ink-2)', border: '1px solid transparent', background: 'none' }}>⚙ Filters</button>
-          <button style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: 'var(--ink-2)', border: '1px solid transparent', background: 'none' }}>Local · Chicago ▾</button>
+          <button style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: 'var(--ink-2)', border: '1px solid transparent', background: 'none' }}>⚙ Filters</button>
+          <button style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: 'var(--ink-2)', border: '1px solid transparent', background: 'none' }}>Local · Chicago ▾</button>
         </div>
       </div>
 
@@ -481,7 +481,7 @@ function ViewSeeds({
 
         {/* Left col */}
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>TODAY&apos;S DECK</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>TODAY&apos;S DECK</div>
           <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 10, padding: 14 }}>
             {[
               { k: 'Reviewed', v: '4 / 12', c: 'var(--ink)' },
@@ -499,7 +499,7 @@ function ViewSeeds({
               <span style={{ color: '#ffb84a', fontWeight: 600 }}>+42 XP</span>
             </div>
           </div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginTop: 18, marginBottom: 4 }}>DAILY QUEST</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginTop: 18, marginBottom: 4 }}>DAILY QUEST</div>
           <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14 }}>Save 5 seeds today</div>
             <div style={{ display: 'flex', gap: 4 }}>
@@ -507,7 +507,7 @@ function ViewSeeds({
                 <span key={i} style={{ flex: 1, height: 6, borderRadius: 99, background: filled ? 'var(--accent)' : 'var(--bg-3)' }} />
               ))}
             </div>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.06em' }}>3 / 5 · 60 XP + Seed Curator badge</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.06em' }}>3 / 5 · 60 XP + Seed Curator badge</div>
           </div>
         </aside>
 
@@ -525,7 +525,7 @@ function ViewSeeds({
               </div>
               <button style={{
                 marginTop: 8, padding: '10px 20px', borderRadius: 8,
-                fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em',
+                fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, letterSpacing: '.08em',
                 textTransform: 'uppercase', cursor: 'pointer', border: 'none', color: '#fff',
                 background: 'linear-gradient(135deg, var(--accent), var(--pink))'
               }}>Widen Filter</button>
@@ -544,16 +544,16 @@ function ViewSeeds({
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.75) 100%)' }} />
               {/* Playing indicator */}
               {seedPlaying && (
-                <div style={{ position: 'absolute', top: 54, left: '50%', transform: 'translateX(-50%)', zIndex: 10, padding: '5px 12px', borderRadius: 99, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.14em', color: '#22e5d4', animation: 'pulse 1.4s infinite', whiteSpace: 'nowrap' }}>
+                <div style={{ position: 'absolute', top: 54, left: '50%', transform: 'translateX(-50%)', zIndex: 10, padding: '5px 12px', borderRadius: 99, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.14em', color: '#22e5d4', animation: 'pulse 1.4s infinite', whiteSpace: 'nowrap' }}>
                   ● PLAYING
                 </div>
               )}
               {/* Tags */}
               <div style={{ position: 'absolute', top: 18, left: 18, right: 18, display: 'flex', justifyContent: 'space-between', gap: 8, zIndex: 3 }}>
-                <span style={{ padding: '5px 10px', borderRadius: 99, background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(8px)', fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', fontWeight: 700, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ padding: '5px 10px', borderRadius: 99, background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(8px)', fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.14em', fontWeight: 700, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />SEED · 22s
                 </span>
-                <span style={{ padding: '5px 10px', borderRadius: 99, background: 'rgba(255,255,255,.18)', fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', fontWeight: 700, color: '#fff' }}>CHICAGO</span>
+                <span style={{ padding: '5px 10px', borderRadius: 99, background: 'rgba(255,255,255,.18)', fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.14em', fontWeight: 700, color: '#fff' }}>CHICAGO</span>
               </div>
               {/* Waveform */}
               <div style={{ position: 'absolute', bottom: 170, left: 24, right: 24, height: 36, display: 'flex', alignItems: 'flex-end', gap: 3, zIndex: 3 }}>
@@ -564,11 +564,11 @@ function ViewSeeds({
               {/* Body */}
               <div style={{ position: 'absolute', bottom: 60, left: 22, right: 22, zIndex: 3, color: '#fff' }}>
                 <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 32, letterSpacing: '-.03em', lineHeight: .95, textShadow: '0 2px 12px rgba(0,0,0,.4)' }}>{frontTrack ? frontTrack.title : 'Slow Burn'}</div>
-                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'rgba(255,255,255,.8)', letterSpacing: '.1em', marginTop: 6, textTransform: 'uppercase' }}>{frontTrack ? `${frontTrack.artistName} · ${frontTrack.album}` : 'The Lowriders · Side Roads'}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'rgba(255,255,255,.8)', letterSpacing: '.1em', marginTop: 6, textTransform: 'uppercase' }}>{frontTrack ? `${frontTrack.artistName} · ${frontTrack.album}` : 'The Lowriders · Side Roads'}</div>
                 <div style={{ fontFamily: "'Instrument Serif',serif", fontStyle: 'italic', fontSize: 16, color: 'rgba(255,255,255,.9)', marginTop: 14, lineHeight: 1.35, borderLeft: '2px solid var(--accent)', paddingLeft: 10 }}>&ldquo;It only really lands at 1:48 — that&apos;s the seed.&rdquo;</div>
               </div>
               {/* Footer */}
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(255,255,255,.08)', fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.08em', color: 'rgba(255,255,255,.7)' }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(255,255,255,.08)', fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.08em', color: 'rgba(255,255,255,.7)' }}>
                 <span>♥ {frontTrack ? frontTrack.hypeCount : 211} hype</span>
                 <span>48 saves · 21 skips</span>
               </div>
@@ -590,13 +590,13 @@ function ViewSeeds({
               <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
             </button>
           </div>
-          <div style={{ textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.14em', marginTop: 14, textTransform: 'uppercase' }}>← Skip · ↑ Save · → Hype · Space Play/Pause</div>
+          <div style={{ textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em', marginTop: 14, textTransform: 'uppercase' }}>← Skip · ↑ Save · → Hype · Space Play/Pause</div>
           </>)}
         </div>
 
         {/* Right col */}
         <aside style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>UP NEXT</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>UP NEXT</div>
           <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 12, padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               { title: 'Cassette Heart', artist: 'Juno North', dur: '24s', grad: 'linear-gradient(135deg,#b983ff,#7fb3ff)', op: 1 },
@@ -607,12 +607,12 @@ function ViewSeeds({
                 <div style={{ width: 42, height: 42, borderRadius: 6, background: t.grad }} />
                 <div>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13 }}>{t.title}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.06em' }}>{t.artist} · {t.dur}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.06em' }}>{t.artist} · {t.dur}</div>
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginTop: 18, marginBottom: 4 }}>WHY THIS SEED?</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.18em', textTransform: 'uppercase', fontWeight: 700, marginTop: 18, marginBottom: 4 }}>WHY THIS SEED?</div>
           <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 10, padding: 14, fontFamily: 'var(--f-b)', fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>
             You hyped <span style={{ color: 'var(--accent)', fontWeight: 600 }}>3 tracks</span> from The Lowriders this month. This is from their unreleased EP <em style={{ fontFamily: "'Instrument Serif',serif" }}>&ldquo;Side Roads&rdquo;</em> — promoter test pressing.
           </div>
@@ -640,11 +640,11 @@ function QueueRail({ tracks, currentIdx, onPick }: {
       <div style={{ padding: '18px 20px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--line)', flexShrink: 0 }}>
         <div>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, letterSpacing: '-.005em' }}>Queue</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>
             {tracks.length} tracks · {Math.floor(durMin / 60)}m
           </div>
         </div>
-        <button style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.1em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
+        <button style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.1em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer' }}>Edit</button>
       </div>
 
       {/* List */}
@@ -670,12 +670,12 @@ function QueueRail({ tracks, currentIdx, onPick }: {
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontFamily: 'var(--f-b)', fontWeight: 600, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>{t.title}</div>
-                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 2 }}>{t.artistName}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 2 }}>{t.artistName}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: 'var(--f-m)', fontSize: 10, color: '#ff3e9a' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: 'var(--f-m)', fontSize: 12, color: '#ff3e9a' }}>
                 <IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}
               </div>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', width: 30, textAlign: 'right' }}>{t.duration}</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', width: 30, textAlign: 'right' }}>{t.duration}</div>
             </button>
           );
         })}
@@ -683,7 +683,7 @@ function QueueRail({ tracks, currentIdx, onPick }: {
 
       {/* Footer */}
       <div style={{ padding: '14px 20px 18px', borderTop: '1px solid var(--line)', flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.14em' }}>CURATED BY</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em' }}>CURATED BY</div>
         <div style={{ fontFamily: 'var(--f-s)', fontStyle: 'italic', fontSize: 18, marginTop: 4, color: 'var(--ink)' }}>iHYPE · Discovery Queue</div>
       </div>
     </aside>
@@ -722,9 +722,9 @@ function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress, setPro
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, letterSpacing: '-.005em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>{track.title}</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.04em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artistName} · <span style={{ color: 'var(--ink-4)' }}>{track.album}</span></div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.04em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artistName} · <span style={{ color: 'var(--ink-4)' }}>{track.album}</span></div>
         </div>
-        <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99, color: '#ff3e9a', fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer', flexShrink: 0 }}>
+        <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99, color: '#ff3e9a', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer', flexShrink: 0 }}>
           <IcHeart s={14} c="#ff3e9a" /> {track.hypeCount}
         </button>
       </div>
@@ -732,16 +732,16 @@ function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress, setPro
       {/* Center: controls + scrub */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button title="Shuffle" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcShuffle s={14} /></button>
-          <button title="Previous" onClick={onPrev} style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcSkipP s={14} /></button>
-          <button onClick={onToggle} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--ink)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
+          <button title="Shuffle" aria-label="Shuffle" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcShuffle s={14} /></button>
+          <button title="Previous" aria-label="Previous track" onClick={onPrev} style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcSkipP s={14} /></button>
+          <button onClick={onToggle} aria-label={playing ? 'Pause' : 'Play'} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--ink)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
             {playing ? <IcPause s={14} /> : <IcPlay s={14} />}
           </button>
-          <button title="Next" onClick={onNext} style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcSkipN s={14} /></button>
-          <button title="Repeat" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcRepeat s={14} /></button>
+          <button title="Next" aria-label="Next track" onClick={onNext} style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcSkipN s={14} /></button>
+          <button title="Repeat" aria-label="Repeat" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcRepeat s={14} /></button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 540 }}>
-          <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 34, textAlign: 'center' }}>{fmtTime(progress * track.durationSec)}</span>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 34, textAlign: 'center' }}>{fmtTime(progress * track.durationSec)}</span>
           <div
             style={{ flex: 1, height: 4, background: 'rgba(255,255,255,.06)', borderRadius: 99, position: 'relative', cursor: 'pointer', overflow: 'visible' }}
             onClick={e => {
@@ -752,7 +752,7 @@ function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress, setPro
             <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: 'linear-gradient(90deg, var(--accent), #ff3e9a)', borderRadius: 99 }} />
             <div style={{ position: 'absolute', top: '50%', left: `${progress * 100}%`, transform: 'translate(-50%, -50%)', width: 11, height: 11, borderRadius: '50%', background: '#fff', boxShadow: '0 0 0 3px rgba(255,255,255,.15)' }} />
           </div>
-          <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 34, textAlign: 'center' }}>{track.duration}</span>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 34, textAlign: 'center' }}>{track.duration}</span>
         </div>
       </div>
 
@@ -778,7 +778,7 @@ function Panel({ title, link, onLink, children, style }: {
     <section style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden', ...style }}>
       <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, letterSpacing: '-.005em', color: 'var(--ink)' }}>{title}</div>
-        {link && <button onClick={onLink} style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.1em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer' }}>{link}</button>}
+        {link && <button onClick={onLink} style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.1em', textTransform: 'uppercase', background: 'none', border: 'none', cursor: 'pointer' }}>{link}</button>}
       </div>
       {children}
     </section>
@@ -788,9 +788,9 @@ function Panel({ title, link, onLink, children, style }: {
 function StatCard({ label, value, delta, color }: { label: string; value: string; delta: string; color: string }) {
   return (
     <div style={{ padding: '14px 16px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)' }}>
-      <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.16em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
       <div style={{ fontFamily: 'var(--f-d)', fontSize: 26, fontWeight: 700, letterSpacing: '-.015em', color: 'var(--ink)' }}>{value}</div>
-      <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.02em', marginTop: 6, color }}>{delta}</div>
+      <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.02em', marginTop: 6, color }}>{delta}</div>
     </div>
   );
 }
@@ -828,12 +828,12 @@ function TrackCard({ track, active, onClick }: { track: WbTrack; active: boolean
         <div style={{ position: 'absolute', left: 10, bottom: 10, width: 26, height: 26, borderRadius: '50%', background: 'var(--ink)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <IcPlay s={12} />
         </div>
-        <div style={{ position: 'absolute', right: 8, top: 8, padding: '2px 7px', background: 'rgba(0,0,0,.5)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 9, color: '#ff3e9a', display: 'flex', alignItems: 'center', gap: 3 }}>
+        <div style={{ position: 'absolute', right: 8, top: 8, padding: '2px 7px', background: 'rgba(0,0,0,.5)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, color: '#ff3e9a', display: 'flex', alignItems: 'center', gap: 3 }}>
           <IcHeart s={10} c="#ff3e9a" /> {track.hypeCount}
         </div>
       </div>
       <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, letterSpacing: '-.005em', color: 'var(--ink)' }}>{track.title}</div>
-      <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{track.artistName} · {track.duration}</div>
+      <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{track.artistName} · {track.duration}</div>
     </button>
   );
 }
@@ -853,7 +853,7 @@ const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
   if (!show) {
     return (
       <div style={{ padding: '24px 32px' }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: '#ff3e9a', marginBottom: 10 }}>● RADIO · iHYPE NETWORK</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: '#ff3e9a', marginBottom: 10 }}>● RADIO · iHYPE NETWORK</div>
         <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Radio</h1>
         <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 16 }}>No radio shows yet. Start one in Studio.</p>
       </div>
@@ -865,7 +865,7 @@ const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
         <div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: '#ff3e9a', marginBottom: 10 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: '#ff3e9a', marginBottom: 10 }}>
             ● ON AIR · {shows.length} CHANNELS · {shows.reduce((a, s) => a + s.listeners, 0).toLocaleString()} LISTENING NOW
           </div>
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Radio</h1>
@@ -880,7 +880,7 @@ const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
       <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16 }}>
         {/* Channels list */}
         <div style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden', alignSelf: 'start' }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.14em' }}>CHANNELS</div>
+          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--line)', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em' }}>CHANNELS</div>
           {shows.map(r => (
             <button key={r.id} onClick={() => setActiveId(r.id)} style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px',
@@ -892,15 +892,15 @@ const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: 'var(--ink)' }}>
                   {r.name}
-                  {r.live && <span style={{ fontFamily: 'var(--f-m)', fontSize: 8, color: '#ff3e9a', letterSpacing: '.16em', padding: '1px 5px', border: '1px solid rgba(255,62,154,.4)', borderRadius: 3 }}>● LIVE</span>}
+                  {r.live && <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: '#ff3e9a', letterSpacing: '.16em', padding: '1px 5px', border: '1px solid rgba(255,62,154,.4)', borderRadius: 3 }}>● LIVE</span>}
                 </div>
-                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{r.host} · {r.time}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{r.host} · {r.time}</div>
               </div>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)' }}>{r.listeners}</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)' }}>{r.listeners}</div>
             </button>
           ))}
           <div style={{ padding: '10px 14px', textAlign: 'center' }}>
-            <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.06em', cursor: 'pointer' }}>+ Add station</span>
+            <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.06em', cursor: 'pointer' }}>+ Add station</span>
           </div>
         </div>
 
@@ -910,18 +910,18 @@ const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
           <div style={{ padding: '24px 28px', border: '1px solid var(--line)', borderRadius: 10, background: `linear-gradient(135deg, ${show.color}30 0%, transparent 60%), var(--bg-2)` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               {show.live ? (
-                <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: '#ff3e9a', letterSpacing: '.14em', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99 }}>
+                <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: '#ff3e9a', letterSpacing: '.14em', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99 }}>
                   <IcDot c="#ff3e9a" s={8} /> ON AIR · {show.listeners} listening
                 </span>
               ) : (
-                <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.14em' }}>
+                <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em' }}>
                   NEXT BROADCAST · {show.next}
                 </span>
               )}
               <span style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18, color: 'var(--ink-2)' }}>{FREQS[showIdx] ?? '88.3'} MHz</span>
             </div>
             <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 34, letterSpacing: '-.025em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>{show.name}</h2>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.06em', marginTop: 8 }}>Hosted by <strong>{show.host}</strong> · {show.time}</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.06em', marginTop: 8 }}>Hosted by <strong>{show.host}</strong> · {show.time}</div>
             <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 14, maxWidth: 540, lineHeight: 1.55 }}>{show.desc}</p>
             <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
               <button style={{ padding: '9px 16px', background: show.live ? show.color : 'var(--ink)', color: 'var(--bg)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', display: 'flex', alignItems: 'center', gap: 6, border: 'none', cursor: 'pointer' }}>
@@ -938,16 +938,16 @@ const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
             <div style={{ padding: '4px 0' }}>
               {data.tracks.slice(0, 6).map((t, i) => (
                 <button key={t.id} onClick={() => onPickTrack(i)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14, padding: '10px 18px', borderBottom: '1px solid var(--line)', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', width: 22 }}>{String(i + 1).padStart(2, '0')}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)', width: 22 }}>{String(i + 1).padStart(2, '0')}</div>
                   <div style={{ width: 34, height: 34, borderRadius: 4, flexShrink: 0, background: `linear-gradient(135deg, ${t.color}, ${t.color}80)` }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{t.title}</div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 2 }}>{t.artistName} · {t.album}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 2 }}>{t.artistName} · {t.album}</div>
                   </div>
-                  <div style={{ padding: '2px 8px', background: 'var(--bg-3)', borderRadius: 3, fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-2)', letterSpacing: '.08em' }}>
+                  <div style={{ padding: '2px 8px', background: 'var(--bg-3)', borderRadius: 3, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.08em' }}>
                     {i === 0 && show.live ? 'NOW' : i < 2 ? 'JUST PLAYED' : `-${i * 4}m`}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff3e9a', width: 50, justifyContent: 'flex-end' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--f-m)', fontSize: 13, color: '#ff3e9a', width: 50, justifyContent: 'flex-end' }}>
                     <IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}
                   </div>
                 </button>
@@ -971,7 +971,7 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
     <div style={{ padding: '24px 32px 32px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 22, gap: 24 }}>
         <div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: '#22e5d4', marginBottom: 10 }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: '#22e5d4', marginBottom: 10 }}>
             ● {data.showsTonight} TONIGHT · NO SCALPERS · 45/45/10 SPLIT
           </div>
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Live Events</h1>
@@ -982,7 +982,7 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
         <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 8, flexShrink: 0 }}>
           {tabs.map(([k, l]) => (
             <button key={k} onClick={() => setTab(k)} style={{
-              padding: '7px 12px', borderRadius: 5, fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.04em', border: 'none', cursor: 'pointer',
+              padding: '7px 12px', borderRadius: 5, fontFamily: 'var(--f-m)', fontSize: 13, letterSpacing: '.04em', border: 'none', cursor: 'pointer',
               background: tab === k ? 'var(--bg-3)' : 'transparent',
               color: tab === k ? 'var(--ink)' : 'var(--ink-3)',
             }}>{l}</button>
@@ -994,10 +994,10 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {['ALL CITIES','CHICAGO','THIS WEEK','UNDER $20'].map((f, i) => (
-              <button key={f} style={{ padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.12em', cursor: 'pointer', background: i === 1 ? 'var(--bg-4)' : 'var(--bg-2)', color: i === 1 ? 'var(--ink)' : 'var(--ink-2)', borderColor: i === 1 ? 'var(--line-2)' : 'var(--line)' }}>{f}</button>
+              <button key={f} style={{ padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.12em', cursor: 'pointer', background: i === 1 ? 'var(--bg-4)' : 'var(--bg-2)', color: i === 1 ? 'var(--ink)' : 'var(--ink-2)', borderColor: i === 1 ? 'var(--line-2)' : 'var(--line)' }}>{f}</button>
             ))}
             <span style={{ flex: 1 }} />
-            <button style={{ padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-2)', background: 'var(--bg-2)', cursor: 'pointer' }}>Sort · by HYPE ↓</button>
+            <button style={{ padding: '7px 12px', border: '1px solid var(--line)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', background: 'var(--bg-2)', cursor: 'pointer' }}>Sort · by HYPE ↓</button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12 }}>
             {data.shows.map(s => {
@@ -1008,28 +1008,28 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
                 <div key={s.id} style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--bg-2)', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ height: 140, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${color}, ${color}80)` }}>
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 40%, rgba(0,0,0,.4) 100%)' }} />
-                    <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'rgba(0,0,0,.55)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 9, color: '#fff', letterSpacing: '.14em' }}>
+                    <div style={{ position: 'absolute', top: 12, left: 12, display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'rgba(0,0,0,.55)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, color: '#fff', letterSpacing: '.14em' }}>
                       <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor, display: 'inline-block' }} /> {s.status}
                     </div>
-                    <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: 'rgba(0,0,0,.55)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 10, color: '#fff' }}>
+                    <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: 'rgba(0,0,0,.55)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, color: '#fff' }}>
                       ♡ {s.hype} HYPE
                     </div>
                   </div>
                   <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 22, letterSpacing: '-.02em', lineHeight: 1.05, color: 'var(--ink)' }}>{s.name}</div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.06em' }}>{s.venue}</div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.06em' }}>{s.date} · {s.time}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.06em' }}>{s.venue}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.06em' }}>{s.date} · {s.time}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 4 }}>
                       <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,.06)', borderRadius: 2, position: 'relative', overflow: 'hidden' }}>
                         <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: pct > 85 ? '#ffb84a' : '#22e5d4', borderRadius: 2 }} />
                       </div>
-                      <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)' }}>{s.sold} / {s.capacity}</div>
+                      <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)' }}>{s.sold} / {s.capacity}</div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                       <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 26, letterSpacing: '-.02em', color: 'var(--ink)' }}>${s.price}</div>
                       <button style={{ padding: '9px 16px', background: 'var(--ink)', color: 'var(--bg)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', border: 'none', cursor: 'pointer' }}>Get ticket →</button>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, marginTop: 2, borderTop: '1px solid var(--line)', fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.04em' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, marginTop: 2, borderTop: '1px solid var(--line)', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em' }}>
                       <span>${(s.price * 0.45).toFixed(2)} → artist</span>
                       <span>${(s.price * 0.45).toFixed(2)} → venue</span>
                       <span>${(s.price * 0.10).toFixed(2)} → referrer</span>
@@ -1046,14 +1046,14 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
         <div>
           {data.tickets.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.16em', marginBottom: 10 }}>NEXT UP</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.16em', marginBottom: 10 }}>NEXT UP</div>
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr 200px', gap: 32, padding: '24px 28px',
                 border: '1px solid var(--line)', borderRadius: 12,
                 background: 'linear-gradient(135deg, rgba(255,80,41,.15) 0%, transparent 60%), var(--bg-2)',
               }}>
                 <div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: '#22e5d4', letterSpacing: '.14em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: '#22e5d4', letterSpacing: '.14em', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <IcDot c="#22e5d4" s={7} /> CONFIRMED · DOORS 7:30 PM
                   </div>
                   <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 32, letterSpacing: '-.025em', margin: '10px 0 4px', color: 'var(--ink)' }}>
@@ -1063,7 +1063,7 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
                   <div style={{ display: 'flex', gap: 30, marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--line)' }}>
                     {[['SEAT', data.tickets[0].seat], ['PAID', `$${data.tickets[0].price}`], ['ENTRY CODE', data.tickets[0].code]].map(([l, v]) => (
                       <div key={l}>
-                        <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.16em', marginBottom: 6 }}>{l}</div>
+                        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.16em', marginBottom: 6 }}>{l}</div>
                         <div style={{ fontFamily: l === 'ENTRY CODE' ? 'var(--f-m)' : 'var(--f-d)', fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{v}</div>
                       </div>
                     ))}
@@ -1078,7 +1078,7 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                   <div style={{ padding: 14, background: 'var(--ink)', color: 'var(--bg)', borderRadius: 8 }}><IcQR s={140} /></div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.06em', textAlign: 'center', maxWidth: 140 }}>Signed by iHYPE · scan with venue app</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.06em', textAlign: 'center', maxWidth: 140 }}>Signed by iHYPE · scan with venue app</div>
                 </div>
               </div>
             </div>
@@ -1086,32 +1086,32 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
           <div style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden' }}>
             <div style={{ padding: '12px 18px', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>All my tickets</div>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em' }}>{data.tickets.length} active</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em' }}>{data.tickets.length} active</div>
             </div>
             {data.tickets.map(tk => (
               <div key={tk.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderBottom: '1px solid var(--line)' }}>
                 <div style={{ width: 3, height: 40, background: 'var(--accent)', borderRadius: 2 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{tk.showName}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{tk.date}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{tk.date}</div>
                 </div>
                 {[['SEAT', tk.seat], ['PAID', `$${tk.price}`]].map(([l, v]) => (
                   <div key={l} style={{ minWidth: 80 }}>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 3 }}>{l}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 3 }}>{l}</div>
                     <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{v}</div>
                   </div>
                 ))}
-                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.05em' }}>{tk.code}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.05em' }}>{tk.code}</div>
                 <div style={{
                   padding: '4px 10px', border: `1px solid ${tk.status === 'CONFIRMED' ? 'rgba(34,229,212,.3)' : 'rgba(255,184,74,.3)'}`,
-                  borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.08em',
+                  borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.08em',
                   color: tk.status === 'CONFIRMED' ? '#22e5d4' : '#ffb84a',
                 }}>{tk.status}</div>
                 <button style={{ color: 'var(--ink-3)', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcArrow s={12} /></button>
               </div>
             ))}
             {data.tickets.length === 0 && (
-              <div style={{ padding: 24, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', textAlign: 'center' }}>No tickets yet — browse events above.</div>
+              <div style={{ padding: 24, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)', textAlign: 'center' }}>No tickets yet — browse events above.</div>
             )}
           </div>
         </div>
@@ -1139,18 +1139,18 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
                   <div style={{ width: 3, height: 40, background: '#22e5d4', borderRadius: 2 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{s.name} <span style={{ color: 'var(--ink-3)' }}>· {s.venue}</span></div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{s.date} · {s.time}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{s.date} · {s.time}</div>
                   </div>
                   <div style={{ minWidth: 90 }}>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 4 }}>SOLD</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 4 }}>SOLD</div>
                     <div style={{ width: 80, height: 4, background: 'rgba(255,255,255,.06)', borderRadius: 2, position: 'relative', overflow: 'hidden', marginBottom: 4 }}>
                       <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: pct > 85 ? '#ffb84a' : '#22e5d4', borderRadius: 2 }} />
                     </div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-2)' }}>{s.sold} / {s.capacity}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)' }}>{s.sold} / {s.capacity}</div>
                   </div>
-                  <div style={{ minWidth: 60 }}><div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 3 }}>PRICE</div><div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>${s.price}</div></div>
-                  <div style={{ minWidth: 80 }}><div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 3 }}>GROSS</div><div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>${(s.sold * s.price).toLocaleString()}</div></div>
-                  <button style={{ padding: '7px 12px', border: '1px solid var(--line-2)', borderRadius: 5, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', background: 'none', cursor: 'pointer' }}>Manage →</button>
+                  <div style={{ minWidth: 60 }}><div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 3 }}>PRICE</div><div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>${s.price}</div></div>
+                  <div style={{ minWidth: 80 }}><div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 3 }}>GROSS</div><div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>${(s.sold * s.price).toLocaleString()}</div></div>
+                  <button style={{ padding: '7px 12px', border: '1px solid var(--line-2)', borderRadius: 5, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', background: 'none', cursor: 'pointer' }}>Manage →</button>
                 </div>
               );
             })}
@@ -1161,7 +1161,7 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
       {tab === 'scan' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 18, padding: 24, border: '1px solid var(--line)', borderRadius: 12, background: 'var(--bg-2)' }}>
           <div>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: '#22e5d4', marginBottom: 10 }}>● VENUE MODE · GATE 1</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: '#22e5d4', marginBottom: 10 }}>● VENUE MODE · GATE 1</div>
             <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 30, letterSpacing: '-.025em', margin: '8px 0', color: 'var(--ink)' }}>Door scanner</h2>
             <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', maxWidth: 480, lineHeight: 1.5 }}>Point a phone camera at the QR. Valid tickets show green; replays are blocked at the protocol layer.</p>
             <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1174,7 +1174,7 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
                   {r.ok ? <IcCheck s={14} /> : <span style={{ fontSize: 14 }}>⨯</span>}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink)', letterSpacing: '.04em' }}>{r.code}</div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{r.meta}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{r.meta}</div>
                   </div>
                   <div style={{ color: r.ok ? '#22e5d4' : '#ff5029', fontFamily: 'var(--f-m)', fontSize: 11 }}>{r.status}</div>
                 </div>
@@ -1185,12 +1185,12 @@ const ViewTickets = memo(function ViewTickets({ data }: { data: WorkbenchData })
             <div style={{ aspectRatio: '1', background: 'var(--bg)', border: '1px solid var(--line-2)', borderRadius: 10, position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ position: 'absolute', inset: 30, border: '2px solid rgba(34,229,212,.5)', borderRadius: 4 }} />
               <div style={{ position: 'absolute', left: 30, right: 30, top: '50%', height: 1, background: '#22e5d4', boxShadow: '0 0 16px #22e5d4' }} />
-              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18, textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.1em' }}>Ready for QR…</div>
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 18, textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)', letterSpacing: '.1em' }}>Ready for QR…</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, padding: '14px 16px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--bg-3)' }}>
               {[['ADMITTED', '148', 'var(--ink)'], ['WAITING', '23', 'var(--ink)'], ['BLOCKED', '2', '#ff5029']].map(([l, v, c]) => (
                 <div key={l}>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 3 }}>{l}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.14em', marginBottom: 3 }}>{l}</div>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: c }}>{v}</div>
                 </div>
               ))}
@@ -1209,7 +1209,7 @@ function ViewLibrary({ data, onPickTrack, currentIdx }: { data: WorkbenchData; o
   return (
     <div style={{ padding: '24px 32px 32px' }}>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: '#b983ff', marginBottom: 10 }}>● YOUR SAVED TRACKS · {data.tracks.length} SONGS · 18 PLAYLISTS</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: '#b983ff', marginBottom: 10 }}>● YOUR SAVED TRACKS · {data.tracks.length} SONGS · 18 PLAYLISTS</div>
         <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Library</h1>
         <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>Everything you've HYPEd, saved from Discover seeds, or curated. Your library is yours.</p>
       </div>
@@ -1223,7 +1223,7 @@ function ViewLibrary({ data, onPickTrack, currentIdx }: { data: WorkbenchData; o
           <div key={p.n} style={{ padding: 14, border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', cursor: 'pointer' }}>
             <div style={{ aspectRatio: '1', borderRadius: 6, background: `linear-gradient(135deg, ${p.c}, ${p.c}80)`, marginBottom: 10 }} />
             <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>{p.n}</div>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 3 }}>{p.count} tracks</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>{p.count} tracks</div>
           </div>
         ))}
       </div>
@@ -1243,7 +1243,7 @@ function ViewDiscover({ data, onPickTrack, currentIdx }: { data: WorkbenchData; 
   return (
     <div style={{ padding: '24px 32px 32px' }}>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: 'var(--accent)', marginBottom: 10 }}>● DISCOVER · SEEDS · NEW ARTISTS</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: 'var(--accent)', marginBottom: 10 }}>● DISCOVER · SEEDS · NEW ARTISTS</div>
         <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Discover</h1>
         <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>Swipe through 15–30 second seeds from new artists. Right to save, left to skip, up to HYPE.</p>
       </div>
@@ -1262,7 +1262,7 @@ function ViewStudio({ data }: { data: WorkbenchData }) {
   return (
     <div style={{ padding: '24px 32px 32px' }}>
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: 'var(--accent)', marginBottom: 10 }}>● STUDIO · SHOW CREATOR · UPLOADS</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: 'var(--accent)', marginBottom: 10 }}>● STUDIO · SHOW CREATOR · UPLOADS</div>
         <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Studio</h1>
         <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>Upload tracks, build radio shows, track payouts. 45% of every ticket to you, always.</p>
       </div>
@@ -1274,9 +1274,9 @@ function ViewStudio({ data }: { data: WorkbenchData }) {
                 <div style={{ width: 40, height: 40, borderRadius: 5, background: `linear-gradient(135deg, ${t.color}, ${t.color}80)`, flexShrink: 0 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{t.title}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{t.artistName} · {t.duration}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{t.artistName} · {t.duration}</div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff3e9a' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--f-m)', fontSize: 13, color: '#ff3e9a' }}>
                   <IcHeart s={10} c="#ff3e9a" /> {t.hypeCount}
                 </div>
               </div>
@@ -1284,10 +1284,10 @@ function ViewStudio({ data }: { data: WorkbenchData }) {
           </div>
         </Panel>
         <div style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', padding: '24px 28px' }}>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.16em', color: 'var(--ink-3)', marginBottom: 8 }}>PAYOUT PENDING</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.16em', color: 'var(--ink-3)', marginBottom: 8 }}>PAYOUT PENDING</div>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.025em', color: 'var(--ink)' }}>${payout.toLocaleString()}</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ffb84a', letterSpacing: '.04em', marginTop: 6 }}>pending · next release</div>
-          <div style={{ marginTop: 18, padding: '10px 14px', background: 'var(--bg-3)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-2)', letterSpacing: '.04em' }}>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: '#ffb84a', letterSpacing: '.04em', marginTop: 6 }}>pending · next release</div>
+          <div style={{ marginTop: 18, padding: '10px 14px', background: 'var(--bg-3)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.04em' }}>
             45% tickets · 45% venue · 10% referrer · $0 platform fee
           </div>
           <button style={{ marginTop: 14, width: '100%', padding: '10px', background: 'var(--accent)', color: 'var(--bg)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', border: 'none', cursor: 'pointer' }}>
@@ -1325,15 +1325,15 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
     <div style={{ padding: '24px 32px 32px', maxWidth: 1180 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
         <div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: 'var(--ink-3)', marginBottom: 10 }}>● PERSONAL · APPLIES TO THIS BROWSER</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: 'var(--ink-3)', marginBottom: 10 }}>● PERSONAL · APPLIES TO THIS BROWSER</div>
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Settings <span style={{ color: 'var(--ink-2)', fontWeight: 500 }}>· page customization</span></h1>
           <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 580, lineHeight: 1.5 }}>Make iHYPE feel like yours. Changes apply live.</p>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {onBack && (
-            <button onClick={onBack} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.04em', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>← Back</button>
+            <button onClick={onBack} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.04em', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>← Back</button>
           )}
-          <button onClick={() => setPref('__reset__', null)} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.04em', background: 'none', cursor: 'pointer' }}>Reset to defaults</button>
+          <button onClick={() => setPref('__reset__', null)} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.04em', background: 'none', cursor: 'pointer' }}>Reset to defaults</button>
         </div>
       </div>
 
@@ -1341,7 +1341,7 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
         {/* Accent */}
         <section style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', padding: '16px 18px' }}>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, letterSpacing: '-.005em', color: 'var(--ink)', marginBottom: 4 }}>Accent color</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>Used for highlights, the player, and active nav.</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>Used for highlights, the player, and active nav.</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
             {ACCENTS.map(c => (
               <button key={c.v} onClick={() => setPref('accent', c.v)} style={{
@@ -1351,7 +1351,7 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
                 boxShadow: prefs.accent === c.v ? `0 0 0 1px ${c.v}80` : 'none',
               }}>
                 <div style={{ width: 22, height: 22, borderRadius: 5, background: c.v, flexShrink: 0 }} />
-                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink)', letterSpacing: '.04em' }}>{c.label}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink)', letterSpacing: '.04em' }}>{c.label}</div>
                 {prefs.accent === c.v && <div style={{ position: 'absolute', top: 6, right: 6, color: c.v }}><IcCheck s={11} /></div>}
               </button>
             ))}
@@ -1368,12 +1368,12 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
             }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--f-b)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>Preview</div>
-              <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: prefs.accent, letterSpacing: '.08em', marginTop: 3 }}>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: prefs.accent, letterSpacing: '.08em', marginTop: 3 }}>
                 ♥ 1,247 HYPEs this week
               </div>
             </div>
             <button style={{
-              padding: '7px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 11,
+              padding: '7px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13,
               fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
               border: 'none', cursor: 'pointer', color: '#fff',
               background: `linear-gradient(135deg, ${prefs.accent}, var(--pink))`
@@ -1384,11 +1384,11 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
         {/* Density */}
         <section style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', padding: '16px 18px' }}>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, letterSpacing: '-.005em', color: 'var(--ink)', marginBottom: 4 }}>Density</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>Tighter = more on screen. Comfortable = more breathing room.</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>Tighter = more on screen. Comfortable = more breathing room.</div>
           <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-3)', borderRadius: 7, border: '1px solid var(--line)' }}>
             {[['compact','Compact'],['cozy','Cozy'],['comfy','Comfortable']].map(([k,l]) => (
               <button key={k} onClick={() => setPref('density', k)} style={{
-                flex: 1, padding: '8px 10px', borderRadius: 5, fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.04em', border: 'none', cursor: 'pointer',
+                flex: 1, padding: '8px 10px', borderRadius: 5, fontFamily: 'var(--f-m)', fontSize: 13, letterSpacing: '.04em', border: 'none', cursor: 'pointer',
                 background: prefs.density === k ? 'var(--bg)' : 'transparent',
                 color: prefs.density === k ? 'var(--ink)' : 'var(--ink-3)',
               }}>{l}</button>
@@ -1402,7 +1402,7 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
               <div key={opt.k} style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{opt.l}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{opt.s}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{opt.s}</div>
                 </div>
                 <Toggle on={(prefs as Record<string, unknown>)[opt.k] as boolean} onChange={v => setPref(opt.k, v)} />
               </div>
@@ -1413,7 +1413,7 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
         {/* Pinned tools — span 2 */}
         <section style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', padding: '16px 18px', gridColumn: 'span 2' }}>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, letterSpacing: '-.005em', color: 'var(--ink)', marginBottom: 4 }}>Pinned tools</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>What shows in the left rail. Home and Settings are always present.</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>What shows in the left rail. Home and Settings are always present.</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {PIN_TOOLS.map(t => {
               const pinned = prefs.pinned.includes(t.k);
@@ -1427,9 +1427,9 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
                   <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 5, background: 'var(--bg-2)', color: pinned ? prefs.accent : 'var(--ink-3)' }}>{t.icon}</div>
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{t.label}</div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.02em', marginTop: 2 }}>{t.sub}</div>
+                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.02em', marginTop: 2 }}>{t.sub}</div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', border: `1px solid ${pinned ? `${prefs.accent}40` : 'var(--line-2)'}`, borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.04em', color: pinned ? prefs.accent : 'var(--ink-3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 9px', border: `1px solid ${pinned ? `${prefs.accent}40` : 'var(--line-2)'}`, borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.04em', color: pinned ? prefs.accent : 'var(--ink-3)' }}>
                     {pinned ? <><IcCheck s={11} /> pinned</> : 'pin'}
                   </div>
                 </button>
@@ -1441,7 +1441,7 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
         {/* Home panels — span 2 */}
         <section style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', padding: '16px 18px', gridColumn: 'span 2' }}>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, letterSpacing: '-.005em', color: 'var(--ink)', marginBottom: 4 }}>Home page panels</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>What appears on Home below the greeting.</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>What appears on Home below the greeting.</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {[
               { k: 'panel_stats', l: 'Stat row', d: 'Hype, sales, plays, payouts' },
@@ -1458,7 +1458,7 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
                 <Toggle on={(prefs as Record<string,unknown>)[p.k] as boolean} onChange={v => setPref(p.k, v)} small />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{p.l}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{p.d}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{p.d}</div>
                 </div>
               </label>
             ))}
@@ -1468,23 +1468,23 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
         {/* City */}
         <section style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', padding: '16px 18px' }}>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, letterSpacing: '-.005em', color: 'var(--ink)', marginBottom: 4 }}>City + scene</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>Used everywhere — "Tonight in", radio picks, discover defaults.</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>Used everywhere — "Tonight in", radio picks, discover defaults.</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <select value={prefs.city} onChange={e => setPref('city', e.target.value)} style={{ padding: '8px 12px', background: 'var(--bg-3)', border: '1px solid var(--line)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink)' }}>
               {['Chicago, IL','Brooklyn, NY','Los Angeles, CA','Austin, TX','Detroit, MI','Atlanta, GA'].map(c => <option key={c}>{c}</option>)}
             </select>
-            <span style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.06em' }}>· current</span>
+            <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.06em' }}>· current</span>
           </div>
         </section>
 
         {/* Greeting */}
         <section style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', padding: '16px 18px' }}>
           <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, letterSpacing: '-.005em', color: 'var(--ink)', marginBottom: 4 }}>Greeting style</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>The big line at the top of Home.</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.02em', marginBottom: 14 }}>The big line at the top of Home.</div>
           <div style={{ display: 'flex', gap: 4, padding: 4, background: 'var(--bg-3)', borderRadius: 7, border: '1px solid var(--line)' }}>
             {[['warm','Warm name'],['minimal','Minimal'],['data','Data first']].map(([k,l]) => (
               <button key={k} onClick={() => setPref('greeting', k)} style={{
-                flex: 1, padding: '8px 10px', borderRadius: 5, fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.04em', border: 'none', cursor: 'pointer',
+                flex: 1, padding: '8px 10px', borderRadius: 5, fontFamily: 'var(--f-m)', fontSize: 13, letterSpacing: '.04em', border: 'none', cursor: 'pointer',
                 background: prefs.greeting === k ? 'var(--bg)' : 'transparent',
                 color: prefs.greeting === k ? 'var(--ink)' : 'var(--ink-3)',
               }}>{l}</button>
@@ -1493,7 +1493,7 @@ function ViewSettings({ prefs, setPref, data, onBack }: {
         </section>
       </div>
 
-      <div style={{ marginTop: 20, padding: '14px 18px', border: '1px dashed var(--line-2)', borderRadius: 8, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.02em' }}>
+      <div style={{ marginTop: 20, padding: '14px 18px', border: '1px dashed var(--line-2)', borderRadius: 8, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)', letterSpacing: '.02em' }}>
         Preferences live in this browser. Sign in to sync across devices — keys never leave your control.
       </div>
     </div>
@@ -1661,6 +1661,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         @keyframes eq { 0%,100% { height: 3px; } 50% { height: 10px; } }
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
         .wb-view-anim { animation: fadeIn .35s ease-out both; }
+        *:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+        button, [role="button"] { min-height: 44px; }
+        .wb-tab-btn { min-height: 44px !important; }
       `}</style>
       <div
         className="wb-shell"
@@ -1739,7 +1742,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         }}>
           <span style={{ color: '#22e5d4' }}>✓</span> {toast}
           <button onClick={() => { setPlaying(false); setCurrentIdx(0); setToast(null); }}
-            style={{ marginLeft: 8, fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '.06em' }}>
+            style={{ marginLeft: 8, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '.06em' }}>
             Undo
           </button>
         </div>
