@@ -11,7 +11,7 @@ export async function GET() {
   // Get hype actions from AuditLog for this user, last 60 days
   const logs = await db.auditLog.findMany({
     where: {
-      userId: session.user.id,
+      actorUserId: session.user.id,
       action: { startsWith: 'hype_' },
       createdAt: { gte: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) },
     },
