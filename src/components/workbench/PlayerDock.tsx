@@ -5,10 +5,14 @@ import type { WbTrack } from '@/components/WorkbenchShell';
 import { IcHeart, IcShuffle, IcSkipP, IcPause, IcPlay, IcSkipN, IcRepeat, IcQueue, IcVol } from './icons';
 import { fmtTime } from './types';
 
-export function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress, setProgress }: {
+export function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress, onSeek, setProgress }: {
   track: WbTrack; playing: boolean; onToggle: () => void;
   onNext: () => void; onPrev: () => void;
-  progress: number; setProgress: (p: number) => void;
+  progress: number;
+  /** Preferred seek handler (seeks real audio + updates progress). Falls back to setProgress. */
+  onSeek?: (ratio: number) => void;
+  /** @deprecated Pass onSeek instead */
+  setProgress?: (p: number) => void;
 }) {
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
@@ -61,7 +65,9 @@ export function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress,
             style={{ flex: 1, height: 4, background: 'rgba(255,255,255,.06)', borderRadius: 99, position: 'relative', cursor: 'pointer', overflow: 'visible' }}
             onClick={e => {
               const r = e.currentTarget.getBoundingClientRect();
-              setProgress(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)));
+              const ratio = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+              if (onSeek) onSeek(ratio);
+              else if (setProgress) setProgress(ratio);
             }}
           >
             <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: 'linear-gradient(90deg, var(--accent), #ff3e9a)', borderRadius: 99 }} />

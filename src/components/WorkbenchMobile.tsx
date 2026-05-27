@@ -976,11 +976,50 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const [tab, setTab] = useState<MobileTab>('me');
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0.42);
-  const track = data.tracks[0];
+  const [currentTrackIdx, setCurrentTrackIdx] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Tick progress when playing
+  const currentTrack = data.tracks[currentTrackIdx % Math.max(data.tracks.length, 1)];
+  // keep track as alias for first-track compat used below
+  const track = currentTrack ?? data.tracks[0];
+
+  // Real audio playback effect
   useEffect(() => {
-    if (!playing || !track) return;
+    const audio = audioRef.current;
+    if (!audio || !currentTrack?.mediaUrl) return;
+    if (audio.src !== currentTrack.mediaUrl) {
+      audio.src = currentTrack.mediaUrl;
+      audio.load();
+    }
+    if (playing) {
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [playing, currentTrackIdx, currentTrack]);
+
+  // Sync progress from audio element
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTimeUpdate = () => {
+      if (audio.duration) setProgress(audio.currentTime / audio.duration);
+    };
+    const onEnded = () => {
+      setCurrentTrackIdx(ci => (ci + 1) % Math.max(data.tracks.length, 1));
+      setProgress(0);
+    };
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', onEnded);
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, [data.tracks.length]);
+
+  // Fallback tick progress when no mediaUrl
+  useEffect(() => {
+    if (!playing || !track || track.mediaUrl) return;
     const iv = setInterval(() => {
       setProgress(p => {
         const next = p + 1 / track.durationSec;
@@ -1008,6 +1047,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
       overflow: 'hidden',
     }}>
       <style>{eqCss}</style>
+      <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
       <WMTopBar tab={tab} listeningNow={data.listeningNow} userName={data.userName} initials={data.userInitials} />
       <div role="main" className="wm-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', position: 'relative', scrollbarWidth: 'none' }}>
         {screenEl}

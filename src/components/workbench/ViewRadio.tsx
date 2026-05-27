@@ -88,8 +88,22 @@ export const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
             <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.06em', marginTop: 8 }}>Hosted by <strong>{show.host}</strong> · {show.time}</div>
             <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 14, maxWidth: 540, lineHeight: 1.55 }}>{show.desc}</p>
             <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-              <button style={{ padding: '9px 16px', background: show.live ? show.color : 'var(--ink)', color: 'var(--bg)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', display: 'flex', alignItems: 'center', gap: 6, border: 'none', cursor: 'pointer' }}>
-                <IcPlay s={12} /> {show.live ? 'Tune in' : 'Pre-roll archive'}
+              <button
+                onClick={() => {
+                  // data.radioShows don't embed individual tracks — play the first track
+                  // in the global queue. When per-show track lists are available, map
+                  // show.tracks[0] to its global index instead.
+                  onPickTrack(0);
+                }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '10px 20px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                  fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700,
+                  letterSpacing: '.06em', textTransform: 'uppercase', color: '#fff',
+                  background: 'linear-gradient(135deg, var(--accent), var(--pink, #ff3e9a))',
+                }}
+              >
+                ▶ Tune in
               </button>
               {['＋ Subscribe', '♥ Hype show'].map(l => (
                 <button key={l} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.04em', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--ink)', background: 'none', cursor: 'pointer' }}>{l}</button>

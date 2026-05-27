@@ -21,6 +21,7 @@ import { ViewStudio } from './workbench/ViewStudio';
 import { ViewSettings } from './workbench/ViewSettings';
 import { Toast, WelcomeDialog } from './workbench/Overlays';
 import { ViewErrorBoundary } from './workbench/ErrorBoundary';
+import { SearchOverlay } from './workbench/SearchOverlay';
 
 // ─────────────────────────────────────────────────────────────
 // StarterPack type (for compat with home/page.tsx)
@@ -55,6 +56,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  // Audio ref for real playback
+  const audioRef = useRef<HTMLAudioElement>(null);
+
   // Load prefs from localStorage after mount
   useEffect(() => {
     setPrefs(loadPrefs());
@@ -78,11 +82,50 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     root.style.setProperty('--top-h', '60px');
   }, [prefs, mounted]);
 
-  // Player tick
+  // Sync audio element with playing state
   useEffect(() => {
-    if (!playing || tracks.length === 0) return;
+    const audio = audioRef.current;
+    if (!audio) return;
     const track = tracks[currentIdx];
-    if (!track) return;
+    if (!track?.mediaUrl) {
+      // No real audio — fall back to fake tick (handled below)
+      return;
+    }
+    if (audio.src !== track.mediaUrl) {
+      audio.src = track.mediaUrl;
+      audio.load();
+    }
+    if (playing) {
+      audio.play().catch(() => {}); // catch autoplay policy errors silently
+    } else {
+      audio.pause();
+    }
+  }, [playing, currentIdx, tracks]);
+
+  // Sync progress from audio element
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTimeUpdate = () => {
+      if (audio.duration) setProgress(audio.currentTime / audio.duration);
+    };
+    const onEnded = () => {
+      setCurrentIdx(ci => (ci + 1) % tracks.length);
+      setProgress(0);
+    };
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('ended', onEnded);
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, [tracks.length]);
+
+  // Player tick — only used as fallback when mediaUrl is empty
+  useEffect(() => {
+    const track = tracks[currentIdx];
+    if (!playing || tracks.length === 0 || !track) return;
+    if (track.mediaUrl) return; // real audio handles progress
     const iv = setInterval(() => {
       setProgress(p => {
         const next = p + 1 / track.durationSec;
@@ -95,6 +138,13 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     }, 1000);
     return () => clearInterval(iv);
   }, [playing, currentIdx, tracks]);
+
+  // Seek when progress is set externally (scrubber click)
+  const onSeekProgress = useCallback((ratio: number) => {
+    const audio = audioRef.current;
+    if (audio?.duration) audio.currentTime = ratio * audio.duration;
+    setProgress(ratio);
+  }, []);
 
   const setPref = useCallback((key: string, val: unknown) => {
     setPrefs(p => {
@@ -109,8 +159,16 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   }, []);
 
   const onPickTrack = useCallback((i: number) => { setCurrentIdx(i); setPlaying(true); }, []);
-  const onNext = useCallback(() => { setCurrentIdx(ci => (ci + 1) % tracks.length); setProgress(0); }, [tracks.length]);
-  const onPrev = useCallback(() => { setCurrentIdx(ci => (ci - 1 + tracks.length) % tracks.length); setProgress(0); }, [tracks.length]);
+  const onNext = useCallback(() => {
+    if (audioRef.current) audioRef.current.currentTime = 0;
+    setCurrentIdx(ci => (ci + 1) % tracks.length);
+    setProgress(0);
+  }, [tracks.length]);
+  const onPrev = useCallback(() => {
+    if (audioRef.current) audioRef.current.currentTime = 0;
+    setCurrentIdx(ci => (ci - 1 + tracks.length) % tracks.length);
+    setProgress(0);
+  }, [tracks.length]);
 
   // Seeds state
   const [seedPlaying, setSeedPlaying] = useState(false);
@@ -149,9 +207,22 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       .catch(() => {});
   }, []);
 
+  // Search overlay state
+  const [searchOpen, setSearchOpen] = useState(false);
+
   // Keyboard navigation
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // ⌘K / Ctrl+K — toggle search
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(p => !p);
+        return;
+      }
+      if (e.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+        return;
+      }
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
       if (view === 'seeds') {
@@ -160,14 +231,14 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         if (e.key === ' ')          { e.preventDefault(); setSeedPlaying(p => !p); }
         if (e.key === 'ArrowRight') { setSeedCardIdx(ci => Math.max(0, ci - 1)); }
       } else {
-        if (e.key === ' ')         { e.preventDefault(); setPlaying(p => !p); }
+        if (e.key === ' ')          { e.preventDefault(); setPlaying(p => !p); }
         if (e.key === 'ArrowRight') { onNext(); }
         if (e.key === 'ArrowLeft')  { onPrev(); }
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [view, seedCardIdx, tracks.length, onSeedSave, onNext, onPrev]);
+  }, [view, seedCardIdx, tracks.length, onSeedSave, onNext, onPrev, searchOpen]);
 
   const track = tracks[currentIdx] ?? tracks[0];
   const showDock = prefs.stickyDock && track;
@@ -223,6 +294,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
             userName={data.userName}
             activeProfileTypes={data.activeProfileTypes}
             onSettings={() => navigateTo('settings')}
+            onSearch={() => setSearchOpen(true)}
             badges={{
               seeds: data.tracks.length > 0 ? String(data.tracks.length) : undefined,
               radio: data.radioShows.some(r => r.live) ? 'LIVE' : undefined,
@@ -262,12 +334,15 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
             onNext={onNext}
             onPrev={onPrev}
             progress={progress}
-            setProgress={setProgress}
+            onSeek={onSeekProgress}
           />
         )}
       </div>
+      {/* Hidden audio element for real playback */}
+      <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
       {toast && <Toast message={toast} onUndo={() => { setPlaying(false); setCurrentIdx(0); setToast(null); }} />}
       {showWelcome && <WelcomeDialog onDismiss={() => { localStorage.setItem('ihype-welcome-seen', '1'); setShowWelcome(false); }} />}
+      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }
