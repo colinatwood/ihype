@@ -384,8 +384,57 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
 function ScreenSeeds({ data }: { data: WorkbenchData }) {
   const tracks = data.tracks;
   const waveform = [30, 55, 80, 42, 90, 70, 48, 88, 62, 35, 78, 55, 92, 40, 68, 82, 48, 30, 62, 88];
-  const front = tracks[0];
-  const behind = [tracks[2], tracks[1]];
+
+  // Swipe / drag state
+  const [cardIdx, setCardIdx] = useState(0);
+  const [dragX, setDragX] = useState(0);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef<{ x: number; y: number } | null>(null);
+
+  const totalTracks = tracks.length;
+  const front = tracks[cardIdx % totalTracks];
+  const behind = [
+    tracks[(cardIdx + 2) % totalTracks],
+    tracks[(cardIdx + 1) % totalTracks],
+  ];
+
+  function advanceCard() {
+    setCardIdx(i => i + 1);
+  }
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    setIsDragging(true);
+    setDragX(0);
+    setDragY(0);
+  }
+
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isDragging || !dragStart.current) return;
+    setDragX(e.clientX - dragStart.current.x);
+    setDragY(e.clientY - dragStart.current.y);
+  }
+
+  function handlePointerUp() {
+    if (isDragging) {
+      if (dragX > 80) {
+        // hype
+        advanceCard();
+      } else if (dragX < -80) {
+        // skip
+        advanceCard();
+      } else if (dragY < -80) {
+        // save
+        advanceCard();
+      }
+    }
+    setIsDragging(false);
+    setDragX(0);
+    setDragY(0);
+    dragStart.current = null;
+  }
 
   return (
     <>
@@ -432,11 +481,51 @@ function ScreenSeeds({ data }: { data: WorkbenchData }) {
           ))}
           {/* front card */}
           {front && (
-            <div style={{
-              position: 'absolute', inset: 0, borderRadius: 20, overflow: 'hidden', zIndex: 5,
-              background: `linear-gradient(135deg,${front.color},${front.color}cc)`,
-              boxShadow: '0 30px 60px -10px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06)',
-            }}>
+            <div
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerLeave={handlePointerUp}
+              style={{
+                position: 'absolute', inset: 0, borderRadius: 20, overflow: 'hidden', zIndex: 5,
+                background: `linear-gradient(135deg,${front.color},${front.color}cc)`,
+                boxShadow: '0 30px 60px -10px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06)',
+                transform: isDragging
+                  ? `translateX(${dragX}px) translateY(${Math.min(0, dragY)}px) rotate(${dragX * 0.08}deg)`
+                  : 'none',
+                transition: isDragging ? 'none' : 'transform .3s ease',
+                touchAction: 'none',
+                userSelect: 'none',
+                cursor: isDragging ? 'grabbing' : 'grab',
+              }}>
+              {/* Gesture hint overlays */}
+              {isDragging && dragX > 40 && (
+                <div style={{
+                  position: 'absolute', top: 18, right: 18, zIndex: 10,
+                  background: 'rgba(34,229,90,.82)', color: '#fff', borderRadius: 10,
+                  padding: '7px 14px', fontFamily: T.fd, fontWeight: 800, fontSize: 18,
+                  letterSpacing: '-.01em', pointerEvents: 'none',
+                  boxShadow: '0 4px 16px rgba(0,200,80,.4)',
+                }}>HYPE ♥</div>
+              )}
+              {isDragging && dragX < -40 && (
+                <div style={{
+                  position: 'absolute', top: 18, left: 18, zIndex: 10,
+                  background: 'rgba(255,60,60,.82)', color: '#fff', borderRadius: 10,
+                  padding: '7px 14px', fontFamily: T.fd, fontWeight: 800, fontSize: 18,
+                  letterSpacing: '-.01em', pointerEvents: 'none',
+                  boxShadow: '0 4px 16px rgba(255,60,60,.4)',
+                }}>SKIP ✕</div>
+              )}
+              {isDragging && dragY < -40 && (
+                <div style={{
+                  position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
+                  background: 'rgba(34,229,212,.82)', color: '#fff', borderRadius: 10,
+                  padding: '7px 14px', fontFamily: T.fd, fontWeight: 800, fontSize: 18,
+                  letterSpacing: '-.01em', pointerEvents: 'none',
+                  boxShadow: `0 4px 16px rgba(34,229,212,.4)`,
+                }}>SAVE ↑</div>
+              )}
               {/* stripe texture */}
               <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 8px,transparent 8px 16px)' }} />
               <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 70% 30%,rgba(255,255,255,.16),transparent 60%)' }} />
@@ -474,12 +563,12 @@ function ScreenSeeds({ data }: { data: WorkbenchData }) {
         {/* Swipe controls */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 10 }}>
           {[
-            { c: '#ff6b5a', bd: 'rgba(255,107,90,.4)', sz: 46, label: '✕' },
-            { c: T.ink2,    bd: T.line2,               sz: 42, label: '↺' },
-            { c: T.teal,    bd: 'rgba(34,229,212,.4)', sz: 60, label: '▶' },
-            { c: T.pink,    bd: 'rgba(255,62,154,.4)', sz: 46, label: '♥' },
+            { c: '#ff6b5a', bd: 'rgba(255,107,90,.4)', sz: 46, label: '✕', action: 'skip' },
+            { c: T.ink2,    bd: T.line2,               sz: 42, label: '↺', action: 'replay' },
+            { c: T.teal,    bd: 'rgba(34,229,212,.4)', sz: 60, label: '▶', action: 'save' },
+            { c: T.pink,    bd: 'rgba(255,62,154,.4)', sz: 46, label: '♥', action: 'hype' },
           ].map((b, i) => (
-            <button key={i} style={{
+            <button key={i} onClick={() => b.action !== 'replay' && advanceCard()} style={{
               width: b.sz, height: b.sz, borderRadius: '50%',
               background: T.bg2, border: `1px solid ${b.bd}`, color: b.c,
               display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',

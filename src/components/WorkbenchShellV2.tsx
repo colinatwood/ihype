@@ -177,7 +177,7 @@ function AppTopbar({ view, setView, listeningNow, initials, userName, activeProf
               )}
               {active && (
                 <span style={{
-                  position: 'absolute', left: 14, right: 14, bottom: -1, height: 2,
+                  position: 'absolute', left: 14, right: 14, bottom: 0, height: 2,
                   background: 'var(--accent)', borderRadius: '2px 2px 0 0',
                   boxShadow: '0 0 12px rgba(255,80,41,.6)',
                 }} />
@@ -231,7 +231,7 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
   return (
     <div style={{ padding: '32px 48px 48px', maxWidth: 1600, margin: '0 auto' }}>
       {/* Hero — 3-col grid */}
-      <div style={{
+      <div className="me-hero-grid" style={{
         display: 'grid', gridTemplateColumns: '200px 1fr auto', gap: 28, alignItems: 'center',
         padding: 26, borderRadius: 14,
         background: 'linear-gradient(135deg, var(--bg-2), var(--bg-3))',
@@ -269,11 +269,20 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
         </div>
 
         {/* Stats 2×2 grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, auto)', gap: '18px 28px', zIndex: 1 }}>
+        <div className="me-hero-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, auto)', gap: '18px 28px', zIndex: 1 }}>
           {heroStats.map(s => (
             <div key={s.k} style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 30, letterSpacing: '-.02em', lineHeight: 1, color: s.accent ? 'var(--accent)' : 'var(--ink)' }}>{s.v}</div>
               <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.16em', textTransform: 'uppercase', marginTop: 6 }}>{s.k}</div>
+            </div>
+          ))}
+        </div>
+        {/* Inline stats for narrow screens */}
+        <div className="me-hero-stats-inline" style={{ display: 'none', gap: 20, flexWrap: 'wrap', gridColumn: '1 / -1', zIndex: 1, paddingTop: 8 }}>
+          {heroStats.map(s => (
+            <div key={s.k} style={{ textAlign: 'left' }}>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 22, letterSpacing: '-.02em', lineHeight: 1, color: s.accent ? 'var(--accent)' : 'var(--ink)' }}>{s.v}</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.16em', textTransform: 'uppercase', marginTop: 4 }}>{s.k}</div>
             </div>
           ))}
         </div>
@@ -389,10 +398,48 @@ function ViewMyPage({ data, onPickTrack, currentIdx }: {
 // ─────────────────────────────────────────────────────────────
 // ViewSeeds — 3-col layout matching design
 // ─────────────────────────────────────────────────────────────
-function ViewSeeds({ data: _data }: { data: WorkbenchData }) {
+function ViewSeeds({
+  data,
+  seedPlaying,
+  setSeedPlaying,
+  seedCardIdx,
+  onSave,
+}: {
+  data: WorkbenchData;
+  seedPlaying: boolean;
+  setSeedPlaying: (v: boolean) => void;
+  seedCardIdx: number;
+  onSave?: (idx: number) => void;
+}) {
   const waveHeights = [30,55,80,42,90,70,48,88,62,35,78,55,92,40,68,82,48,30,62,88];
   // SeedsGamifiedView is kept for future embedded use
   void SeedsGamifiedView;
+
+  // Determine which track to show on the front card
+  const frontTrack = data.tracks.length > 0 ? data.tracks[seedCardIdx % data.tracks.length] : null;
+
+  // Web Audio API tone generator (220Hz sine, 0.08 gain, 15s)
+  useEffect(() => {
+    if (!seedPlaying) return;
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 220;
+    gain.gain.value = 0.08;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 15);
+    const timer = setTimeout(() => setSeedPlaying(false), 15000);
+    return () => {
+      clearTimeout(timer);
+      try { osc.stop(); } catch {}
+      ctx.close();
+    };
+  }, [seedPlaying, setSeedPlaying]);
+
   return (
     <div style={{ padding: '32px 48px 48px', maxWidth: 1600, margin: '0 auto' }}>
       {/* View head */}
@@ -453,9 +500,15 @@ function ViewSeeds({ data: _data }: { data: WorkbenchData }) {
             {/* front card */}
             <div style={{ position: 'absolute', inset: 0, borderRadius: 22, overflow: 'hidden', boxShadow: '0 30px 60px -10px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.06)', zIndex: 5 }}>
               {/* Art bg */}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #ff5029 0%, #ff3e9a 60%, #221c16 100%)' }} />
+              <div style={{ position: 'absolute', inset: 0, background: frontTrack ? `linear-gradient(135deg, ${frontTrack.color} 0%, #ff3e9a 60%, #221c16 100%)` : 'linear-gradient(135deg, #ff5029 0%, #ff3e9a 60%, #221c16 100%)' }} />
               {/* Overlay gradient */}
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,.75) 100%)' }} />
+              {/* Playing indicator */}
+              {seedPlaying && (
+                <div style={{ position: 'absolute', top: 54, left: '50%', transform: 'translateX(-50%)', zIndex: 10, padding: '5px 12px', borderRadius: 99, background: 'rgba(0,0,0,.65)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.14em', color: '#22e5d4', animation: 'pulse 1.4s infinite', whiteSpace: 'nowrap' }}>
+                  ● PLAYING
+                </div>
+              )}
               {/* Tags */}
               <div style={{ position: 'absolute', top: 18, left: 18, right: 18, display: 'flex', justifyContent: 'space-between', gap: 8, zIndex: 3 }}>
                 <span style={{ padding: '5px 10px', borderRadius: 99, background: 'rgba(0,0,0,.55)', backdropFilter: 'blur(8px)', fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', fontWeight: 700, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -466,18 +519,18 @@ function ViewSeeds({ data: _data }: { data: WorkbenchData }) {
               {/* Waveform */}
               <div style={{ position: 'absolute', bottom: 170, left: 24, right: 24, height: 36, display: 'flex', alignItems: 'flex-end', gap: 3, zIndex: 3 }}>
                 {waveHeights.map((h, i) => (
-                  <i key={i} style={{ flex: 1, background: 'rgba(255,255,255,.55)', borderRadius: 99, display: 'block', height: `${h}%` }} />
+                  <i key={i} style={{ flex: 1, background: seedPlaying ? 'rgba(34,229,212,.8)' : 'rgba(255,255,255,.55)', borderRadius: 99, display: 'block', height: `${h}%`, transition: 'background .3s' }} />
                 ))}
               </div>
               {/* Body */}
               <div style={{ position: 'absolute', bottom: 60, left: 22, right: 22, zIndex: 3, color: '#fff' }}>
-                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 32, letterSpacing: '-.03em', lineHeight: .95, textShadow: '0 2px 12px rgba(0,0,0,.4)' }}>Slow Burn</div>
-                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'rgba(255,255,255,.8)', letterSpacing: '.1em', marginTop: 6, textTransform: 'uppercase' }}>The Lowriders · Side Roads</div>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 32, letterSpacing: '-.03em', lineHeight: .95, textShadow: '0 2px 12px rgba(0,0,0,.4)' }}>{frontTrack ? frontTrack.title : 'Slow Burn'}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'rgba(255,255,255,.8)', letterSpacing: '.1em', marginTop: 6, textTransform: 'uppercase' }}>{frontTrack ? `${frontTrack.artistName} · ${frontTrack.album}` : 'The Lowriders · Side Roads'}</div>
                 <div style={{ fontFamily: "'Instrument Serif',serif", fontStyle: 'italic', fontSize: 16, color: 'rgba(255,255,255,.9)', marginTop: 14, lineHeight: 1.35, borderLeft: '2px solid var(--accent)', paddingLeft: 10 }}>&ldquo;It only really lands at 1:48 — that&apos;s the seed.&rdquo;</div>
               </div>
               {/* Footer */}
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,.4)', backdropFilter: 'blur(10px)', borderTop: '1px solid rgba(255,255,255,.08)', fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.08em', color: 'rgba(255,255,255,.7)' }}>
-                <span>♥ 211 hype</span>
+                <span>♥ {frontTrack ? frontTrack.hypeCount : 211} hype</span>
                 <span>48 saves · 21 skips</span>
               </div>
             </div>
@@ -485,20 +538,20 @@ function ViewSeeds({ data: _data }: { data: WorkbenchData }) {
 
           {/* Controls */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 24 }}>
-            <button title="Skip" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,107,90,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ff6b5a' }}>
+            <button title="Skip (ArrowLeft)" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,107,90,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ff6b5a' }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
-            <button title="Replay" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid var(--line-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--ink-2)' }}>
-              <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5"/></svg>
+            <button title="Play/Pause (Space)" onClick={() => setSeedPlaying(!seedPlaying)} style={{ width: 56, height: 56, borderRadius: '50%', background: seedPlaying ? 'rgba(34,229,212,.1)' : 'var(--bg-2)', border: `1px solid ${seedPlaying ? 'rgba(34,229,212,.6)' : 'var(--line-2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: seedPlaying ? '#22e5d4' : 'var(--ink-2)' }}>
+              {seedPlaying ? <IcPause s={20} /> : <IcPlay s={20} />}
             </button>
-            <button title="Save" style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
+            <button title="Save — loads into dock (ArrowUp)" onClick={() => onSave?.(seedCardIdx % Math.max(data.tracks.length, 1))} style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(34,229,212,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#22e5d4' }}>
               <svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 5l14 7-14 7V5z" fill="currentColor" opacity=".2"/><path d="M5 5l14 7-14 7V5z"/></svg>
             </button>
-            <button title="HYPE it" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,62,154,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--pink)' }}>
+            <button title="HYPE it (ArrowRight)" style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--bg-2)', border: '1px solid rgba(255,62,154,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--pink)' }}>
               <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/></svg>
             </button>
           </div>
-          <div style={{ textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.14em', marginTop: 14, textTransform: 'uppercase' }}>← Skip · ↑ Save · → Hype · Space Replay</div>
+          <div style={{ textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.14em', marginTop: 14, textTransform: 'uppercase' }}>← Skip · ↑ Save · → Hype · Space Play/Pause</div>
         </div>
 
         {/* Right col */}
@@ -742,173 +795,6 @@ function TrackCard({ track, active, onClick }: { track: WbTrack; active: boolean
       <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, letterSpacing: '-.005em', color: 'var(--ink)' }}>{track.title}</div>
       <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{track.artistName} · {track.duration}</div>
     </button>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// ViewHome (legacy — kept for reference, not rendered)
-// ─────────────────────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function ViewHome({ data, prefs, setView, currentIdx, onPickTrack }: {
-  data: WorkbenchData;
-  prefs: typeof DEFAULT_PREFS;
-  setView: (v: 'studio' | 'seeds' | 'tickets' | 'me' | 'radio' | 'settings') => void;
-  currentIdx: number;
-  onPickTrack: (i: number) => void;
-}) {
-  const now = new Date();
-  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const day = days[now.getDay()].toUpperCase();
-  const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-  const city = (prefs.city || data.city || 'your city').toUpperCase();
-
-  const greeting = (() => {
-    if (prefs.greeting === 'minimal') return 'Home.';
-    if (prefs.greeting === 'data') return `${data.listeningNow.toLocaleString()} listening · ${data.hypedToday} hyped today · ${data.showsTonight} shows tonight`;
-    const h = now.getHours();
-    const tod = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
-    return `Good ${tod}, ${data.userName}.`;
-  })();
-
-  const ROLE_COLORS: Record<string, string> = { LISTENER: '#b983ff', ARTIST: '#ff5029', VENUE: '#22e5d4', DJ: '#ff3e9a' };
-  const ROLE_LABELS: Record<string, { label: string; sub: string }> = {
-    LISTENER: { label: 'Fan', sub: 'HYPE tracks, swipe seeds, attend' },
-    ARTIST:   { label: 'Artist', sub: 'Upload, seed, tour · 45% of every ticket' },
-    VENUE:    { label: 'Venue', sub: 'List shows · 45% · demand radar' },
-    DJ:       { label: 'Promoter/DJ', sub: 'Referral links · 10% on tickets you drive' },
-  };
-
-  return (
-    <div style={{ padding: '24px 32px 8px', minHeight: '100%' }}>
-      {/* Greeting row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24, gap: 24 }}>
-        <div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: 'var(--ink-3)', marginBottom: 10 }}>
-            ● {day} · {city} · {timeStr}
-          </div>
-          <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 38, letterSpacing: '-.025em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>{greeting}</h1>
-          <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>{data.greeting}</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-          <button onClick={() => setView('studio')} style={{ padding: '9px 16px', background: 'var(--accent)', color: 'var(--bg)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', display: 'flex', alignItems: 'center', gap: 6, border: 'none', cursor: 'pointer' }}>
-            <IcBolt s={12} /> Build a show
-          </button>
-          <button onClick={() => setView('seeds')} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.04em', color: 'var(--ink)', background: 'none', cursor: 'pointer' }}>
-            Today's seeds →
-          </button>
-        </div>
-      </div>
-
-      {/* Stats row */}
-      {prefs.panel_stats && data.stats.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 18 }}>
-          {data.stats.slice(0, 4).map(s => (
-            <StatCard key={s.label} label={s.label} value={s.value} delta={s.delta} color={s.color} />
-          ))}
-        </div>
-      )}
-
-      {/* Two-col row */}
-      {(prefs.panel_tonight || prefs.panel_activity) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 12, marginBottom: 14 }}>
-          {prefs.panel_tonight && (
-            <Panel title="Tonight in Chicago" link="All events →" onLink={() => setView('tickets')}>
-              <div style={{ padding: '4px 0' }}>
-                {(data.shows.length > 0 ? data.shows : []).slice(0, 3).map(s => {
-                  const fillColor = s.status === 'TONIGHT' ? '#22e5d4' : s.status === 'NEAR SOLD' ? '#ffb84a' : 'var(--ink-3)';
-                  const pct = s.capacity > 0 ? (s.sold / s.capacity) * 100 : 0;
-                  return (
-                    <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderBottom: '1px solid var(--line)' }}>
-                      <div style={{ width: 3, height: 36, borderRadius: 2, background: fillColor, flexShrink: 0 }} />
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>
-                          {s.name} <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}>· {s.venue}</span>
-                        </div>
-                        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>
-                          {s.date} · {s.time} · ♡ {s.hype}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 80 }}>
-                        <div style={{ width: 70, height: 3, background: 'rgba(255,255,255,.06)', borderRadius: 2, position: 'relative', overflow: 'hidden' }}>
-                          <div style={{ position: 'absolute', inset: 0, width: `${pct}%`, background: pct > 85 ? '#ffb84a' : '#22e5d4', borderRadius: 2 }} />
-                        </div>
-                        <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)' }}>{s.sold}/{s.capacity}</div>
-                      </div>
-                      <button style={{ color: 'var(--ink-3)', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcArrow s={12} /></button>
-                    </div>
-                  );
-                })}
-                {data.shows.length === 0 && (
-                  <div style={{ padding: '16px', fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', textAlign: 'center' }}>No shows tonight in your city.</div>
-                )}
-              </div>
-            </Panel>
-          )}
-
-          {prefs.panel_activity && (
-            <Panel title="Activity" link="Mark read">
-              <div style={{ padding: '4px 0' }}>
-                {data.activity.slice(0, 5).map((a, i) => {
-                  const dotColor: Record<string, string> = { hype: '#ff3e9a', show: '#22e5d4', radio: '#b983ff', payout: '#ffb84a', request: '#7fb3ff', security: '#ff5029' };
-                  return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid var(--line)' }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor[a.kind] || 'var(--ink-3)', flexShrink: 0 }} />
-                      <div style={{ flex: 1, fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink)' }}>{a.text}</div>
-                      <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.04em', flexShrink: 0 }}>{a.time}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Panel>
-          )}
-        </div>
-      )}
-
-      {/* HYPEd tracks */}
-      {prefs.panel_hyped && data.tracks.length > 0 && (
-        <Panel title="HYPEd this week" link="Open seeds →" onLink={() => setView('seeds')} style={{ marginBottom: 14 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 10, padding: '14px 16px' }}>
-            {data.tracks.slice(0, 6).map((t, i) => (
-              <TrackCard key={t.id} track={t} active={i === currentIdx} onClick={() => onPickTrack(i)} />
-            ))}
-          </div>
-        </Panel>
-      )}
-
-      {/* Roles */}
-      {prefs.panel_roles && (
-        <Panel title="Your roles" style={{ marginBottom: 24 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, padding: '14px 16px' }}>
-            {(['LISTENER','ARTIST','VENUE','DJ'] as const).map(rk => {
-              const active = data.activeProfileTypes.includes(rk);
-              const col = ROLE_COLORS[rk];
-              const info = ROLE_LABELS[rk];
-              return (
-                <div key={rk} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px',
-                  border: `1px solid ${active ? col : 'var(--line)'}`, borderRadius: 8,
-                  background: active ? `${col}08` : 'var(--bg-2)',
-                }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: col, flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{info.label}</div>
-                    <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 2 }}>{info.sub}</div>
-                  </div>
-                  <button style={{
-                    display: 'flex', alignItems: 'center', gap: 4, padding: '4px 8px',
-                    border: `1px solid ${active ? col + '40' : 'var(--line-2)'}`, borderRadius: 99,
-                    fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.04em',
-                    color: active ? col : 'var(--ink-2)', background: 'none', cursor: 'pointer',
-                  }}>
-                    {active ? <><IcCheck s={11} /> active</> : 'add →'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </Panel>
-      )}
-    </div>
   );
 }
 
@@ -1376,10 +1262,11 @@ function ViewStudio({ data }: { data: WorkbenchData }) {
 // ─────────────────────────────────────────────────────────────
 // ViewSettings
 // ─────────────────────────────────────────────────────────────
-function ViewSettings({ prefs, setPref, data }: {
+function ViewSettings({ prefs, setPref, data, onBack }: {
   prefs: typeof DEFAULT_PREFS;
   setPref: (k: string, v: unknown) => void;
   data: WorkbenchData;
+  onBack?: () => void;
 }) {
   const ACCENTS = [
     { v: '#ff5029', label: 'Ember' }, { v: '#ff3e9a', label: 'Hot pink' },
@@ -1402,7 +1289,12 @@ function ViewSettings({ prefs, setPref, data }: {
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Settings <span style={{ color: 'var(--ink-2)', fontWeight: 500 }}>· page customization</span></h1>
           <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 580, lineHeight: 1.5 }}>Make iHYPE feel like yours. Changes apply live.</p>
         </div>
-        <button onClick={() => setPref('__reset__', null)} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.04em', background: 'none', cursor: 'pointer' }}>Reset to defaults</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {onBack && (
+            <button onClick={onBack} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.04em', background: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>← Back</button>
+          )}
+          <button onClick={() => setPref('__reset__', null)} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '.04em', background: 'none', cursor: 'pointer' }}>Reset to defaults</button>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -1557,6 +1449,8 @@ export type StarterPackItem = {
 // ─────────────────────────────────────────────────────────────
 export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData; starterPack?: StarterPackItem[] }) {
   const [view, setView] = useState<View>('me');
+  const [prevView, setPrevView] = useState<View>('me');
+  const navigateTo = (v: View) => { if (v !== view) setPrevView(view); setView(v); };
   const [prefs, setPrefs] = useState<typeof DEFAULT_PREFS>(DEFAULT_PREFS);
   const [mounted, setMounted] = useState(false);
 
@@ -1621,6 +1515,36 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const onNext = useCallback(() => { setCurrentIdx(ci => (ci + 1) % tracks.length); setProgress(0); }, [tracks.length]);
   const onPrev = useCallback(() => { setCurrentIdx(ci => (ci - 1 + tracks.length) % tracks.length); setProgress(0); }, [tracks.length]);
 
+  // Seeds state
+  const [seedPlaying, setSeedPlaying] = useState(false);
+  const [seedCardIdx, setSeedCardIdx] = useState(0);
+  const onSeedSave = useCallback((idx: number) => {
+    setCurrentIdx(idx);
+    setPlaying(true);
+    setSeedCardIdx(ci => ci + 1);
+    setSeedPlaying(false);
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+      if (view === 'seeds') {
+        if (e.key === 'ArrowLeft')  { setSeedCardIdx(ci => ci + 1); setSeedPlaying(false); }
+        if (e.key === 'ArrowUp')    { onSeedSave(seedCardIdx % Math.max(tracks.length, 1)); }
+        if (e.key === ' ')          { e.preventDefault(); setSeedPlaying(p => !p); }
+        if (e.key === 'ArrowRight') { setSeedCardIdx(ci => Math.max(0, ci - 1)); }
+      } else {
+        if (e.key === ' ')         { e.preventDefault(); setPlaying(p => !p); }
+        if (e.key === 'ArrowRight') { onNext(); }
+        if (e.key === 'ArrowLeft')  { onPrev(); }
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [view, seedCardIdx, tracks.length, onSeedSave, onNext, onPrev]);
+
   const track = tracks[currentIdx] ?? tracks[0];
   const showDock = prefs.stickyDock && track;
 
@@ -1635,11 +1559,11 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const viewEl = (() => {
     switch (view) {
       case 'me':       return <ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} />;
-      case 'seeds':    return <ViewSeeds data={data} />;
+      case 'seeds':    return <ViewSeeds data={data} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} seedCardIdx={seedCardIdx} onSave={onSeedSave} />;
       case 'radio':    return <ViewRadio data={data} onPickTrack={onPickTrack} />;
       case 'studio':   return <ViewStudio data={data} />;
       case 'tickets':  return <ViewTickets data={data} />;
-      case 'settings': return <ViewSettings prefs={prefs} setPref={setPref} data={data} />;
+      case 'settings': return <ViewSettings prefs={prefs} setPref={setPref} data={data} onBack={() => navigateTo(prevView)} />;
       default:         return <ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} />;
     }
   })();
@@ -1669,12 +1593,12 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         <div style={{ gridColumn: '1 / -1', gridRow: 1 }}>
           <AppTopbar
             view={view}
-            setView={setView}
+            setView={navigateTo}
             listeningNow={data.listeningNow}
             initials={data.userInitials}
             userName={data.userName}
             activeProfileTypes={data.activeProfileTypes}
-            onSettings={() => setView('settings')}
+            onSettings={() => navigateTo('settings')}
           />
         </div>
 
