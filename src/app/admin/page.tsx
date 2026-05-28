@@ -362,7 +362,7 @@ export default async function AdminPage() {
         <div className="admin-console-panel-head">
           <div>
             <h2>Rate limit hits (1h)</h2>
-            <p className="meta">Top buckets that returned 429 in the last hour. Requires Vercel KV.</p>
+            <p className="meta">Top buckets that returned 429 in the last hour.</p>
           </div>
         </div>
         <div className="admin-list">
