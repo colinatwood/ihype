@@ -551,11 +551,11 @@ export default async function AdminPage() {
               — branch the production database for point-in-time snapshots.
             </li>
             <li>
-              <strong>Vercel:</strong>{' '}
-              <a href="https://vercel.com/dashboard" rel="noopener noreferrer" target="_blank">
-                vercel.com/dashboard
+              <strong>Cloudflare:</strong>{' '}
+              <a href="https://dash.cloudflare.com/" rel="noopener noreferrer" target="_blank">
+                dash.cloudflare.com
               </a>{' '}
-              — review storage integration logs and exports.
+              — review Workers logs, R2 storage, and analytics.
             </li>
             <li>
               For ad-hoc exports run <code>pg_dump &quot;$DATABASE_URL&quot; &gt; ihype-backup.sql</code>{' '}
