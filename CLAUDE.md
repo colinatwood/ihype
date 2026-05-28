@@ -1,5 +1,17 @@
 # iHYPE — Engineering reference for Claude Code
 
+## ⚠️ INFRASTRUCTURE: Cloudflare Workers, NOT Vercel
+
+**This app is deployed to Cloudflare Workers via OpenNext (`npm run cf:build` + `wrangler deploy`).**
+
+- **Never reference Vercel** in code, comments, docs, or instructions. It is not used.
+- Hosting: Cloudflare Workers
+- Cron jobs: `wrangler.cron.toml` (not `vercel.json`)
+- Edge headers: `cf-ipcity`, `cf-ipcountry`, `cf-iplongitude`, `cf-iplatitude` (not `x-vercel-ip-*`)
+- Cache purge: Cloudflare Cache API with `CLOUDFLARE_ZONE_ID` secret
+- KV storage: Cloudflare Workers KV (not Vercel KV)
+- Deployment CI: `.github/workflows/deploy-production.yml` → `wrangler deploy`
+
 ## NextAuth v5 beta pinning
 
 `next-auth` is pinned to **`5.0.0-beta.31`** (exact, no caret) and mirrored in
