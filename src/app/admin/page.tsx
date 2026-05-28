@@ -551,12 +551,6 @@ export default async function AdminPage() {
               — branch the production database for point-in-time snapshots.
             </li>
             <li>
-              <strong>Cloudflare:</strong>{' '}
-              <a href="https://dash.cloudflare.com/" rel="noopener noreferrer" target="_blank">
-                dash.cloudflare.com
-              </a>{' '}
-              — review Workers logs, R2 storage, and analytics.
-            </li>
             <li>
               For ad-hoc exports run <code>pg_dump &quot;$DATABASE_URL&quot; &gt; ihype-backup.sql</code>{' '}
               from a trusted workstation.

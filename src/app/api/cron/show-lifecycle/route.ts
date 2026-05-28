@@ -7,9 +7,9 @@ export const maxDuration = 60;
 
 /**
  * GET /api/cron/show-lifecycle
- * Cloudflare Cron (wrangler.cron.toml) — runs every minute.
+ * Cron — runs every minute.
  * Transitions shows between SCHEDULED → LIVE → ENDED based on startsAt/endsAt.
- * Guarded by CRON_SECRET so only the Cloudflare scheduler can invoke it.
+ * Guarded by CRON_SECRET.
  */
 export async function GET(request: NextRequest) {
   if (!isCronRequestAuthorized(request)) {
