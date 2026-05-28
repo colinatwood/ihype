@@ -487,12 +487,16 @@ function ScreenSeeds({ data }: { data: WorkbenchData }) {
   const [sessionStats, setSessionStats] = useState({ saved: 0, skipped: 0, hyped: 0 });
   const [_loadingDeck, setLoadingDeck] = useState(false);
 
-  // Swipe / drag state
+  // Swipe / drag state — use refs for hot-path, state only for render triggers
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
   const [flyOff, setFlyOff] = useState<{ x: number; y: number; rot: number } | null>(null);
   const dragStart = useRef<{ x: number; y: number } | null>(null);
+  const dragXRef = useRef(0);
+  const dragYRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
 
   // Fetch deck on mount
   useEffect(() => {
@@ -549,31 +553,47 @@ function ScreenSeeds({ data }: { data: WorkbenchData }) {
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.currentTarget.setPointerCapture(e.pointerId);
     dragStart.current = { x: e.clientX, y: e.clientY };
-    setIsDragging(true);
+    dragXRef.current = 0;
+    dragYRef.current = 0;
+    setIsPressed(true);
+    setIsDragging(false);
     setDragX(0);
     setDragY(0);
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!isDragging || !dragStart.current) return;
-    setDragX(e.clientX - dragStart.current.x);
-    setDragY(e.clientY - dragStart.current.y);
+    if (!dragStart.current) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    dragXRef.current = dx;
+    dragYRef.current = dy;
+    if (!isDragging && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+      setIsDragging(true);
+      setIsPressed(false);
+    }
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      setDragX(dragXRef.current);
+      setDragY(dragYRef.current);
+    });
   }
 
   function handlePointerUp() {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    const dx = dragXRef.current;
+    const dy = dragYRef.current;
     if (isDragging) {
-      if (dragX > 80) {
-        handleAction('hype', true, dragX, dragY);
-      } else if (dragX < -80) {
-        handleAction('skip', true, dragX, dragY);
-      } else if (dragY < -80) {
-        handleAction('save', true, dragX, dragY);
-      }
+      if (dx > 100)       handleAction('hype', true, dx, dy);
+      else if (dx < -100) handleAction('skip', true, dx, dy);
+      else if (dy < -100) handleAction('save', true, dx, dy);
     }
+    setIsPressed(false);
     setIsDragging(false);
     setDragX(0);
     setDragY(0);
     dragStart.current = null;
+    dragXRef.current = 0;
+    dragYRef.current = 0;
   }
 
   return (
@@ -608,98 +628,87 @@ function ScreenSeeds({ data }: { data: WorkbenchData }) {
         </div>
 
         {/* Card stack */}
-        <div style={{ position: 'relative', width: '100%', aspectRatio: '320 / 440', marginBottom: 18 }}>
+        <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 3.6', marginBottom: 14 }}>
           {/* behind cards */}
           {behind.map((t, i) => (
             <div key={t.id} style={{
-              position: 'absolute', inset: 0, borderRadius: 20, overflow: 'hidden',
-              transform: `translateY(${(behind.length - i) * 10}px) scale(${.88 + i * .06})`,
-              opacity: .3 + i * .25, zIndex: i,
+              position: 'absolute', inset: 0, borderRadius: 18, overflow: 'hidden',
+              transform: `translateY(${(behind.length - i) * 8}px) scale(${.9 + i * .05})`,
+              opacity: .35 + i * .25, zIndex: i,
               background: `linear-gradient(135deg,${t.color},${t.color}80)`,
-              boxShadow: '0 20px 40px rgba(0,0,0,.5)',
+              boxShadow: '0 12px 32px rgba(0,0,0,.5)',
             }} />
           ))}
           {/* front card */}
-          {front && (
-            <div
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerLeave={handlePointerUp}
-              style={{
-                position: 'absolute', inset: 0, borderRadius: 20, overflow: 'hidden', zIndex: 5,
-                background: `linear-gradient(135deg,${front.color},${front.color}cc)`,
-                boxShadow: '0 30px 60px -10px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06)',
-                transform: flyOff
-                  ? `translateX(${flyOff.x}px) translateY(${flyOff.y}px) rotate(${flyOff.rot}deg)`
-                  : isDragging
-                    ? `translateX(${dragX}px) translateY(${Math.min(0, dragY)}px) rotate(${dragX * 0.08}deg)`
-                    : 'none',
-                transition: flyOff ? 'transform .32s cubic-bezier(.4,0,.2,1)' : isDragging ? 'none' : 'transform .3s ease',
-                touchAction: 'none',
-                userSelect: 'none',
-                cursor: isDragging ? 'grabbing' : 'grab',
-              }}>
-              {/* Gesture hint overlays */}
-              {isDragging && dragX > 40 && (
-                <div style={{
-                  position: 'absolute', top: 18, right: 18, zIndex: 10,
-                  background: 'rgba(34,229,90,.82)', color: '#fff', borderRadius: 10,
-                  padding: '7px 14px', fontFamily: T.fd, fontWeight: 800, fontSize: 18,
-                  letterSpacing: '-.01em', pointerEvents: 'none',
-                  boxShadow: '0 4px 16px rgba(0,200,80,.4)',
-                }}>HYPE ♥</div>
-              )}
-              {isDragging && dragX < -40 && (
-                <div style={{
-                  position: 'absolute', top: 18, left: 18, zIndex: 10,
-                  background: 'rgba(255,60,60,.82)', color: '#fff', borderRadius: 10,
-                  padding: '7px 14px', fontFamily: T.fd, fontWeight: 800, fontSize: 18,
-                  letterSpacing: '-.01em', pointerEvents: 'none',
-                  boxShadow: '0 4px 16px rgba(255,60,60,.4)',
-                }}>SKIP ✕</div>
-              )}
-              {isDragging && dragY < -40 && (
-                <div style={{
-                  position: 'absolute', top: 18, left: '50%', transform: 'translateX(-50%)', zIndex: 10,
-                  background: 'rgba(34,229,212,.82)', color: '#fff', borderRadius: 10,
-                  padding: '7px 14px', fontFamily: T.fd, fontWeight: 800, fontSize: 18,
-                  letterSpacing: '-.01em', pointerEvents: 'none',
-                  boxShadow: `0 4px 16px rgba(34,229,212,.4)`,
-                }}>SAVE ↑</div>
-              )}
-              {/* stripe texture */}
-              <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0 8px,transparent 8px 16px)' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 70% 30%,rgba(255,255,255,.16),transparent 60%)' }} />
-              {/* gradient overlay bottom */}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.8) 100%)', zIndex: 2 }} />
-              {/* tags */}
-              <div style={{ position: 'absolute', top: 14, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', zIndex: 3 }}>
-                <span style={{ padding: '4px 8px', borderRadius: 99, background: 'rgba(0,0,0,.55)', fontFamily: T.fm, fontSize: 12, letterSpacing: '.14em', fontWeight: 700, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: T.accent, display: 'inline-block' }} />SEED · 22s
-                </span>
-                <span style={{ padding: '4px 8px', borderRadius: 99, background: 'rgba(255,255,255,.18)', fontFamily: T.fm, fontSize: 12, letterSpacing: '.14em', fontWeight: 700, color: '#fff' }}>CHICAGO</span>
-              </div>
-              {/* waveform */}
-              <div style={{ position: 'absolute', bottom: 144, left: 18, right: 18, height: 30, display: 'flex', alignItems: 'flex-end', gap: 2, zIndex: 3 }}>
-                {waveform.map((h, i) => (
-                  <span key={i} style={{ flex: 1, height: `${h}%`, background: 'rgba(255,255,255,.55)', borderRadius: 99, display: 'block' }} />
-                ))}
-              </div>
-              {/* body */}
-              <div style={{ position: 'absolute', bottom: 18, left: 16, right: 16, zIndex: 3, color: '#fff' }}>
-                <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 26, letterSpacing: '-.025em', textShadow: '0 2px 12px rgba(0,0,0,.4)' }}>{front.title}</div>
-                <div style={{ fontFamily: T.fm, fontSize: 12, color: 'rgba(255,255,255,.8)', letterSpacing: '.1em', marginTop: 4, textTransform: 'uppercase' }}>{front.artistName} · {front.album}</div>
-                <div style={{ fontFamily: T.fs, fontStyle: 'italic', fontSize: 13, color: 'rgba(255,255,255,.9)', marginTop: 10, lineHeight: 1.3, borderLeft: `2px solid ${T.accent}`, paddingLeft: 8 }}>
-                  &quot;It only really lands at 1:48 — that&apos;s the seed.&quot;
+          {front && (() => {
+            // Proportional tint: 0 at 0px drag, full at 100px
+            const hypeAlpha = Math.min(Math.max(dragX / 100, 0), 1) * 0.55;
+            const skipAlpha = Math.min(Math.max(-dragX / 100, 0), 1) * 0.55;
+            const saveAlpha = Math.min(Math.max(-dragY / 100, 0), 1) * 0.55;
+            return (
+              <div
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+                style={{
+                  position: 'absolute', inset: 0, borderRadius: 18, overflow: 'hidden', zIndex: 5,
+                  background: `linear-gradient(150deg,${front.color}ee,${front.color}99)`,
+                  boxShadow: isPressed
+                    ? `0 8px 24px rgba(0,0,0,.5), 0 0 0 2px ${front.color}88`
+                    : '0 20px 48px -8px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06)',
+                  transform: flyOff
+                    ? `translateX(${flyOff.x}px) translateY(${flyOff.y}px) rotate(${flyOff.rot}deg)`
+                    : isDragging
+                      ? `translateX(${dragX}px) translateY(${dragY * 0.3}px) rotate(${dragX * 0.06}deg)`
+                      : isPressed ? 'scale(0.97)' : 'scale(1)',
+                  transition: flyOff
+                    ? 'transform .3s cubic-bezier(.4,0,.2,1)'
+                    : isDragging ? 'none'
+                    : 'transform .15s ease, box-shadow .15s ease',
+                  touchAction: 'none',
+                  userSelect: 'none',
+                  cursor: isDragging ? 'grabbing' : 'grab',
+                  willChange: 'transform',
+                }}>
+                {/* Full-card tint overlays — proportional to drag */}
+                {hypeAlpha > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 8, background: `rgba(34,200,80,${hypeAlpha})`, pointerEvents: 'none', borderRadius: 18 }} />}
+                {skipAlpha > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 8, background: `rgba(255,60,60,${skipAlpha})`, pointerEvents: 'none', borderRadius: 18 }} />}
+                {saveAlpha > 0 && <div style={{ position: 'absolute', inset: 0, zIndex: 8, background: `rgba(34,229,212,${saveAlpha})`, pointerEvents: 'none', borderRadius: 18 }} />}
+                {/* Action labels — appear past halfway */}
+                {dragX > 50 && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9, color: '#fff', fontFamily: T.fd, fontWeight: 900, fontSize: 32, letterSpacing: '-.02em', opacity: Math.min((dragX - 50) / 50, 1), pointerEvents: 'none', textShadow: '0 2px 16px rgba(0,0,0,.4)' }}>HYPE ♥</div>}
+                {dragX < -50 && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9, color: '#fff', fontFamily: T.fd, fontWeight: 900, fontSize: 32, letterSpacing: '-.02em', opacity: Math.min((-dragX - 50) / 50, 1), pointerEvents: 'none', textShadow: '0 2px 16px rgba(0,0,0,.4)' }}>SKIP ✕</div>}
+                {dragY < -50 && <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9, color: '#fff', fontFamily: T.fd, fontWeight: 900, fontSize: 32, letterSpacing: '-.02em', opacity: Math.min((-dragY - 50) / 50, 1), pointerEvents: 'none', textShadow: '0 2px 16px rgba(0,0,0,.4)' }}>SAVE ↑</div>}
+                {/* texture */}
+                <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg,rgba(255,255,255,.04) 0 8px,transparent 8px 16px)' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 60% 20%,rgba(255,255,255,.18),transparent 55%)' }} />
+                {/* strong bottom gradient so text is always readable */}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,transparent 35%,rgba(0,0,0,.92) 100%)', zIndex: 2 }} />
+                {/* tags */}
+                <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', justifyContent: 'space-between', zIndex: 3 }}>
+                  <span style={{ padding: '3px 8px', borderRadius: 99, background: 'rgba(0,0,0,.6)', fontFamily: T.fm, fontSize: 11, letterSpacing: '.12em', fontWeight: 700, color: '#fff', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: T.accent, display: 'inline-block' }} />SEED · 22s
+                  </span>
+                  <span style={{ padding: '3px 8px', borderRadius: 99, background: 'rgba(255,255,255,.15)', fontFamily: T.fm, fontSize: 11, letterSpacing: '.12em', fontWeight: 700, color: '#fff' }}>CHICAGO</span>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontFamily: T.fm, fontSize: 12, letterSpacing: '.08em', color: 'rgba(255,255,255,.7)' }}>
-                  <span>♥ {front.hypeCount} hype</span>
-                  <span>{deck.length - deckIdx} left</span>
+                {/* waveform */}
+                <div style={{ position: 'absolute', bottom: 100, left: 16, right: 16, height: 28, display: 'flex', alignItems: 'flex-end', gap: 2, zIndex: 3 }}>
+                  {waveform.map((h, i) => (
+                    <span key={i} style={{ flex: 1, height: `${h}%`, background: 'rgba(255,255,255,.5)', borderRadius: 99, display: 'block' }} />
+                  ))}
+                </div>
+                {/* track info */}
+                <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, zIndex: 3, color: '#fff' }}>
+                  <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 22, letterSpacing: '-.02em', lineHeight: 1.1, textShadow: '0 2px 10px rgba(0,0,0,.5)' }}>{front.title}</div>
+                  <div style={{ fontFamily: T.fm, fontSize: 11, color: 'rgba(255,255,255,.75)', letterSpacing: '.1em', marginTop: 3, textTransform: 'uppercase' }}>{front.artistName} · {front.album}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontFamily: T.fm, fontSize: 11, letterSpacing: '.06em', color: 'rgba(255,255,255,.6)' }}>
+                    <span>♥ {front.hypeCount} hype</span>
+                    <span>{deck.length - deckIdx} left</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Swipe controls */}
