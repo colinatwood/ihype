@@ -14,6 +14,7 @@ import { useToast } from '@/components/Toast';
 import { RadioShowCreator } from '@/components/RadioShowCreator';
 import { SeedsGamifiedView, type SeedsGamifiedSeed } from '@/components/SeedsGamifiedView';
 import { ViewAdmin } from '@/components/ViewAdmin';
+import { ViewErrorBoundary } from '@/components/workbench/ErrorBoundary';
 
 // ── Keyboard shortcut hook ─────────────────────────────────────
 function useKey(key: string, handler: (e: KeyboardEvent) => void, deps: React.DependencyList = []) {
@@ -328,17 +329,17 @@ function OnboardingModal({ onDone }: { onDone: () => void }) {
   const steps = [
     {
       title: 'Welcome to iHYPE',
-      body: 'Your workbench is ready. iHYPE is a nonprofit music platform — 0% ticket fees, real fan demand, no algorithms.',
+      body: 'A nonprofit music platform with no ticket fees. Every ticket goes 45% to the artist, 45% to the venue, and 10% to whoever brought the fan — zero to the platform.',
       cta: 'Next →',
     },
     {
-      title: 'Create your first event',
-      body: 'List a show, set your ticket price, and sell directly to fans. We take nothing.',
-      cta: 'Got it →',
+      title: 'Seeds',
+      body: 'Swipe right to hype, left to skip, up to save. Every swipe shapes your local scene and feeds real demand data to artists and venues.',
+      cta: 'Next →',
     },
     {
-      title: 'Invite your fans',
-      body: 'Share your iHYPE profile link with your audience. Every hype they give you is a real signal of demand.',
+      title: "You're all set",
+      body: "Explore the menu, hype what moves you, and earn from every ticket you sell. Your workbench is ready.",
       cta: "Let's go →",
     },
   ];
@@ -652,22 +653,24 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         <WbSidebar view={view} setView={(v) => { setView(v); setSidebarOpen(false); }} pinned={['seeds', 'home', ...prefs.pinned]} initials={liveData.userInitials} accent={prefs.accent} activeProfileTypes={liveData.activeProfileTypes} mobileOpen={sidebarOpen} onMobileClose={() => setSidebarOpen(false)} isVerified={liveData.isVerified} isAdmin={liveData.isAdmin} streakDays={streakDays} />
         <WbTopbar view={view} data={liveData} onHamburger={() => setSidebarOpen(s => !s)} setView={setView} />
         <main className="wb-main" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-          {view === 'home'     && <ViewHome data={liveData} prefs={prefs} setView={setView} starterPack={starterPack} />}
-          {view === 'discover' && <ViewDiscover data={liveData} />}
-          {view === 'seeds'    && <ViewSeeds data={liveData} />}
-          {view === 'tickets'  && <ViewTicketing data={liveData} activeProfileTypes={liveData.activeProfileTypes} />}
-          {view === 'studio'   && <RadioShowCreator />}
-          {view === 'artist'   && <ViewArtist data={liveData} />}
-          {view === 'venue'    && <ViewVenue data={liveData} />}
-          {view === 'settings'  && <ViewSettings prefs={prefs} setPref={setPref} data={liveData} />}
-          {view === 'inbox'       && <ViewInbox data={liveData} setView={setView} />}
-          {view === 'hype-map'   && <ViewHypeMap />}
-          {view === 'scene-graph'&& <ViewSceneGraph data={liveData} />}
-          {view === 'money-flow' && <ViewMoneyFlow data={liveData} />}
-          {view === 'governance' && <ViewGovernance />}
-          {view === 'setlist'    && <ViewSetlistBuilder data={liveData} />}
-          {view === 'news'       && <ViewNews />}
-          {view === 'admin'      && <ViewAdmin />}
+          <ViewErrorBoundary>
+            {view === 'home'     && <ViewHome data={liveData} prefs={prefs} setView={setView} starterPack={starterPack} />}
+            {view === 'discover' && <ViewDiscover data={liveData} />}
+            {view === 'seeds'    && <ViewSeeds data={liveData} />}
+            {view === 'tickets'  && <ViewTicketing data={liveData} activeProfileTypes={liveData.activeProfileTypes} />}
+            {view === 'studio'   && <RadioShowCreator />}
+            {view === 'artist'   && <ViewArtist data={liveData} />}
+            {view === 'venue'    && <ViewVenue data={liveData} />}
+            {view === 'settings'  && <ViewSettings prefs={prefs} setPref={setPref} data={liveData} />}
+            {view === 'inbox'       && <ViewInbox data={liveData} setView={setView} />}
+            {view === 'hype-map'   && <ViewHypeMap />}
+            {view === 'scene-graph'&& <ViewSceneGraph data={liveData} />}
+            {view === 'money-flow' && <ViewMoneyFlow data={liveData} />}
+            {view === 'governance' && <ViewGovernance />}
+            {view === 'setlist'    && <ViewSetlistBuilder data={liveData} />}
+            {view === 'news'       && <ViewNews />}
+            {view === 'admin'      && <ViewAdmin />}
+          </ViewErrorBoundary>
         </main>
         {showQueue && <WbQueueRail data={liveData} />}
         <WbPlayerDock queueRailOn={prefs.queueRail} onToggleQueue={() => setPref('queueRail', !prefs.queueRail)} />

@@ -104,7 +104,56 @@ export function KeyboardShortcutsDialog({ onDismiss }: { onDismiss: () => void }
   );
 }
 
+const WELCOME_STEPS = [
+  {
+    emoji: '🎵',
+    title: 'Welcome to iHYPE',
+    body: (
+      <>
+        A nonprofit music platform with no ticket fees. Every ticket goes{' '}
+        <strong style={{ color: 'var(--ink)' }}>45%</strong> to the artist,{' '}
+        <strong style={{ color: 'var(--ink)' }}>45%</strong> to the venue, and{' '}
+        <strong style={{ color: 'var(--ink)' }}>10%</strong> to whoever brought the fan —{' '}
+        zero to the platform.
+      </>
+    ),
+    cta: 'Next →',
+  },
+  {
+    emoji: '🌱',
+    title: 'Seeds',
+    body: (
+      <>
+        Swipe <strong style={{ color: 'var(--ink)' }}>right</strong> to hype,{' '}
+        <strong style={{ color: 'var(--ink)' }}>left</strong> to skip,{' '}
+        <strong style={{ color: 'var(--ink)' }}>up</strong> to save. Every swipe shapes your
+        local scene and feeds real demand data to artists and venues.
+      </>
+    ),
+    cta: 'Next →',
+  },
+  {
+    emoji: '⚡',
+    title: "You're all set",
+    body: (
+      <>
+        Explore the menu, hype what moves you, and earn from every ticket you sell. Your
+        workbench is ready.
+      </>
+    ),
+    cta: "Let's go",
+  },
+];
+
 export function WelcomeDialog({ onDismiss }: { onDismiss: () => void }) {
+  const [step, setStep] = React.useState(0);
+  const current = WELCOME_STEPS[step];
+  const isLast = step === WELCOME_STEPS.length - 1;
+
+  function handleCta() {
+    if (!isLast) { setStep(s => s + 1); } else { onDismiss(); }
+  }
+
   return (
     <div role="dialog" aria-modal="true" aria-label="Welcome to iHYPE" style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,.72)', backdropFilter: 'blur(8px)',
@@ -114,29 +163,36 @@ export function WelcomeDialog({ onDismiss }: { onDismiss: () => void }) {
         background: 'var(--bg-2)', border: '1px solid var(--line-2)', borderRadius: 16,
         padding: '40px 48px', maxWidth: 480, textAlign: 'center',
       }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🎵</div>
-        <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.02em', color: 'var(--ink)', margin: '0 0 14px' }}>Welcome to iHYPE</h2>
-        <p style={{ fontFamily: 'var(--f-b)', fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 10px' }}>
-          Your music command center. <strong style={{ color: 'var(--ink)' }}>HYPE</strong> tracks you love.
-        </p>
-        <p style={{ fontFamily: 'var(--f-b)', fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 10px' }}>
-          <strong style={{ color: 'var(--ink)' }}>Seeds</strong> shows you 15-second clips of new music in your city — save what you like.
-        </p>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>{current.emoji}</div>
+        <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.02em', color: 'var(--ink)', margin: '0 0 14px' }}>{current.title}</h2>
         <p style={{ fontFamily: 'var(--f-b)', fontSize: 15, color: 'var(--ink-2)', lineHeight: 1.6, margin: '0 0 28px' }}>
-          <strong style={{ color: 'var(--ink)' }}>45/45/10</strong> — every ticket, stream, and tip splits between artist, venue, and promoter. No black boxes.
+          {current.body}
         </p>
         <button
           autoFocus
-          onClick={onDismiss}
+          onClick={handleCta}
           style={{
             padding: '13px 32px', borderRadius: 10, border: 'none', cursor: 'pointer',
             fontFamily: 'var(--f-m)', fontSize: 14, fontWeight: 700, letterSpacing: '.06em',
-            textTransform: 'uppercase', color: '#fff',
+            textTransform: 'uppercase', color: '#fff', width: '100%',
             background: 'linear-gradient(135deg, var(--accent), var(--pink))',
           }}
         >
-          Let&apos;s go
+          {current.cta}
         </button>
+        {/* Step dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 20 }}>
+          {WELCOME_STEPS.map((_, i) => (
+            <div
+              key={i}
+              style={{
+                width: i === step ? 20 : 6, height: 6, borderRadius: 3,
+                background: i === step ? 'var(--accent)' : 'var(--line-2)',
+                transition: 'width .2s, background .2s',
+              }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
