@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { WorkbenchData, WbTrack } from './WorkbenchShell';
 import { SearchOverlay } from '@/components/workbench/SearchOverlay';
+import { ViewErrorBoundary } from '@/components/workbench/ErrorBoundary';
 
 // ─── Design tokens (match Workbench Mobile design) ───────────
 const T = {
@@ -511,6 +512,53 @@ function WMBottomTabs({ tab, onTab }: { tab: MobileTab; onTab: (t: MobileTab) =>
   );
 }
 
+// ─── Referral panel ──────────────────────────────────────────
+function ReferralPanel({ data }: { data: WorkbenchData }) {
+  const [copied, setCopied] = React.useState(false);
+  const link = typeof window !== 'undefined' && data.profileHexId
+    ? `${window.location.origin}/invite/${data.profileHexId}`
+    : null;
+  const copy = () => {
+    if (!link) return;
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+  const r = data.referralStats;
+  return (
+    <div style={{ padding: '14px 18px 0' }}>
+      <WMCard>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+          <div style={{ fontFamily: T.fd, fontWeight: 700, letterSpacing: '-.01em', fontSize: 14, color: T.ink }}>Invite & Earn</div>
+          <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em' }}>10% referrer cut</div>
+        </div>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between' }}>
+          {[
+            { k: 'Clicks',  v: String(r?.clicks  ?? 0) },
+            { k: 'Joined',  v: String(r?.buyers   ?? 0) },
+            { k: 'Earned',  v: `$${((r?.payoutCents ?? 0) / 100).toFixed(0)}`, accent: true },
+          ].map(s => (
+            <div key={s.k}>
+              <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 20, color: s.accent ? T.amber : T.ink }}>{s.v}</div>
+              <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase', marginTop: 2 }}>{s.k}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={copy} style={{
+          width: '100%', padding: '10px 0', borderRadius: 8, cursor: 'pointer', border: 'none',
+          background: copied ? 'rgba(34,229,212,.12)' : T.bg3,
+          color: copied ? T.teal : T.ink,
+          fontFamily: T.fm, fontSize: 13, fontWeight: 700, letterSpacing: '.08em',
+          transition: 'background .2s, color .2s',
+        }}>
+          {copied ? '✓ Copied!' : '🔗 Copy invite link'}
+        </button>
+      </WMCard>
+    </div>
+  );
+}
+
 // ─── Screen: Me ──────────────────────────────────────────────
 function ScreenMe({ data }: { data: WorkbenchData }) {
   return (
@@ -535,7 +583,7 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
               <div style={{ display: 'flex', gap: 5, marginBottom: 7, flexWrap: 'wrap' }}>
                 {data.activeProfileTypes.includes('LISTENER') && <WMPill><span style={{ width: 5, height: 5, borderRadius: '50%', background: T.purple, display: 'inline-block' }} />FAN</WMPill>}
                 {data.activeProfileTypes.includes('ARTIST') && <WMPill><span style={{ width: 5, height: 5, borderRadius: '50%', background: T.accent, display: 'inline-block' }} />ARTIST</WMPill>}
-                <WMPill tone="amber">⚡ LV 14</WMPill>
+                <WMPill tone="amber">⚡ LV {Math.max(1, Math.floor((data.lifeStats?.totalHype ?? 0) / 100) + 1)}</WMPill>
               </div>
               <h1 style={{ fontFamily: T.fd, fontWeight: 800, letterSpacing: '-.025em', lineHeight: .95, fontSize: 30, margin: 0, color: T.ink }}>{data.userName}</h1>
               <p style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2, letterSpacing: '.08em', marginTop: 6 }}>@{data.userName.toLowerCase().replace(/\s/g, '.')} · {data.city}</p>
@@ -546,10 +594,10 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 14, paddingTop: 14, borderTop: `1px dashed ${T.line}` }}>
             {[
-              { v: (data.lifeStats?.totalHype ?? 1284).toLocaleString(), k: 'Given', accent: true },
-              { v: '842', k: 'Received' },
-              { v: String(data.lifeStats?.eventsAttended ?? 23), k: 'Shows' },
-              { v: '7', k: 'Top-5' },
+              { v: (data.lifeStats?.totalHype ?? 0).toLocaleString(), k: 'Given', accent: true },
+              { v: (data.stats.find(s => s.label.toLowerCase().includes('received'))?.value ?? '—'), k: 'Received' },
+              { v: String(data.lifeStats?.eventsAttended ?? 0), k: 'Shows' },
+              { v: (data.stats.find(s => s.label.toLowerCase().includes('top'))?.value ?? String(data.tracks.length)), k: 'Tracks' },
             ].map((s, i) => (
               <div key={i}>
                 <div style={{ fontFamily: T.fd, fontWeight: 800, letterSpacing: '-.025em', fontSize: 18, color: s.accent ? T.accent : T.ink }}>{s.v}</div>
@@ -567,12 +615,18 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
           <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.12em', textTransform: 'uppercase' }}>this week</div>
         </div>
         <div style={{ display: 'flex', gap: 10, padding: '0 18px', overflowX: 'auto', scrollbarWidth: 'none' }}>
-          {[
-            { k: 'Weekly listens', v: '2,284', d: '↑ 18%', c: T.teal },
-            { k: 'Save rate',      v: '26%',   d: '88 saves', c: T.accent },
-            { k: 'Next payout',   v: '$2,460', d: 'Jun 24',   c: T.amber },
-            { k: 'Next show',     v: 'Jun 18', d: 'Empty Bottle', c: T.pink },
-          ].map((t, i) => (
+          {(() => {
+            const nextShow = data.shows[0];
+            const payout = data.referralStats?.payoutCents ?? data.lifeStats?.totalEarnings ?? 0;
+            const listens = data.stats.find(s => s.label.toLowerCase().includes('listen') || s.label.toLowerCase().includes('play'));
+            const saves = data.stats.find(s => s.label.toLowerCase().includes('save'));
+            return [
+              { k: 'Total listens', v: listens?.value ?? (data.lifeStats?.songsPlayed ?? 0).toLocaleString(), d: listens?.delta ?? 'all time', c: T.teal },
+              { k: 'Save rate',     v: saves?.value ?? '—',    d: saves?.delta ?? '',          c: T.accent },
+              { k: 'Earnings',      v: `$${(payout / 100).toFixed(0)}`, d: 'lifetime',         c: T.amber },
+              { k: 'Next show',     v: nextShow ? nextShow.date : '—', d: nextShow ? nextShow.name : 'No shows yet', c: T.pink },
+            ];
+          })().map((t, i) => (
             <div key={i} style={{ flex: '0 0 142px', background: T.bg2, border: `1px solid ${T.line}`, borderRadius: 10, padding: '12px 13px' }}>
               <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase' }}>{t.k}</div>
               <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 22, letterSpacing: '-.025em', marginTop: 5, color: t.c }}>{t.v}</div>
@@ -603,6 +657,9 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
         </WMCard>
       </div>
 
+      {/* Referral / Invite panel */}
+      <ReferralPanel data={data} />
+
       {/* Activity */}
       <div style={{ padding: '14px 18px 24px' }}>
         <WMCard>
@@ -610,6 +667,11 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
             <div style={{ fontFamily: T.fd, fontWeight: 700, letterSpacing: '-.01em', fontSize: 14, color: T.ink }}>Recent activity</div>
             <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.1em', textTransform: 'uppercase' }}>24h</div>
           </div>
+          {data.activity.length === 0 && (
+            <div style={{ padding: '16px 0', textAlign: 'center', fontFamily: T.fb, fontSize: 13, color: T.ink3 }}>
+              No activity yet — start by hyping a track.
+            </div>
+          )}
           {data.activity.slice(0, 5).map((a, i, arr) => {
             const dotColors: Record<string, string> = { hype: T.pink, show: T.teal, radio: T.pink, payout: T.amber };
             const ic: Record<string, string> = { hype: '♥', show: '★', radio: '📻', payout: '$', default: '↗' };
@@ -1009,6 +1071,11 @@ function ScreenRadio({ data }: { data: WorkbenchData }) {
           <h2 style={{ fontFamily: T.fd, fontWeight: 700, letterSpacing: '-.01em', fontSize: 16, color: T.ink, margin: 0 }}>All shows</h2>
           <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em' }}>by <span style={{ color: T.ink }}>next on air</span></div>
         </div>
+        {!live && shows.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '32px 18px', color: T.ink3, fontFamily: T.fb, fontSize: 14 }}>
+            No live shows right now — check back soon.
+          </div>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           {rest.slice(0, 4).map((r, i) => (
             <div key={r.id} style={{
@@ -1212,6 +1279,12 @@ function ScreenTicketing({ data }: { data: WorkbenchData }) {
 
         {/* Event cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 18 }}>
+          {data.shows.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '32px 18px', color: T.ink3, fontFamily: T.fb, fontSize: 14, background: T.bg2, borderRadius: 12, border: `1px solid ${T.line}` }}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>🎟️</div>
+              No upcoming shows yet.{'\n'}Explore the scene to find events near you.
+            </div>
+          )}
           {data.shows.map((e, i) => {
             const pct = e.capacity > 0 ? (e.sold / e.capacity) * 100 : 0;
             const isHot = pct > 85 || e.status === 'TONIGHT';
@@ -1261,6 +1334,11 @@ function ScreenTicketing({ data }: { data: WorkbenchData }) {
             <h2 style={{ fontFamily: T.fd, fontWeight: 700, letterSpacing: '-.01em', fontSize: 15, color: T.ink, margin: 0 }}>My Tickets</h2>
             <span style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em' }}>{data.tickets.length} active</span>
           </div>
+          {data.tickets.length === 0 && (
+            <div style={{ padding: '20px 16px', textAlign: 'center', fontFamily: T.fb, fontSize: 13, color: T.ink3 }}>
+              No tickets yet.
+            </div>
+          )}
           {data.tickets.map((tk, i, arr) => {
             const isWait = tk.status === 'WAITLIST';
             return (
@@ -1469,7 +1547,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
             ) : pullDelta > 40 ? '↓ RELEASE' : pullDelta > 10 ? '↓ PULL TO REFRESH' : null}
           </div>
         )}
-        {screenEl}
+        <ViewErrorBoundary viewName={tab}>{screenEl}</ViewErrorBoundary>
       </div>
       {track && (
         <WMMiniPlayer
