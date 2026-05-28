@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 
-export const revalidate = 3600;
+export const dynamic = 'force-dynamic';
 
 export default async function WeeklyPage() {
   // Top hyped tracks this week — using ArtistMediaAsset which has hypeCount via profile
