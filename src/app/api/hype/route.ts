@@ -66,6 +66,29 @@ async function checkAndRecordMilestone(profileId: string, newCount: number) {
   }
 }
 
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const showId = searchParams.get('showId');
+  const limit = Math.min(parseInt(searchParams.get('limit') ?? '10'), 50);
+  if (!showId) return NextResponse.json({ error: 'showId required' }, { status: 400 });
+  const hypers = await db.hypeEvent.findMany({
+    where: { showId },
+    orderBy: { createdAt: 'asc' },
+    take: limit,
+    include: { user: { select: { id: true, username: true, image: true } } },
+  });
+  const total = await db.hypeEvent.count({ where: { showId } });
+  return NextResponse.json({
+    hypers: hypers.map((h, i) => ({
+      userId: h.userId,
+      username: h.user.username,
+      avatarUrl: h.user.image,
+      isFirst: i === 0,
+    })),
+    total,
+  });
+}
+
 const schema = z.discriminatedUnion('targetType', [
   z.object({ targetType: z.literal('show'), targetId: z.string().cuid() }),
   z.object({ targetType: z.literal('profile'), targetId: z.string().cuid() })

@@ -131,6 +131,7 @@ model User {
   emailBounced            Boolean                  @default(false)
   badges                  Badge[]
   showAttendees           ShowAttendee[]
+  setlistVotes            SetlistVote[]
   sentBookingRequests     BookingRequest[]         @relation("BookingRequestFromUser")
 }
 
@@ -414,6 +415,7 @@ model Show {
   rsvps                  ShowRsvp[]
   attendees              ShowAttendee[]
   setlistProgress        Json?
+  setlistVotes           SetlistVote[]
 
   @@index([startsAt, status])
 }
@@ -595,6 +597,20 @@ model HypeEvent {
 
   @@unique([userId, showId])
   @@index([userId])
+  @@index([showId])
+}
+
+model SetlistVote {
+  id        String   @id @default(cuid())
+  showId    String
+  userId    String
+  mediaId   String
+  createdAt DateTime @default(now())
+  show      Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([showId, userId, mediaId])
+  @@index([showId, mediaId])
 }
 
 model ProfileHypeEvent {
