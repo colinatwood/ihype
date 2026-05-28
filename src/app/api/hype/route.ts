@@ -7,6 +7,7 @@ import { consumeRateLimit, rateLimitHeaders, rateLimitKey } from '@/lib/rate-lim
 import { sendGenericEmail } from '@/lib/mailer';
 import { checkAndAwardBadges } from '@/lib/badges';
 import { getBaseUrl } from '@/lib/utils';
+import { sendPushNotification } from '@/lib/push-notify';
 
 const HYPE_MILESTONES = [10, 50, 100, 500, 1000];
 
@@ -154,6 +155,18 @@ export async function POST(request: NextRequest) {
 
     await checkAndRecordMilestone(payload.targetId, updatedProfile.hypeCount);
     checkAndAwardBadges(session.user.id).catch(() => {});
+
+    // Push notification to track owner (fire-and-forget, skip self-hype)
+    db.profile.findUnique({ where: { id: payload.targetId }, select: { ownerId: true, name: true } })
+      .then(profile => {
+        if (profile && profile.ownerId !== session.user.id) {
+          sendPushNotification(profile.ownerId, {
+            title: 'Your track got hyped!',
+            body: `Someone just hyped ${profile.name} on iHYPE.`,
+          }).catch(() => {});
+        }
+      })
+      .catch(() => {});
 
     return NextResponse.json({ action: 'hyped', hypeCount: updatedProfile.hypeCount });
   } catch (err) {
