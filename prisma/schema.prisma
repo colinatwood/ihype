@@ -136,6 +136,9 @@ model User {
   userSecurityVersion     Int                      @default(0)
   lastLoginCountry        String?
   lastLoginAt             DateTime?
+  tosAcceptedAt           DateTime?
+  welcomeDay3SentAt       DateTime?
+  welcomeDay7SentAt       DateTime?
 }
 
 model Profile {
@@ -1060,4 +1063,11 @@ model AuxItem {
   queue    AuxQueue @relation(fields: [queueId], references: [id], onDelete: Cascade)
 
   @@index([queueId])
+}
+
+model FeatureFlag {
+  key         String   @id
+  enabled     Boolean  @default(false)
+  description String?
+  updatedAt   DateTime @updatedAt
 }
