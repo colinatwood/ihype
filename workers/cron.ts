@@ -60,6 +60,11 @@ const JOBS: CronJob[] = [
   { path: '/api/cron/anomaly-check', schedule: '0 * * * *'   },  // hourly anomaly check
   { path: '/api/cron/dmca-enforce',  schedule: '30 3 * * *'  },  // DMCA enforcement at 3:30am
   { path: '/api/cron/social-digest', schedule: '30 8 * * 1'  },  // social digest Monday 8:30am
+
+  // New feature crons
+  { path: '/api/cron/nearby-show-notify', schedule: '0 9 * * *'  },  // daily nearby show notifications at 9am
+  { path: '/api/cron/publish-scheduled',  schedule: '*/15 * * * *' },  // publish scheduled releases every 15min
+  { path: '/api/cron/rsvp-reminders',     schedule: '0 * * * *'   },  // RSVP reminders every hour
 ];
 
 export default {

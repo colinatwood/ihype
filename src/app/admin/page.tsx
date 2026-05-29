@@ -191,6 +191,42 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
   ]);
 
   const [
+    monthlyRevenue,
+    topEarners,
+    payoutTotals,
+    pendingAds,
+    abTests,
+  ] = await Promise.all([
+    // Monthly revenue: last 12 months
+    db.ticketOrder.findMany({
+      where: { status: 'CAPTURED', chargedAt: { gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) } },
+      select: { chargedAt: true, totalChargeCents: true },
+    }).catch(() => [] as { chargedAt: Date | null; totalChargeCents: number }[]),
+    // Top earners by profileId
+    db.accountsPayableEntry.groupBy({
+      by: ['profileId'],
+      where: { profileId: { not: null } },
+      _sum: { amountCents: true },
+      orderBy: { _sum: { amountCents: 'desc' } },
+      take: 10,
+    }).catch(() => []),
+    // Payout totals
+    db.accountsPayableEntry.groupBy({
+      by: ['status'],
+      _sum: { amountCents: true },
+    }).catch(() => []),
+    // Pending ads
+    db.ad.findMany({
+      where: { status: 'PENDING' },
+      include: { advertiser: { select: { email: true, username: true } }, slot: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    }).catch(() => []),
+    // A/B tests
+    db.aBTest.findMany({ orderBy: { createdAt: 'desc' } }).catch(() => []),
+  ]);
+
+  const [
     demoLoginsEnabled,
     inviteOnlySignupEnabled,
     demoContentHidden,
@@ -248,6 +284,20 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
     .filter((event) => event.action.includes('passkey') && event.action.includes('failed'))
     .slice(0, 5)
     .map((event) => ({ action: event.action.replace('signup_funnel:', ''), meta: auditMeta(event.metadata) }));
+
+  // Monthly revenue computation
+  const monthlyMap: Record<string, number> = {};
+  for (const order of monthlyRevenue) {
+    if (!order.chargedAt) continue;
+    const key = `${order.chargedAt.getFullYear()}-${String(order.chargedAt.getMonth() + 1).padStart(2, '0')}`;
+    monthlyMap[key] = (monthlyMap[key] ?? 0) + order.totalChargeCents;
+  }
+  const monthlyRows = Object.entries(monthlyMap).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 12);
+
+  // Payout totals
+  const payoutPaid = payoutTotals.find(p => p.status === 'RELEASED')?._sum.amountCents ?? 0;
+  const payoutPending = payoutTotals.find(p => p.status === 'PENDING')?._sum.amountCents ?? 0;
+  const platformFeeTotal = Math.round((revenueCents * 0.1)); // rough 10% estimate
 
   return (
     <main className="container section admin-console">
@@ -806,6 +856,115 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
             this section is informational so admins know where to look.
           </p>
         </article>
+      </section>
+
+      {/* ── Revenue Dashboard ──────────────────────────────────── */}
+      <section className="section">
+        <h2>Revenue</h2>
+        <div className="admin-list" style={{ marginBottom: 16 }}>
+          <div className="admin-list-row"><strong>Total ticket revenue (CAPTURED)</strong><span>{`$${(revenueCents / 100).toFixed(2)}`}</span></div>
+          <div className="admin-list-row"><strong>Platform fee est. (10%)</strong><span>{`$${(platformFeeTotal / 100).toFixed(2)}`}</span></div>
+          <div className="admin-list-row"><strong>Payouts paid</strong><span>{`$${(payoutPaid / 100).toFixed(2)}`}</span></div>
+          <div className="admin-list-row"><strong>Payouts pending</strong><span>{`$${(payoutPending / 100).toFixed(2)}`}</span></div>
+        </div>
+        {monthlyRows.length > 0 && (
+          <>
+            <h3 style={{ fontSize: 14, marginBottom: 8 }}>Monthly revenue (last 12 months)</h3>
+            <div className="admin-list">
+              {monthlyRows.map(([month, cents]) => (
+                <div className="admin-list-row" key={month}>
+                  <span>{month}</span>
+                  <strong>{`$${(cents / 100).toFixed(2)}`}</strong>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        {topEarners.length > 0 && (
+          <>
+            <h3 style={{ fontSize: 14, marginBottom: 8, marginTop: 16 }}>Top earners (by profile)</h3>
+            <div className="admin-list">
+              {topEarners.map((e) => (
+                <div className="admin-list-row" key={e.profileId}>
+                  <span>{e.profileId ?? 'unknown'}</span>
+                  <strong>{`$${((e._sum.amountCents ?? 0) / 100).toFixed(2)}`}</strong>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* ── Rate Limits ───────────────────────────────────────── */}
+      <section className="section">
+        <h2>Rate Limits (last 24h)</h2>
+        {recentSpamFlags.length === 0 ? (
+          <p className="meta">No SPAM_FLAG notifications in the last 24 hours.</p>
+        ) : (
+          <div className="admin-list">
+            {recentSpamFlags.map((n) => (
+              <div className="admin-list-row" key={n.id}>
+                <span>{n.user?.username ?? n.user?.email ?? n.userId}</span>
+                <small>{n.body}</small>
+                <small>{n.createdAt.toISOString().slice(0, 16)}</small>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── A/B Tests ─────────────────────────────────────────── */}
+      <section className="section">
+        <h2>A/B Tests</h2>
+        {abTests.length === 0 ? (
+          <p className="meta">No A/B tests configured. POST to /api/admin/ab-tests to create one.</p>
+        ) : (
+          <div className="admin-list">
+            {abTests.map((t) => (
+              <div className="admin-list-row" key={t.key}>
+                <code>{t.key}</code>
+                <span>{t.description ?? '—'}</span>
+                <strong style={{ color: t.enabled ? 'var(--teal, #22e5d4)' : 'var(--ink3, #666)' }}>{t.enabled ? 'ENABLED' : 'DISABLED'}</strong>
+                <small>{t.createdAt.toISOString().slice(0, 10)}</small>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="meta" style={{ marginTop: 8 }}>
+          Manage via <code>POST /api/admin/ab-tests</code> with <code>{`{key, description, enabled}`}</code>.
+        </p>
+      </section>
+
+      {/* ── Ads ───────────────────────────────────────────────── */}
+      <section className="section">
+        <h2>Ads — Pending Review</h2>
+        {pendingAds.length === 0 ? (
+          <p className="meta">No pending ads.</p>
+        ) : (
+          <div className="admin-list">
+            {pendingAds.map((ad) => (
+              <div className="admin-list-row" key={ad.id} style={{ flexWrap: 'wrap', gap: 8 }}>
+                <strong>{ad.title}</strong>
+                <span>{ad.slot?.name}</span>
+                <small>{ad.advertiser?.username ?? ad.advertiser?.email}</small>
+                <small>{ad.createdAt.toISOString().slice(0, 10)}</small>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <form method="POST" action={`/api/admin/ads/${ad.id}`} style={{ display: 'inline' }}>
+                    <input type="hidden" name="status" value="APPROVED" />
+                    <button type="submit" className="button small" style={{ fontSize: 12 }}>Approve</button>
+                  </form>
+                  <form method="POST" action={`/api/admin/ads/${ad.id}`} style={{ display: 'inline' }}>
+                    <input type="hidden" name="status" value="REJECTED" />
+                    <button type="submit" className="button small secondary" style={{ fontSize: 12 }}>Reject</button>
+                  </form>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="meta" style={{ marginTop: 8 }}>
+          Manage via <code>PATCH /api/admin/ads/[adId]</code> with <code>{`{status: "APPROVED"|"REJECTED"}`}</code>.
+        </p>
       </section>
     </main>
   );
