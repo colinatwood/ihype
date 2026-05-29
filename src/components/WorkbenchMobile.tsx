@@ -1455,6 +1455,29 @@ function ScreenRadio({ data, onSetlistSheet, onHypersSheet, onSeedsTab }: { data
 
 // ─── Screen: Studio ──────────────────────────────────────────
 function ScreenStudio({ data }: { data: WorkbenchData }) {
+  const [disputeSheetShowId, setDisputeSheetShowId] = React.useState<string | null>(null);
+  const [disputeReason, setDisputeReason] = React.useState('');
+  const [disputeAmount, setDisputeAmount] = React.useState('');
+  const [disputeState, setDisputeState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+
+  const handleDispute = async (showId: string) => {
+    if (!disputeReason.trim()) return;
+    setDisputeState('loading');
+    try {
+      const res = await fetch('/api/payouts/dispute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          showId,
+          reason: disputeReason,
+          expectedAmountCents: Math.round(parseFloat(disputeAmount || '0') * 100),
+        }),
+      });
+      setDisputeState(res.ok ? 'done' : 'error');
+      if (res.ok) setTimeout(() => { setDisputeSheetShowId(null); setDisputeState('idle'); setDisputeReason(''); setDisputeAmount(''); }, 2000);
+    } catch { setDisputeState('error'); }
+  };
+
   const clips = [
     { n: '01', t: 'Intro — Welcome back',         m: 'Maya · spoken',               type: 'VOICE', d: '0:42' },
     { n: '02', t: 'Sundown',                      m: 'Maya Reyes · Halflight EP',   type: 'TRACK', d: '3:24' },
@@ -1590,11 +1613,57 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-end' }}>
                 <WMPill tone={d.pill[0]}>{d.pill[1]}</WMPill>
                 <span style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2 }}>{d.r}</span>
+                {d.pill[1] === 'PUBLISHED' && (
+                  <button
+                    onClick={() => setDisputeSheetShowId(d.t)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.amber, fontFamily: T.fm, fontSize: 11, padding: 0, fontWeight: 700 }}
+                  >
+                    Dispute payout →
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* Dispute payout sheet */}
+      {disputeSheetShowId && (
+        <>
+          <div onClick={() => setDisputeSheetShowId(null)} style={{ position: 'fixed', inset: 0, zIndex: 59, background: 'rgba(0,0,0,.6)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 60, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', padding: '20px 18px 40px' }}>
+            <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, marginBottom: 4 }}>Dispute payout</div>
+            <div style={{ fontFamily: T.fm, fontSize: 13, color: T.ink3, marginBottom: 14 }}>Submit a payout dispute for admin review.</div>
+            {disputeState === 'done' ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: T.teal, fontFamily: T.fb }}>Dispute submitted!</div>
+            ) : (
+              <>
+                <input
+                  type="number"
+                  value={disputeAmount}
+                  onChange={(e) => setDisputeAmount(e.target.value)}
+                  placeholder="Expected payout amount ($)"
+                  style={{ width: '100%', background: T.bg2, border: `1px solid ${T.line2}`, borderRadius: 10, color: T.ink, fontFamily: T.fb, fontSize: 14, padding: '10px 12px', marginBottom: 10, boxSizing: 'border-box', outline: 'none' }}
+                />
+                <textarea
+                  value={disputeReason}
+                  onChange={(e) => setDisputeReason(e.target.value.slice(0, 500))}
+                  placeholder="Describe the issue with your payout…"
+                  rows={4}
+                  style={{ width: '100%', background: T.bg2, border: `1px solid ${T.line2}`, borderRadius: 10, color: T.ink, fontFamily: T.fb, fontSize: 14, padding: '10px 12px', marginBottom: 12, boxSizing: 'border-box', outline: 'none', resize: 'none' }}
+                />
+                <button
+                  onClick={() => handleDispute(disputeSheetShowId)}
+                  disabled={disputeState === 'loading' || !disputeReason.trim()}
+                  style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: disputeReason.trim() ? `linear-gradient(135deg,${T.accent},${T.pink})` : T.bg4, color: disputeReason.trim() ? T.bg : T.ink3, fontFamily: T.fd, fontWeight: 800, fontSize: 15, cursor: disputeReason.trim() ? 'pointer' : 'default' }}
+                >
+                  {disputeState === 'loading' ? 'Submitting…' : disputeState === 'error' ? 'Failed — retry' : 'Submit dispute'}
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -1603,6 +1672,37 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
 function ScreenTicketing({ data, onHypersSheet, onRadioTab }: { data: WorkbenchData; onHypersSheet?: (showId: string) => void; onRadioTab?: () => void }) {
   const [subTab, setSubTab] = useState(0);
   const subTabs = ['Upcoming', 'My Tickets', 'Past', 'Sell'];
+  const [resendState, setResendState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [transferSheetOrderId, setTransferSheetOrderId] = React.useState<string | null>(null);
+  const [transferEmail, setTransferEmail] = React.useState('');
+  const [transferState, setTransferState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+
+  const handleResend = async () => {
+    setResendState('loading');
+    try {
+      const res = await fetch('/api/tickets/resend-confirmation', { method: 'POST' });
+      setResendState(res.ok ? 'done' : 'error');
+      setTimeout(() => setResendState('idle'), 3000);
+    } catch { setResendState('error'); setTimeout(() => setResendState('idle'), 3000); }
+  };
+
+  const handleTransfer = async (orderId: string) => {
+    if (!transferEmail.trim()) return;
+    setTransferState('loading');
+    try {
+      const res = await fetch(`/api/tickets/${orderId}/transfer`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toEmail: transferEmail }),
+      });
+      if (res.ok) {
+        setTransferState('done');
+        setTimeout(() => { setTransferSheetOrderId(null); setTransferState('idle'); setTransferEmail(''); }, 2000);
+      } else {
+        setTransferState('error');
+      }
+    } catch { setTransferState('error'); }
+  };
 
   return (
     <>
@@ -1712,12 +1812,61 @@ function ScreenTicketing({ data, onHypersSheet, onRadioTab }: { data: WorkbenchD
                   <span style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2, fontWeight: 600, letterSpacing: '.08em' }}>{tk.seat}</span>
                   <WMPill tone={isWait ? 'amber' : 'teal'}>{tk.status}</WMPill>
                   {tk.showId && <IWasThereButton showId={tk.showId} />}
+                  {tk.id && (
+                    <button
+                      onClick={() => setTransferSheetOrderId(tk.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.accent, fontFamily: T.fm, fontSize: 11, padding: 0, fontWeight: 700 }}
+                    >
+                      Transfer →
+                    </button>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
+        {/* Resend confirmation */}
+        <button
+          onClick={handleResend}
+          disabled={resendState === 'loading'}
+          style={{ width: '100%', marginBottom: 12, padding: '10px 0', borderRadius: 8, border: `1px solid ${T.line2}`, background: 'transparent', color: resendState === 'done' ? T.teal : T.ink2, fontFamily: T.fm, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+        >
+          {resendState === 'idle' && 'Resend ticket confirmation email'}
+          {resendState === 'loading' && 'Sending…'}
+          {resendState === 'done' && '✓ Email sent!'}
+          {resendState === 'error' && 'Failed — try again'}
+        </button>
       </div>
+
+      {/* Transfer sheet */}
+      {transferSheetOrderId && (
+        <>
+          <div onClick={() => setTransferSheetOrderId(null)} style={{ position: 'fixed', inset: 0, zIndex: 59, background: 'rgba(0,0,0,.6)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 60, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', padding: '20px 18px 40px' }}>
+            <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, marginBottom: 16 }}>Transfer ticket</div>
+            {transferState === 'done' ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: T.teal, fontFamily: T.fb }}>Ticket transferred!</div>
+            ) : (
+              <>
+                <input
+                  type="email"
+                  value={transferEmail}
+                  onChange={(e) => setTransferEmail(e.target.value)}
+                  placeholder="Recipient email address"
+                  style={{ width: '100%', background: T.bg2, border: `1px solid ${T.line2}`, borderRadius: 10, color: T.ink, fontFamily: T.fb, fontSize: 14, padding: '10px 12px', marginBottom: 12, boxSizing: 'border-box', outline: 'none' }}
+                />
+                <button
+                  onClick={() => handleTransfer(transferSheetOrderId)}
+                  disabled={transferState === 'loading' || !transferEmail.trim()}
+                  style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: transferEmail.trim() ? `linear-gradient(135deg,${T.accent},${T.pink})` : T.bg4, color: transferEmail.trim() ? T.bg : T.ink3, fontFamily: T.fd, fontWeight: 800, fontSize: 15, cursor: transferEmail.trim() ? 'pointer' : 'default' }}
+                >
+                  {transferState === 'loading' ? 'Transferring…' : transferState === 'error' ? 'Failed — retry' : 'Transfer'}
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
     </>
   );
 }

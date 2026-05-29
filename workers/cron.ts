@@ -54,6 +54,12 @@ const JOBS: CronJob[] = [
   { path: '/api/cron?job=artist-onboarding',     schedule: '0 11 * * *'  },
   { path: '/api/cron?job=show-payouts',          schedule: '0 13 * * *'  },
   { path: '/api/cron?job=stripe-connect-health', schedule: '0 */6 * * *' },
+
+  // Operator tools
+  { path: '/api/cron/daily-ops',     schedule: '0 7 * * *'   },  // daily ops report
+  { path: '/api/cron/anomaly-check', schedule: '0 * * * *'   },  // hourly anomaly check
+  { path: '/api/cron/dmca-enforce',  schedule: '30 3 * * *'  },  // DMCA enforcement at 3:30am
+  { path: '/api/cron/social-digest', schedule: '30 8 * * 1'  },  // social digest Monday 8:30am
 ];
 
 export default {

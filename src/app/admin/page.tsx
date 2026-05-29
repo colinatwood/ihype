@@ -5,6 +5,9 @@ import { redirect } from 'next/navigation';
 import { AdminReportActions, AdminVerificationActions } from '@/components/AdminModerationActions';
 import { AdminNav } from '@/components/AdminNav';
 import { AdminFeatureFlags } from '@/components/AdminFeatureFlags';
+import { FeatureToggle } from '@/components/admin/FeatureToggle';
+import { BulkActions } from '@/components/admin/BulkActions';
+import { SocialPostCopy } from '@/components/admin/SocialPostCopy';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getHealthSnapshot } from '@/lib/health';
@@ -19,7 +22,7 @@ import {
   isInviteCodeRequiredRuntime,
   shouldHideDemoContentRuntime
 } from '@/lib/runtime-flags';
-import { featureShowAction } from './users/actions';
+
 
 export const metadata: Metadata = {
   title: 'Admin Beta Console | iHYPE.org',
@@ -74,7 +77,13 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
     recentSpamFlags,
     recentLoginsCount,
     userSearchResults,
-    recentInviteCodes
+    recentInviteCodes,
+    funnelStage1,
+    funnelStage2,
+    funnelStage3,
+    funnelStage1Recent,
+    recentSocialPosts,
+    calendarShows,
   ] = await Promise.all([
     db.user.count().catch(() => 0),
     db.profile.count().catch(() => 0),
@@ -162,6 +171,23 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
       orderBy: { createdAt: 'desc' },
       take: 10,
     }).catch(() => []),
+    // Artist funnel — stage 1
+    db.profile.count({ where: { type: 'ARTIST', mediaUploads: { none: {} } } }).catch(() => 0),
+    // Artist funnel — stage 2
+    db.profile.count({ where: { type: 'ARTIST', mediaUploads: { some: {} }, hostedShows: { none: {} }, headlinerShows: { none: {} } } }).catch(() => 0),
+    // Artist funnel — stage 3
+    db.show.count({ where: { hypeCount: 0, status: { not: 'DRAFT' } } }).catch(() => 0),
+    // Recent stage-1 artists
+    db.profile.findMany({ where: { type: 'ARTIST', mediaUploads: { none: {} } }, select: { name: true, slug: true, createdAt: true }, orderBy: { createdAt: 'desc' }, take: 5 }).catch(() => []),
+    // Recent social posts
+    db.socialPost.findMany({ orderBy: { generatedAt: 'desc' }, take: 5 }).catch(() => []),
+    // Upcoming calendar (next 30 days)
+    db.show.findMany({
+      where: { status: 'SCHEDULED', startsAt: { gte: new Date(), lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } },
+      select: { id: true, title: true, startsAt: true, featured: true, venueProfile: { select: { name: true } }, headlinerProfile: { select: { name: true } }, ticketsSoldCount: true, ticketCapacity: true },
+      orderBy: { startsAt: 'asc' },
+      take: 100,
+    }).catch(() => [] as Array<{ id: string; title: string; startsAt: Date; featured: boolean; venueProfile: { name: string } | null; headlinerProfile: { name: string } | null; ticketsSoldCount: number; ticketCapacity: number | null }>),
   ]);
 
   const [
@@ -478,10 +504,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                   <small>{show.venueProfile?.name ?? '—'}</small>
                   <small>{show.startsAt.toISOString().slice(0, 10)}</small>
                   <small>{show._count.tickets} tix</small>
-                  <form action={featureShowAction}>
-                    <input type="hidden" name="showId" value={show.id} />
-                    <button className="button small secondary" type="submit">Feature</button>
-                  </form>
+                  <FeatureToggle showId={show.id} initialFeatured={show.featured} />
                 </div>
               ))
             ) : (
@@ -617,6 +640,107 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
               <div className="admin-list-row" key={flag.id}>
                 <span>{flag.body}</span>
                 <small>{flag.user?.username ?? flag.user?.email ?? flag.userId} | {flag.createdAt.toISOString()}</small>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Artist Funnel */}
+      <section className="panel admin-console-panel">
+        <div className="admin-console-panel-head">
+          <div>
+            <h2>Artist Funnel</h2>
+            <p className="meta">Where artists drop off before their first show.</p>
+          </div>
+        </div>
+        <div className="admin-health-grid">
+          <div className="admin-health-card">
+            <span>No uploads yet</span>
+            <strong style={{ color: funnelStage1 > 0 ? '#e74c3c' : 'inherit' }}>{funnelStage1}</strong>
+          </div>
+          <div className="admin-health-card">
+            <span>Uploads, no shows</span>
+            <strong style={{ color: funnelStage2 > 0 ? '#f39c12' : 'inherit' }}>{funnelStage2}</strong>
+          </div>
+          <div className="admin-health-card">
+            <span>Shows with 0 hypes</span>
+            <strong>{funnelStage3}</strong>
+          </div>
+        </div>
+        {funnelStage1Recent.length > 0 && (
+          <div className="admin-list" style={{ marginTop: 12 }}>
+            <strong style={{ fontSize: 13, marginBottom: 6, display: 'block' }}>Recent stage-1 artists (no uploads)</strong>
+            {funnelStage1Recent.map((p) => (
+              <div className="admin-list-row" key={p.slug}>
+                <span>{p.name}</span>
+                <small>{p.slug} · joined {p.createdAt.toISOString().slice(0, 10)}</small>
+              </div>
+            ))}
+          </div>
+        )}
+        <BulkActions
+          items={funnelStage1Recent.map((p) => ({ id: p.slug, label: p.name }))}
+          type="profiles"
+        />
+      </section>
+
+      {/* Social Posts */}
+      <section className="panel admin-console-panel">
+        <div className="admin-console-panel-head">
+          <div>
+            <h2>Social Posts</h2>
+            <p className="meta">Recent auto-generated social digest posts.</p>
+          </div>
+        </div>
+        {recentSocialPosts.length === 0 ? (
+          <div className="empty">No social posts yet. Monday digest will generate them.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {recentSocialPosts.map((post) => (
+              <div key={post.id} style={{ background: 'var(--bg2,#111)', border: '1px solid var(--line2,#333)', borderRadius: 8, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <pre style={{ fontFamily: 'inherit', fontSize: 13, margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{post.text}</pre>
+                  <small style={{ color: 'var(--ink3,#666)', fontSize: 11 }}>{post.generatedAt.toISOString().slice(0, 16)}</small>
+                </div>
+                <SocialPostCopy text={post.text} />
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Content Calendar */}
+      <section className="panel admin-console-panel">
+        <div className="admin-console-panel-head">
+          <div>
+            <h2>Upcoming Calendar</h2>
+            <p className="meta">Scheduled shows in the next 30 days.</p>
+          </div>
+        </div>
+        {calendarShows.length === 0 ? (
+          <div className="empty">No scheduled shows in the next 30 days.</div>
+        ) : (
+          <div>
+            {Object.entries(
+              calendarShows.reduce((acc: Record<string, typeof calendarShows>, show) => {
+                const date = show.startsAt.toLocaleDateString();
+                acc[date] ??= [];
+                acc[date].push(show);
+                return acc;
+              }, {})
+            ).map(([date, shows]) => (
+              <div key={date} style={{ marginBottom: 14 }}>
+                <div style={{ fontFamily: 'var(--f-mono,monospace)', fontSize: 12, fontWeight: 700, color: 'var(--ink3,#666)', marginBottom: 6, letterSpacing: '.08em', textTransform: 'uppercase' }}>{date}</div>
+                {shows.map((show) => (
+                  <div key={show.id} className="admin-list-row" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ flex: 1 }}>{show.title}</span>
+                    <small>{show.venueProfile?.name ?? '—'}</small>
+                    <small>{show.headlinerProfile?.name ?? '—'}</small>
+                    <small>{show.ticketsSoldCount}/{show.ticketCapacity ?? '∞'} tix</small>
+                    <FeatureToggle showId={show.id} initialFeatured={show.featured} />
+                  </div>
+                ))}
               </div>
             ))}
           </div>
