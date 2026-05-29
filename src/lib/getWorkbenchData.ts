@@ -282,7 +282,15 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
     return responseData;
   } catch (e) {
     console.error('getWorkbenchData error:', e);
-    return MOCK_DATA;
+    return {
+      ...MOCK_DATA,
+      degraded: true,
+      tracks: [],
+      shows: [],
+      tickets: [],
+      radioShows: [],
+      notifications: [],
+    };
   }
 }
 

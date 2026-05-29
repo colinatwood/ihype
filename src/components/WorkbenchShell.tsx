@@ -236,6 +236,7 @@ export type WorkbenchData = {
   isAdmin?: boolean;
   uploadStreak?: number;
   needsGenreQuiz?: boolean;
+  degraded?: boolean;
 };
 
 // ── Default prefs ──────────────────────────────────────────────

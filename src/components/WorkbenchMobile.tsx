@@ -452,11 +452,12 @@ const eqCss = `
 `;
 
 // ─── Top bar ─────────────────────────────────────────────────
-function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, notifCount }: {
+function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, notifCount, onFeedback }: {
   tab: MobileTab; onTab: (t: MobileTab) => void;
   listeningNow: number; userName: string; initials: string;
   onSearch?: () => void;
   notifCount?: number;
+  onFeedback?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
@@ -651,7 +652,6 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
         {([
           { icon: 'ℹ️', label: 'About iHYPE', href: '/about' },
           { icon: '🔍', label: 'Transparency', href: '/transparency' },
-          { icon: '🐛', label: 'Report a bug', href: 'mailto:bugs@ihype.org' },
         ] as { icon: string; label: string; href: string }[]).map(item => (
           <a key={item.label} href={item.href} onClick={close} style={{
             display: 'flex', alignItems: 'center', gap: 14, padding: '13px 20px',
@@ -661,6 +661,13 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
             <span style={{ fontFamily: T.fb, fontSize: 15, color: T.ink }}>{item.label}</span>
           </a>
         ))}
+        <button onClick={() => { close(); onFeedback?.(); }} style={{
+          display: 'flex', alignItems: 'center', gap: 14, padding: '13px 20px',
+          background: 'transparent', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left',
+        }}>
+          <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>🐛</span>
+          <span style={{ fontFamily: T.fb, fontSize: 15, color: T.ink }}>Report a bug</span>
+        </button>
       </div>
 
       {/* Divider */}
@@ -849,6 +856,25 @@ function ReferralPanel({ data }: { data: WorkbenchData }) {
 
 // ─── Screen: Me ──────────────────────────────────────────────
 function ScreenMe({ data }: { data: WorkbenchData }) {
+  const [deletingAccount, setDeletingAccount] = React.useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Are you sure you want to delete your account? This cannot be undone.')) return;
+    if (!window.confirm('Final confirmation: all your data will be permanently deleted.')) return;
+    setDeletingAccount(true);
+    try {
+      const res = await fetch('/api/settings/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'DELETE' }),
+      });
+      if (res.ok) {
+        window.location.href = '/login';
+      }
+    } catch { /* ignore */ } finally {
+      setDeletingAccount(false);
+    }
+  };
   return (
     <>
       {/* Hero portrait card */}
@@ -954,7 +980,7 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
       <ReferralPanel data={data} />
 
       {/* Activity */}
-      <div style={{ padding: '14px 18px 24px' }}>
+      <div style={{ padding: '14px 18px 0' }}>
         <WMCard>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <div style={{ fontFamily: T.fd, fontWeight: 700, letterSpacing: '-.01em', fontSize: 14, color: T.ink }}>Recent activity</div>
@@ -962,7 +988,7 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
           </div>
           {data.activity.length === 0 && (
             <div style={{ padding: '16px 0', textAlign: 'center', fontFamily: T.fb, fontSize: 13, color: T.ink3 }}>
-              No activity yet — start by hyping a track.
+              Start exploring — hype tracks and follow artists to build your history
             </div>
           )}
           {data.activity.slice(0, 5).map((a, i, arr) => {
@@ -985,6 +1011,22 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
             );
           })}
         </WMCard>
+      </div>
+
+      {/* Danger zone */}
+      <div style={{ padding: '14px 18px 32px' }}>
+        <button
+          onClick={handleDeleteAccount}
+          disabled={deletingAccount}
+          style={{
+            width: '100%', padding: '11px 0', borderRadius: 9, border: `1px solid rgba(239,68,68,.4)`,
+            background: 'rgba(239,68,68,.07)', color: '#ef4444',
+            fontFamily: T.fm, fontSize: 13, fontWeight: 700, letterSpacing: '.08em', cursor: 'pointer',
+            opacity: deletingAccount ? .6 : 1,
+          }}
+        >
+          {deletingAccount ? 'Deleting account…' : 'Delete account'}
+        </button>
       </div>
     </>
   );
@@ -1303,7 +1345,7 @@ function ScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData; onHypersShe
 }
 
 // ─── Screen: Radio ───────────────────────────────────────────
-function ScreenRadio({ data, onSetlistSheet, onHypersSheet }: { data: WorkbenchData; onSetlistSheet?: (showId: string) => void; onHypersSheet?: (showId: string) => void }) {
+function ScreenRadio({ data, onSetlistSheet, onHypersSheet, onSeedsTab }: { data: WorkbenchData; onSetlistSheet?: (showId: string) => void; onHypersSheet?: (showId: string) => void; onSeedsTab?: () => void }) {
   const shows = data.radioShows;
   const live = shows.find(s => s.live);
   const rest = shows.filter(s => !s.live);
@@ -1368,7 +1410,10 @@ function ScreenRadio({ data, onSetlistSheet, onHypersSheet }: { data: WorkbenchD
         </div>
         {!live && shows.length === 0 && (
           <div style={{ textAlign: 'center', padding: '32px 18px', color: T.ink3, fontFamily: T.fb, fontSize: 14 }}>
-            No live shows right now — check back soon.
+            No live shows right now —{' '}
+            <button onClick={onSeedsTab} style={{ background: 'none', border: 'none', color: T.accent, cursor: 'pointer', fontFamily: T.fb, fontSize: 14, padding: 0, textDecoration: 'underline' }}>
+              explore Seeds to discover new music ↗
+            </button>
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
@@ -1555,7 +1600,7 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
 }
 
 // ─── Screen: Ticketing ───────────────────────────────────────
-function ScreenTicketing({ data, onHypersSheet }: { data: WorkbenchData; onHypersSheet?: (showId: string) => void }) {
+function ScreenTicketing({ data, onHypersSheet, onRadioTab }: { data: WorkbenchData; onHypersSheet?: (showId: string) => void; onRadioTab?: () => void }) {
   const [subTab, setSubTab] = useState(0);
   const subTabs = ['Upcoming', 'My Tickets', 'Past', 'Sell'];
 
@@ -1585,7 +1630,10 @@ function ScreenTicketing({ data, onHypersSheet }: { data: WorkbenchData; onHyper
           {data.shows.length === 0 && (
             <div style={{ textAlign: 'center', padding: '32px 18px', color: T.ink3, fontFamily: T.fb, fontSize: 14, background: T.bg2, borderRadius: 12, border: `1px solid ${T.line}` }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>🎟️</div>
-              No upcoming shows yet.{'\n'}Explore the scene to find events near you.
+              No tickets yet —{' '}
+              <button onClick={onRadioTab} style={{ background: 'none', border: 'none', color: T.accent, cursor: 'pointer', fontFamily: T.fb, fontSize: 14, padding: 0, textDecoration: 'underline' }}>
+                find shows near you in Radio →
+              </button>
             </div>
           )}
           {data.shows.map((e, i) => {
@@ -1674,6 +1722,90 @@ function ScreenTicketing({ data, onHypersSheet }: { data: WorkbenchData; onHyper
   );
 }
 
+// ─── Feedback sheet ───────────────────────────────────────────
+function WMFeedbackSheet({ onClose }: { onClose: () => void }) {
+  const [category, setCategory] = React.useState<'bug' | 'suggestion' | 'other'>('bug');
+  const [message, setMessage] = React.useState('');
+  const [submitted, setSubmitted] = React.useState(false);
+  const [submitting, setSubmitting] = React.useState(false);
+
+  const handleSubmit = async () => {
+    if (!message.trim()) return;
+    setSubmitting(true);
+    try {
+      await fetch('/api/support/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, category, url: typeof window !== 'undefined' ? window.location.href : '' }),
+      });
+      setSubmitted(true);
+      setTimeout(() => onClose(), 2000);
+    } catch { /* ignore */ } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 59, background: 'rgba(0,0,0,.6)' }} />
+      <div style={{
+        position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 60,
+        background: T.bg3, borderTop: `1px solid ${T.line2}`,
+        borderRadius: '18px 18px 0 0',
+        boxShadow: '0 -12px 48px rgba(0,0,0,.7)',
+        padding: '20px 18px 40px',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, letterSpacing: '-.025em' }}>Send feedback</div>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.ink2, cursor: 'pointer', fontSize: 20, padding: 4 }}>✕</button>
+        </div>
+        {submitted ? (
+          <div style={{ textAlign: 'center', padding: '24px 0', fontFamily: T.fb, fontSize: 15, color: T.teal }}>
+            Thanks for your feedback!
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              {(['bug', 'suggestion', 'other'] as const).map(cat => (
+                <button key={cat} onClick={() => setCategory(cat)} style={{
+                  flex: 1, padding: '8px 0', borderRadius: 8, border: `1px solid ${category === cat ? T.accent : T.line2}`,
+                  background: category === cat ? 'rgba(255,80,41,.12)' : 'transparent',
+                  color: category === cat ? T.accent : T.ink2,
+                  fontFamily: T.fm, fontSize: 12, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer',
+                }}>{cat}</button>
+              ))}
+            </div>
+            <div style={{ position: 'relative', marginBottom: 14 }}>
+              <textarea
+                value={message}
+                onChange={e => setMessage(e.target.value.slice(0, 500))}
+                placeholder="Describe what happened or what you'd like to see…"
+                rows={4}
+                style={{
+                  width: '100%', background: T.bg2, border: `1px solid ${T.line2}`, borderRadius: 10,
+                  color: T.ink, fontFamily: T.fb, fontSize: 14, padding: '10px 12px',
+                  resize: 'none', outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+              <div style={{ position: 'absolute', bottom: 8, right: 10, fontFamily: T.fm, fontSize: 11, color: T.ink3 }}>{message.length}/500</div>
+            </div>
+            <button onClick={handleSubmit} disabled={submitting || !message.trim()} style={{
+              width: '100%', padding: '13px 0', borderRadius: 10, border: 'none',
+              background: message.trim() ? `linear-gradient(135deg,${T.accent},${T.pink})` : T.bg4,
+              color: message.trim() ? T.bg : T.ink3,
+              fontFamily: T.fd, fontWeight: 800, fontSize: 15, letterSpacing: '-.01em',
+              cursor: message.trim() ? 'pointer' : 'default',
+              opacity: submitting ? .6 : 1,
+            }}>
+              {submitting ? 'Sending…' : 'Submit'}
+            </button>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ─── Main mobile export ───────────────────────────────────────
 export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const [tab, setTab] = useState<MobileTab>('me');
@@ -1683,6 +1815,15 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
+  const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
+  const [seedsTooltipSeen, setSeedsTooltipSeen] = React.useState(() => {
+    if (typeof window === 'undefined') return true;
+    return !!localStorage.getItem('ihype_tooltip_seeds_seen');
+  });
+  const [radioTooltipSeen, setRadioTooltipSeen] = React.useState(() => {
+    if (typeof window === 'undefined') return true;
+    return !!localStorage.getItem('ihype_tooltip_radio_seen');
+  });
 
   useEffect(() => {
     fetch('/api/notifications')
@@ -1817,9 +1958,9 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     switch (tab) {
       case 'me':     return <ScreenMe data={data} />;
       case 'seeds':  return <ScreenSeeds data={data} onHypersSheet={setHypersSheetShowId} />;
-      case 'radio':  return <ScreenRadio data={data} onSetlistSheet={setSetlistSheetShowId} onHypersSheet={setHypersSheetShowId} />;
+      case 'radio':  return <ScreenRadio data={data} onSetlistSheet={setSetlistSheetShowId} onHypersSheet={setHypersSheetShowId} onSeedsTab={() => setTab('seeds')} />;
       case 'studio': return <ScreenStudio data={data} />;
-      case 'tick':   return <ScreenTicketing data={data} onHypersSheet={setHypersSheetShowId} />;
+      case 'tick':   return <ScreenTicketing data={data} onHypersSheet={setHypersSheetShowId} onRadioTab={() => setTab('radio')} />;
     }
   })();
 
@@ -1831,8 +1972,13 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
       overflow: 'hidden',
     }}>
       <style>{eqCss}</style>
+      {data.degraded && (
+        <div style={{ background: '#f59e0b', color: '#000', textAlign: 'center', padding: '6px 12px', fontSize: 12, fontWeight: 600, position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}>
+          Having trouble connecting — some data may be outdated
+        </div>
+      )}
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
-      <WMTopBar tab={tab} onTab={setTab} listeningNow={data.listeningNow} userName={data.userName} initials={data.userInitials} onSearch={() => setSearchOpen(true)} notifCount={notifCount} />
+      <WMTopBar tab={tab} onTab={setTab} listeningNow={data.listeningNow} userName={data.userName} initials={data.userInitials} onSearch={() => setSearchOpen(true)} notifCount={notifCount} onFeedback={() => setShowFeedbackSheet(true)} />
       <div
         role="main"
         className="wm-scroll"
@@ -1872,6 +2018,51 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
         <WMGenreQuizSheet profileId={data.profileId} onComplete={() => setShowGenreQuiz(false)} />
       )}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {showFeedbackSheet && <WMFeedbackSheet onClose={() => setShowFeedbackSheet(false)} />}
+      {/* Seeds tooltip */}
+      {!seedsTooltipSeen && data.tracks.length === 0 && tab === 'seeds' && (
+        <SeedsTooltip onDismiss={() => { localStorage.setItem('ihype_tooltip_seeds_seen', '1'); setSeedsTooltipSeen(true); }} />
+      )}
+      {/* Radio tooltip */}
+      {!radioTooltipSeen && data.radioShows.length === 0 && tab === 'radio' && (
+        <RadioTooltip onDismiss={() => { localStorage.setItem('ihype_tooltip_radio_seen', '1'); setRadioTooltipSeen(true); }} />
+      )}
+    </div>
+  );
+}
+
+function SeedsTooltip({ onDismiss }: { onDismiss: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+  return (
+    <div style={{
+      position: 'fixed', bottom: 100, left: 18, right: 18, zIndex: 70,
+      background: T.bg3, border: `1px solid ${T.line2}`, borderRadius: 12,
+      padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      boxShadow: '0 8px 32px rgba(0,0,0,.6)',
+    }}>
+      <span style={{ fontFamily: T.fb, fontSize: 14, color: T.ink }}>Swipe right to hype, left to skip, up to save</span>
+      <button onClick={onDismiss} style={{ background: 'none', border: 'none', color: T.ink3, cursor: 'pointer', fontSize: 18, padding: '0 0 0 10px' }}>✕</button>
+    </div>
+  );
+}
+
+function RadioTooltip({ onDismiss }: { onDismiss: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+  return (
+    <div style={{
+      position: 'fixed', bottom: 100, left: 18, right: 18, zIndex: 70,
+      background: T.bg3, border: `1px solid ${T.line2}`, borderRadius: 12,
+      padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      boxShadow: '0 8px 32px rgba(0,0,0,.6)',
+    }}>
+      <span style={{ fontFamily: T.fb, fontSize: 14, color: T.ink }}>Tune into live shows and upcoming events</span>
+      <button onClick={onDismiss} style={{ background: 'none', border: 'none', color: T.ink3, cursor: 'pointer', fontSize: 18, padding: '0 0 0 10px' }}>✕</button>
     </div>
   );
 }
