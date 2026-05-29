@@ -46,6 +46,9 @@ const JOBS: CronJob[] = [
   { path: '/api/cron?job=follow-digest',      schedule: '0 9 * * 1'   },
   { path: '/api/cron?job=audit-log-rotate',   schedule: '0 4 * * 1'   },
 
+  // Backup verification — 5am daily
+  { path: '/api/cron/backup-verify',             schedule: '0 5 * * *'   },
+
   // Additional daily jobs
   { path: '/api/cron?job=close-stale-bookings',  schedule: '0 1 * * *'   },
   { path: '/api/cron?job=artist-onboarding',     schedule: '0 11 * * *'  },

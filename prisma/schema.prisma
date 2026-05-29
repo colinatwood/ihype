@@ -1077,6 +1077,18 @@ model FeatureFlag {
   updatedAt   DateTime @updatedAt
 }
 
+model InviteCode {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  createdBy    String?
+  usedByUserId String?   @unique
+  usedAt       DateTime?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([createdAt])
+}
+
 model PromoCode {
   id            String        @id @default(cuid())
   code          String        @unique
