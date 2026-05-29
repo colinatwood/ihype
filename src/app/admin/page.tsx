@@ -73,7 +73,8 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
     recentShows,
     recentSpamFlags,
     recentLoginsCount,
-    userSearchResults
+    userSearchResults,
+    recentInviteCodes
   ] = await Promise.all([
     db.user.count().catch(() => 0),
     db.profile.count().catch(() => 0),
@@ -157,6 +158,10 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
       select: { id: true, email: true, username: true, role: true, createdAt: true, profiles: { select: { type: true, slug: true } } },
       take: 10,
     }).catch(() => []) : Promise.resolve([]),
+    db.inviteCode.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    }).catch(() => []),
   ]);
 
   const [
@@ -612,6 +617,33 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
               <div className="admin-list-row" key={flag.id}>
                 <span>{flag.body}</span>
                 <small>{flag.user?.username ?? flag.user?.email ?? flag.userId} | {flag.createdAt.toISOString()}</small>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="section">
+        <h2>Invite Codes</h2>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+          <a className="button" href="/api/admin/invite-codes" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13 }}>
+            View all via API
+          </a>
+          <a className="button" href="/api/admin/test-email" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13 }}>
+            Send test email
+          </a>
+        </div>
+        {recentInviteCodes.length === 0 ? (
+          <p className="meta">No invite codes yet. POST to /api/admin/invite-codes to generate some.</p>
+        ) : (
+          <div className="admin-list">
+            {recentInviteCodes.map((code) => (
+              <div className="admin-list-row" key={code.id}>
+                <code style={{ fontFamily: 'monospace', letterSpacing: 1 }}>{code.code}</code>
+                <small>
+                  {code.usedAt ? `Used ${code.usedAt.toISOString()}` : code.expiresAt && code.expiresAt < new Date() ? 'Expired' : 'Available'}
+                  {' | '}created {code.createdAt.toISOString()}
+                </small>
               </div>
             ))}
           </div>

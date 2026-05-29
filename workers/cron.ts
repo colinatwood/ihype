@@ -68,6 +68,7 @@ export default {
     await Promise.all(
       matched.map(async (job) => {
         const url = `${env.APP_BASE_URL}${job.path}`;
+        console.log('[cron] Firing:', job.path, 'at', new Date().toISOString());
         try {
           const res = await fetch(url, {
             method: 'GET',
