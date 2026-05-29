@@ -425,6 +425,10 @@ model Show {
   setlistProgress        Json?
   setlistVotes           SetlistVote[]
   promoCodes             PromoCode[]
+  moderationStatus       String    @default("APPROVED")
+  featured               Boolean   @default(false)
+  dmcaDeadline           DateTime?
+  dmcaStatus             String?
 
   @@index([startsAt, status])
 }
@@ -467,6 +471,8 @@ model TicketOrder {
   locationCountry            String?
   locationPostalCode         String?
   chargedAt                  DateTime?
+  transferredAt              DateTime?
+  transferredToEmail         String?
   createdAt                  DateTime               @default(now())
   updatedAt                  DateTime               @updatedAt
   show                       Show                   @relation(fields: [showId], references: [id], onDelete: Cascade)
@@ -514,6 +520,7 @@ model AccountsPayableEntry {
   amountCents   Int
   payeeLabel    String
   note          String?
+  paidAt        DateTime?
   createdAt     DateTime                @default(now())
   updatedAt     DateTime                @updatedAt
   ticketOrder   TicketOrder             @relation(fields: [ticketOrderId], references: [id], onDelete: Cascade)
@@ -1106,4 +1113,12 @@ model PromoCode {
 
   @@index([showId])
   @@index([profileId])
+}
+
+model SocialPost {
+  id          String    @id @default(cuid())
+  text        String
+  generatedAt DateTime  @default(now())
+  postedAt    DateTime?
+  platform    String?
 }
