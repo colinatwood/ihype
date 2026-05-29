@@ -69,7 +69,9 @@ export default async function AdminPage() {
     health,
     recentTicketOrders,
     revenueAgg,
-    recentShows
+    recentShows,
+    recentSpamFlags,
+    recentLoginsCount
   ] = await Promise.all([
     db.user.count().catch(() => 0),
     db.profile.count().catch(() => 0),
@@ -137,7 +139,14 @@ export default async function AdminPage() {
         venueProfile: { select: { name: true } },
         _count: { select: { tickets: true } }
       }
-    }).catch(() => [])
+    }).catch(() => []),
+    db.notification.findMany({
+      where: { type: 'SPAM_FLAG', createdAt: { gte: new Date(Date.now() - 86400000) } },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      include: { user: { select: { email: true, username: true } } }
+    }).catch(() => []),
+    db.user.count({ where: { lastLoginAt: { gte: new Date(Date.now() - 86400000) } } }).catch(() => 0)
   ]);
 
   const [
@@ -533,6 +542,35 @@ export default async function AdminPage() {
             )}
           </div>
         </article>
+      </section>
+
+      <section className="panel admin-console-panel">
+        <div className="admin-console-panel-head">
+          <div>
+            <h2>Security</h2>
+            <p className="meta">Spam flags and login activity in the last 24 hours.</p>
+          </div>
+        </div>
+        <div className="admin-metric-grid" style={{ marginBottom: '1rem' }}>
+          <article className="card admin-metric-card">
+            <span>Spam flags (24h)</span>
+            <strong>{recentSpamFlags.length}</strong>
+          </article>
+          <article className="card admin-metric-card">
+            <span>Logins (24h)</span>
+            <strong>{recentLoginsCount}</strong>
+          </article>
+        </div>
+        {recentSpamFlags.length > 0 && (
+          <div className="admin-list">
+            {recentSpamFlags.map((flag) => (
+              <div className="admin-list-row" key={flag.id}>
+                <span>{flag.body}</span>
+                <small>{flag.user?.username ?? flag.user?.email ?? flag.userId} | {flag.createdAt.toISOString()}</small>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="section">
