@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { isAdminSession } from '@/lib/permissions';
 import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 import { AdminShell } from '@/components/admin/AdminShell';
+import { OpsLoginGate } from '@/components/admin/OpsLoginGate';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -15,5 +16,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect(WORKBENCH_PATH);
   }
 
-  return <AdminShell>{children}</AdminShell>;
+  const { name, email } = session.user;
+
+  return (
+    <OpsLoginGate name={name} email={email}>
+      <AdminShell name={name} email={email}>{children}</AdminShell>
+    </OpsLoginGate>
+  );
 }
