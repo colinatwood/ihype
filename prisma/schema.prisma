@@ -133,6 +133,9 @@ model User {
   showAttendees           ShowAttendee[]
   setlistVotes            SetlistVote[]
   sentBookingRequests     BookingRequest[]         @relation("BookingRequestFromUser")
+  userSecurityVersion     Int                      @default(0)
+  lastLoginCountry        String?
+  lastLoginAt             DateTime?
 }
 
 model Profile {

@@ -141,6 +141,25 @@ export async function POST(request: NextRequest) {
         entityId: payload.targetId
       });
 
+      // Spam detection: flag if user exceeds 100 hype actions in 60 seconds
+      const recentShowHypeCount = await db.hypeEvent.count({
+        where: { userId: session.user.id, createdAt: { gte: new Date(Date.now() - 60_000) } }
+      });
+      if (recentShowHypeCount > 100) {
+        const admins = await db.user.findMany({ where: { role: 'ADMIN' }, select: { id: true }, take: 1 });
+        if (admins[0]) {
+          await db.notification.create({
+            data: {
+              userId: admins[0].id,
+              type: 'SPAM_FLAG',
+              body: `User ${session.user.id} sent ${recentShowHypeCount} show hypes in 60s`,
+              link: `/admin`
+            }
+          });
+        }
+        return NextResponse.json({ error: 'Spam detected' }, { status: 429 });
+      }
+
       return NextResponse.json({ action: 'hyped', hypeCount: updatedShow.hypeCount });
     }
 
