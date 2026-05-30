@@ -18,6 +18,9 @@ export async function POST(request: Request) {
   if (!sub?.endpoint || !sub?.keys?.auth || !sub?.keys?.p256dh) {
     return NextResponse.json({ error: 'Missing subscription fields.' }, { status: 400 });
   }
+  if (sub.endpoint.length > 2048 || sub.keys.auth.length > 256 || sub.keys.p256dh.length > 256) {
+    return NextResponse.json({ error: 'Subscription fields too long.' }, { status: 400 });
+  }
 
   const existing = await db.pushSubscription.count({ where: { userId: session.user.id } });
   if (existing >= MAX_SUBSCRIPTIONS_PER_USER) {
