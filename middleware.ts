@@ -42,11 +42,15 @@ const authMiddleware = auth((request) => {
 
 // Redirect www to apex BEFORE NextAuth sees the request — NextAuth rejects hosts
 // that don't match AUTH_URL, causing an Internal Server Error for www.ihype.org.
+// Use the Host header rather than request.nextUrl.hostname because OpenNext
+// normalizes nextUrl to the configured NEXT_PUBLIC_APP_URL (ihype.org), making
+// the hostname check always false for www requests.
 export default function middleware(request: NextRequest) {
-  if (request.nextUrl.hostname === 'www.ihype.org') {
-    const url = request.nextUrl.clone();
+  const host = (request.headers.get('host') ?? request.nextUrl.hostname).split(':')[0].toLowerCase();
+  if (host === 'www.ihype.org') {
+    const url = new URL(request.url);
     url.hostname = 'ihype.org';
-    return NextResponse.redirect(url, 308);
+    return NextResponse.redirect(url.toString(), 308);
   }
   return (authMiddleware as (req: NextRequest) => ReturnType<typeof NextResponse.next>)(request);
 }
