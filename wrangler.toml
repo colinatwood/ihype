@@ -11,6 +11,16 @@ workers_dev = false
 [limits]
 cpu_ms = 1500
 
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+
 rules = [
   { type = "CompiledWasm", globs = ["**/*.wasm"], fallthrough = true }
 ]
