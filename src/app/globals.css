@@ -12,23 +12,16 @@
   --line-2: rgba(255,255,255,.14);
   --accent: #ff5029;
   --accent-2: #ff3e9a;
-  --r-fan: #b983ff;
-  --r-artist: #ff5029;
-  --r-venue: #22e5d4;
-  --r-promoter: #ff3e9a;
   --f-d: var(--font-syne, 'Syne', sans-serif);
   --f-b: var(--font-dm, 'DM Sans', sans-serif);
   --f-m: var(--font-jb, 'JetBrains Mono', monospace);
   --f-s: var(--font-serif, 'Instrument Serif', serif);
-  --rail-w: 56px;
   --queue-w: 300px;
   --player-h: 64px;
   --top-h: 42px;
   /* Legacy compat */
   --text: #f0ebe5;
   --muted: #5a5048;
-  --panel: rgba(16,13,9,.84);
-  --panel-2: rgba(26,22,18,.9);
   --shadow: 0 18px 42px rgba(0,0,0,.35);
 }
 
@@ -49,8 +42,6 @@
     --line-2: rgba(255,255,255,.16);
     --text: #f4f1ea;
     --muted: #645b50;
-    --panel: rgba(12,10,16,.86);
-    --panel-2: rgba(21,19,26,.9);
   }
 }
 
@@ -68,8 +59,6 @@
   --line-2: rgba(0,0,0,.16);
   --text: #1a1410;
   --muted: #7a6e64;
-  --panel: rgba(255,255,255,.7);
-  --panel-2: rgba(240,235,228,.9);
 }
 
 * {
@@ -2138,7 +2127,6 @@ body:has(.wb-root) .site-shell {
   font-size: 0.82rem;
 }
 .profile-design-shell {
-  --profile-design-surface: linear-gradient(160deg, rgba(8,12,24,0.98), rgba(18,26,46,0.98));
   --profile-design-overlay: radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 18%);
   --profile-design-panel: rgba(12, 18, 34, 0.82);
   --profile-design-hero: linear-gradient(135deg, rgba(35,208,216,0.2), rgba(143,91,255,0.24));
@@ -4025,8 +4013,6 @@ html.a11y-reduce-motion *::after {
 
 html.high-contrast {
   --bg: #000000;
-  --panel: #050505;
-  --panel-2: #0a0a0a;
   --text: #ffffff;
   --muted: #f1f5ff;
   --line: rgba(255, 255, 255, 0.78);
