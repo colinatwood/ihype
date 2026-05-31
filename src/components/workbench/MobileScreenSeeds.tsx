@@ -240,7 +240,7 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
         </div>
 
         {/* Card stack */}
-        <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 3.6', marginBottom: 14 }}>
+        <div style={{ position: 'relative', width: '100%', aspectRatio: '3 / 2.4', marginBottom: 14 }}>
           {/* Skeleton loading state */}
           {loadingDeck && (
             <div className="wm-skeleton" style={{ position: 'absolute', inset: 0, borderRadius: 18 }} />
@@ -392,7 +392,7 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
 
         {/* Collab board */}
         <CollabBoardSection />
-        <div style={{ height: 24 }} />
+        <div style={{ height: 48 }} />
       </div>
     </>
   );
