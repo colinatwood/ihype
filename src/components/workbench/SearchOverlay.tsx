@@ -69,12 +69,12 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
       <div style={{
         position: 'relative', width: '100%', maxWidth: 560,
         background: 'var(--bg-2)', border: '1px solid var(--line-2)',
-        borderRadius: 14, boxShadow: '0 16px 48px rgba(0,0,0,.5)',
+        borderRadius: 16, boxShadow: '0 16px 48px rgba(0,0,0,.5)', animation: 'fadeIn .2s ease-out both',
         overflow: 'hidden',
       }}>
         {/* Input */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: results.length > 0 || loading ? '1px solid var(--line)' : 'none' }}>
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ color: 'var(--ink-3)' }}><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input
             ref={inputRef}
             value={query}
@@ -83,7 +83,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
             placeholder="Search tracks, artists, shows…"
             style={{
               flex: 1, background: 'none', border: 'none', outline: 'none',
-              fontFamily: 'var(--f-b)', fontSize: 16, color: 'var(--ink)',
+              fontFamily: 'var(--f-b)', fontSize: 15, color: 'var(--ink)',
             }}
           />
           {query && <button onClick={() => setQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontSize: 18, lineHeight: 1 }}>×</button>}
@@ -98,14 +98,20 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
               <div key={r.id}
                 onClick={() => { if (r.href) window.location.href = r.href; onClose(); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', cursor: 'pointer', borderBottom: '1px solid var(--line)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.03)')}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,80,41,.05)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
               >
-                <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: r.type === 'track' ? 'var(--accent)' : r.type === 'show' ? '#22e5d4' : r.type === 'genre' ? '#ffb84a' : '#b983ff' }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{r.sub} · {r.type}</div>
+                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{r.sub}</div>
                 </div>
+                <span style={{
+                  display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 99,
+                  fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', flexShrink: 0,
+                  background: r.type === 'track' ? 'rgba(255,80,41,.15)' : r.type === 'show' ? 'rgba(34,229,212,.12)' : r.type === 'genre' ? 'rgba(255,184,74,.12)' : 'rgba(185,131,255,.12)',
+                  color: r.type === 'track' ? 'var(--accent)' : r.type === 'show' ? '#22e5d4' : r.type === 'genre' ? '#ffb84a' : '#b983ff',
+                  border: `1px solid ${r.type === 'track' ? 'rgba(255,80,41,.25)' : r.type === 'show' ? 'rgba(34,229,212,.2)' : r.type === 'genre' ? 'rgba(255,184,74,.2)' : 'rgba(185,131,255,.2)'}`,
+                }}>{r.type}</span>
               </div>
             ))}
           </div>
@@ -115,7 +121,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
         )}
         {!query && (
           <div style={{ padding: '20px 18px', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.06em' }}>
-            Try: artist name, track title, venue, show…
+            Try: <strong style={{ color: 'var(--ink-2)' }}>artist name</strong>, track title, venue, show…
           </div>
         )}
       </div>
