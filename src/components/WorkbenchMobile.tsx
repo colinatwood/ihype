@@ -10,7 +10,6 @@ import { SearchOverlay } from '@/components/workbench/SearchOverlay';
 import { ViewErrorBoundary } from '@/components/workbench/ErrorBoundary';
 import {
   T,
-  WMTrackSheet,
   WMShowHypersSheet,
   WMSetlistVoteSheet,
   WMGenreQuizSheet,
@@ -177,34 +176,183 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   );
 }
 
-// ─── Mini Player ─────────────────────────────────────────────
-function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
-  track: WbTrack; playing: boolean; onToggle: () => void; progress: number; onAlbumTap?: () => void;
+// ─── Now Playing Sheet (full-screen) ─────────────────────────
+function WMNowPlayingSheet({ track, playing, progress, onToggle, onSeek, onPrev, onNext, onClose, nextTracks }: {
+  track: WbTrack; playing: boolean; progress: number;
+  onToggle: () => void; onSeek: (r: number) => void;
+  onPrev: () => void; onNext: () => void;
+  onClose: () => void; nextTracks: WbTrack[];
 }) {
+  const [dragY, setDragY] = React.useState(0);
+  const dragStartY = React.useRef(0);
+  const isDraggingHandle = React.useRef(false);
+
+  function fmtTime(s: number) {
+    const m = Math.floor(s / 60);
+    return `${m}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  }
+  const cur = progress * (track.durationSec || 0);
+
   return (
-    <div style={{ position: 'relative', padding: '8px 12px', background: T.bg2, borderTop: `1px solid ${T.line2}`, display: 'grid', gridTemplateColumns: '40px 1fr auto auto', gap: 10, alignItems: 'center', flexShrink: 0 }}>
-      <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${T.accent},${T.pink},transparent)`, opacity: .6 }} />
-      <div onClick={onAlbumTap} style={{ width: 40, height: 40, borderRadius: 7, background: `linear-gradient(135deg,${track.color},${track.color}80)`, position: 'relative', overflow: 'hidden', flexShrink: 0, cursor: onAlbumTap ? 'pointer' : 'default' }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 30%,rgba(255,255,255,.3),transparent 60%)' }} />
-        {playing && (
-          <div style={{ position: 'absolute', bottom: 5, left: 5, display: 'flex', gap: 2, alignItems: 'flex-end', height: 9 }}>
-            {[0, 1, 2].map(i => <span key={i} className="wm-eq-bar" style={{ width: 2, background: '#fff', borderRadius: 99, display: 'block', height: 4 }} />)}
-          </div>
-        )}
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 13, letterSpacing: '-.005em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: T.ink }}>{track.title}</div>
-        <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2, marginTop: 2, letterSpacing: '.04em' }}>{track.artistName} <span style={{ color: T.ink4 }}>·</span> {track.album}</div>
-        <div style={{ marginTop: 5, height: 2, borderRadius: 99, background: 'rgba(255,255,255,.06)', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: `linear-gradient(90deg,${T.accent},${T.pink})`, borderRadius: 99 }} />
+    <div className="wm-now-playing" style={{
+      position: 'fixed', inset: 0, zIndex: 100, display: 'flex', flexDirection: 'column',
+      background: `linear-gradient(175deg, ${track.color}28 0%, ${T.bg} 44%)`,
+      transform: `translateY(${Math.max(0, dragY)}px)`,
+      transition: dragY > 0 ? 'none' : 'transform .22s ease',
+      overflowY: 'auto',
+    }}>
+      {/* Drag handle + header */}
+      <div
+        style={{ flexShrink: 0, paddingTop: 'max(env(safe-area-inset-top,0px),8px)', cursor: 'grab', userSelect: 'none' }}
+        onPointerDown={e => { isDraggingHandle.current = true; dragStartY.current = e.clientY; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); }}
+        onPointerMove={e => { if (!isDraggingHandle.current) return; const dy = e.clientY - dragStartY.current; if (dy > 0) setDragY(dy); }}
+        onPointerUp={() => { isDraggingHandle.current = false; if (dragY > 80) onClose(); else setDragY(0); }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 14, paddingBottom: 4 }}>
+          <div style={{ width: 40, height: 4, borderRadius: 99, background: 'rgba(255,255,255,.18)' }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 20px 14px' }}>
+          <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,.07)', border: 'none', color: T.ink2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <span style={{ fontFamily: T.fm, fontSize: 11, letterSpacing: '.2em', color: T.ink3, textTransform: 'uppercase', fontWeight: 700 }}>Now Playing</span>
+          <div style={{ width: 36 }} />
         </div>
       </div>
-      <button aria-label="Hype this track" style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 9px', border: 'rgba(255,62,154,.3) 1px solid', borderRadius: 99, color: T.pink, fontFamily: T.fm, fontSize: 12, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer', minHeight: 44, minWidth: 44 }}>♥ {track.hypeCount}</button>
-      <button onClick={onToggle} aria-label={playing ? 'Pause' : 'Play'} style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: '50%', background: T.ink, color: T.bg, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-        {playing
-          ? <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/></svg>
-          : <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3v10l10-5z"/></svg>}
-      </button>
+
+      {/* Album art */}
+      <div style={{ flexShrink: 0, padding: '0 44px 28px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{
+          width: '100%', maxWidth: 320, aspectRatio: '1', borderRadius: 22,
+          background: `linear-gradient(135deg, ${track.color} 0%, ${track.color}80 100%)`,
+          position: 'relative', overflow: 'hidden',
+          boxShadow: `0 32px 64px ${track.color}50, 0 8px 32px rgba(0,0,0,.5)`,
+          transform: playing ? 'scale(1)' : 'scale(0.92)',
+          transition: 'transform .4s cubic-bezier(.34,1.56,.64,1)',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.3),transparent 60%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 8px,transparent 8px 16px)' }} />
+          {playing && (
+            <div style={{ position: 'absolute', bottom: 18, left: 18, display: 'flex', gap: 3, alignItems: 'flex-end', height: 22 }}>
+              {[0, 1, 2].map(i => <span key={i} className="wm-eq-bar" style={{ width: 3, background: 'rgba(255,255,255,.8)', borderRadius: 99, display: 'block', height: 7 }} />)}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Track info */}
+      <div style={{ flexShrink: 0, padding: '0 28px 18px' }}>
+        <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 26, letterSpacing: '-.03em', lineHeight: 1.1, color: T.ink }}>{track.title}</div>
+        <div style={{ fontFamily: T.fm, fontSize: 15, color: T.ink2, marginTop: 6, letterSpacing: '.04em' }}>{track.artistName} <span style={{ color: T.ink4 }}>·</span> {track.album}</div>
+      </div>
+
+      {/* Seekable progress bar */}
+      <div style={{ flexShrink: 0, padding: '0 28px', marginBottom: 6 }}>
+        <div
+          style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,.1)', position: 'relative', cursor: 'pointer', touchAction: 'none' }}
+          onPointerDown={e => { e.stopPropagation(); (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); const r = e.currentTarget.getBoundingClientRect(); onSeek(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); }}
+          onPointerMove={e => { if (e.buttons !== 1) return; e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); onSeek(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); }}
+        >
+          <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: `linear-gradient(90deg,${T.accent},${T.pink})`, borderRadius: 99 }} />
+          <div style={{ position: 'absolute', top: '50%', left: `${progress * 100}%`, transform: 'translate(-50%,-50%)', width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,.45)', pointerEvents: 'none' }} />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontFamily: T.fm, fontSize: 12, color: T.ink3 }}>
+          <span>{fmtTime(cur)}</span>
+          <span>{fmtTime(track.durationSec || 0)}</span>
+        </div>
+      </div>
+
+      {/* Transport controls */}
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '4px 28px 20px' }}>
+        <button onClick={onPrev} aria-label="Previous track" style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: T.ink2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6L20 18V6z"/></svg>
+        </button>
+        <button onClick={onToggle} aria-label={playing ? 'Pause' : 'Play'} style={{ width: 76, height: 76, borderRadius: '50%', background: T.ink, color: T.bg, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 24px rgba(0,0,0,.5)', flexShrink: 0 }}>
+          {playing
+            ? <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            : <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor" style={{ transform: 'translateX(2px)' }}><path d="M8 5v14l11-7z"/></svg>}
+        </button>
+        <button onClick={onNext} aria-label="Next track" style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: T.ink2, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2.5-6L18 6v12z"/></svg>
+        </button>
+      </div>
+
+      {/* Hype */}
+      <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+        <button style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 24px', borderRadius: 99, border: '1px solid rgba(255,62,154,.4)', background: 'rgba(255,62,154,.08)', color: T.pink, fontFamily: T.fm, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+          ♥ Hype · {track.hypeCount.toLocaleString()}
+        </button>
+      </div>
+
+      {/* Up next */}
+      {nextTracks.length > 0 && (
+        <div style={{ padding: '0 20px 32px' }}>
+          <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, letterSpacing: '.2em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 10, padding: '0 4px' }}>Up next</div>
+          {nextTracks.slice(0, 3).map((t, i) => (
+            <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '44px 1fr', gap: 12, alignItems: 'center', padding: '10px 4px', borderBottom: i < Math.min(nextTracks.length, 3) - 1 ? `1px solid ${T.line}` : 'none', opacity: 1 - i * 0.2 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 8, background: `linear-gradient(135deg,${t.color},${t.color}80)` }} />
+              <div>
+                <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14, color: T.ink }}>{t.title}</div>
+                <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, marginTop: 2 }}>{t.artistName}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Mini Player ─────────────────────────────────────────────
+function WMMiniPlayer({ track, playing, onToggle, progress, onOpen, onPrev, onNext, onSeek, onDismiss }: {
+  track: WbTrack; playing: boolean; onToggle: () => void; progress: number;
+  onOpen?: () => void; onPrev?: () => void; onNext?: () => void;
+  onSeek?: (r: number) => void; onDismiss?: () => void;
+}) {
+  const [swipeDy, setSwipeDy] = React.useState(0);
+  const dismissStartY = React.useRef(0);
+  const dismissDy = React.useRef(0);
+
+  return (
+    <div
+      style={{ position: 'relative', background: T.bg2, borderTop: `1px solid ${T.line2}`, flexShrink: 0, transform: `translateY(${Math.max(0, swipeDy)}px)`, transition: swipeDy > 0 ? 'none' : 'transform .2s ease', touchAction: 'pan-x' }}
+      onPointerDown={e => { dismissStartY.current = e.clientY; dismissDy.current = 0; }}
+      onPointerMove={e => { const dy = e.clientY - dismissStartY.current; if (dy > 8) { dismissDy.current = dy; setSwipeDy(dy * 0.5); } }}
+      onPointerUp={() => { if (dismissDy.current > 60) onDismiss?.(); setSwipeDy(0); dismissStartY.current = 0; dismissDy.current = 0; }}
+    >
+      <span style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg,transparent,${T.accent},${T.pink},transparent)`, opacity: .6, pointerEvents: 'none' }} />
+      <div style={{ padding: '8px 12px', display: 'grid', gridTemplateColumns: '40px 1fr auto auto auto', gap: 8, alignItems: 'center' }}>
+        <div onClick={onOpen} style={{ width: 40, height: 40, borderRadius: 7, background: `linear-gradient(135deg,${track.color},${track.color}80)`, position: 'relative', overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 30%,rgba(255,255,255,.3),transparent 60%)' }} />
+          {playing && (
+            <div style={{ position: 'absolute', bottom: 5, left: 5, display: 'flex', gap: 2, alignItems: 'flex-end', height: 9 }}>
+              {[0, 1, 2].map(i => <span key={i} className="wm-eq-bar" style={{ width: 2, background: '#fff', borderRadius: 99, display: 'block', height: 4 }} />)}
+            </div>
+          )}
+        </div>
+        <div onClick={onOpen} style={{ minWidth: 0, cursor: 'pointer' }}>
+          <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 13, letterSpacing: '-.005em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: T.ink }}>{track.title}</div>
+          <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2, marginTop: 1, letterSpacing: '.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artistName}</div>
+          <div
+            style={{ marginTop: 5, height: 3, borderRadius: 99, background: 'rgba(255,255,255,.08)', position: 'relative', overflow: 'hidden', touchAction: 'none' }}
+            onPointerDown={e => { e.stopPropagation(); (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); const r = e.currentTarget.getBoundingClientRect(); onSeek?.(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); }}
+            onPointerMove={e => { if (e.buttons !== 1) return; e.stopPropagation(); const r = e.currentTarget.getBoundingClientRect(); onSeek?.(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width))); }}
+          >
+            <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: `linear-gradient(90deg,${T.accent},${T.pink})`, borderRadius: 99 }} />
+          </div>
+        </div>
+        <button onClick={e => { e.stopPropagation(); onPrev?.(); }} aria-label="Previous track" style={{ width: 36, height: 44, background: 'none', border: 'none', color: T.ink3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6L20 18V6z"/></svg>
+        </button>
+        <button onClick={e => { e.stopPropagation(); onToggle(); }} aria-label={playing ? 'Pause' : 'Play'} style={{ width: 40, height: 40, borderRadius: '50%', background: T.ink, color: T.bg, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+          {playing
+            ? <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="3" height="10"/><rect x="9" y="3" width="3" height="10"/></svg>
+            : <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3v10l10-5z"/></svg>}
+        </button>
+        <button onClick={e => { e.stopPropagation(); onNext?.(); }} aria-label="Next track" style={{ width: 36, height: 44, background: 'none', border: 'none', color: T.ink3, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zm2.5-6L18 6v12z"/></svg>
+        </button>
+      </div>
     </div>
   );
 }
@@ -308,7 +456,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [swipeHintSeen, tab]);
 
-  const [trackSheetOpen, setTrackSheetOpen] = useState(false);
+  const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
   const [hypersSheetShowId, setHypersSheetShowId] = useState<string | null>(null);
   const [setlistSheetShowId, setSetlistSheetShowId] = useState<string | null>(null);
   const [showGenreQuiz, setShowGenreQuiz] = useState(data.needsGenreQuiz ?? false);
@@ -328,6 +476,42 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     await new Promise(r => setTimeout(r, 900));
     setRefreshing(false);
   }, [refreshing]);
+
+  const handlePrev = useCallback(() => {
+    setCurrentTrackIdx(i => Math.max(0, i - 1));
+    setProgress(0);
+    if (audioRef.current) audioRef.current.currentTime = 0;
+  }, []);
+
+  const handleNext = useCallback(() => {
+    setCurrentTrackIdx(i => (i + 1) % Math.max(data.tracks.length, 1));
+    setProgress(0);
+    if (audioRef.current) audioRef.current.currentTime = 0;
+  }, [data.tracks.length]);
+
+  const handleSeek = useCallback((ratio: number) => {
+    const clamped = Math.max(0, Math.min(1, ratio));
+    setProgress(clamped);
+    if (audioRef.current && audioRef.current.duration) {
+      audioRef.current.currentTime = clamped * audioRef.current.duration;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !track) return;
+    const ms = navigator.mediaSession;
+    ms.metadata = new MediaMetadata({ title: track.title, artist: track.artistName, album: track.album });
+    ms.playbackState = playing ? 'playing' : 'paused';
+    ms.setActionHandler('play', () => setPlaying(true));
+    ms.setActionHandler('pause', () => setPlaying(false));
+    ms.setActionHandler('previoustrack', handlePrev);
+    ms.setActionHandler('nexttrack', handleNext);
+    return () => {
+      try {
+        (['play','pause','previoustrack','nexttrack'] as MediaSessionAction[]).forEach(a => ms.setActionHandler(a, null));
+      } catch {}
+    };
+  }, [track, playing, handlePrev, handleNext]);
 
   function handleMainTouchStart(e: React.TouchEvent) {
     const t = e.touches[0];
@@ -401,8 +585,8 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
           <div className="wm-tab-screen">{screenEl}</div>
         </ViewErrorBoundary>
       </div>
-      {track && tab !== 'seeds' && <WMMiniPlayer track={track} playing={playing} onToggle={() => setPlaying(p => !p)} progress={progress} onAlbumTap={() => setTrackSheetOpen(true)} />}
-      <WMTrackSheet track={track ?? null} open={trackSheetOpen} onClose={() => setTrackSheetOpen(false)} />
+      {track && tab !== 'seeds' && <WMMiniPlayer track={track} playing={playing} onToggle={() => setPlaying(p => !p)} progress={progress} onOpen={() => setNowPlayingOpen(true)} onPrev={handlePrev} onNext={handleNext} onSeek={handleSeek} onDismiss={() => setPlaying(false)} />}
+      {nowPlayingOpen && track && <WMNowPlayingSheet track={track} playing={playing} progress={progress} onToggle={() => setPlaying(p => !p)} onSeek={handleSeek} onPrev={handlePrev} onNext={handleNext} onClose={() => setNowPlayingOpen(false)} nextTracks={data.tracks.slice(currentTrackIdx + 1, currentTrackIdx + 4)} />}
       <WMShowHypersSheet showId={hypersSheetShowId} onClose={() => setHypersSheetShowId(null)} />
       <WMSetlistVoteSheet showId={setlistSheetShowId} onClose={() => setSetlistSheetShowId(null)} />
       {showGenreQuiz && data.profileId && <WMGenreQuizSheet profileId={data.profileId} onComplete={() => setShowGenreQuiz(false)} />}
