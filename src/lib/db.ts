@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from '@prisma/client/wasm';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { log } from '@/lib/logger';
 
 const RUNTIME_POSTGRES_URL_CANDIDATES = [
   'POSTGRES_PRISMA_URL',
@@ -76,7 +77,22 @@ function makePrisma(url: string) {
     max: 1,
     idleTimeoutMillis: 10000,
   });
-  return new PrismaClient({ adapter });
+  const client = new PrismaClient({ adapter });
+
+  // Fail loudly when a query hangs — Cloudflare Workers have a 60s wall-clock
+  // limit and a hung query would silently consume it. 25s leaves enough headroom.
+  client.$use(async (params, next) => {
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => {
+        const err = new Error('DB query timeout after 25s');
+        log.error('[db]', err, `Query timed out: ${params.model}.${params.action}`);
+        reject(err);
+      }, 25_000)
+    );
+    return Promise.race([next(params), timeout]);
+  });
+
+  return client;
 }
 
 type DbClient = ReturnType<typeof makePrisma>;
