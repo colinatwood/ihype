@@ -4,7 +4,7 @@
 // used by WorkbenchMobile and all MobileScreen* components.
 
 import React from 'react';
-import type { WorkbenchData } from '@/components/WorkbenchShell';
+import type { WorkbenchData } from '@/types/workbench';
 
 // ─── Design tokens ────────────────────────────────────────────
 export const T = {

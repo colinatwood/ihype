@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { WorkbenchData } from '@/components/WorkbenchShell';
+import type { WorkbenchData } from '@/types/workbench';
 import { T, WMPill, WMChip, WMViewHead, IWasThereButton } from './MobilePrimitives';
 
 // ─── Screen: Ticketing ───────────────────────────────────────

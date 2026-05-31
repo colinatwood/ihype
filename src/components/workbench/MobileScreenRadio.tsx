@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { WorkbenchData } from '@/components/WorkbenchShell';
+import type { WorkbenchData } from '@/types/workbench';
 import { T, WMPill, WMChip, WMViewHead, WMTrendingStrip } from './MobilePrimitives';
 
 // ─── Screen: Radio ───────────────────────────────────────────

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { WorkbenchData } from '@/components/WorkbenchShell';
+import type { WorkbenchData } from '@/types/workbench';
 import { T, WMPill, WMCard, WMSkeleton, ReferralPanel } from './MobilePrimitives';
 
 // ─── Listening History Section ────────────────────────────────

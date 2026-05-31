@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { WorkbenchData } from '@/components/WorkbenchShell';
+import type { WorkbenchData } from '@/types/workbench';
 import { T, WMPill, WMChip, WMViewHead, WMCard, WMTrendingStrip } from './MobilePrimitives';
 
 // ─── Collab Board Section ─────────────────────────────────────
