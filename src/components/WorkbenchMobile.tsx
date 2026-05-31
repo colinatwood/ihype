@@ -1,12 +1,32 @@
 'use client';
 
+// ─── THIN ORCHESTRATOR ────────────────────────────────────────
+// Screen components live in src/components/workbench/MobileScreen*.tsx
+// Shared primitives live in src/components/workbench/MobilePrimitives.tsx
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { WorkbenchData, WbTrack } from '@/types/workbench';
 import { SearchOverlay } from '@/components/workbench/SearchOverlay';
 import { ViewErrorBoundary } from '@/components/workbench/ErrorBoundary';
+import {
+  T,
+  WMTrackSheet,
+  WMShowHypersSheet,
+  WMSetlistVoteSheet,
+  WMGenreQuizSheet,
+  WMFeedbackSheet,
+} from '@/components/workbench/MobilePrimitives';
+import { MobileScreenMe } from '@/components/workbench/MobileScreenMe';
+import { MobileScreenSeeds } from '@/components/workbench/MobileScreenSeeds';
+import { MobileScreenRadio } from '@/components/workbench/MobileScreenRadio';
+import { MobileScreenStudio } from '@/components/workbench/MobileScreenStudio';
+import { MobileScreenTicketing } from '@/components/workbench/MobileScreenTicketing';
 
-// ─── Design tokens (match Workbench Mobile design) ───────────
-const T = {
+// ─── PLACEHOLDER — old T token kept here only so the rest of this
+// file (WMTopBar, WMMiniPlayer, etc.) continues to compile until
+// those components reference the imported T above.
+// DELETE the block below once the next pass removes the old inline code.
+const _T_UNUSED = {
   bg:     '#0a0805',
   bg2:    '#100d09',
   bg3:    '#1a1612',

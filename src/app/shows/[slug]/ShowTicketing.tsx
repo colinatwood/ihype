@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { TicketSaleCard } from '@/components/TicketSaleCard';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
+import { formatShowTime } from '@/lib/utils';
 
 interface TicketOrder {
   id: string;
@@ -93,7 +94,7 @@ export function ShowTicketing({ show, currentFan, affiliatePromoter, viewerLocat
             ticketCapacity={show.ticketCapacity}
             ticketPriceCents={show.ticketPriceCents}
             ticketingOpen={show.status === 'LIVE' || Boolean(show.ticketingOpensAt && show.ticketingOpensAt <= new Date())}
-            ticketingOpensAtLabel={show.ticketingOpensAt ? show.ticketingOpensAt.toISOString() : null}
+            ticketingOpensAtLabel={show.ticketingOpensAt ? formatShowTime(show.ticketingOpensAt) : null}
             ticketsSoldCount={show.ticketsSoldCount}
             title={show.title}
             venueName={show.venueProfile.name}
