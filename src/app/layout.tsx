@@ -6,7 +6,6 @@ import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { NavDrawer } from '@/components/NavDrawer';
 import { SearchBar } from '@/components/SearchBar';
 import { BugReportButton } from '@/components/BugReportButton';
@@ -56,8 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <header aria-label="Primary site header" className="nav site-nav">
             <div className="container nav-inner-marketing">
               <HeaderLogo />
-              <SearchBar />
-              <ThemeToggle />
+              <div className="nav-search-wrap"><SearchBar /></div>
               <HeaderAuthLinks />
               <NavDrawer />
             </div>

@@ -64,12 +64,12 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   const titles: Record<MobileTab, string> = {
     me: 'my page', seeds: 'seeds', radio: 'radio', studio: 'studio', tick: 'tickets',
   };
-  const navItems: { id: MobileTab; icon: string; label: string; badge?: string }[] = [
+  const navItems: { id: MobileTab; icon: string; label: string }[] = [
     { id: 'me',     icon: '👤', label: 'My Page' },
-    { id: 'seeds',  icon: '🌱', label: 'Seeds',   badge: '12' },
-    { id: 'radio',  icon: '📻', label: 'Radio',   badge: 'LIVE' },
+    { id: 'seeds',  icon: '🌱', label: 'Seeds' },
+    { id: 'radio',  icon: '📻', label: 'Radio' },
     { id: 'studio', icon: '🎙️', label: 'Studio' },
-    { id: 'tick',   icon: '🎟️', label: 'Tickets', badge: '3' },
+    { id: 'tick',   icon: '🎟️', label: 'Tickets' },
   ];
   const close = () => setMenuOpen(false);
   const openSearch = () => { setMenuOpen(false); setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 80); };
@@ -114,7 +114,7 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
         )}
       </button>
     </header>
-    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 21, transform: searchOpen ? 'translateY(66px)' : 'translateY(calc(-100% - 66px))', transition: 'transform .22s cubic-bezier(.4,0,.2,1)', background: T.bg2, borderBottom: `1px solid ${T.line2}`, padding: '10px 14px' }}>
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 21, transform: searchOpen ? 'translateY(66px)' : 'translateY(calc(-100% - 66px))', transition: 'transform .22s cubic-bezier(.4,0,.2,1)', background: T.bg2, borderBottom: `1px solid ${T.line2}`, padding: '10px 14px', boxSizing: 'border-box' }}>
       <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: T.bg3, border: `1px solid ${T.line2}`, borderRadius: 10, padding: '0 12px' }}>
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={T.ink3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -125,21 +125,6 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
       </form>
     </div>
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 19, transform: menuOpen ? 'translateY(66px)' : 'translateY(calc(-100% - 66px))', transition: 'transform .24s cubic-bezier(.4,0,.2,1)', background: T.bg3, borderBottom: `1px solid ${T.line2}`, boxShadow: '0 16px 48px rgba(0,0,0,.7)' }}>
-      <div style={{ padding: '8px 0' }}>
-        <div style={{ padding: '8px 20px 6px', fontFamily: T.fm, fontSize: 11, letterSpacing: '.18em', color: T.ink3, textTransform: 'uppercase' }}>Navigate</div>
-        {navItems.map(it => {
-          const active = tab === it.id;
-          return (
-            <button key={it.id} onClick={() => { onTab(it.id); close(); }} style={{ width: '100%', padding: '13px 20px', background: active ? 'rgba(255,80,41,.07)' : 'transparent', border: 'none', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', textAlign: 'left' }}>
-              <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{it.icon}</span>
-              <span style={{ fontFamily: T.fb, fontSize: 15, color: active ? T.accent : T.ink, flex: 1 }}>{it.label}</span>
-              {it.badge && <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 6px', borderRadius: 99, fontFamily: T.fm, background: it.badge === 'LIVE' ? 'rgba(255,80,41,.18)' : T.bg4, color: it.badge === 'LIVE' ? T.accent : T.ink2, border: `1px solid ${it.badge === 'LIVE' ? 'rgba(255,80,41,.4)' : T.line2}`, letterSpacing: '.08em' }}>{it.badge}</span>}
-              {active && <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, flexShrink: 0 }} />}
-            </button>
-          );
-        })}
-      </div>
-      <div style={{ height: 1, background: T.line, margin: '0 20px' }} />
       <div style={{ padding: '8px 0' }}>
         {[
           { icon: '🔔', label: `Notifications${(notifCount ?? 0) > 0 ? ` · ${notifCount}` : ''}`, action: close, accent: (notifCount ?? 0) > 0 },
@@ -229,7 +214,7 @@ function WMBottomTabs({ tab, onTab }: { tab: MobileTab; onTab: (t: MobileTab) =>
     { id: 'tick',   label: 'Tickets', icon: WMIcon.tick,   badge: '3' },
   ];
   return (
-    <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', background: T.bg2, borderTop: `1px solid ${T.line}`, padding: '4px 6px 8px', gap: 2, flexShrink: 0 }}>
+    <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', background: T.bg2, borderTop: `1px solid ${T.line}`, padding: `4px 6px max(8px, env(safe-area-inset-bottom))`, gap: 2, flexShrink: 0 }}>
       {items.map(it => {
         const on = tab === it.id;
         return (
