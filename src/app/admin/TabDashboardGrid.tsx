@@ -26,7 +26,7 @@ interface Props {
     venueProfile: { name: string } | null;
     _count: { tickets: number };
   }>;
-  recentUsers: Array<{ email: string; username: string | null; role: string }>;
+  recentUsers: Array<{ email: string | null; username: string; role: string; createdAt: Date }>;
   recentReports: Array<{
     id: string;
     reason: string;

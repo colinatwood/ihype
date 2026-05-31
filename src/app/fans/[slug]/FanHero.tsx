@@ -21,7 +21,7 @@ interface FanHeroProps {
     avatarImage: string | null;
   };
   avatarImage: string | null;
-  bannerStyle: React.CSSProperties;
+  bannerStyle: React.CSSProperties | undefined;
   fanLevel: number;
   fullSongListenCount: number;
   fullShowListenCount: number;

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 // ── Re-export types that home/page.tsx imports ────────────────
 export type { WbStat, WbTrack, WbShow, WbActivity, WbNotification, WbRadioShow, WorkbenchData, Prefs, StarterPackItem } from '@/types/workbench';
 
-import type { WorkbenchData } from '@/types/workbench';
+import type { WorkbenchData, StarterPackItem } from '@/types/workbench';
 
 import { DEFAULT_PREFS, loadPrefs, shiftAccent } from './workbench/types';
 import type { View } from './workbench/types';

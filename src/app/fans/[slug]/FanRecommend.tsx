@@ -1,6 +1,7 @@
 import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { FanRecommendationsPanel } from '@/components/FanRecommendationsPanel';
 import type { RequestLocation } from '@/lib/request-location';
+import type { DiscoverSpotlightProfile } from '@/lib/discover-feed';
 
 type GlobeRouteStop = {
   id: string;
@@ -67,18 +68,7 @@ type PromoterGenreMatch = NearbyEntry & {
   relatedShowCount: number;
 };
 
-type ArtistEntry = {
-  id: string;
-  slug: string;
-  name: string;
-  city: string | null;
-  stateRegion: string | null;
-  country: string | null;
-  postalCode: string | null;
-  genres: string[];
-  hypeCount: number;
-  avatarImage: string | null;
-};
+type ArtistEntry = DiscoverSpotlightProfile;
 
 interface FanRecommendProps {
   globeRouteStops: GlobeRouteStop[];

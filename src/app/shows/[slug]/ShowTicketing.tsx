@@ -19,7 +19,7 @@ interface TicketOrder {
 }
 
 interface CurrentFan {
-  name: string;
+  name: string | null;
   email: string | null;
   role: string;
   storedPaymentTokenRef: string | null;
@@ -52,12 +52,7 @@ interface ShowTicketingProps {
   };
   currentFan: CurrentFan | null;
   affiliatePromoter: { id: string; name: string } | null;
-  viewerLocation: {
-    city?: string;
-    stateRegion?: string;
-    country?: string;
-    postalCode?: string;
-  } | null;
+  viewerLocation: { city?: string | null; stateRegion?: string | null; country?: string | null; postalCode?: string | null; [key: string]: unknown } | null;
 }
 
 export function ShowTicketing({ show, currentFan, affiliatePromoter, viewerLocation }: ShowTicketingProps) {
