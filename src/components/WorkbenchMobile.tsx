@@ -22,11 +22,6 @@ import { MobileScreenRadio } from '@/components/workbench/MobileScreenRadio';
 import { MobileScreenStudio } from '@/components/workbench/MobileScreenStudio';
 import { MobileScreenTicketing } from '@/components/workbench/MobileScreenTicketing';
 
-// ─── PLACEHOLDER — old T token kept here only so the rest of this
-// file (WMTopBar, WMMiniPlayer, etc.) continues to compile until
-// those components reference the imported T above.
-// DELETE the block below once the next pass removes the old inline code.
-
 type MobileTab = 'me' | 'seeds' | 'radio' | 'studio' | 'tick';
 
 // ─── Icons ────────────────────────────────────────────────────
