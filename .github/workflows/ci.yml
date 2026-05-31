@@ -38,9 +38,11 @@ jobs:
       - name: E2E smoke test
         run: npm run test:e2e
         env:
-          PLAYWRIGHT_BASE_URL: http://localhost:3000
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
           NEXT_PUBLIC_BASE_URL: https://ihype.org
+          NEXT_PUBLIC_APP_URL: https://ihype.org
+          NEXTAUTH_SECRET: ci-placeholder-secret-not-real
+          AUTH_SECRET: ci-placeholder-secret-not-real
 
       - name: Cloudflare build
         run: npm run cf:build
