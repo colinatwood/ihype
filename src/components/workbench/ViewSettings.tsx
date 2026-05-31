@@ -1,37 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import type { WorkbenchData, WbPageEditor, WbTrack } from '@/types/workbench';
+import type { WorkbenchData, WbPageEditor } from '@/types/workbench';
 import { DEFAULT_PREFS } from './types';
-import { IcLibrary, IcRadio, IcTicket, IcDisco, IcStudio, IcCheck, IcPlay, IcHeart } from './icons';
+import { IcLibrary, IcRadio, IcTicket, IcDisco, IcStudio, IcCheck } from './icons';
 import { Toggle } from './Toggle';
-import { Panel } from './primitives';
+import { Panel, TrackCard } from './primitives';
 
 // ─────────────────────────────────────────────────────────────
 // ViewLibrary (stub)
 // ─────────────────────────────────────────────────────────────
-function TrackCard({ track, active, onClick }: { track: WbTrack; active: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} style={{
-      padding: 8, border: `1px solid ${active ? track.color : 'var(--line)'}`,
-      borderRadius: 8, background: 'var(--bg-3)', textAlign: 'left',
-      transition: 'border-color .2s', cursor: 'pointer', width: '100%',
-    }}>
-      <div style={{ width: '100%', aspectRatio: '1', borderRadius: 5, marginBottom: 8, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${track.color}, ${track.color}80)` }}>
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,.25), transparent 65%)' }} />
-        <div style={{ position: 'absolute', left: 10, bottom: 10, width: 26, height: 26, borderRadius: '50%', background: 'var(--ink)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <IcPlay s={12} />
-        </div>
-        <div style={{ position: 'absolute', right: 8, top: 8, padding: '2px 7px', background: 'rgba(0,0,0,.5)', borderRadius: 99, fontFamily: 'var(--f-m)', fontSize: 12, color: '#ff3e9a', display: 'flex', alignItems: 'center', gap: 3 }}>
-          <IcHeart s={10} c="#ff3e9a" /> {track.hypeCount}
-        </div>
-      </div>
-      <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, letterSpacing: '-.005em', color: 'var(--ink)' }}>{track.title}</div>
-      <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 3 }}>{track.artistName} · {track.duration}</div>
-    </button>
-  );
-}
-
 export function ViewLibrary({ data, onPickTrack, currentIdx }: { data: WorkbenchData; onPickTrack: (i: number) => void; currentIdx: number }) {
   return (
     <div style={{ padding: '24px 32px 32px' }}>
@@ -101,7 +79,9 @@ function Field({ label, value, onChange, placeholder, type = 'text' }: {
         type={type}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13 }}
+        onFocus={e => { e.currentTarget.style.borderColor = 'rgba(255,80,41,.4)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255,80,41,.1)'; }}
+        onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.14)'; e.currentTarget.style.boxShadow = 'none'; }}
+        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line-2)', background: 'var(--bg-3)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, transition: 'border-color .15s, box-shadow .15s' }}
       />
     </label>
   );
@@ -122,7 +102,9 @@ function TextArea({ label, value, onChange, placeholder, rows = 4 }: {
         rows={rows}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg-3)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, resize: 'vertical', lineHeight: 1.45 }}
+        onFocus={e => { e.currentTarget.style.borderColor = 'rgba(255,80,41,.4)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(255,80,41,.1)'; }}
+        onBlur={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.14)'; e.currentTarget.style.boxShadow = 'none'; }}
+        style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line-2)', background: 'var(--bg-3)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, resize: 'vertical', lineHeight: 1.45, transition: 'border-color .15s, box-shadow .15s' }}
       />
     </label>
   );
@@ -130,7 +112,7 @@ function TextArea({ label, value, onChange, placeholder, rows = 4 }: {
 
 function EditorPanel({ title, eyebrow, children, span = 1 }: { title: string; eyebrow?: string; children: React.ReactNode; span?: 1 | 2 }) {
   return (
-    <section style={{ border: '1px solid var(--line)', borderRadius: 12, background: 'var(--bg-2)', padding: '18px 20px', gridColumn: span === 2 ? '1 / -1' : undefined }}>
+    <section style={{ border: '1px solid var(--line-2)', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,.25)', background: 'var(--bg-2)', padding: '18px 20px', gridColumn: span === 2 ? '1 / -1' : undefined }}>
       {eyebrow ? <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.16em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: 6 }}>{eyebrow}</div> : null}
       <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, letterSpacing: '-.015em', color: 'var(--ink)', margin: '0 0 14px' }}>{title}</h2>
       <div style={{ display: 'grid', gap: 12 }}>{children}</div>
@@ -262,11 +244,11 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {onBack && <button onClick={onBack} style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.04em', background: 'none', cursor: 'pointer' }}>← Back</button>}
           <a href={publicPath} target="_blank" rel="noreferrer" style={{ padding: '9px 14px', border: '1px solid var(--line-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.04em', textDecoration: 'none' }}>View page</a>
-          <button onClick={() => void savePage()} disabled={saving} style={{ padding: '10px 16px', border: 'none', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13, color: '#fff', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', background: `linear-gradient(135deg, ${prefs.accent}, var(--pink))`, cursor: saving ? 'wait' : 'pointer' }}>{saving ? 'Saving…' : 'Save page'}</button>
+          <button onClick={() => void savePage()} disabled={saving} style={{ padding: '10px 16px', border: 'none', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13, color: '#fff', fontWeight: 800, letterSpacing: '.08em', textTransform: 'uppercase', background: `linear-gradient(135deg, ${prefs.accent}, #ff3e9a)`, cursor: saving ? 'wait' : 'pointer' }}>{saving ? 'Saving…' : 'Save page'}</button>
         </div>
       </div>
 
-      {status ? <div style={{ marginBottom: 14, padding: '10px 12px', border: '1px solid var(--line)', borderRadius: 8, background: 'var(--bg-2)', color: status.includes('Could not') ? '#ffb4a7' : 'var(--ink-2)', fontFamily: 'var(--f-m)', fontSize: 12 }}>{status}</div> : null}
+      {status ? <div style={{ marginBottom: 14, padding: '11px 14px', border: '1px solid rgba(255,80,41,.2)', borderRadius: 10, background: status.includes('Could not') ? 'rgba(255,80,80,.08)' : 'rgba(255,80,41,.06)', color: status.includes('Could not') ? '#ffb4a7' : 'var(--ink-2)', fontFamily: 'var(--f-m)', fontSize: 13 }}>{status}</div> : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.1fr .9fr', gap: 14 }}>
         <EditorPanel title="Identity + layout" eyebrow="Who you are" span={2}>

@@ -167,9 +167,10 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
           { k: 'Next Payout', v: '$2,460', d: 'releases Jun 24' },
           { k: 'Next Show', v: 'Jun 18', d: 'Empty Bottle · 9PM' },
         ].map(s => (
-          <div key={s.k} style={{ padding: '14px 16px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)' }}>
-            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.14em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{s.k}</div>
-            <div style={{ fontFamily: 'var(--f-d)', fontSize: 24, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)', lineHeight: 1, marginTop: 6 }}>{s.v}</div>
+          <div key={s.k} style={{ padding: '16px 18px', border: '1px solid var(--line-2)', borderRadius: 12, background: 'var(--bg-2)', boxShadow: '0 2px 16px rgba(0,0,0,.22)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(255,255,255,.025) 0%, transparent 50%)', pointerEvents: 'none' }} />
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.14em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>{s.k}</div>
+            <div style={{ fontFamily: 'var(--f-d)', fontSize: 26, fontWeight: 800, letterSpacing: '-.02em', color: 'var(--ink)', lineHeight: 1, marginTop: 6 }}>{s.v}</div>
             <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', marginTop: 4 }}>{s.d}</div>
           </div>
         ))}
@@ -214,7 +215,7 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
       {referral && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-          border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)',
+          border: '1px solid var(--line-2)', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,.2)', background: 'var(--bg-2)',
           marginBottom: 14,
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -338,8 +339,8 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
             {data.activity.slice(0, 5).map((a, i) => {
               const dotColor: Record<string, string> = { hype: '#ff3e9a', show: '#22e5d4', radio: '#b983ff', payout: '#ffb84a' };
               return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid var(--line)' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: dotColor[a.kind] || 'var(--ink-3)', flexShrink: 0 }} />
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid var(--line)', transition: 'background .15s' }} onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.025)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: dotColor[a.kind] || 'var(--ink-3)', flexShrink: 0, boxShadow: `0 0 6px ${dotColor[a.kind] || 'var(--ink-3)'}` }} />
                   <div style={{ flex: 1, fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink)' }}>{a.text}</div>
                   <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', flexShrink: 0 }}>{a.time}</div>
                 </div>
@@ -393,8 +394,9 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
                 display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px',
                 border: `1px solid ${active ? col : 'var(--line)'}`, borderRadius: 8,
                 background: active ? `${col}08` : 'var(--bg-2)',
+                boxShadow: active ? `0 2px 14px ${col}20` : 'none',
               }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: col, flexShrink: 0 }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: col, flexShrink: 0, boxShadow: `0 0 8px ${col}` }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{info.label}</div>
                   <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', marginTop: 2 }}>{info.sub}</div>

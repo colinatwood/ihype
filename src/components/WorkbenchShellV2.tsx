@@ -70,7 +70,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     root.style.setProperty('--density', String(densMap[prefs.density] ?? 1));
     root.style.setProperty('--rail-w', '0px');
     root.style.setProperty('--queue-w', prefs.queueRail ? '300px' : '0px');
-    root.style.setProperty('--player-h', prefs.density === 'compact' ? '58px' : '64px');
+    root.style.setProperty('--player-h', prefs.density === 'compact' ? '68px' : prefs.density === 'comfy' ? '88px' : '78px');
     root.style.setProperty('--top-h', '60px');
   }, [prefs, mounted]);
 
@@ -339,7 +339,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
           fontSize: `calc(14px * var(--density, 1))`,
           position: 'relative',
         }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 200, background: 'radial-gradient(ellipse at 50% -50%, rgba(255,80,41,.07), transparent 60%)', pointerEvents: 'none', zIndex: 0 }} />
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 320, background: 'radial-gradient(ellipse at 50% -30%, rgba(255,80,41,.12) 0%, rgba(255,62,154,.04) 40%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
           <div key={view} className="wb-view-anim" style={{ position: 'relative', zIndex: 1 }}>
             <React.Suspense fallback={
               <div style={{
