@@ -245,16 +245,30 @@ body:has(.wb-root) .site-shell {
 .wb-radio-body, .wb-channels, .wb-view-pad,
 .wb-shell .site-shell, .wb-shell main {
   scrollbar-width: thin;
-  scrollbar-color: #3a332c #0f0d0a;
+  scrollbar-color: #2e2822 transparent;
 }
 .wb-main::-webkit-scrollbar,
-.wb-queue-list::-webkit-scrollbar { width: 6px; height: 6px; }
+.wb-queue-list::-webkit-scrollbar,
+.wb-shell main::-webkit-scrollbar { width: 5px; height: 5px; }
 .wb-main::-webkit-scrollbar-track,
-.wb-queue-list::-webkit-scrollbar-track { background: #0f0d0a; }
+.wb-queue-list::-webkit-scrollbar-track,
+.wb-shell main::-webkit-scrollbar-track { background: transparent; }
 .wb-main::-webkit-scrollbar-thumb,
-.wb-queue-list::-webkit-scrollbar-thumb { background: #3a332c; border-radius: 3px; }
+.wb-queue-list::-webkit-scrollbar-thumb,
+.wb-shell main::-webkit-scrollbar-thumb { background: #2e2822; border-radius: 99px; }
 .wb-main::-webkit-scrollbar-thumb:hover,
-.wb-queue-list::-webkit-scrollbar-thumb:hover { background: #4a4540; }
+.wb-queue-list::-webkit-scrollbar-thumb:hover,
+.wb-shell main::-webkit-scrollbar-thumb:hover { background: #3e3630; }
+
+/* Vinyl spin + album art breathing animations */
+@keyframes vinyl-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes album-breathe {
+  0%, 100% { box-shadow: var(--album-glow, 0 4px 24px rgba(255,80,41,.35)), 0 0 0 1px rgba(255,255,255,.08); }
+  50%       { box-shadow: var(--album-glow, 0 4px 36px rgba(255,80,41,.55)), 0 0 0 1px rgba(255,255,255,.12); }
+}
 .nav-logo-right { justify-self: end; }
 .wb-sidebar {
   border-right: 1px solid rgba(255,255,255,.07);

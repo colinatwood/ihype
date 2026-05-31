@@ -20,17 +20,35 @@ export function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress,
   return (
     <footer style={{
       display: 'grid', gridTemplateColumns: '340px 1fr 340px', alignItems: 'center', gap: 24, padding: '0 22px',
-      background: 'linear-gradient(180deg, var(--bg-2), var(--bg))',
+      background: 'rgba(10,8,5,0.92)',
+      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       borderTop: '1px solid var(--line-2)', position: 'relative',
       gridColumn: '1 / -1',
     }}>
       {/* Top gradient accent line */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, var(--accent), #ff3e9a, transparent)', opacity: .5, pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent 5%, var(--accent) 30%, #ff3e9a 70%, transparent 95%)', opacity: .6, pointerEvents: 'none' }} />
 
       {/* Left: 340px — art + info + hype */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
-        <div style={{ width: 52, height: 52, borderRadius: 7, flexShrink: 0, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${track.color}, ${track.color}80)` }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,.3), transparent 60%)' }} />
+        <div style={{
+          width: 66, height: 66, borderRadius: 10, flexShrink: 0, position: 'relative', overflow: 'hidden',
+          background: `linear-gradient(135deg, ${track.color}, ${track.color}80)`,
+          boxShadow: `0 4px 24px ${track.color}60, 0 0 0 1px rgba(255,255,255,.08)`,
+          animation: playing ? 'album-breathe 3s ease-in-out infinite' : 'none',
+          transition: 'box-shadow .4s ease',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 60%)' }} />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              border: '2px solid rgba(255,255,255,.25)',
+              background: 'rgba(0,0,0,.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: playing ? 'vinyl-spin 6s linear infinite' : 'none',
+            }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,.5)' }} />
+            </div>
+          </div>
           {playing && (
             <div style={{ position: 'absolute', bottom: 6, left: 6, display: 'flex', gap: 2, alignItems: 'flex-end', height: 10, zIndex: 2 }}>
               {[{ dur: '1.1s' }, { dur: '.9s' }, { dur: '1.3s' }].map((b, i) => (
@@ -40,29 +58,46 @@ export function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress,
           )}
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, letterSpacing: '-.005em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>{track.title}</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', letterSpacing: '.04em', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artistName} · <span style={{ color: 'var(--ink-4)' }}>{track.album}</span></div>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, letterSpacing: '-.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--ink)' }}>{track.title}</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.03em', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{track.artistName}<span style={{ color: 'var(--ink-4)', margin: '0 5px' }}>·</span><span style={{ color: 'var(--ink-3)' }}>{track.album}</span></div>
         </div>
-        <button aria-label="Hype this track" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99, color: '#ff3e9a', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer', flexShrink: 0 }}>
+        <button aria-label="Hype this track" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 99, color: '#ff3e9a', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, background: 'rgba(255,62,154,.07)', cursor: 'pointer', flexShrink: 0 }}>
           <IcHeart s={14} c="#ff3e9a" /> {track.hypeCount}
         </button>
       </div>
 
       {/* Center: controls + scrub */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button title="Shuffle" aria-label="Shuffle" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcShuffle s={14} /></button>
-          <button title="Previous" aria-label="Previous track" onClick={onPrev} style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcSkipP s={14} /></button>
-          <button onClick={onToggle} aria-label={playing ? 'Pause' : 'Play'} style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--ink)', color: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
-            {playing ? <IcPause s={14} /> : <IcPlay s={14} />}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button title="Shuffle" aria-label="Shuffle" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', transition: 'color .15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink-2)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-3)')}
+          ><IcShuffle s={14} /></button>
+          <button title="Previous" aria-label="Previous track" onClick={onPrev} style={{ width: 34, height: 34, borderRadius: 8, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', transition: 'color .15s, background .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--ink)'; e.currentTarget.style.background = 'rgba(255,255,255,.06)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--ink-2)'; e.currentTarget.style.background = 'none'; }}
+          ><IcSkipP s={15} /></button>
+          <button onClick={onToggle} aria-label={playing ? 'Pause' : 'Play'} style={{
+            width: 44, height: 44, borderRadius: '50%',
+            background: 'var(--ink)', color: 'var(--bg)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer',
+            boxShadow: '0 2px 14px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.12)',
+            transition: 'transform .1s, box-shadow .1s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            {playing ? <IcPause s={15} /> : <IcPlay s={15} />}
           </button>
-          <button title="Next" aria-label="Next track" onClick={onNext} style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcSkipN s={14} /></button>
-          <button title="Repeat" aria-label="Repeat" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcRepeat s={14} /></button>
+          <button title="Next" aria-label="Next track" onClick={onNext} style={{ width: 34, height: 34, borderRadius: 8, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', transition: 'color .15s, background .15s' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--ink)'; e.currentTarget.style.background = 'rgba(255,255,255,.06)'; }} onMouseLeave={e => { e.currentTarget.style.color = 'var(--ink-2)'; e.currentTarget.style.background = 'none'; }}
+          ><IcSkipN s={15} /></button>
+          <button title="Repeat" aria-label="Repeat" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', transition: 'color .15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink-2)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-3)')}
+          ><IcRepeat s={14} /></button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 540 }}>
-          <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 34, textAlign: 'center' }}>{fmtTime(progress * track.durationSec)}</span>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 32, textAlign: 'center' }}>{fmtTime(progress * track.durationSec)}</span>
           <div
-            style={{ flex: 1, height: 4, background: 'rgba(255,255,255,.06)', borderRadius: 99, position: 'relative', cursor: 'pointer', overflow: 'visible' }}
+            style={{ flex: 1, height: 4, background: 'rgba(255,255,255,.07)', borderRadius: 99, position: 'relative', cursor: 'pointer', overflow: 'visible' }}
             onClick={e => {
               const r = e.currentTarget.getBoundingClientRect();
               const ratio = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
@@ -71,25 +106,27 @@ export function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress,
             }}
           >
             <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: 'linear-gradient(90deg, var(--accent), #ff3e9a)', borderRadius: 99 }} />
-            <div style={{ position: 'absolute', top: '50%', left: `${progress * 100}%`, transform: 'translate(-50%, -50%)', width: 11, height: 11, borderRadius: '50%', background: '#fff', boxShadow: '0 0 0 3px rgba(255,255,255,.15)' }} />
+            <div style={{ position: 'absolute', top: '50%', left: `${progress * 100}%`, transform: 'translate(-50%, -50%)', width: 12, height: 12, borderRadius: '50%', background: '#fff', boxShadow: '0 0 0 3px rgba(255,80,41,.3)', transition: 'transform .1s' }} />
           </div>
-          <span style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 34, textAlign: 'center' }}>{track.duration}</span>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.04em', minWidth: 32, textAlign: 'center' }}>{track.duration}</span>
         </div>
       </div>
 
       {/* Right: 340px — queue + vol */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14 }}>
-        <button title="Queue" aria-label="Queue" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer' }}><IcQueue s={14} /></button>
+        <button title="Queue" aria-label="Queue" style={{ width: 32, height: 32, borderRadius: 7, color: 'var(--ink-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', transition: 'color .15s' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--ink-2)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--ink-3)')}
+        ><IcQueue s={14} /></button>
         {/* Volume */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             aria-label={muted ? 'Unmute' : 'Mute'}
             onClick={() => setMuted(m => !m)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: muted ? 'var(--ink-3)' : 'var(--ink-2)', display: 'flex', alignItems: 'center', padding: 4 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: muted ? 'var(--ink-4)' : 'var(--ink-2)', display: 'flex', alignItems: 'center', padding: 4, transition: 'color .15s' }}
           >
             <IcVol s={16} />
           </button>
-          <div style={{ position: 'relative', width: 72, height: 3, background: 'var(--bg-4)', borderRadius: 99, cursor: 'pointer' }}
+          <div style={{ position: 'relative', width: 80, height: 3, background: 'rgba(255,255,255,.08)', borderRadius: 99, cursor: 'pointer' }}
             onClick={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               const v = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -97,7 +134,7 @@ export function PlayerDock({ track, playing, onToggle, onNext, onPrev, progress,
               setMuted(false);
             }}
           >
-            <div style={{ height: '100%', width: `${(muted ? 0 : volume) * 100}%`, background: 'var(--accent)', borderRadius: 99 }} />
+            <div style={{ height: '100%', width: `${(muted ? 0 : volume) * 100}%`, background: 'linear-gradient(90deg, var(--accent), #ff3e9a)', borderRadius: 99 }} />
           </div>
         </div>
       </div>

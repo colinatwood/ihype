@@ -49,7 +49,9 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
       height: 'var(--top-h)', borderBottom: '1px solid var(--line)',
       display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center',
       gap: 24, padding: '0 22px',
-      background: 'var(--bg-2)', position: 'relative', zIndex: 10,
+      background: 'rgba(16,13,9,0.9)', backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      position: 'relative', zIndex: 10,
     }}>
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', userSelect: 'none' }}>
@@ -77,15 +79,17 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
           const active = view === tab.k;
           return (
             <button key={tab.k} onClick={() => setView(tab.k)} aria-current={active ? 'page' : undefined} style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px',
-              borderRadius: 8, cursor: 'pointer', border: 'none',
+              display: 'flex', alignItems: 'center', gap: 7, padding: '7px 14px',
+              borderRadius: 8, cursor: 'pointer',
+              border: active ? '1px solid rgba(255,80,41,.22)' : '1px solid transparent',
               color: active ? 'var(--ink)' : 'var(--ink-2)',
-              background: 'transparent',
+              background: active ? 'rgba(255,80,41,.1)' : 'transparent',
               fontFamily: 'var(--f-b)', fontWeight: 600, fontSize: 13, letterSpacing: '-.005em',
-              position: 'relative', transition: 'color .15s, background .15s',
+              position: 'relative', transition: 'color .15s, background .15s, border-color .15s',
+              boxShadow: active ? '0 0 18px rgba(255,80,41,.12), inset 0 1px 0 rgba(255,255,255,.06)' : 'none',
             }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,.03)'; (e.currentTarget as HTMLButtonElement).style.color = active ? 'var(--ink)' : '#f0ebe5'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = active ? 'var(--ink)' : 'var(--ink-2)'; }}
+              onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,.04)'; (e.currentTarget as HTMLButtonElement).style.color = '#f0ebe5'; } }}
+              onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = 'var(--ink-2)'; } }}
             >
               {TAB_ICONS[tab.k]}
               {tab.label}
@@ -93,17 +97,10 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
                 <span style={{
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   minWidth: 18, height: 18, padding: '0 5px', borderRadius: 99,
-                  background: active ? 'rgba(255,80,41,.16)' : 'var(--bg-3)',
-                  fontFamily: 'var(--f-m)', fontSize: 12,
-                  color: active ? 'var(--accent)' : 'var(--ink-2)', fontWeight: 700, letterSpacing: '.04em',
+                  background: active ? 'rgba(255,80,41,.22)' : 'rgba(255,255,255,.06)',
+                  fontFamily: 'var(--f-m)', fontSize: 11,
+                  color: active ? 'var(--accent)' : 'var(--ink-3)', fontWeight: 700, letterSpacing: '.04em',
                 }}>{badges[tab.k]}</span>
-              )}
-              {active && (
-                <span style={{
-                  position: 'absolute', left: 14, right: 14, bottom: 0, height: 2,
-                  background: 'var(--accent)', borderRadius: '2px 2px 0 0',
-                  boxShadow: '0 0 12px rgba(255,80,41,.6)',
-                }} />
               )}
             </button>
           );
