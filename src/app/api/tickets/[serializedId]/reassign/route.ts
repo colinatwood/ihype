@@ -23,6 +23,9 @@ export async function POST(
     return NextResponse.json({ error: 'Login required' }, { status: 401 });
   }
 
+  const rl = await consumeRateLimit(rateLimitKey('ticket-reassign', session.user.id, null), { limit: 20, windowMs: 60 * 60 * 1000 });
+  if (!rl.allowed) return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+
   try {
     const { serializedId } = await params;
     const body = schema.parse(await request.json());
