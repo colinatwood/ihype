@@ -40,6 +40,7 @@ const eqCss = `
 @keyframes wm-eq3{0%,100%{height:4px}50%{height:11px}}
 @keyframes wm-pulse{0%,100%{opacity:1}50%{opacity:.3}}
 @keyframes wm-shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes wm-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 .wm-eq-bar:nth-child(1){animation:wm-eq1 1.1s infinite}
 .wm-eq-bar:nth-child(2){animation:wm-eq2 .9s infinite}
 .wm-eq-bar:nth-child(3){animation:wm-eq3 1.3s infinite}
@@ -63,7 +64,7 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   const [searchVal, setSearchVal] = React.useState('');
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const titles: Record<MobileTab, string> = {
-    me: 'my page', seeds: 'seeds', radio: 'radio', studio: 'studio', tick: 'tickets',
+    me: 'My Page', seeds: 'Seeds', radio: 'Radio', studio: 'Studio', tick: 'Tickets',
   };
   const close = () => setMenuOpen(false);
   const openSearch = () => { setMenuOpen(false); setSearchBarOpen(true); };
@@ -94,7 +95,7 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
           <span style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 15, letterSpacing: '-.03em', lineHeight: 1, display: 'flex', alignItems: 'baseline', gap: 1, color: T.ink }}>
             iHYPE<span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: T.accent, transform: 'translateY(-7px)' }} />
           </span>
-          <span style={{ display: 'block', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.18em', marginTop: 2, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ display: 'block', fontFamily: T.fm, fontSize: 13, fontWeight: 600, color: T.ink2, letterSpacing: '.12em', marginTop: 2, textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {titles[tab]}
           </span>
         </span>
@@ -123,7 +124,7 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
         </form>
       </div>
     )}
-    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 19, transform: menuOpen ? 'translateY(66px)' : 'translateY(calc(-100% - 66px))', transition: 'transform .24s cubic-bezier(.4,0,.2,1)', background: T.bg3, borderBottom: `1px solid ${T.line2}`, boxShadow: '0 16px 48px rgba(0,0,0,.7)' }}>
+    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 19, transform: menuOpen ? 'translateY(66px)' : 'translateY(calc(-100% - 66px))', transition: 'transform .24s cubic-bezier(.4,0,.2,1)', background: T.bg3, borderBottom: `1px solid ${T.line2}`, boxShadow: '0 16px 48px rgba(0,0,0,.7)', maxHeight: 'calc(100dvh - 66px)', overflowY: 'auto' }}>
       <div style={{ padding: '8px 0' }}>
         <div style={{ padding: '8px 20px 6px', fontFamily: T.fm, fontSize: 11, letterSpacing: '.18em', color: T.ink3, textTransform: 'uppercase' }}>Navigate</div>
         {([
@@ -221,34 +222,6 @@ function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
           : <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M4 3v10l10-5z"/></svg>}
       </button>
     </div>
-  );
-}
-
-// ─── Bottom Tab Bar ──────────────────────────────────────────
-function WMBottomTabs({ tab, onTab, radioLive }: { tab: MobileTab; onTab: (t: MobileTab) => void; radioLive?: boolean }) {
-  const items: { id: MobileTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'me',     label: 'Me',      icon: WMIcon.me },
-    { id: 'seeds',  label: 'Seeds',   icon: WMIcon.seeds },
-    { id: 'radio',  label: 'Radio',   icon: WMIcon.radio,  badge: radioLive ? 'LIVE' : undefined },
-    { id: 'studio', label: 'Studio',  icon: WMIcon.studio },
-    { id: 'tick',   label: 'Tickets', icon: WMIcon.tick },
-  ];
-  return (
-    <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', background: T.bg2, borderTop: `1px solid ${T.line}`, padding: `4px 6px max(8px, env(safe-area-inset-bottom))`, gap: 2, flexShrink: 0 }}>
-      {items.map(it => {
-        const on = tab === it.id;
-        return (
-          <button key={it.id} aria-label={it.label} onClick={() => onTab(it.id)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', color: on ? T.ink : T.ink3, fontFamily: T.fb, fontSize: 12, fontWeight: 600, letterSpacing: '-.005em', padding: '6px 0 4px', cursor: 'pointer', position: 'relative', minHeight: 44, minWidth: 44 }}>
-            {on && <span style={{ position: 'absolute', top: 0, width: 24, height: 2, borderRadius: '0 0 2px 2px', background: T.accent, boxShadow: `0 0 8px ${T.accent}` }} />}
-            <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              {it.icon}
-              {it.badge && <span style={{ position: 'absolute', top: -4, right: -9, fontSize: 12, fontWeight: 800, padding: '1px 4px', borderRadius: 99, letterSpacing: '.06em', background: it.badge === 'LIVE' ? 'rgba(255,80,41,.18)' : T.bg3, color: it.badge === 'LIVE' ? T.accent : T.ink2, fontFamily: T.fm, border: `1px solid ${it.badge === 'LIVE' ? 'rgba(255,80,41,.4)' : T.line2}` }}>{it.badge}</span>}
-            </span>
-            {it.label}
-          </button>
-        );
-      })}
-    </nav>
   );
 }
 
@@ -409,8 +382,12 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
       <WMTopBar tab={tab} onTab={setTab} listeningNow={data.listeningNow} userName={data.userName} initials={data.userInitials} onSearch={() => setResultsOpen(true)} notifCount={notifCount} onFeedback={() => setShowFeedbackSheet(true)} radioLive={data.radioShows.some(r => r.live)} />
       <div role="main" className="wm-scroll" style={{ flex: 1, overflowY: tab === 'seeds' ? 'hidden' : 'auto', overflowX: 'hidden', position: 'relative', scrollbarWidth: 'none' }} onTouchStart={handleMainTouchStart} onTouchMove={handleMainTouchMove} onTouchEnd={handleMainTouchEnd}>
         {tab !== 'seeds' && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: pullDelta > 0 ? pullDelta : refreshing ? 44 : 0, overflow: 'hidden', transition: refreshing ? 'none' : 'height .2s', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.12em' }}>
-            {refreshing ? (<><span className="wm-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, display: 'inline-block' }} />REFRESHING</>) : pullDelta > 40 ? '↓ RELEASE' : pullDelta > 10 ? '↓ PULL TO REFRESH' : null}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: pullDelta > 0 ? pullDelta : refreshing ? 44 : 0, overflow: 'hidden', transition: refreshing ? 'none' : 'height .2s' }}>
+            {refreshing ? (
+              <svg style={{ animation: 'wm-spin .8s linear infinite' }} width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="2.5" strokeLinecap="round"><path d="M12 2a10 10 0 0 1 10 10" opacity=".25"/><path d="M22 12A10 10 0 0 1 12 22"/></svg>
+            ) : pullDelta > 10 ? (
+              <svg style={{ transition: 'transform .15s', transform: pullDelta > 40 ? 'rotate(180deg)' : 'rotate(0deg)' }} width={18} height={18} viewBox="0 0 24 24" fill="none" stroke={T.ink3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            ) : null}
           </div>
         )}
         <ViewErrorBoundary viewName={tab}>{screenEl}</ViewErrorBoundary>
