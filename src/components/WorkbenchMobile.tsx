@@ -58,23 +58,19 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   onFeedback?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [searchBarOpen, setSearchBarOpen] = React.useState(false);
   const [searchVal, setSearchVal] = React.useState('');
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const titles: Record<MobileTab, string> = {
     me: 'my page', seeds: 'seeds', radio: 'radio', studio: 'studio', tick: 'tickets',
   };
-  const navItems: { id: MobileTab; icon: string; label: string }[] = [
-    { id: 'me',     icon: '👤', label: 'My Page' },
-    { id: 'seeds',  icon: '🌱', label: 'Seeds' },
-    { id: 'radio',  icon: '📻', label: 'Radio' },
-    { id: 'studio', icon: '🎙️', label: 'Studio' },
-    { id: 'tick',   icon: '🎟️', label: 'Tickets' },
-  ];
   const close = () => setMenuOpen(false);
-  const openSearch = () => { setMenuOpen(false); setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 80); };
-  const closeSearch = () => { setSearchOpen(false); setSearchVal(''); };
+  const openSearch = () => { setMenuOpen(false); setSearchBarOpen(true); };
+  const closeSearch = () => { setSearchBarOpen(false); setSearchVal(''); };
   const handleSearchSubmit = (e: React.FormEvent) => { e.preventDefault(); closeSearch(); onSearch?.(); };
+  React.useEffect(() => {
+    if (searchBarOpen) { const t = setTimeout(() => searchInputRef.current?.focus(), 50); return () => clearTimeout(t); }
+  }, [searchBarOpen]);
 
   return (
     <>
@@ -102,10 +98,10 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
           </span>
         </span>
       </div>
-      <button aria-label="Search" onClick={openSearch} style={{ width: 44, height: 44, borderRadius: 8, background: searchOpen ? T.bg3 : 'transparent', border: `1px solid ${searchOpen ? T.line2 : T.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0, transition: 'background .15s', color: T.ink2 }}>
+      <button aria-label="Search" onClick={openSearch} style={{ width: 44, height: 44, borderRadius: 8, background: searchBarOpen ? T.bg3 : 'transparent', border: `1px solid ${searchBarOpen ? T.line2 : T.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0, transition: 'background .15s', color: T.ink2 }}>
         <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       </button>
-      <button aria-label={menuOpen ? 'Close menu' : 'Open menu'} onClick={() => { setSearchOpen(false); setMenuOpen(o => !o); }} style={{ width: 44, height: 44, borderRadius: 8, background: menuOpen ? T.bg3 : 'transparent', border: `1px solid ${menuOpen ? T.line2 : T.line}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', padding: 0, position: 'relative', transition: 'background .15s', flexShrink: 0 }}>
+      <button aria-label={menuOpen ? 'Close menu' : 'Open menu'} onClick={() => { setSearchBarOpen(false); setMenuOpen(o => !o); }} style={{ width: 44, height: 44, borderRadius: 8, background: menuOpen ? T.bg3 : 'transparent', border: `1px solid ${menuOpen ? T.line2 : T.line}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', padding: 0, position: 'relative', transition: 'background .15s', flexShrink: 0 }}>
         <span style={{ display: 'block', width: 16, height: 1.5, background: T.ink, borderRadius: 2, transition: 'transform .2s', transform: menuOpen ? 'translateY(6.5px) rotate(45deg)' : 'none' }} />
         <span style={{ display: 'block', width: 16, height: 1.5, background: T.ink, borderRadius: 2, opacity: menuOpen ? 0 : 1, transition: 'opacity .15s' }} />
         <span style={{ display: 'block', width: 16, height: 1.5, background: T.ink, borderRadius: 2, transition: 'transform .2s', transform: menuOpen ? 'translateY(-6.5px) rotate(-45deg)' : 'none' }} />
@@ -114,7 +110,7 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
         )}
       </button>
     </header>
-    {searchOpen && (
+    {searchBarOpen && (
       <div onClick={e => { if (e.target === e.currentTarget) closeSearch(); }} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.85)', display: 'flex', flexDirection: 'column', padding: '16px 14px' }}>
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: T.bg3, border: `1px solid ${T.line2}`, borderRadius: 10, padding: '0 12px' }}>
@@ -207,13 +203,13 @@ function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
 }
 
 // ─── Bottom Tab Bar ──────────────────────────────────────────
-function WMBottomTabs({ tab, onTab }: { tab: MobileTab; onTab: (t: MobileTab) => void }) {
+function WMBottomTabs({ tab, onTab, radioLive }: { tab: MobileTab; onTab: (t: MobileTab) => void; radioLive?: boolean }) {
   const items: { id: MobileTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'me',     label: 'Me',      icon: WMIcon.me },
-    { id: 'seeds',  label: 'Seeds',   icon: WMIcon.seeds,  badge: '12' },
-    { id: 'radio',  label: 'Radio',   icon: WMIcon.radio,  badge: 'LIVE' },
+    { id: 'seeds',  label: 'Seeds',   icon: WMIcon.seeds },
+    { id: 'radio',  label: 'Radio',   icon: WMIcon.radio,  badge: radioLive ? 'LIVE' : undefined },
     { id: 'studio', label: 'Studio',  icon: WMIcon.studio },
-    { id: 'tick',   label: 'Tickets', icon: WMIcon.tick,   badge: '3' },
+    { id: 'tick',   label: 'Tickets', icon: WMIcon.tick },
   ];
   return (
     <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', background: T.bg2, borderTop: `1px solid ${T.line}`, padding: `4px 6px max(8px, env(safe-area-inset-bottom))`, gap: 2, flexShrink: 0 }}>
@@ -262,7 +258,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const [progress, setProgress] = useState(0.42);
   const [currentTrackIdx, setCurrentTrackIdx] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [resultsOpen, setResultsOpen] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
   const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
   const [seedsTooltipSeen, setSeedsTooltipSeen] = React.useState(() => {
@@ -388,7 +384,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
         </div>
       )}
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
-      <WMTopBar tab={tab} onTab={setTab} listeningNow={data.listeningNow} userName={data.userName} initials={data.userInitials} onSearch={() => setSearchOpen(true)} notifCount={notifCount} onFeedback={() => setShowFeedbackSheet(true)} />
+      <WMTopBar tab={tab} onTab={setTab} listeningNow={data.listeningNow} userName={data.userName} initials={data.userInitials} onSearch={() => setResultsOpen(true)} notifCount={notifCount} onFeedback={() => setShowFeedbackSheet(true)} />
       <div role="main" className="wm-scroll" style={{ flex: 1, overflowY: tab === 'seeds' ? 'hidden' : 'auto', overflowX: 'hidden', position: 'relative', scrollbarWidth: 'none' }} onTouchStart={handleMainTouchStart} onTouchMove={handleMainTouchMove} onTouchEnd={handleMainTouchEnd}>
         {tab !== 'seeds' && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, height: pullDelta > 0 ? pullDelta : refreshing ? 44 : 0, overflow: 'hidden', transition: refreshing ? 'none' : 'height .2s', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.12em' }}>
@@ -398,11 +394,12 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
         <ViewErrorBoundary viewName={tab}>{screenEl}</ViewErrorBoundary>
       </div>
       {track && tab !== 'seeds' && <WMMiniPlayer track={track} playing={playing} onToggle={() => setPlaying(p => !p)} progress={progress} onAlbumTap={() => setTrackSheetOpen(true)} />}
+      <WMBottomTabs tab={tab} onTab={setTab} radioLive={data.radioShows.some(r => r.live)} />
       <WMTrackSheet track={track ?? null} open={trackSheetOpen} onClose={() => setTrackSheetOpen(false)} />
       <WMShowHypersSheet showId={hypersSheetShowId} onClose={() => setHypersSheetShowId(null)} />
       <WMSetlistVoteSheet showId={setlistSheetShowId} onClose={() => setSetlistSheetShowId(null)} />
       {showGenreQuiz && data.profileId && <WMGenreQuizSheet profileId={data.profileId} onComplete={() => setShowGenreQuiz(false)} />}
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchOverlay open={resultsOpen} onClose={() => setResultsOpen(false)} />
       {showFeedbackSheet && <WMFeedbackSheet onClose={() => setShowFeedbackSheet(false)} />}
       {!seedsTooltipSeen && data.tracks.length === 0 && tab === 'seeds' && (
         <SeedsTooltip onDismiss={() => { localStorage.setItem('ihype_tooltip_seeds_seen', '1'); setSeedsTooltipSeen(true); }} />
