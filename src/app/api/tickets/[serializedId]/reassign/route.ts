@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { sendIssuedTicketEmail } from '@/lib/mailer';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { db } from '@/lib/db';
+import { consumeRateLimit, rateLimitKey } from '@/lib/rate-limit';
 import { buildTicketQrCodeDataUrl, buildTicketVerificationUrl, formatTicketStatus } from '@/lib/tickets';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 
