@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <header aria-label="Primary site header" className="nav site-nav">
             <div className="container nav-inner-marketing">
               <HeaderLogo />
-              <div className="nav-search-wrap"><SearchBar /></div>
+              <SearchBar />
               <HeaderAuthLinks />
               <NavDrawer />
             </div>

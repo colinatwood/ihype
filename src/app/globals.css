@@ -5689,12 +5689,13 @@ html.high-contrast p {
 
 /* ── Mobile-first improvements ──────────────────────────────────── */
 
-/* Marketing header: collapse to logo + auth + hamburger on small screens */
+/* Marketing header: collapse to logo + search icon + hamburger on small screens */
 @media (max-width: 580px) {
   .nav-inner-marketing {
     grid-template-columns: auto 1fr auto;
   }
-  .nav-search-wrap { display: none; }
+  /* BugReportButton: authenticated hamburger has "Report a bug", so hide floating btn on mobile */
+  .bug-report-btn { display: none; }
   /* Auth slot spans last column only */
   .nav-auth-slot {
     justify-self: end;

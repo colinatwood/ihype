@@ -114,16 +114,18 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
         )}
       </button>
     </header>
-    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 21, transform: searchOpen ? 'translateY(66px)' : 'translateY(calc(-100% - 66px))', transition: 'transform .22s cubic-bezier(.4,0,.2,1)', background: T.bg2, borderBottom: `1px solid ${T.line2}`, padding: '10px 14px', boxSizing: 'border-box' }}>
-      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: T.bg3, border: `1px solid ${T.line2}`, borderRadius: 10, padding: '0 12px' }}>
-          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={T.ink3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input ref={searchInputRef} value={searchVal} onChange={e => setSearchVal(e.target.value)} placeholder="Search artists, shows, tracks…" style={{ flex: 1, background: 'none', border: 'none', outline: 'none', padding: '11px 0', fontFamily: T.fb, fontSize: 15, color: T.ink }} />
-          {searchVal && <button type="button" onClick={() => setSearchVal('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, padding: 0, fontSize: 16, lineHeight: 1 }}>✕</button>}
-        </div>
-        <button type="button" onClick={closeSearch} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink2, fontFamily: T.fb, fontSize: 14, padding: '0 4px', whiteSpace: 'nowrap' }}>Cancel</button>
-      </form>
-    </div>
+    {searchOpen && (
+      <div onClick={e => { if (e.target === e.currentTarget) closeSearch(); }} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,.85)', display: 'flex', flexDirection: 'column', padding: '16px 14px' }}>
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: T.bg3, border: `1px solid ${T.line2}`, borderRadius: 10, padding: '0 12px' }}>
+            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={T.ink3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input ref={searchInputRef} value={searchVal} onChange={e => setSearchVal(e.target.value)} placeholder="Search artists, shows, tracks…" style={{ flex: 1, background: 'none', border: 'none', outline: 'none', padding: '12px 0', fontFamily: T.fb, fontSize: 16, color: T.ink }} />
+            {searchVal && <button type="button" onClick={() => setSearchVal('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, padding: 0, fontSize: 16, lineHeight: 1 }}>✕</button>}
+          </div>
+          <button type="button" onClick={closeSearch} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink2, fontFamily: T.fb, fontSize: 14, padding: '0 4px', whiteSpace: 'nowrap' }}>Cancel</button>
+        </form>
+      </div>
+    )}
     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 19, transform: menuOpen ? 'translateY(66px)' : 'translateY(calc(-100% - 66px))', transition: 'transform .24s cubic-bezier(.4,0,.2,1)', background: T.bg3, borderBottom: `1px solid ${T.line2}`, boxShadow: '0 16px 48px rgba(0,0,0,.7)' }}>
       <div style={{ padding: '8px 0' }}>
         {[
@@ -165,8 +167,8 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
         </div>
       </div>
     </div>
-    {(menuOpen || searchOpen) && (
-      <div onClick={() => { close(); closeSearch(); }} style={{ position: 'absolute', inset: 0, zIndex: 18, background: 'rgba(0,0,0,.55)' }} />
+    {menuOpen && (
+      <div onClick={() => { close(); }} style={{ position: 'absolute', inset: 0, zIndex: 18, background: 'rgba(0,0,0,.55)' }} />
     )}
     </>
   );
@@ -395,7 +397,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
         )}
         <ViewErrorBoundary viewName={tab}>{screenEl}</ViewErrorBoundary>
       </div>
-      {track && <WMMiniPlayer track={track} playing={playing} onToggle={() => setPlaying(p => !p)} progress={progress} onAlbumTap={() => setTrackSheetOpen(true)} />}
+      {track && tab !== 'seeds' && <WMMiniPlayer track={track} playing={playing} onToggle={() => setPlaying(p => !p)} progress={progress} onAlbumTap={() => setTrackSheetOpen(true)} />}
       <WMTrackSheet track={track ?? null} open={trackSheetOpen} onClose={() => setTrackSheetOpen(false)} />
       <WMShowHypersSheet showId={hypersSheetShowId} onClose={() => setHypersSheetShowId(null)} />
       <WMSetlistVoteSheet showId={setlistSheetShowId} onClose={() => setSetlistSheetShowId(null)} />
