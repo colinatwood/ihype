@@ -18,6 +18,7 @@ import { ViewRadio } from './workbench/ViewRadio';
 import { ViewTickets } from './workbench/ViewTickets';
 import { ViewStudio } from './workbench/ViewStudio';
 import { ViewSettings } from './workbench/ViewSettings';
+import { ViewMatchmaker } from './workbench/ViewMatchmaker';
 import { Toast, WelcomeDialog, KeyboardShortcutsDialog } from './workbench/Overlays';
 import { ViewErrorBoundary } from './workbench/ErrorBoundary';
 import { SearchOverlay } from './workbench/SearchOverlay';
@@ -264,6 +265,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const showDock = prefs.stickyDock && track;
 
   const isSeeds = view === 'seeds';
+  const isMatchmaker = view === 'matchmaker';
   const showQueue = prefs.queueRail && tracks.length > 0 && !isSeeds;
   const colTemplate = showQueue ? 'minmax(0, 1fr) var(--queue-w)' : '1fr';
   const shellMaxWidth = showQueue ? 1300 : 1600;
@@ -276,8 +278,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       case 'radio':    return <ViewErrorBoundary viewName="Radio"><ViewRadio data={data} onPickTrack={onPickTrack} /></ViewErrorBoundary>;
       case 'studio':   return <ViewErrorBoundary viewName="Studio"><ViewStudio data={data} /></ViewErrorBoundary>;
       case 'tickets':  return <ViewErrorBoundary viewName="Live Events"><ViewTickets data={data} /></ViewErrorBoundary>;
-      case 'settings': return <ViewErrorBoundary viewName="Settings"><ViewSettings prefs={prefs} setPref={setPref} data={data} onBack={() => navigateTo(prevView)} /></ViewErrorBoundary>;
-      default:         return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
+      case 'settings':     return <ViewErrorBoundary viewName="Settings"><ViewSettings prefs={prefs} setPref={setPref} data={data} onBack={() => navigateTo(prevView)} /></ViewErrorBoundary>;
+      case 'matchmaker':   return <ViewErrorBoundary viewName="Matchmaker"><ViewMatchmaker /></ViewErrorBoundary>;
+      default:             return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
     }
   })();
 
@@ -334,7 +337,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         {/* Main content */}
         <main ref={mainRef} role="main" style={{
           gridColumn: 1, gridRow: 2,
-          overflowY: isSeeds ? 'hidden' : 'auto',
+          overflowY: isSeeds || isMatchmaker ? 'hidden' : 'auto',
           overflowX: 'hidden',
           background: 'var(--bg)', minHeight: 0, minWidth: 0,
           fontSize: `calc(14px * var(--density, 1))`,
@@ -347,7 +350,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
             <div className="wb-bg-orb" style={{ width: 380, height: 380, bottom: '10%', left: '35%', background: 'radial-gradient(circle, rgba(255,62,154,.07), transparent 70%)', animationDelay: '-16s' }} />
             <div className="wb-bg-grid" />
           </div>
-          <div key={view} className="wb-view-anim" style={{ position: 'relative', zIndex: 1 }}>
+          <div key={view} className="wb-view-anim" style={{ position: isMatchmaker ? 'absolute' : 'relative', zIndex: 1, ...(isMatchmaker ? { inset: 0 } : {}) }}>
             <React.Suspense fallback={
               <div style={{
                 position: 'absolute',
