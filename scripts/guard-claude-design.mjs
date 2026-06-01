@@ -100,7 +100,7 @@ assertIncludes(
   'First-passkey signup should use the shared Auth.js session cookie helper.'
 );
 assertIncludes(
-  'src/app/auth/magic/page.tsx',
+  'src/app/api/auth/magic/route.ts',
   'buildAuthSessionCookie',
   'Magic-link sign-in should use the shared Auth.js session cookie helper.'
 );
