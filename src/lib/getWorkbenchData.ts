@@ -142,10 +142,10 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       // Count songs played by this user
       db.mediaListen.count({ where: { userId } }).catch(() => 0),
       // Count distinct listeners on this user's media in the last 30 minutes
-      profileIds.length > 0
+      user.profiles.length > 0
         ? db.mediaListen.count({
             where: {
-              media: { profile: { ownerId: userId } },
+              artistProfileSlug: { in: user.profiles.map((p) => p.slug) },
               createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) },
             },
           }).catch(() => 0)
