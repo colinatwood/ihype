@@ -1190,7 +1190,7 @@ function ScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData; onHypersShe
   }, []);
 
   const handleAction = useCallback((action: 'save' | 'skip' | 'hype', fromDrag = false, dragDx = 0, dragDy = 0) => {
-    const front = deck[deckIdx % Math.max(deck.length, 1)];
+    const front = deck.length > 0 && deckIdx < deck.length ? deck[deckIdx] : undefined;
     if (!front || actionedIds.has(front.id)) return;
 
     // Haptic feedback
@@ -1227,8 +1227,8 @@ function ScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData; onHypersShe
     }, 320);
   }, [deck, deckIdx, actionedIds]);
 
-  const front = deck[deckIdx % Math.max(deck.length, 1)];
-  const behind = deck.length > 1 ? [
+  const front = deck.length > 0 && deckIdx < deck.length ? deck[deckIdx] : undefined;
+  const behind = deck.length > 1 && front ? [
     deck[(deckIdx + 2) % deck.length],
     deck[(deckIdx + 1) % deck.length],
   ] : [];
