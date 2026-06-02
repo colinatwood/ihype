@@ -10,6 +10,60 @@ import { getBaseUrl } from '@/lib/utils';
 import { sendPushNotification } from '@/lib/push-notify';
 
 const HYPE_MILESTONES = [10, 50, 100, 500, 1000];
+const SHOW_HYPE_MILESTONES = [10, 25, 50, 100, 250, 500];
+
+async function checkAndRecordShowMilestone(showId: string, newCount: number) {
+  const crossed = SHOW_HYPE_MILESTONES.find((m) => newCount === m);
+  if (!crossed) return;
+  try {
+    // Guard: don't re-fire if this milestone was already recorded (e.g. after unhype + rehype).
+    const alreadyRecorded = await db.auditLog.findFirst({
+      where: { action: `show_milestone_hype_${crossed}`, entityId: showId },
+      select: { id: true }
+    });
+    if (alreadyRecorded) return;
+
+    const show = await db.show.findUnique({
+      where: { id: showId },
+      select: { id: true, title: true, creator: { select: { email: true, name: true } } }
+    });
+    if (!show) return;
+    await recordAuditEvent({
+      action: `show_milestone_hype_${crossed}`,
+      entityType: 'show',
+      entityId: showId,
+      metadata: { milestone: crossed, showTitle: show.title }
+    });
+    const ownerEmail = show.creator?.email;
+    if (ownerEmail) {
+      const ownerName = show.creator?.name?.trim() || show.title;
+      const text = [
+        `Congrats ${ownerName}!`,
+        '',
+        `Your show '${show.title}' just hit ${crossed} hypes on iHYPE.`,
+        'Keep the momentum — share your show to invite more fans.',
+        '',
+        '— iHYPE'
+      ].join('\n');
+      const html = `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#10182a;">
+          <h2 style="margin:0 0 12px;">🎉 ${crossed} hypes!</h2>
+          <p>Congrats ${ownerName} — <strong>${show.title}</strong> just hit <strong>${crossed} hypes</strong> on iHYPE.</p>
+          <p>Keep the momentum — share your show to invite more fans.</p>
+          <p style="color:#5b657a;font-size:12px;">— iHYPE</p>
+        </div>
+      `;
+      await sendGenericEmail({
+        to: ownerEmail,
+        subject: `🎉 Your show '${show.title}' just hit ${crossed} hypes`,
+        text,
+        html
+      }).catch(() => {});
+    }
+  } catch {
+    // Milestones are best-effort; never fail the hype call.
+  }
+}
 
 async function checkAndRecordMilestone(profileId: string, newCount: number) {
   const crossed = HYPE_MILESTONES.find((m) => newCount === m);
@@ -166,6 +220,21 @@ export async function POST(request: NextRequest) {
         }
         return NextResponse.json({ error: 'Spam detected' }, { status: 429 });
       }
+
+      checkAndRecordShowMilestone(payload.targetId, updatedShow.hypeCount).catch(() => {});
+      checkAndAwardBadges(session.user.id).catch(() => {});
+
+      // Push notification to show creator (fire-and-forget, skip self-hype)
+      db.show.findUnique({ where: { id: payload.targetId }, select: { creatorId: true, title: true } })
+        .then(show => {
+          if (show && show.creatorId !== session.user.id) {
+            sendPushNotification(show.creatorId, {
+              title: 'Your show got hyped!',
+              body: `Someone just hyped '${show.title}' on iHYPE.`,
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
 
       return NextResponse.json({ action: 'hyped', hypeCount: updatedShow.hypeCount });
     }
