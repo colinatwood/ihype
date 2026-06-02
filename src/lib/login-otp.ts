@@ -50,7 +50,7 @@ export async function createLoginOtpChallenge({
   });
 
   const otp = generateOtp();
-  const otpHash = await bcrypt.hash(otp, 12);
+  const otpHash = await bcrypt.hash(otp, 10);
   const challengeToken = randomBytes(32).toString('hex');
 
   await db.mfaChallenge.create({
