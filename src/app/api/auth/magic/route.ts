@@ -17,8 +17,12 @@ export async function GET(request: NextRequest) {
   try {
     record = await db.magicLinkToken.findUnique({ where: { token } });
   } catch (err) {
+    const msg = err instanceof Error ? err.message.slice(0, 120) : String(err).slice(0, 120);
     console.error('[magic-link] token lookup failed:', err);
-    return NextResponse.redirect(new URL('/login?error=ml_db_error', request.url));
+    const url = new URL('/login', request.url);
+    url.searchParams.set('error', 'ml_db_error');
+    url.searchParams.set('detail', msg);
+    return NextResponse.redirect(url);
   }
 
   if (!record || record.used || record.expiresAt < new Date()) {
