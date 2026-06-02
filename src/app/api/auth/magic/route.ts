@@ -13,25 +13,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=invalid_magic_link', request.url));
   }
 
-  let record;
+  let record: { id: string; used: boolean; expiresAt: Date; userId: string } | null = null;
   try {
-    record = await db.magicLinkToken.findUnique({
-      where: { token },
-      include: {
-        user: {
-          select: {
-            id: true, name: true, email: true, image: true,
-            role: true, emailVerified: true, userSecurityVersion: true,
-          }
-        }
-      }
-    });
+    record = await db.magicLinkToken.findUnique({ where: { token } });
   } catch (err) {
-    console.error('[magic-link] DB lookup failed:', err);
+    console.error('[magic-link] token lookup failed:', err);
     return NextResponse.redirect(new URL('/login?error=ml_db_error', request.url));
   }
 
   if (!record || record.used || record.expiresAt < new Date()) {
+    return NextResponse.redirect(new URL('/login?error=expired_magic_link', request.url));
+  }
+
+  let user: { id: string; name: string | null; email: string | null; image: string | null; role: string; emailVerified: Date | null; userSecurityVersion: number } | null = null;
+  try {
+    user = await db.user.findUnique({
+      where: { id: record.userId },
+      select: { id: true, name: true, email: true, image: true, role: true, emailVerified: true, userSecurityVersion: true },
+    });
+  } catch (err) {
+    console.error('[magic-link] user lookup failed:', err);
+    return NextResponse.redirect(new URL('/login?error=ml_db_error', request.url));
+  }
+
+  if (!user) {
     return NextResponse.redirect(new URL('/login?error=expired_magic_link', request.url));
   }
 
@@ -47,14 +52,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=ml_no_secret', request.url));
   }
 
-  const sessionCookie = await buildAuthSessionCookie(record.user);
+  const sessionCookie = await buildAuthSessionCookie(user);
   if (!sessionCookie) {
-    console.error('[magic-link] buildAuthSessionCookie returned null for user', record.user.id, 'securityVersion:', record.user.userSecurityVersion);
+    console.error('[magic-link] buildAuthSessionCookie returned null for user', user.id, 'securityVersion:', user.userSecurityVersion);
     return NextResponse.redirect(new URL('/login?error=ml_cookie_error', request.url));
   }
 
   const rawCallback = searchParams.get('callbackUrl');
-  const defaultDest = record.user.role === 'ADMIN' ? '/admin' : undefined;
+  const defaultDest = user.role === 'ADMIN' ? '/admin' : undefined;
   const dest = resolvePostAuthRedirect(rawCallback ?? defaultDest);
 
   const response = NextResponse.redirect(new URL(dest, request.url));
