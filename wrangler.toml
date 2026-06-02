@@ -56,9 +56,6 @@ database_id = "72feb348-a07a-4bd5-a6ee-5b27b751999d"
 binding = "AE"
 dataset = "ihype_analytics"
 
-[[queues.producers]]
-binding = "EMAIL_QUEUE"
-queue = "ihype-email-queue"
 
 [[services]]
 binding = "WORKER_SELF_REFERENCE"
