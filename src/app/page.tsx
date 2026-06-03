@@ -80,95 +80,11 @@ export default async function RootPage() {
                 artists, venues, and the fans who fill the room. We take nothing.
               </p>
 
-              {/* Role-specific CTAs */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginBottom: '1.5rem' }}>
-                {[
-                  { label: 'I\'m an Artist', role: 'ARTIST', color: '#ff5029', bg: 'rgba(255,80,41,.15)' },
-                  { label: 'I\'m a Venue', role: 'VENUE', color: '#22e5d4', bg: 'rgba(34,229,212,.12)' },
-                  { label: 'I\'m a Fan', role: 'FAN', color: '#b983ff', bg: 'rgba(185,131,255,.12)' },
-                  { label: 'I\'m a Promoter', role: 'DJ', color: '#ffb84a', bg: 'rgba(255,184,74,.12)' },
-                ].map(r => (
-                  <Link
-                    key={r.role}
-                    href={`/register?role=${r.role}`}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-                      padding: '0.65rem 1.25rem', borderRadius: 999,
-                      border: `1px solid ${r.color}40`,
-                      background: r.bg,
-                      color: r.color,
-                      fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: '0.9rem',
-                      textDecoration: 'none',
-                      transition: 'opacity .15s',
-                    }}
-                  >
-                    {r.label} →
-                  </Link>
-                ))}
-              </div>
-
               <Link href="/login" style={{ fontFamily: 'var(--f-b)', fontSize: '0.9rem', color: 'var(--ink-3)', textDecoration: 'none' }}>
                 Already have an account? <span style={{ color: 'var(--ink-2)', textDecoration: 'underline' }}>Sign in</span>
               </Link>
             </div>
 
-            {/* Animated seed card stack */}
-            <div style={{ display: 'none' }} className="hero-cards-desktop">
-              <style>{`
-                @media (min-width: 900px) { .hero-cards-desktop { display: block !important; } }
-                @keyframes seed-float-0 { 0%,100%{transform:rotate(-6deg) translateY(0)} 50%{transform:rotate(-6deg) translateY(-8px)} }
-                @keyframes seed-float-1 { 0%,100%{transform:rotate(-1deg) translateY(0)} 50%{transform:rotate(-1deg) translateY(-6px)} }
-                @keyframes seed-float-2 { 0%,100%{transform:rotate(4deg) translateY(0)} 50%{transform:rotate(4deg) translateY(-10px)} }
-                .seed-card-0{animation:seed-float-0 5s ease-in-out infinite}
-                .seed-card-1{animation:seed-float-1 5.5s ease-in-out .4s infinite}
-                .seed-card-2{animation:seed-float-2 4.8s ease-in-out .8s infinite}
-              `}</style>
-              <div style={{ position: 'relative', width: 220, height: 320 }}>
-                {[
-                  { top: 30, left: 20, color: '#ff5029', track: 'Night Owls', artist: 'Solara' },
-                  { top: 15, left: 10, color: '#b983ff', track: 'Echo Line', artist: 'Dusk Theory' },
-                  { top: 0, left: 0, color: '#22e5d4', track: 'Meridian', artist: 'LUNE' },
-                ].map((c, i) => (
-                  <div
-                    key={i}
-                    className={`seed-card-${i}`}
-                    style={{
-                      position: 'absolute',
-                      top: c.top,
-                      left: c.left,
-                      width: 200,
-                      height: 280,
-                      borderRadius: 20,
-                      border: `1px solid ${c.color}35`,
-                      background: `linear-gradient(145deg, ${c.color}22, rgba(9,8,6,.9))`,
-                      backdropFilter: 'blur(12px)',
-                      padding: '1.5rem',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      boxShadow: `0 8px 32px ${c.color}20`,
-                    }}
-                  >
-                    <div style={{
-                      width: 56, height: 56, borderRadius: 14,
-                      background: `linear-gradient(135deg, ${c.color}, ${c.color}80)`,
-                    }} />
-                    <div>
-                      <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: '1rem', color: 'var(--ink)', marginBottom: '0.2rem' }}>{c.track}</div>
-                      <div style={{ fontFamily: 'var(--f-m)', fontSize: '0.75rem', color: 'var(--ink-3)' }}>{c.artist}</div>
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                        <div style={{ flex: 1, height: 36, borderRadius: 999, background: 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span style={{ fontSize: '1rem' }}>👎</span>
-                        </div>
-                        <div style={{ flex: 1, height: 36, borderRadius: 999, background: `${c.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${c.color}40` }}>
-                          <span style={{ fontSize: '1rem' }}>🔥</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* The 45/45/10 pills */}
