@@ -164,7 +164,7 @@ function PasskeyPanel() {
       if (!optRes.ok) throw new Error('Could not start passkey registration.');
       const options = await optRes.json();
       const { startRegistration } = await import('@simplewebauthn/browser');
-      const attestation = await startRegistration({ optionsJSON: options });
+      const attestation = await startRegistration(options);
       const verRes = await fetch('/api/auth/passkey/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
