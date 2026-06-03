@@ -4,6 +4,7 @@ import { isEmailDeliveryConfigured } from '@/lib/mailer';
 import { createLoginOtpChallenge } from '@/lib/login-otp';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 import { db } from '@/lib/db';
 
 const schema = z.object({
@@ -11,6 +12,7 @@ const schema = z.object({
   password: z.string().default(''),
   tosAccepted: z.boolean().optional(),
   inviteCode: z.string().optional(),
+  turnstileToken: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -40,6 +42,11 @@ export async function POST(request: Request) {
         { error: 'Email delivery is not configured on this server. Contact support.' },
         { status: 503 }
       );
+    }
+
+    const turnstileOk = await verifyTurnstileToken(body.turnstileToken, clientAddress);
+    if (!turnstileOk) {
+      return NextResponse.json({ error: 'Bot check failed. Please try again.' }, { status: 400 });
     }
 
     // Invite-only gate

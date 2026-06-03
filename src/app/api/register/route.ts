@@ -9,6 +9,7 @@ import { createHexId } from '@/lib/hex-id';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 import { isInviteCodeRequiredRuntime, isReservedPlatformEmail, isValidInviteCode } from '@/lib/runtime-flags';
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
 import { slugify } from '@/lib/utils';
@@ -53,7 +54,8 @@ const schema = z.object({
   inviteCode: z.string().trim().max(80).optional(),
   ref: z.string().trim().max(80).optional(),
   company: z.string().trim().max(120).optional(),
-  passkeyFlow: z.boolean().optional().default(false)
+  passkeyFlow: z.boolean().optional().default(false),
+  turnstileToken: z.string().optional(),
 });
 
 function getProfileType(role: 'FAN' | 'ARTIST' | 'DJ' | 'VENUE'): ProfileType {
@@ -167,6 +169,11 @@ export async function POST(request: Request) {
 
     const rawBody = await request.json();
     const body = schema.parse(rawBody);
+
+    const turnstileOk = await verifyTurnstileToken(body.turnstileToken, clientAddress);
+    if (!turnstileOk) {
+      return NextResponse.json({ error: 'Bot check failed. Please try again.' }, { status: 400 });
+    }
     const trimmedName = body.name?.trim() ?? '';
     const normalizedEmail = body.email ? body.email.toLowerCase() : null;
     const normalizedPhone = body.phone ? body.phone.replace(/\s+/g, '').toLowerCase() : null;

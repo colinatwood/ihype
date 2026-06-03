@@ -83,6 +83,7 @@ function makePrisma(url: string) {
     query: {
       $allModels: {
         async $allOperations({ model, operation, args, query }) {
+          const start = Date.now();
           const timeout = new Promise<never>((_, reject) =>
             setTimeout(() => {
               const err = new Error('DB query timeout after 25s');
@@ -90,7 +91,12 @@ function makePrisma(url: string) {
               reject(err);
             }, 25_000)
           );
-          return Promise.race([query(args), timeout]);
+          const result = await Promise.race([query(args), timeout]);
+          const elapsed = Date.now() - start;
+          if (elapsed > 1000) {
+            log.warn('[db] slow query', `${model}.${operation} took ${elapsed}ms`);
+          }
+          return result;
         },
       },
     },
