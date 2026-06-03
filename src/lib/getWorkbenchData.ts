@@ -91,7 +91,11 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             select: { id: true, serializedId: true, status: true, holderName: true },
           },
         },
-      }),
+      }).catch(() => [] as {
+        id: string; confirmationCode: string; status: string;
+        show: { id: string; title: string; startsAt: Date; ticketPriceCents: number; venueProfile: { name: string } | null };
+        tickets: { id: string; serializedId: string | null; status: string; holderName: string | null }[];
+      }[]),
       // Fetch hype events (shows this user hyped) for activity
       db.hypeEvent.findMany({
         where: { userId },
@@ -101,7 +105,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
           id: true, createdAt: true,
           show: { select: { title: true } },
         },
-      }),
+      }).catch(() => [] as { id: string; createdAt: Date; show: { title: string } }[]),
       // Fetch incoming hypes on user's profiles
       db.profileHypeEvent.findMany({
         where: {
@@ -124,8 +128,8 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
           id: true, title: true, status: true, startsAt: true, featured: true,
           headlinerProfile: { select: { name: true } },
         },
-      }),
-      getArtistUploadStreak(primaryProfile?.id ?? ''),
+      }).catch(() => [] as { id: string; title: string; status: string; startsAt: Date; featured: boolean; headlinerProfile: { name: string } | null }[]),
+      getArtistUploadStreak(primaryProfile?.id ?? '').catch(() => 0),
       // Count profile hype events per profile in the last 7 days
       profileIds.length > 0
         ? db.profileHypeEvent.groupBy({
