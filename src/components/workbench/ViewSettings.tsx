@@ -140,6 +140,69 @@ function ShowMiniList({ title, shows }: { title: string; shows: WbPageEditor['up
 // ─────────────────────────────────────────────────────────────
 // ViewSettings — public page editor
 // ─────────────────────────────────────────────────────────────
+function StripeConnectPanel({ data }: { data: WorkbenchData }) {
+  const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState('');
+  const profileType = data.profileType ?? '';
+  const isEligible = profileType === 'ARTIST' || profileType === 'DJ' || profileType === 'VENUE';
+  const isOnboarded = data.stripeConnectOnboarded ?? false;
+
+  if (!isEligible || !data.profileId) return null;
+
+  async function startOnboarding() {
+    setConnecting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/stripe/connect/onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: data.profileId }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof payload.error === 'string' ? payload.error : 'Could not start payout setup.');
+      window.location.href = payload.onboardingUrl;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not start payout setup.');
+      setConnecting(false);
+    }
+  }
+
+  return (
+    <EditorPanel title="Payout account" eyebrow="Revenue">
+      {isOnboarded ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 18 }}>✓</span>
+          <div>
+            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>Stripe connected</div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 3 }}>Your 45% share from ticket sales will be paid out to your connected bank account.</div>
+          </div>
+          <button
+            onClick={() => void startOnboarding()}
+            disabled={connecting}
+            style={{ marginLeft: 'auto', padding: '8px 12px', border: '1px solid var(--line-2)', borderRadius: 6, background: 'none', color: 'var(--ink-2)', fontFamily: 'var(--f-m)', fontSize: 12, cursor: 'pointer' }}
+          >
+            {connecting ? 'Opening…' : 'Update account'}
+          </button>
+        </div>
+      ) : (
+        <div>
+          <p style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)', marginTop: 0, marginBottom: 12, lineHeight: 1.5 }}>
+            Connect a bank account to receive your 45% share of ticket revenue. iHYPE uses Stripe to handle payouts securely.
+          </p>
+          <button
+            onClick={() => void startOnboarding()}
+            disabled={connecting}
+            style={{ padding: '10px 16px', border: 'none', borderRadius: 7, background: 'linear-gradient(135deg, #635bff, #7c74ff)', color: '#fff', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 800, cursor: connecting ? 'wait' : 'pointer' }}
+          >
+            {connecting ? 'Opening Stripe…' : 'Connect payout account'}
+          </button>
+          {error ? <p style={{ marginTop: 8, fontFamily: 'var(--f-m)', fontSize: 12, color: '#ffb4a7' }}>{error}</p> : null}
+        </div>
+      )}
+    </EditorPanel>
+  );
+}
+
 export function ViewSettings({ prefs, setPref, data, onBack }: {
   prefs: typeof DEFAULT_PREFS;
   setPref: (k: string, v: unknown) => void;
@@ -160,6 +223,7 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
         <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: 'var(--accent)', marginBottom: 10 }}>● PAGE EDITOR</div>
         <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Create your page</h1>
         <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 620, lineHeight: 1.5 }}>Create a listener, artist, promoter, or venue profile to unlock page editing.</p>
+        <div style={{ marginTop: 24 }}><StripeConnectPanel data={data} /></div>
       </div>
     );
   }
@@ -355,6 +419,8 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
           </EditorPanel>
         ) : null}
       </div>
+
+      <div style={{ marginTop: 14 }}><StripeConnectPanel data={data} /></div>
 
       <div style={{ marginTop: 20, padding: '14px 18px', border: '1px dashed var(--line-2)', borderRadius: 8, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)', letterSpacing: '.02em' }}>
         This editor changes your public page, not your browsing experience. Use it to curate the layout, background, media, songs, top 5, links, shows, merch, ticketing, and venue info visitors see.

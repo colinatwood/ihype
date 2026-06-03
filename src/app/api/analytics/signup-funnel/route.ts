@@ -3,31 +3,10 @@ import { z } from 'zod';
 import { recordAuditEvent } from '@/lib/audit';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
+import { trackRequest } from '@/lib/analytics';
 
 const schema = z.object({
-  event: z.enum([
-    'view_signup',
-    'select_role',
-    'enter_email',
-    'enter_phone',
-    'submit_register',
-    'register_success',
-    'register_error',
-    'passkey_prompt',
-    'passkey_register_start',
-    'passkey_register_success',
-    'passkey_register_error',
-    'passkey_register_skip',
-    'passkey_auth_start',
-    'passkey_auth_success',
-    'passkey_auth_error',
-    'otp_request',
-    'otp_verify_start',
-    'otp_verify_success',
-    'otp_verify_error',
-    'login_success',
-    'login_error',
-  ]),
+  event: z.string().min(1).max(80),
   role: z.enum(['FAN', 'ARTIST', 'DJ', 'VENUE']).optional(),
   method: z.enum(['email', 'passkey']).optional(),
   step: z.string().trim().max(80).optional(),
@@ -75,6 +54,8 @@ export async function POST(request: Request) {
       viewport: body.viewport ?? null
     }
   });
+
+  trackRequest(`/funnel/${body.event}`, 200, 0);
 
   return NextResponse.json({ ok: true });
 }

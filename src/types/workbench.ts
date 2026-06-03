@@ -163,6 +163,7 @@ export type WorkbenchData = {
   uploadStreak?: number;
   needsGenreQuiz?: boolean;
   degraded?: boolean;
+  stripeConnectOnboarded?: boolean;
   pageEditor?: WbPageEditor;
 };
 
