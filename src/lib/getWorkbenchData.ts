@@ -443,7 +443,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
           sold: s.ticketsSoldCount,
           capacity: s.ticketCapacity ?? 0,
           price: Math.round(s.ticketPriceCents / 100),
-          status: 'ENDED' as const,
+          status: 'UPCOMING' as const,
         })),
       } : undefined,
     };
