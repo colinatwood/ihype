@@ -39,7 +39,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             where: { id: token.sub },
             select: { userSecurityVersion: true }
           });
-          if (!dbUser || dbUser.userSecurityVersion !== token.securityVersion) return null;
+          if (!dbUser || dbUser.userSecurityVersion !== (token.securityVersion ?? 0)) return null;
         } catch (err) {
           console.error('[auth] Unable to validate user security version:', err);
           return null;
