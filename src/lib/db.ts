@@ -94,7 +94,7 @@ function makePrisma(url: string) {
           const result = await Promise.race([query(args), timeout]);
           const elapsed = Date.now() - start;
           if (elapsed > 1000) {
-            log.warn('[db] slow query', `${model}.${operation} took ${elapsed}ms`);
+            log.warn('[db]', { model, operation, elapsedMs: elapsed }, 'Slow query');
           }
           return result;
         },
