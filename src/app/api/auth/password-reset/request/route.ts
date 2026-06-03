@@ -12,10 +12,12 @@ import {
 } from '@/lib/password-reset';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 
 const requestSchema = z.object({
   email: z.string().email(),
-  company: z.string().trim().max(120).optional()
+  company: z.string().trim().max(120).optional(),
+  turnstileToken: z.string().optional(),
 });
 
 const GENERIC_SUCCESS_MESSAGE =
@@ -42,6 +44,12 @@ export async function POST(request: Request) {
     }
 
     const body = requestSchema.parse(await request.json());
+
+    const turnstileOk = await verifyTurnstileToken(body.turnstileToken, clientAddress);
+    if (!turnstileOk) {
+      return NextResponse.json({ error: 'Bot check failed. Please try again.' }, { status: 400 });
+    }
+
     if (body.company) {
       await recordAuditEvent({
         action: 'bot_trap_triggered',

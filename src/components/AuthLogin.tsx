@@ -14,6 +14,7 @@ import {
   trackSignupFunnel,
 } from '@/components/AuthShared';
 import type { AuthMethod } from '@/components/AuthShared';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
 
 export function LoginScreen({
   initialIdentifier = '',
@@ -35,6 +36,7 @@ export function LoginScreen({
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tosAccepted, setTosAccepted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   async function signInWithPasskey() {
     setError('');
@@ -73,6 +75,7 @@ export function LoginScreen({
         identifier,
         password,
         tosAccepted: tosAccepted || undefined,
+        turnstileToken: turnstileToken || undefined,
       });
       setChallengeId(payload.challengeId);
       setDeliveryEmail(payload.email || identifier);
@@ -201,6 +204,10 @@ export function LoginScreen({
             />
             <span>I agree to the <a href="/terms" style={{ color: 'inherit' }}>Terms of Service</a> and confirm I am 13 or older</span>
           </label>
+          <TurnstileWidget
+            onToken={setTurnstileToken}
+            onExpire={() => setTurnstileToken('')}
+          />
           <button className="button" disabled={isSubmitting} type="submit">
             {isSubmitting ? 'Sending code...' : 'Send email code'}
           </button>

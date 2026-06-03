@@ -5,6 +5,7 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { postJson } from '@/lib/api-client';
 import { AuthSignalShell, getErrorMessage } from '@/components/AuthShared';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
 
 export function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -16,6 +17,7 @@ export function ForgotPasswordScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [codeRequested, setCodeRequested] = useState(false);
   const [company, setCompany] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   async function requestReset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,7 +26,11 @@ export function ForgotPasswordScreen() {
     setIsSubmitting(true);
 
     try {
-      const payload = await postJson<{ message?: string }>('/api/auth/password-reset/request', { email, company });
+      const payload = await postJson<{ message?: string }>('/api/auth/password-reset/request', {
+        email,
+        company,
+        turnstileToken: turnstileToken || undefined,
+      });
       setCodeRequested(true);
       setMessage(payload.message || 'If that email exists, a reset passcode has been sent.');
     } catch (err) {
@@ -79,6 +85,10 @@ export function ForgotPasswordScreen() {
             <span>Email</span>
             <input autoComplete="email" inputMode="email" onChange={(event) => setEmail(event.target.value)} required type="email" value={email} />
           </label>
+          <TurnstileWidget
+            onToken={setTurnstileToken}
+            onExpire={() => setTurnstileToken('')}
+          />
           <button className="button" disabled={isSubmitting} type="submit">
             {isSubmitting ? 'Sending...' : 'Send reset code'}
           </button>

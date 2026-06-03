@@ -15,6 +15,7 @@ import {
   trackSignupFunnel,
 } from '@/components/AuthShared';
 import type { AuthMethod, RegisterStep, RoleOption, SignupVariant } from '@/components/AuthShared';
+import { TurnstileWidget } from '@/components/TurnstileWidget';
 
 export function RegisterScreen({
   initialRole = 'FAN',
@@ -38,6 +39,7 @@ export function RegisterScreen({
   const [status, setStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [company, setCompany] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [step, setStep] = useState<RegisterStep>('form');
   const [createdAccountId, setCreatedAccountId] = useState('');
   const [challengeId, setChallengeId] = useState('');
@@ -88,6 +90,7 @@ export function RegisterScreen({
       inviteCode: inviteOnly ? inviteCode : undefined,
       company,
       passkeyFlow: authMethod === 'passkey',
+      turnstileToken: turnstileToken || undefined,
     });
 
     setCreatedAccountId(result.id);
@@ -419,6 +422,10 @@ export function RegisterScreen({
             </label>
           ) : null}
 
+          <TurnstileWidget
+            onToken={setTurnstileToken}
+            onExpire={() => setTurnstileToken('')}
+          />
           <button className="button" disabled={isSubmitting} type="submit">
             {isSubmitting
               ? 'Setting up...'
