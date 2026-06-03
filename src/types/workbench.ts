@@ -77,6 +77,17 @@ type WbProfileLocation = {
   longitude: number | null;
 };
 
+export type WbTrendingProfile = {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  city: string;
+  genre: string;
+  hypeCount: number;
+  avatarImage: string;
+};
+
 export type WbRadioShow = {
   id: string;
   name: string;
@@ -164,6 +175,7 @@ export type WorkbenchData = {
   needsGenreQuiz?: boolean;
   degraded?: boolean;
   stripeConnectOnboarded?: boolean;
+  trending?: WbTrendingProfile[];
   pageEditor?: WbPageEditor;
 };
 

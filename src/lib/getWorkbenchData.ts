@@ -1,4 +1,4 @@
-import type { WorkbenchData } from '@/components/WorkbenchShellV2';
+import type { WorkbenchData, WbTrendingProfile } from '@/components/WorkbenchShellV2';
 import { db } from '@/lib/db';
 import { MOCK_DATA } from '@/lib/workbench-mock';
 import { getArtistUploadStreak } from '@/lib/streaks';
@@ -106,11 +106,13 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
     const primaryProfile = user.profiles.slice().sort((a, b) =>
       (TYPE_PRIORITY[a.type] ?? 99) - (TYPE_PRIORITY[b.type] ?? 99)
     )[0];
-    const [ticketOrders, hypeEvents, profileHypes, radioShows, uploadStreak, weeklyHypeCounts, pastShows] = await Promise.all([
+    const isCreatorProfile = primaryProfile && ['ARTIST', 'DJ', 'VENUE'].includes(primaryProfile.type);
+
+    const [ticketOrders, hypeEvents, profileHypes, radioShows, uploadStreak, weeklyHypeCounts, pastShows, hypedToday, listeningNowCount, trendingProfiles] = await Promise.all([
       // Fetch user's ticket orders
       db.ticketOrder.findMany({
         where: { buyerUserId: userId, status: { in: ['RESERVED', 'CAPTURED'] } },
-        take: 5,
+        take: 20,
         orderBy: { createdAt: 'desc' },
         select: {
           id: true, confirmationCode: true, status: true,
@@ -163,7 +165,8 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
           headlinerProfile: { select: { name: true } },
         },
       }).catch(() => [] as { id: string; title: string; status: string; startsAt: Date; featured: boolean; headlinerProfile: { name: string } | null }[]),
-      getArtistUploadStreak(primaryProfile?.id ?? '').catch(() => 0),
+      // Skip upload streak for listener-only profiles (irrelevant)
+      isCreatorProfile ? getArtistUploadStreak(primaryProfile!.id).catch(() => 0) : Promise.resolve(0),
       // Count profile hype events per profile in the last 7 days
       profileIds.length > 0
         ? db.profileHypeEvent.groupBy({
@@ -176,8 +179,8 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             orderBy: { _count: { profileId: 'desc' } },
           }).catch(() => [] as { profileId: string; _count: { profileId: number } }[])
         : Promise.resolve([] as { profileId: string; _count: { profileId: number } }[]),
-      // Fetch past shows for the primary profile's page editor
-      primaryProfile
+      // Skip past shows for listener-only profiles
+      isCreatorProfile && primaryProfile
         ? db.show.findMany({
             where: {
               status: 'ENDED',
@@ -204,6 +207,21 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             ticketsSoldCount: number; ticketCapacity: number | null; ticketPriceCents: number;
             venueProfile: { name: string } | null; headlinerProfile: { name: string } | null;
           }[]),
+      // Count global hype events today
+      db.hypeEvent.count({
+        where: { createdAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) } },
+      }).catch(() => 0),
+      // Count media listens in the last 5 minutes as a proxy for listening now
+      db.mediaListen.count({
+        where: { completedAt: { gte: new Date(Date.now() - 5 * 60 * 1000) } },
+      }).catch(() => 0),
+      // Top trending artist/DJ profiles by overall hype count
+      db.profile.findMany({
+        where: { type: { in: ['ARTIST', 'DJ'] }, hypeCount: { gt: 0 }, fanShareEnabled: true },
+        orderBy: { hypeCount: 'desc' },
+        take: 6,
+        select: { id: true, name: true, slug: true, city: true, genres: true, hypeCount: true, avatarImage: true, type: true },
+      }).catch(() => [] as { id: string; name: string; slug: string; city: string | null; genres: string[]; hypeCount: number; avatarImage: string | null; type: string }[]),
     ]);
 
     // Count songs played by this user
@@ -345,8 +363,8 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       userInitials: initials || 'FN',
       city,
       greeting: `Welcome back, ${userName.split(' ')[0]}.`,
-      listeningNow: 0,
-      hypedToday: 0,
+      listeningNow: listeningNowCount,
+      hypedToday: hypedToday,
       showsTonight: allShows.filter((s) => s.status === 'TONIGHT').length,
       activeProfileTypes,
       profileType: (primaryProfile?.type as string) ?? 'LISTENER',
@@ -389,6 +407,16 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         songsPlayed: songsPlayedCount,
         eventsAttended: ticketOrders.filter(o => o.status === 'CAPTURED').length,
       },
+      trending: trendingProfiles.map((p): WbTrendingProfile => ({
+        id: p.id,
+        name: p.name,
+        slug: p.slug,
+        type: p.type,
+        city: p.city ?? '',
+        genre: p.genres[0] ?? '',
+        hypeCount: p.hypeCount,
+        avatarImage: p.avatarImage ?? '',
+      })),
       pageEditor: primaryProfile ? {
         profileId: primaryProfile.id,
         slug: primaryProfile.slug,

@@ -2,21 +2,30 @@
 
 import React, { useState, useEffect } from 'react';
 import type { WorkbenchData } from '@/components/WorkbenchShellV2';
-import type { WbTicket } from '@/types/workbench';
+import type { WbTicket, WbTrendingProfile } from '@/types/workbench';
 import { IcHeart, IcCheck } from './icons';
 import { Panel, TrackCard } from './primitives';
 
 const STUB_ACCENT_PALETTE = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#4af0b0'];
 
 function TicketStubQR({ code }: { code: string }) {
-  const cells = Array.from({ length: 16 }, (_, i) => {
-    const ch = code.charCodeAt(i % code.length);
-    return (ch + i) % 2 === 0;
+  const SIZE = 9;
+  // Seed a simple hash from the code string for deterministic pixel pattern
+  const hash = (s: string, seed: number) => {
+    let h = seed;
+    for (let i = 0; i < s.length; i++) h = Math.imul(31, h) + s.charCodeAt(i) | 0;
+    return h;
+  };
+  // Fixed corner squares (finder pattern positions for QR-like appearance)
+  const corners = new Set([0,1,2,3,4,5,6,7,8,9,14,15,16,17,18,63,72,73,74,75,76,77,78]);
+  const cells = Array.from({ length: SIZE * SIZE }, (_, i) => {
+    if (corners.has(i)) return true;
+    return (hash(code, i) ^ (i * 0x5f3759df)) % 3 !== 0;
   });
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 2, width: 40, height: 40, flexShrink: 0 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${SIZE},1fr)`, gap: 1.5, width: 48, height: 48, flexShrink: 0 }}>
       {cells.map((on, i) => (
-        <div key={i} style={{ borderRadius: 1, background: on ? 'var(--accent)' : 'var(--bg-3)' }} />
+        <div key={i} style={{ borderRadius: 1, background: on ? '#fff' : 'transparent' }} />
       ))}
     </div>
   );
@@ -62,35 +71,51 @@ const COVER_GRADIENTS = [
   'linear-gradient(135deg,#1a8278,#7fc4c0)',
   'linear-gradient(135deg,#7a3fb5,#c08fe8)',
   'linear-gradient(135deg,#3a60c8,#90bce8)',
+  'linear-gradient(135deg,#c83a6a,#e890b0)',
+  'linear-gradient(135deg,#3a7ac8,#90c8e8)',
 ];
 
-type TrendingArtist = { name: string; sub: string; hypeCount: number; hypeCount7d: number; gradientIdx: number };
-
-function TrendingCard({ artist }: { artist: TrendingArtist }) {
+function TrendingCard({ artist, idx }: { artist: WbTrendingProfile; idx: number }) {
   const [hyped, setHyped] = useState(false);
   const [count, setCount] = useState(artist.hypeCount);
+  const gradient = artist.avatarImage
+    ? undefined
+    : COVER_GRADIENTS[idx % COVER_GRADIENTS.length];
   return (
     <div style={{ background: 'var(--bg-2)', border: '1px solid var(--line-2)', borderRadius: 14, overflow: 'hidden' }}>
-      <div style={{ height: 100, position: 'relative', background: COVER_GRADIENTS[artist.gradientIdx % COVER_GRADIENTS.length], display: 'flex', alignItems: 'flex-end', padding: '8px 10px', gap: 6 }}>
+      <div style={{
+        height: 100, position: 'relative',
+        background: gradient ?? `url(${artist.avatarImage}) center/cover`,
+        display: 'flex', alignItems: 'flex-end', padding: '8px 10px', gap: 6,
+      }}>
         <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(6px)', padding: '2px 7px', borderRadius: 99, color: '#fff', border: '1px solid rgba(255,255,255,.12)' }}>
-          Artist
+          {artist.type}
         </span>
-        {artist.hypeCount7d > 0 && (
-          <span style={{ fontFamily: 'monospace', fontSize: 9, letterSpacing: '.08em', background: 'rgba(34,229,212,.18)', border: '1px solid rgba(34,229,212,.4)', color: '#22e5d4', padding: '2px 7px', borderRadius: 99 }}>
-            ↑ trending
+        {artist.genre && (
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 9, background: 'rgba(0,0,0,.35)', backdropFilter: 'blur(4px)', color: '#ccc', padding: '2px 7px', borderRadius: 99 }}>
+            {artist.genre}
           </span>
         )}
       </div>
       <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ fontFamily: 'var(--f-d)', fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>{artist.name}</div>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)' }}>{artist.sub}</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)' }}>{artist.city || 'Location unknown'}</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid var(--line)', marginTop: 2 }}>
           <div>
             <div style={{ fontFamily: 'var(--f-d)', fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{count.toLocaleString()}</div>
             <div style={{ fontFamily: 'var(--f-m)', fontSize: 9, color: 'var(--ink-3)', letterSpacing: '.1em', textTransform: 'uppercase', marginTop: 1 }}>hypes</div>
           </div>
           <button
-            onClick={() => { if (hyped) return; setHyped(true); setCount(c => c + 1); }}
+            onClick={() => {
+              if (hyped) return;
+              setHyped(true);
+              setCount(c => c + 1);
+              fetch('/api/hype', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetType: 'profile', targetId: artist.id }),
+              }).catch(() => {});
+            }}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px',
               borderRadius: 99, fontSize: 12, fontWeight: 600, fontFamily: 'var(--f-b)',
@@ -195,12 +220,7 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
     { v: '7', k: 'Top-5 Slots', accent: false },
   ];
 
-  // Trending artists — sorted by hypeCount7d desc, fallback to hypeCount
-  const trendingArtists: TrendingArtist[] = [
-    { name: 'Malia Torres',    sub: 'R&B / Soul · Brooklyn, NY',  hypeCount: 2847, hypeCount7d: 312, gradientIdx: 0 },
-    { name: 'Concrete Wave',   sub: 'Electronic · Chicago, IL',   hypeCount: 1203, hypeCount7d: 198, gradientIdx: 1 },
-    { name: 'Sun Valley Echo', sub: 'Indie Rock · Austin, TX',    hypeCount: 891,  hypeCount7d: 0,   gradientIdx: 2 },
-  ].sort((a, b) => (b.hypeCount7d ?? 0) - (a.hypeCount7d ?? 0) || b.hypeCount - a.hypeCount);
+  const trendingArtists = (data.trending ?? []).slice(0, 3);
 
   return (
     <div style={{ padding: '32px 48px 48px', maxWidth: 1600, margin: '0 auto' }}>
@@ -220,7 +240,10 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
             <span style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)' }}>This week</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-            {trendingArtists.map(a => <TrendingCard key={a.name} artist={a} />)}
+            {trendingArtists.length > 0
+              ? trendingArtists.map((a, i) => <TrendingCard key={a.id} artist={a} idx={i} />)
+              : <div style={{ gridColumn: '1/-1', padding: '32px 0', textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)' }}>No trending artists yet — be the first to HYPE someone.</div>
+            }
           </div>
         </div>
 
@@ -427,6 +450,13 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20, marginBottom: 14 }}>
         <Panel title="Top 5 — this week" link="Curated · updates Sundays">
           <div style={{ padding: '4px 0' }}>
+            {data.tracks.length === 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '28px 16px', gap: 10, textAlign: 'center' }}>
+                <div style={{ fontSize: 32 }}>🎵</div>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, color: 'var(--ink)' }}>No tracks yet</div>
+                <div style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>Upload a song or HYPE an artist to build your listening history.</div>
+              </div>
+            )}
             {data.tracks.slice(0, 5).map((t, i) => (
               <button key={t.id} onClick={() => onPickTrack(i)} style={{
                 width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px',
@@ -514,9 +544,11 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
       {/* Ticket Stubs */}
       <Panel title="🎟️ Your Ticket Stubs" style={{ marginBottom: 14 }}>
         {data.tickets.length === 0 ? (
-          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 14 }}>
-            <div style={{ fontSize: 32, marginBottom: 10 }}>🎟️</div>
-            Your stubs will appear here after your first show
+          <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--ink-2)', fontFamily: 'var(--f-m)', fontSize: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+            <div style={{ fontSize: 36 }}>🎟️</div>
+            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, color: 'var(--ink)' }}>No tickets yet</div>
+            <div style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-3)', maxWidth: '28ch', lineHeight: 1.5 }}>Buy a ticket to an upcoming show and it'll appear here as a digital stub.</div>
+            <a href="/shows" style={{ marginTop: 4, padding: '10px 20px', borderRadius: 8, background: 'linear-gradient(135deg, var(--accent), #ff3e9a)', color: '#fff', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>Browse shows</a>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14, padding: '14px 16px' }}>
