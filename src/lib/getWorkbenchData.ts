@@ -27,6 +27,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             hypeCount: true,
             slug: true,
             genres: true,
+            stripeConnectOnboarded: true,
             mediaUploads: {
               take: 8,
               orderBy: { createdAt: 'desc' },
@@ -299,6 +300,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       notifications: [],
       uploadStreak: uploadStreak ?? 0,
       needsGenreQuiz: needsGenreQuiz ?? false,
+      stripeConnectOnboarded: primaryProfile?.stripeConnectOnboarded ?? false,
       hypeCount7d: primaryProfile ? (weeklyMap[primaryProfile.id] ?? 0) : 0,
       lifeStats: {
         totalHype,
