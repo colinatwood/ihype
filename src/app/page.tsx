@@ -76,8 +76,8 @@ export default async function RootPage() {
                 lineHeight: 1.65,
                 margin: '0 0 2rem',
               }}>
-                The platform that sends every dollar to the people who deserve it —
-                artists, venues, and the fans who fill the room. We take nothing.
+                Zero fees. 45% to the artist, 45% to the venue, 10% to whoever
+                brought the fan. iHYPE takes nothing — and that&apos;s locked in.
               </p>
 
               <Link href="/login" style={{ fontFamily: 'var(--f-b)', fontSize: '0.9rem', color: 'var(--ink-3)', textDecoration: 'none' }}>
@@ -87,26 +87,6 @@ export default async function RootPage() {
 
           </div>
 
-          {/* The 45/45/10 pills */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', marginTop: '2rem' }}>
-            {[
-              { pct: '45%', label: 'to the artist', color: '#ff5029' },
-              { pct: '45%', label: 'to the venue', color: '#22e5d4' },
-              { pct: '10%', label: 'to whoever brought the fan', color: '#b983ff' },
-              { pct: '0%',  label: 'to iHYPE', color: 'var(--ink-3)', dim: true },
-            ].map(p => (
-              <div key={p.label} style={{
-                display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.45rem 0.9rem', borderRadius: 999,
-                border: `1px solid ${p.dim ? 'rgba(255,255,255,.08)' : p.color + '35'}`,
-                background: p.dim ? 'rgba(255,255,255,.03)' : p.color + '12',
-                opacity: p.dim ? 0.6 : 1,
-              }}>
-                <span style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: '1.05rem', color: p.dim ? 'var(--ink-3)' : p.color }}>{p.pct}</span>
-                <span style={{ fontFamily: 'var(--f-m)', fontSize: '0.75rem', color: p.dim ? 'var(--ink-3)' : 'var(--ink-2)', letterSpacing: '.04em' }}>{p.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -302,29 +282,20 @@ export default async function RootPage() {
             <p style={{ fontFamily: 'var(--f-b)', fontSize: '1rem', color: 'var(--ink-2)', margin: '0 0 2rem', maxWidth: '44ch', marginInline: 'auto', lineHeight: 1.65 }}>
               No subscription. No fees. Just music, community, and a platform that&apos;s actually on your side.
             </p>
-            <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '0.65rem' }}>
-              {[
-                { label: 'Join as Artist', role: 'ARTIST', color: '#ff5029' },
-                { label: 'Join as Venue', role: 'VENUE', color: '#22e5d4' },
-                { label: 'Join as Fan', role: 'FAN', color: '#b983ff' },
-                { label: 'Join as Promoter', role: 'DJ', color: '#ffb84a' },
-              ].map(r => (
-                <Link
-                  key={r.role}
-                  href={`/register?role=${r.role}`}
-                  style={{
-                    display: 'inline-block',
-                    padding: '0.75rem 1.5rem', borderRadius: 999,
-                    border: `1px solid ${r.color}50`,
-                    background: `${r.color}18`,
-                    color: r.color,
-                    fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: '0.95rem',
-                    textDecoration: 'none',
-                  }}
-                >
-                  {r.label}
-                </Link>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <Link
+                href="/register"
+                style={{
+                  display: 'inline-block',
+                  padding: '0.9rem 2.5rem', borderRadius: 999,
+                  background: 'var(--accent)',
+                  color: '#fff',
+                  fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: '1.05rem',
+                  textDecoration: 'none',
+                }}
+              >
+                Get started free →
+              </Link>
             </div>
             <div style={{ marginTop: '1.25rem' }}>
               <Link href="/login" style={{ fontFamily: 'var(--f-b)', fontSize: '0.9rem', color: 'var(--ink-3)', textDecoration: 'none' }}>
