@@ -5,7 +5,7 @@ import { WorkbenchData } from '@/types/workbench';
 import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
 
 /* ── types ───────────────────────────────────────────────── */
-type CkMode = 'page' | 'insights' | 'tour' | 'release' | 'library';
+type CkMode = 'page' | 'insights' | 'tour' | 'release' | 'library' | 'presskit';
 type Device = 'desktop' | 'mobile';
 
 interface Msg { side: 'me' | 'ai'; html: string; applied?: string[]; }
@@ -55,7 +55,6 @@ function applyCommand(text: string, vars: PageVars): { reply: string; applied: s
   if (/\bwarm/.test(t)) { set('--p-bg', '#120c08'); set('--p-surface', '#1d140d'); applied.push('Tone → warmer'); }
   if (/\bcool|cold|blue tone/.test(t)) { set('--p-bg', '#080a0d'); set('--p-surface', '#101620'); applied.push('Tone → cooler'); }
 
-  // Genre-aware theming: punk, jazz, electronic, etc.
   const genreThemes: Record<string, Partial<PageVars>> = {
     punk:       { '--p-bg': '#0c0805', '--p-surface': '#1a110a', '--p-accent': '#ff5029', '--p-accent2': '#ffb84a', '--p-radius': '3px' },
     jazz:       { '--p-bg': '#080710', '--p-surface': '#120f1e', '--p-accent': '#b983ff', '--p-accent2': '#ff3e9a', '--p-display': '"Instrument Serif",serif' },
@@ -130,9 +129,17 @@ function RailBtn({ active, onClick, icon, label }: { active: boolean; onClick: (
   );
 }
 
-/* ── Page preview section visibility ── */
-const SEC_LABELS: Record<string, string> = {
-  shows: 'Tour dates', merch: 'Merch shelf',
+const INPUT_STYLE: React.CSSProperties = {
+  padding: '9px 12px',
+  background: 'rgba(255,255,255,.04)',
+  border: '1px solid rgba(255,255,255,.1)',
+  borderRadius: 8,
+  color: 'var(--ink,#f4efe9)',
+  fontFamily: 'var(--f-b,sans-serif)',
+  fontSize: 13,
+  outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box',
 };
 
 /* ── main component ──────────────────────────────────────── */
@@ -147,6 +154,8 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
   const [generating, setGenerating] = useState(false);
   const [showShows, setShowShows] = useState(false);
   const [showMerch, setShowMerch] = useState(false);
+  const [showBooking, setShowBooking] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -161,7 +170,6 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
     setTyping(true);
     setGenerating(true);
 
-    // Simulate AI thinking delay while we fetch any hero image in parallel
     const res = applyCommand(text, pageVars);
     if (/\btour|shows?|dates|gig|concert/.test(text.toLowerCase())) {
       setShowShows(true);
@@ -171,8 +179,11 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
       setShowMerch(true);
       if (!res.applied.includes('Added · Merch shelf')) res.applied.push('Added · Merch shelf');
     }
+    if (/\badd booking|book me|contact/.test(text.toLowerCase())) {
+      setShowBooking(true);
+      if (!res.applied.includes('Added · Booking form')) res.applied.push('Added · Booking form');
+    }
 
-    // Hero image: prefer user's uploaded profile image, then fetch from Unsplash by genre
     let heroUrl = '';
     const uploadedHero = data.pageEditor?.heroImage;
     if (uploadedHero) {
@@ -238,12 +249,13 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
         </div>
 
         {/* nav */}
-        <div style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
           <RailBtn active={mode === 'page'} onClick={() => setMode('page')} label="Page + AI" icon={<IconPage />} />
           <RailBtn active={mode === 'insights'} onClick={() => setMode('insights')} label="Insights" icon={<IconInsights />} />
           <RailBtn active={mode === 'tour'} onClick={() => setMode('tour')} label="Tour" icon={<IconTour />} />
           <RailBtn active={mode === 'release'} onClick={() => setMode('release')} label="Release" icon={<IconRelease />} />
           <RailBtn active={mode === 'library'} onClick={() => setMode('library')} label="Library" icon={<IconLibrary />} />
+          <RailBtn active={mode === 'presskit'} onClick={() => setMode('presskit')} label="Press Kit" icon={<IconPressKit />} />
 
           <div style={{ marginTop: 16, padding: '0 4px' }}>
             <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.25)', marginBottom: 8 }}>Quick Jump</div>
@@ -302,16 +314,26 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                     </button>
                   ))}
                 </div>
-                <button onClick={() => setEditOn(e => !e)} style={{
-                  padding: '5px 12px', borderRadius: 6, border: '1px solid',
-                  borderColor: editOn ? 'rgba(255,80,41,.35)' : 'rgba(255,255,255,.1)',
-                  background: editOn ? 'rgba(255,80,41,.12)' : 'transparent',
-                  color: editOn ? '#ff5029' : 'rgba(244,239,233,.45)',
-                  fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
-                  cursor: 'pointer',
-                }}>
-                  {editOn ? '✎ Editing' : '✎ Edit'}
-                </button>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <button onClick={() => setShareOpen(true)} style={{
+                    padding: '5px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,.1)',
+                    background: 'transparent', color: 'rgba(244,239,233,.45)',
+                    fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                    cursor: 'pointer',
+                  }}>
+                    ⬡ Share
+                  </button>
+                  <button onClick={() => setEditOn(e => !e)} style={{
+                    padding: '5px 12px', borderRadius: 6, border: '1px solid',
+                    borderColor: editOn ? 'rgba(255,80,41,.35)' : 'rgba(255,255,255,.1)',
+                    background: editOn ? 'rgba(255,80,41,.12)' : 'transparent',
+                    color: editOn ? '#ff5029' : 'rgba(244,239,233,.45)',
+                    fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em',
+                    cursor: 'pointer',
+                  }}>
+                    {editOn ? '✎ Editing' : '✎ Edit'}
+                  </button>
+                </div>
               </div>
               {/* public page */}
               <div style={{ position: 'absolute', inset: '46px 0 0', overflow: 'auto', display: 'flex', justifyContent: 'center', padding: generating ? '0' : '20px', transition: 'padding .3s' }}>
@@ -329,7 +351,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                   <PublicPage
                     artistName={artistName} initials={initials}
                     vars={pageVars} editOn={editOn}
-                    showShows={showShows} showMerch={showMerch}
+                    showShows={showShows} showMerch={showMerch} showBooking={showBooking}
                   />
                 </div>
               </div>
@@ -354,7 +376,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                         fontFamily: 'var(--f-m,monospace)', fontSize: 10, cursor: 'pointer',
                         transition: 'all .15s',
                       }}>
-                        "{s}"
+                        &quot;{s}&quot;
                       </button>
                     ))}
                   </div>
@@ -435,7 +457,6 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
               <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 6 }}>Insights</h2>
               <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 24 }}>Last 30 days · updated hourly</div>
 
-              {/* KPIs */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
                 <KpiCard label="Listens" value="2,284" delta="+14%" sub="past 30 days" color="#ff5029" />
                 <KpiCard label="Finish rate" value="71%" delta="+3pts" sub="avg vs 58% norm" color="#b983ff" />
@@ -443,17 +464,14 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 <KpiCard label="Est. payout" value="$2,460" delta="+$340" sub="this month" color="#ffb84a" />
               </div>
 
-              {/* Listens chart */}
               <ChartSection title="Listens & Engagement" subtitle="Daily streams over the past 30 days">
                 <ListensChart />
               </ChartSection>
 
-              {/* HYPE sources */}
               <ChartSection title="HYPE Sources" subtitle="Where your hype is coming from">
                 <HypeSources />
               </ChartSection>
 
-              {/* AI nudge */}
               <div style={{ background: 'rgba(255,80,41,.06)', border: '1px solid rgba(255,80,41,.15)', borderRadius: 12, padding: '14px 18px', marginBottom: 24, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <span style={{ fontSize: 16 }}>✦</span>
                 <div>
@@ -462,22 +480,18 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 </div>
               </div>
 
-              {/* Audience map */}
               <ChartSection title="Audience" subtitle="Top cities by listener count">
                 <AudienceMap />
               </ChartSection>
 
-              {/* Ticket revenue */}
               <ChartSection title="Ticket Revenue" subtitle="Sales across all platforms — past 60 days">
                 <TicketRevenue />
               </ChartSection>
 
-              {/* Top tracks */}
               <ChartSection title="Top Tracks" subtitle="Ranked by streams">
                 <TopTracks />
               </ChartSection>
 
-              {/* Discovery funnel */}
               <ChartSection title="Discovery Funnel" subtitle="Seed view → attended">
                 <DiscoveryFunnel />
               </ChartSection>
@@ -510,9 +524,8 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
           <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
             <div style={{ padding: '28px 32px', maxWidth: 1000, margin: '0 auto' }}>
               <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 6 }}>Release Planner</h2>
-              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 24 }}>"Westbound" · Single · Dropping Jun 14</div>
+              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 24 }}>&quot;Westbound&quot; · Single · Dropping Jun 14</div>
 
-              {/* stat tiles */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
                 <RelStat label="Pre-saves" value="284" icon="♡" color="#ff3e9a" />
                 <RelStat label="Seed plays" value="1,840" icon="▷" color="#b983ff" />
@@ -520,7 +533,6 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 <RelStat label="Est. 1st-wk" value="4,200" icon="↗" color="#ffb84a" />
               </div>
 
-              {/* drop timeline */}
               <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 14 }}>Drop Timeline</div>
               <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '20px 24px', marginBottom: 28 }}>
                 {DROP_STEPS.map((s, i) => (
@@ -544,12 +556,11 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 ))}
               </div>
 
-              {/* AI writer nudge */}
               <div style={{ background: 'rgba(185,131,255,.06)', border: '1px solid rgba(185,131,255,.15)', borderRadius: 12, padding: '16px 20px', marginBottom: 28, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <span style={{ fontSize: 16 }}>✦</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: '#b983ff', marginBottom: 4 }}>Write your announcement copy</div>
-                  <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.6)', lineHeight: 1.5, marginBottom: 12 }}>Drop your one-liner about Westbound and I'll write press blurbs, social captions, and a playlist pitch for you.</div>
+                  <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.6)', lineHeight: 1.5, marginBottom: 12 }}>Drop your one-liner about Westbound and I&apos;ll write press blurbs, social captions, and a playlist pitch for you.</div>
                   <textarea
                     placeholder="What's the vibe? What's the story behind this single?"
                     rows={2}
@@ -564,7 +575,6 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 </div>
               </div>
 
-              {/* bundle options */}
               <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>Release Bundle</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 28 }}>
                 {BUNDLES.map((b, i) => (
@@ -579,7 +589,6 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 ))}
               </div>
 
-              {/* projections */}
               <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>First-Week Projections</div>
               <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '18px 22px' }}>
                 {PROJECTIONS.map(p => (
@@ -595,18 +604,259 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
             </div>
           </div>
         )}
+
+        {/* Mode: Press Kit */}
+        {mode === 'presskit' && (
+          <PressKitPanel artistName={artistName} artistSlug="maya" />
+        )}
+      </div>
+
+      {/* Share card modal */}
+      {shareOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(8px)',
+          }}
+          onClick={() => setShareOpen(false)}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            {/* Share card */}
+            <div style={{
+              width: 340, borderRadius: 20, overflow: 'hidden',
+              background: 'linear-gradient(135deg,#ff5029 0%,#ff3e9a 50%,#b983ff 100%)',
+              padding: '2px',
+            }}>
+              <div style={{
+                borderRadius: 18, background: '#0e0b09',
+                padding: '32px 28px', textAlign: 'center',
+              }}>
+                <div style={{
+                  width: 64, height: 64, borderRadius: 16, margin: '0 auto 16px',
+                  background: 'linear-gradient(135deg,#ff5029,#ff3e9a)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: '#fff',
+                }}>{initials}</div>
+                <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 24, fontWeight: 800, color: '#f4efe9', marginBottom: 4 }}>{artistName}</div>
+                <div style={{ fontFamily: 'system-ui', fontSize: 13, color: 'rgba(244,239,233,.55)', marginBottom: 20 }}>Artist · Chicago, IL · Alt-Indie</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
+                  {[['2,284', 'Streams'], ['12', 'Shows'], ['410+', 'Fans']].map(([v, l]) => (
+                    <div key={l} style={{ background: 'rgba(255,255,255,.06)', borderRadius: 10, padding: '10px 8px' }}>
+                      <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 18, fontWeight: 800, color: '#ff5029' }}>{v}</div>
+                      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, color: 'rgba(244,239,233,.4)', textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 2 }}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', letterSpacing: '.06em' }}>ihype.fm/maya · iHYPE</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setShareOpen(false)}
+                style={{
+                  padding: '9px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,.15)',
+                  background: 'transparent', color: 'rgba(244,239,233,.6)',
+                  fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Close
+              </button>
+              <button
+                style={{
+                  padding: '9px 20px', borderRadius: 8, border: 'none',
+                  background: '#ff5029', color: '#fff',
+                  fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                Copy link
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Press Kit Panel ─────────────────────────────────────── */
+function PressKitPanel({ artistName, artistSlug }: { artistName: string; artistSlug: string }) {
+  const [bio, setBio] = useState(`${artistName} makes late-night songs for long drives. Based in Chicago, IL, their sound blends hazy guitar work with confessional lyrics that land somewhere between indie folk and alternative pop. Their debut EP, recorded live in a basement on Western Ave, has accumulated over 2,000 streams and counting.`);
+  const [riderChecks, setRiderChecks] = useState<Record<string, boolean>>({
+    'PA system (min 1,000W)': true,
+    'Stage monitors (x2)': true,
+    'Direct box (x2)': false,
+    'Drum kit (full)': false,
+    'Green room access': true,
+    'Merch table': true,
+  });
+  const [copied, setCopied] = useState(false);
+
+  function toggleRider(key: string) {
+    setRiderChecks(c => ({ ...c, [key]: !c[key] }));
+  }
+
+  function copyLink() {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
+      <div style={{ padding: '28px 32px', maxWidth: 800, margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>Press Kit · EPK</h2>
+            <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)' }}>Electronic Press Kit for {artistName}</div>
+          </div>
+          <button style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
+            background: '#ff5029', color: '#fff',
+            fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.06em',
+          }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 3v12M7 14l5 5 5-5M4 19h16" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            DOWNLOAD EPK
+          </button>
+        </div>
+
+        {/* Artist bio */}
+        <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '20px 22px', marginBottom: 18 }}>
+          <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.35)', marginBottom: 12 }}>Artist Bio</div>
+          <textarea
+            value={bio}
+            onChange={e => setBio(e.target.value)}
+            rows={5}
+            style={{
+              ...INPUT_STYLE,
+              resize: 'vertical',
+              lineHeight: 1.65,
+              minHeight: 100,
+            }}
+          />
+        </div>
+
+        {/* Key stats grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 18 }}>
+          {[
+            { label: 'Streams', value: '2,284', color: '#ff5029' },
+            { label: 'Shows', value: '12', color: '#b983ff' },
+            { label: 'Cities', value: '4', color: '#22e5d4' },
+            { label: 'Avg Draw', value: '240', color: '#ffb84a' },
+          ].map(stat => (
+            <div key={stat.label} style={{
+              background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))',
+              borderRadius: 12, padding: '16px 18px', textAlign: 'center',
+            }}>
+              <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 28, fontWeight: 800, color: stat.color, lineHeight: 1, marginBottom: 6 }}>{stat.value}</div>
+              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.35)' }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tech rider */}
+        <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '20px 22px', marginBottom: 18 }}>
+          <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.35)', marginBottom: 14 }}>Tech Rider</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {Object.entries(riderChecks).map(([item, checked]) => (
+              <label key={item} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                <div
+                  onClick={() => toggleRider(item)}
+                  style={{
+                    width: 18, height: 18, borderRadius: 5, flexShrink: 0, border: `2px solid ${checked ? '#22e5d4' : 'rgba(255,255,255,.2)'}`,
+                    background: checked ? 'rgba(34,229,212,.15)' : 'transparent',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all .15s', cursor: 'pointer',
+                  }}
+                >
+                  {checked && (
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="#22e5d4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: checked ? 'var(--ink,#f4efe9)' : 'rgba(244,239,233,.45)' }}>{item}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Press photos */}
+        <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '20px 22px', marginBottom: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.35)' }}>Press Photos</div>
+            <button style={{
+              padding: '5px 12px', borderRadius: 6, border: '1px solid rgba(255,80,41,.3)',
+              background: 'rgba(255,80,41,.08)', color: '#ff5029',
+              fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, cursor: 'pointer',
+            }}>
+              + Add photo
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{
+                height: 140, borderRadius: 10, border: '1px dashed rgba(255,255,255,.12)',
+                background: `linear-gradient(135deg, rgba(255,80,41,${0.06 + i * 0.02}), rgba(185,131,255,${0.06 + i * 0.02}))`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer',
+              }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(244,239,233,.25)" strokeWidth="1.5">
+                  <rect x="3" y="3" width="18" height="18" rx="3" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <path d="M21 15l-5-5L5 21" strokeLinejoin="round" />
+                </svg>
+                <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.25)', letterSpacing: '.06em' }}>Photo {i + 1}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Shareable link */}
+        <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '16px 20px' }}>
+          <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.35)', marginBottom: 10 }}>Shareable Link</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              flex: 1, padding: '9px 14px', borderRadius: 8,
+              background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
+              fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.55)',
+            }}>
+              ihype.fm/{artistSlug}/epk
+            </div>
+            <button
+              onClick={copyLink}
+              style={{
+                padding: '9px 16px', borderRadius: 8, border: '1px solid rgba(34,229,212,.25)',
+                background: copied ? 'rgba(34,229,212,.15)' : 'rgba(34,229,212,.06)',
+                color: '#22e5d4',
+                fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                transition: 'all .15s', flexShrink: 0,
+              }}
+            >
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 /* ── Public Page Preview ─────────────────────────────────── */
-function PublicPage({ artistName, initials, vars, editOn, showShows, showMerch }: {
+function PublicPage({ artistName, initials, vars, editOn, showShows, showMerch, showBooking }: {
   artistName: string; initials: string; vars: PageVars; editOn: boolean;
-  showShows: boolean; showMerch: boolean;
+  showShows: boolean; showMerch: boolean; showBooking: boolean;
 }) {
   const s = vars;
   const hasHero = !!s['--p-hero-url'];
+  const [playingIdx, setPlayingIdx] = useState<number | null>(null);
+  const [bookingForm, setBookingForm] = useState({ name: '', email: '', date: '', message: '' });
+
+  function togglePlay(idx: number) {
+    setPlayingIdx(p => (p === idx ? null : idx));
+  }
+
   return (
     <div style={{ background: s['--p-bg'], color: s['--p-ink'], minHeight: '100%', fontFamily: 'system-ui,sans-serif' }}>
       {/* hero */}
@@ -673,18 +923,91 @@ function PublicPage({ artistName, initials, vars, editOn, showShows, showMerch }
         </div>
       )}
 
-      {/* tracks */}
+      {/* tracks with inline player */}
       <div style={{ padding: '28px 36px' }}>
         <div style={{ fontFamily: s['--p-display'], fontSize: 20, fontWeight: 800, color: s['--p-ink'], marginBottom: 16 }}>Tracks</div>
-        {['Velvet Hours', 'Carmine', 'Westbound', 'North Shore'].map((track, i) => (
-          <div key={track} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: `1px solid ${s['--p-line']}` }}>
-            <div style={{ width: 20, textAlign: 'center', fontFamily: 'system-ui', fontSize: 13, color: s['--p-ink2'] }}>{i + 1}</div>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg,${s['--p-accent']}33,${s['--p-surface']})`, flexShrink: 0 }} />
-            <div style={{ flex: 1, fontFamily: 'system-ui', fontSize: 14, fontWeight: 600, color: s['--p-ink'] }} contentEditable={editOn} suppressContentEditableWarning>{track}</div>
-            <div style={{ fontFamily: 'system-ui', fontSize: 12, color: s['--p-ink2'] }}>{['3:42', '4:01', '3:58', '4:22'][i]}</div>
-          </div>
-        ))}
+        {['Velvet Hours', 'Carmine', 'Westbound', 'North Shore'].map((track, i) => {
+          const isPlaying = playingIdx === i;
+          return (
+            <div key={track} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: `1px solid ${s['--p-line']}` }}>
+              {/* play/pause button */}
+              <button
+                onClick={() => togglePlay(i)}
+                style={{
+                  width: 28, height: 28, borderRadius: '50%', border: `1px solid ${isPlaying ? s['--p-accent'] : s['--p-line']}`,
+                  background: isPlaying ? `${s['--p-accent']}22` : 'transparent',
+                  color: isPlaying ? s['--p-accent'] : s['--p-ink2'],
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', flexShrink: 0, transition: 'all .15s',
+                }}
+              >
+                {isPlaying ? (
+                  /* pulsing waveform icon when playing */
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                    <rect x="1" y="3" width="2" height="6" rx="1">
+                      <animate attributeName="height" values="6;10;6;4;6" dur=".7s" repeatCount="indefinite" />
+                      <animate attributeName="y" values="3;1;3;4;3" dur=".7s" repeatCount="indefinite" />
+                    </rect>
+                    <rect x="5" y="1" width="2" height="10" rx="1">
+                      <animate attributeName="height" values="10;4;10;6;10" dur=".7s" repeatCount="indefinite" begin=".15s" />
+                      <animate attributeName="y" values="1;4;1;3;1" dur=".7s" repeatCount="indefinite" begin=".15s" />
+                    </rect>
+                    <rect x="9" y="2" width="2" height="8" rx="1">
+                      <animate attributeName="height" values="8;12;8;4;8" dur=".7s" repeatCount="indefinite" begin=".3s" />
+                      <animate attributeName="y" values="2;0;2;4;2" dur=".7s" repeatCount="indefinite" begin=".3s" />
+                    </rect>
+                  </svg>
+                ) : (
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                    <path d="M2 1.5l7 3.5-7 3.5V1.5z" />
+                  </svg>
+                )}
+              </button>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg,${s['--p-accent']}33,${s['--p-surface']})`, flexShrink: 0 }} />
+              <div style={{ flex: 1, fontFamily: 'system-ui', fontSize: 14, fontWeight: 600, color: s['--p-ink'] }} contentEditable={editOn} suppressContentEditableWarning>{track}</div>
+              <div style={{ fontFamily: 'system-ui', fontSize: 12, color: s['--p-ink2'] }}>{['3:42', '4:01', '3:58', '4:22'][i]}</div>
+            </div>
+          );
+        })}
       </div>
+
+      {/* booking section */}
+      {showBooking && (
+        <div style={{ padding: '28px 36px', borderTop: `1px solid ${s['--p-line']}` }}>
+          <div style={{ fontFamily: s['--p-display'], fontSize: 20, fontWeight: 800, color: s['--p-ink'], marginBottom: 8 }}>Book for Your Event</div>
+          <div style={{ fontFamily: 'system-ui', fontSize: 14, color: s['--p-ink2'], marginBottom: 20 }}>Interested in booking {artistName}? Send an inquiry below.</div>
+          <div style={{ background: s['--p-surface'], borderRadius: s['--p-radius'], padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480 }}>
+            <input
+              placeholder="Your name"
+              value={bookingForm.name}
+              onChange={e => setBookingForm(f => ({ ...f, name: e.target.value }))}
+              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink'], fontFamily: 'system-ui', fontSize: 13, outline: 'none' }}
+            />
+            <input
+              placeholder="Email address"
+              value={bookingForm.email}
+              onChange={e => setBookingForm(f => ({ ...f, email: e.target.value }))}
+              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink'], fontFamily: 'system-ui', fontSize: 13, outline: 'none' }}
+            />
+            <input
+              placeholder="Date in mind (e.g. Jul 15)"
+              value={bookingForm.date}
+              onChange={e => setBookingForm(f => ({ ...f, date: e.target.value }))}
+              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink'], fontFamily: 'system-ui', fontSize: 13, outline: 'none' }}
+            />
+            <textarea
+              placeholder="Your message…"
+              rows={3}
+              value={bookingForm.message}
+              onChange={e => setBookingForm(f => ({ ...f, message: e.target.value }))}
+              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink'], fontFamily: 'system-ui', fontSize: 13, outline: 'none', resize: 'none' }}
+            />
+            <button style={{ padding: '11px 22px', borderRadius: s['--p-radius'], border: 'none', background: s['--p-accent'], color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+              Send Inquiry
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -768,7 +1091,6 @@ function AudienceMap() {
   return (
     <div style={{ display: 'flex', gap: 20 }}>
       <div style={{ flex: '0 0 220px', position: 'relative', height: 120, background: 'rgba(255,255,255,.02)', borderRadius: 8, border: '1px solid rgba(255,255,255,.05)', overflow: 'hidden' }}>
-        {/* simplified US outline dots */}
         {cities.map(c => (
           <div key={c.city} style={{
             position: 'absolute', left: c.x + '%', top: c.y + '%',
@@ -866,7 +1188,6 @@ function DiscoveryFunnel() {
 }
 
 /* ── Tour sub-components ─────────────────────────────────── */
-/* ── TourManager ─────────────────────────────────────────── */
 type LiveShow = {
   id: string; name: string; venue: string; date: string; time: string;
   hype: number; sold: number; capacity: number; price: number;
@@ -874,19 +1195,6 @@ type LiveShow = {
 };
 
 type TourView = 'list' | 'create';
-
-const INPUT_STYLE: React.CSSProperties = {
-  padding: '9px 12px',
-  background: 'rgba(255,255,255,.04)',
-  border: '1px solid rgba(255,255,255,.1)',
-  borderRadius: 8,
-  color: 'var(--ink,#f4efe9)',
-  fontFamily: 'var(--f-b,sans-serif)',
-  fontSize: 13,
-  outline: 'none',
-  width: '100%',
-  boxSizing: 'border-box',
-};
 
 function ShowStatusChip({ status }: { status: LiveShow['status'] }) {
   const cfg: Record<LiveShow['status'], { label: string; color: string; bg: string }> = {
@@ -911,7 +1219,6 @@ function TourManager({ profileId, artistName, existingShows }: { profileId: stri
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null);
 
-  // Form state
   const [title, setTitle] = useState('');
   const [venue, setVenue] = useState('');
   const [city, setCity] = useState('');
@@ -986,8 +1293,6 @@ function TourManager({ profileId, artistName, existingShows }: { profileId: stri
   return (
     <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
       <div style={{ padding: '28px 32px', maxWidth: 900, margin: '0 auto' }}>
-
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
             <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>Tour & Events</h2>
@@ -1022,7 +1327,6 @@ function TourManager({ profileId, artistName, existingShows }: { profileId: stri
           )}
         </div>
 
-        {/* Notice */}
         {notice && (
           <div style={{
             marginBottom: 20, padding: '10px 16px', borderRadius: 8,
@@ -1035,7 +1339,6 @@ function TourManager({ profileId, artistName, existingShows }: { profileId: stri
           </div>
         )}
 
-        {/* Create form */}
         {view === 'create' && (
           <form onSubmit={submit} style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 16, padding: '24px 28px', marginBottom: 28 }}>
             <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 18 }}>New Event</div>
@@ -1068,7 +1371,6 @@ function TourManager({ profileId, artistName, existingShows }: { profileId: stri
                 rows={3}
               />
 
-              {/* Ticketing toggle */}
               <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, padding: '14px 16px' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: ticketed ? 14 : 0 }}>
                   <div
@@ -1122,7 +1424,6 @@ function TourManager({ profileId, artistName, existingShows }: { profileId: stri
           </form>
         )}
 
-        {/* Upcoming shows list */}
         {shows.length > 0 && (
           <>
             <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>Upcoming</div>
@@ -1180,7 +1481,6 @@ function TourManager({ profileId, artistName, existingShows }: { profileId: stri
           </div>
         )}
 
-        {/* Past shows */}
         {pastShows.length > 0 && (
           <>
             <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>Past</div>
@@ -1207,7 +1507,6 @@ function TourManager({ profileId, artistName, existingShows }: { profileId: stri
           </>
         )}
 
-        {/* Footer note */}
         <div style={{ marginTop: 28, padding: '12px 16px', borderRadius: 10, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)', fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', lineHeight: 1.6 }}>
           Events you publish here appear on your public {artistName} page. Ticketed shows go live for purchase immediately after publishing.
         </div>
@@ -1264,6 +1563,14 @@ function IconRelease() {
 }
 function IconLibrary() {
   return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18" strokeLinecap="round" /><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>;
+}
+function IconPressKit() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinejoin="round" />
+      <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 function TypingDot({ delay, ..._ }: { delay: number; [k: string]: unknown }) {
