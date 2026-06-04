@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
-
 export async function GET(req: NextRequest) {
   const genre = req.nextUrl.searchParams.get('genre') || 'music';
   const key = process.env.UNSPLASH_ACCESS_KEY;
