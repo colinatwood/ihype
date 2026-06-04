@@ -485,76 +485,9 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
           </div>
         )}
 
-        {/* Mode: Tour Planner */}
-        {mode === 'tour' && (
-          <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
-            <div style={{ padding: '28px 32px', maxWidth: 1000, margin: '0 auto' }}>
-              <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 6 }}>Tour Planner</h2>
-              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 20 }}>AI-assisted routing · June 2026</div>
-
-              {/* AI nudge */}
-              <div style={{ background: 'rgba(255,80,41,.06)', border: '1px solid rgba(255,80,41,.15)', borderRadius: 12, padding: '14px 18px', marginBottom: 24, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 16 }}>✦</span>
-                <div>
-                  <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: '#ff5029', marginBottom: 4 }}>Optimal routing detected</div>
-                  <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.6)', lineHeight: 1.5 }}>Chicago → Milwaukee → Detroit → Cleveland saves ~4 hrs drive time vs. the reverse. Your audience is strongest in this corridor — June has 3 open Fridays.</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 28 }}>
-                {/* Calendar */}
-                <div>
-                  <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>June 2026</div>
-                  <TourCalendar />
-                </div>
-                {/* Map */}
-                <div>
-                  <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>Routing Map</div>
-                  <RoutingMap />
-                </div>
-              </div>
-
-              {/* Date pipeline */}
-              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>Date Pipeline</div>
-              <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, overflow: 'hidden', marginBottom: 28 }}>
-                {DATE_PIPELINE.map((d, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 18px', borderBottom: i < DATE_PIPELINE.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none' }}>
-                    <div style={{ width: 54, fontFamily: 'var(--f-m,monospace)', fontSize: 12, fontWeight: 700, color: 'var(--ink,#f4efe9)', flexShrink: 0 }}>{d.date}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'var(--ink,#f4efe9)', marginBottom: 2 }}>{d.venue}</div>
-                      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)' }}>{d.city}</div>
-                    </div>
-                    <StatusPill status={d.status} />
-                  </div>
-                ))}
-              </div>
-
-              {/* Venue matches */}
-              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>AI Venue Matches</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {VENUE_MATCHES.map(v => (
-                  <div key={v.name} style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{
-                      width: 44, height: 44, borderRadius: 10, flexShrink: 0,
-                      background: `conic-gradient(#ff5029 ${v.fit * 3.6}deg, rgba(255,255,255,.06) 0)`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--bg-2,#121009)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 800, color: '#ff5029' }}>{v.fit}</div>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: 'var(--ink,#f4efe9)', marginBottom: 2 }}>{v.name}</div>
-                      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)' }}>{v.city} · {v.cap} cap · {v.avg} avg deal</div>
-                    </div>
-                    <button style={{
-                      padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,80,41,.3)',
-                      background: 'rgba(255,80,41,.08)', color: '#ff5029',
-                      fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                    }}>Reach out</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        {/* Mode: Tour / Live Events */}
+        {mode === 'tour' && data.profileId && (
+          <TourManager profileId={data.profileId} artistName={artistName} existingShows={data.shows ?? []} />
         )}
 
         {/* Mode: Library — media uploads */}
@@ -933,93 +866,352 @@ function DiscoveryFunnel() {
 }
 
 /* ── Tour sub-components ─────────────────────────────────── */
-const DATE_PIPELINE = [
-  { date: 'Jun 7', venue: 'Schubas Tavern', city: 'Chicago, IL', status: 'confirmed' as const },
-  { date: 'Jun 14', venue: 'Shank Hall', city: 'Milwaukee, WI', status: 'offer' as const },
-  { date: 'Jun 21', venue: 'El Club', city: 'Detroit, MI', status: 'hold' as const },
-  { date: 'Jun 28', venue: 'Beachland Tavern', city: 'Cleveland, OH', status: 'hold' as const },
-];
+/* ── TourManager ─────────────────────────────────────────── */
+type LiveShow = {
+  id: string; name: string; venue: string; date: string; time: string;
+  hype: number; sold: number; capacity: number; price: number;
+  status: 'TONIGHT' | 'THIS WEEK' | 'UPCOMING' | 'NEAR SOLD' | 'ENDED';
+};
 
-const VENUE_MATCHES = [
-  { name: 'El Club', city: 'Detroit, MI', cap: 300, avg: '$1,200', fit: 94 },
-  { name: 'UFO Factory', city: 'Detroit, MI', cap: 250, avg: '$900', fit: 88 },
-  { name: 'The Sanctuary', city: 'Detroit, MI', cap: 400, avg: '$1,500', fit: 79 },
-];
+type TourView = 'list' | 'create';
 
-type DateStatus = 'confirmed' | 'offer' | 'hold';
-function StatusPill({ status }: { status: DateStatus }) {
-  const cfg: Record<DateStatus, { label: string; color: string; bg: string }> = {
-    confirmed: { label: 'Confirmed', color: '#5fd38a', bg: 'rgba(95,211,138,.1)' },
-    offer: { label: 'Offer', color: '#ffb84a', bg: 'rgba(255,184,74,.1)' },
-    hold: { label: 'Hold', color: 'rgba(244,239,233,.4)', bg: 'rgba(255,255,255,.05)' },
+const INPUT_STYLE: React.CSSProperties = {
+  padding: '9px 12px',
+  background: 'rgba(255,255,255,.04)',
+  border: '1px solid rgba(255,255,255,.1)',
+  borderRadius: 8,
+  color: 'var(--ink,#f4efe9)',
+  fontFamily: 'var(--f-b,sans-serif)',
+  fontSize: 13,
+  outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box',
+};
+
+function ShowStatusChip({ status }: { status: LiveShow['status'] }) {
+  const cfg: Record<LiveShow['status'], { label: string; color: string; bg: string }> = {
+    TONIGHT:   { label: 'Tonight',   color: '#ff5029', bg: 'rgba(255,80,41,.12)' },
+    'THIS WEEK': { label: 'This week', color: '#ffb84a', bg: 'rgba(255,184,74,.1)' },
+    UPCOMING:  { label: 'Upcoming',  color: 'rgba(244,239,233,.5)', bg: 'rgba(255,255,255,.05)' },
+    'NEAR SOLD': { label: 'Near sold', color: '#5fd38a', bg: 'rgba(95,211,138,.1)' },
+    ENDED:     { label: 'Ended',     color: 'rgba(244,239,233,.3)', bg: 'rgba(255,255,255,.04)' },
   };
   const c = cfg[status];
   return (
-    <span style={{ padding: '4px 10px', borderRadius: 20, fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: c.color, background: c.bg }}>
+    <span style={{ padding: '3px 9px', borderRadius: 20, fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: c.color, background: c.bg }}>
       {c.label}
     </span>
   );
 }
 
-function TourCalendar() {
-  const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  const confirmedDays = [7]; const offerDays = [14]; const holdDays = [21, 28];
-  const cells: (number | null)[] = [null, null, null, null, null, 1, 2];
-  for (let d = 3; d <= 30; d++) cells.push(d);
-  return (
-    <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '14px 16px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 6 }}>
-        {DAYS.map((d, i) => <div key={i} style={{ textAlign: 'center', fontFamily: 'var(--f-m,monospace)', fontSize: 9, color: 'rgba(244,239,233,.3)', padding: '4px 0' }}>{d}</div>)}
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-        {cells.map((d, i) => {
-          if (!d) return <div key={i} />;
-          const isConf = confirmedDays.includes(d);
-          const isOffer = offerDays.includes(d);
-          const isHold = holdDays.includes(d);
-          return (
-            <div key={i} style={{
-              textAlign: 'center', padding: '5px 2px',
-              borderRadius: 6, fontFamily: 'var(--f-m,monospace)', fontSize: 11,
-              background: isConf ? 'rgba(95,211,138,.15)' : isOffer ? 'rgba(255,184,74,.15)' : isHold ? 'rgba(255,80,41,.1)' : 'transparent',
-              color: isConf ? '#5fd38a' : isOffer ? '#ffb84a' : isHold ? '#ff5029' : 'rgba(244,239,233,.5)',
-              fontWeight: (isConf || isOffer || isHold) ? 700 : 400,
-            }}>{d}</div>
-          );
-        })}
-      </div>
-      <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-        {[{ label: 'Confirmed', color: '#5fd38a' }, { label: 'Offer', color: '#ffb84a' }, { label: 'Hold', color: '#ff5029' }].map(l => (
-          <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 6, height: 6, borderRadius: 2, background: l.color }} />
-            <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, color: 'rgba(244,239,233,.4)' }}>{l.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+function TourManager({ profileId, artistName, existingShows }: { profileId: string; artistName: string; existingShows: LiveShow[] }) {
+  const [view, setView] = useState<TourView>('list');
+  const [shows, setShows] = useState<LiveShow[]>(existingShows.filter(s => s.status !== 'ENDED'));
+  const [pastShows] = useState<LiveShow[]>(existingShows.filter(s => s.status === 'ENDED'));
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null);
 
-function RoutingMap() {
-  const stops = [
-    { label: 'CHI', x: 52, y: 42 }, { label: 'MKE', x: 54, y: 34 },
-    { label: 'DET', x: 68, y: 38 }, { label: 'CLE', x: 72, y: 44 },
-  ];
+  // Form state
+  const [title, setTitle] = useState('');
+  const [venue, setVenue] = useState('');
+  const [city, setCity] = useState('');
+  const [dateVal, setDateVal] = useState('');
+  const [timeVal, setTimeVal] = useState('20:00');
+  const [ticketed, setTicketed] = useState(false);
+  const [price, setPrice] = useState('');
+  const [capacity, setCapacity] = useState('');
+  const [description, setDescription] = useState('');
+  const [asDraft, setAsDraft] = useState(false);
+
+  function resetForm() {
+    setTitle(''); setVenue(''); setCity(''); setDateVal(''); setTimeVal('20:00');
+    setTicketed(false); setPrice(''); setCapacity(''); setDescription(''); setAsDraft(false);
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !venue.trim() || !dateVal || busy) return;
+    setBusy(true);
+    setNotice(null);
+    try {
+      const startsAt = new Date(`${dateVal}T${timeVal}:00`).toISOString();
+      const body: Record<string, unknown> = {
+        title: title.trim(),
+        description: description.trim(),
+        isRadioShow: false,
+        status: asDraft ? 'DRAFT' : 'SCHEDULED',
+        startsAt,
+        headlinerProfileId: profileId,
+        isTicketed: ticketed,
+        ticketPriceCents: ticketed && price ? Math.round(parseFloat(price) * 100) : 0,
+        ticketCapacity: ticketed && capacity ? parseInt(capacity, 10) : null,
+        venueText: `${venue.trim()}${city.trim() ? ', ' + city.trim() : ''}`,
+      };
+      const res = await fetch('/api/shows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json().catch(() => ({})) as { id?: string; error?: string };
+      if (!res.ok) throw new Error(json.error ?? 'Could not create show.');
+      const d = new Date(`${dateVal}T${timeVal}:00`);
+      const now = new Date();
+      const diff = d.getTime() - now.getTime();
+      const status: LiveShow['status'] = diff < 86400000 && diff > 0 ? 'TONIGHT' : diff < 7 * 86400000 && diff > 0 ? 'THIS WEEK' : 'UPCOMING';
+      setShows(prev => [{
+        id: json.id ?? Math.random().toString(36).slice(2),
+        name: title.trim(),
+        venue: venue.trim(),
+        date: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        time: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        hype: 0, sold: 0,
+        capacity: ticketed && capacity ? parseInt(capacity, 10) : 0,
+        price: ticketed && price ? parseFloat(price) : 0,
+        status,
+      }, ...prev]);
+      resetForm();
+      setView('list');
+      setNotice({ text: asDraft ? 'Saved as draft.' : 'Show scheduled and live on your page.', ok: true });
+    } catch (err) {
+      setNotice({ text: err instanceof Error ? err.message : 'Failed.', ok: false });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const upcomingCount = shows.length;
+  const totalHype = shows.reduce((s, x) => s + x.hype, 0);
+  const totalSold = shows.reduce((s, x) => s + x.sold, 0);
+
   return (
-    <div style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, overflow: 'hidden', height: 180, position: 'relative' }}>
-      <svg viewBox="0 0 100 80" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-        {stops.map((s, i) => {
-          if (i === 0) return null;
-          const prev = stops[i - 1];
-          return <line key={i} x1={prev.x} y1={prev.y} x2={s.x} y2={s.y} stroke="rgba(255,80,41,.3)" strokeWidth="0.8" strokeDasharray="2,1.5" />;
-        })}
-        {stops.map((s, i) => (
-          <g key={i}>
-            <circle cx={s.x} cy={s.y} r="3" fill="#ff5029" opacity="0.9" />
-            <text x={s.x} y={s.y - 4.5} textAnchor="middle" fill="rgba(244,239,233,.7)" fontSize="3.5" fontFamily="monospace" fontWeight="700">{s.label}</text>
-          </g>
-        ))}
-      </svg>
+    <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
+      <div style={{ padding: '28px 32px', maxWidth: 900, margin: '0 auto' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>Tour & Events</h2>
+            <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)' }}>
+              {upcomingCount} upcoming · {totalHype} hype · {totalSold} tickets sold
+            </div>
+          </div>
+          {view === 'list' ? (
+            <button
+              onClick={() => { setNotice(null); setView('create'); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: '#ff5029', color: '#fff',
+                fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.06em',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M12 5v14M5 12h14" strokeLinecap="round" /></svg>
+              ADD DATE
+            </button>
+          ) : (
+            <button
+              onClick={() => { resetForm(); setNotice(null); setView('list'); }}
+              style={{
+                padding: '9px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,.1)',
+                background: 'transparent', color: 'rgba(244,239,233,.5)',
+                fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+
+        {/* Notice */}
+        {notice && (
+          <div style={{
+            marginBottom: 20, padding: '10px 16px', borderRadius: 8,
+            background: notice.ok ? 'rgba(95,211,138,.08)' : 'rgba(255,80,41,.08)',
+            border: `1px solid ${notice.ok ? 'rgba(95,211,138,.2)' : 'rgba(255,80,41,.2)'}`,
+            fontFamily: 'var(--f-b,sans-serif)', fontSize: 13,
+            color: notice.ok ? '#5fd38a' : '#ff5029',
+          }}>
+            {notice.text}
+          </div>
+        )}
+
+        {/* Create form */}
+        {view === 'create' && (
+          <form onSubmit={submit} style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 16, padding: '24px 28px', marginBottom: 28 }}>
+            <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 18 }}>New Event</div>
+
+            <div style={{ display: 'grid', gap: 14 }}>
+              <input style={INPUT_STYLE} placeholder="Event title *" value={title} onChange={e => setTitle(e.target.value)} maxLength={120} required />
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <input style={INPUT_STYLE} placeholder="Venue name *" value={venue} onChange={e => setVenue(e.target.value)} maxLength={100} required />
+                <input style={INPUT_STYLE} placeholder="City, State" value={city} onChange={e => setCity(e.target.value)} maxLength={80} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.4)', marginBottom: 5 }}>DATE *</div>
+                  <input type="date" style={INPUT_STYLE} value={dateVal} onChange={e => setDateVal(e.target.value)} required />
+                </div>
+                <div>
+                  <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.4)', marginBottom: 5 }}>TIME</div>
+                  <input type="time" style={INPUT_STYLE} value={timeVal} onChange={e => setTimeVal(e.target.value)} />
+                </div>
+              </div>
+
+              <textarea
+                style={{ ...INPUT_STYLE, resize: 'vertical', minHeight: 72 }}
+                placeholder="Description (optional)"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                maxLength={1000}
+                rows={3}
+              />
+
+              {/* Ticketing toggle */}
+              <div style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, padding: '14px 16px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: ticketed ? 14 : 0 }}>
+                  <div
+                    onClick={() => setTicketed(t => !t)}
+                    style={{
+                      width: 36, height: 20, borderRadius: 10, position: 'relative', flexShrink: 0,
+                      background: ticketed ? '#ff5029' : 'rgba(255,255,255,.1)',
+                      transition: 'background .2s', cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{
+                      position: 'absolute', top: 2, left: ticketed ? 18 : 2,
+                      width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                      transition: 'left .2s',
+                    }} />
+                  </div>
+                  <span style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'var(--ink,#f4efe9)' }}>Sell tickets</span>
+                </label>
+                {ticketed && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.4)', marginBottom: 5 }}>PRICE (USD)</div>
+                      <input type="number" min="0" step="0.01" style={INPUT_STYLE} placeholder="e.g. 15.00" value={price} onChange={e => setPrice(e.target.value)} />
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.4)', marginBottom: 5 }}>CAPACITY</div>
+                      <input type="number" min="1" style={INPUT_STYLE} placeholder="e.g. 200" value={capacity} onChange={e => setCapacity(e.target.value)} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 20 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={asDraft} onChange={e => setAsDraft(e.target.checked)} style={{ accentColor: '#ff5029' }} />
+                <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.45)' }}>Save as draft (not public yet)</span>
+              </label>
+              <button
+                type="submit"
+                disabled={busy || !title.trim() || !venue.trim() || !dateVal}
+                style={{
+                  padding: '10px 24px', borderRadius: 10, border: 'none', cursor: busy ? 'default' : 'pointer',
+                  background: busy || !title.trim() || !venue.trim() || !dateVal ? 'rgba(255,80,41,.3)' : '#ff5029',
+                  color: '#fff', fontFamily: 'var(--f-m,monospace)', fontSize: 12, fontWeight: 700, letterSpacing: '.06em',
+                }}
+              >
+                {busy ? 'Saving…' : asDraft ? 'SAVE DRAFT' : 'PUBLISH EVENT'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Upcoming shows list */}
+        {shows.length > 0 && (
+          <>
+            <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>Upcoming</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 28 }}>
+              {shows.map(s => (
+                <div key={s.id} style={{
+                  background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))',
+                  borderRadius: 12, padding: '14px 18px',
+                  display: 'grid', gridTemplateColumns: '80px 1fr auto auto', alignItems: 'center', gap: 14,
+                }}>
+                  <div>
+                    <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, fontWeight: 700, color: 'var(--ink,#f4efe9)' }}>{s.date}</div>
+                    <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.4)', marginTop: 2 }}>{s.time}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: 'var(--ink,#f4efe9)', marginBottom: 2 }}>{s.name}</div>
+                    <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)' }}>
+                      {s.venue}
+                      {s.capacity > 0 && <span> · {s.sold}/{s.capacity} sold</span>}
+                      {s.hype > 0 && <span> · {s.hype} hype</span>}
+                    </div>
+                  </div>
+                  <ShowStatusChip status={s.status} />
+                  {s.price > 0 && (
+                    <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: '#ffb84a' }}>
+                      ${s.price}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {shows.length === 0 && view === 'list' && (
+          <div style={{
+            background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))',
+            borderRadius: 16, padding: '40px 32px', textAlign: 'center', marginBottom: 28,
+          }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>🎤</div>
+            <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 16, fontWeight: 700, color: 'var(--ink,#f4efe9)', marginBottom: 6 }}>No upcoming events</div>
+            <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.4)', marginBottom: 20 }}>
+              Add a date to get it live on your page and start selling tickets.
+            </div>
+            <button
+              onClick={() => setView('create')}
+              style={{
+                padding: '10px 22px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: '#ff5029', color: '#fff',
+                fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700,
+              }}
+            >
+              ADD FIRST DATE
+            </button>
+          </div>
+        )}
+
+        {/* Past shows */}
+        {pastShows.length > 0 && (
+          <>
+            <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 12 }}>Past</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {pastShows.map(s => (
+                <div key={s.id} style={{
+                  background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)',
+                  borderRadius: 10, padding: '12px 18px',
+                  display: 'grid', gridTemplateColumns: '80px 1fr auto', alignItems: 'center', gap: 14,
+                }}>
+                  <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.35)' }}>{s.date}</div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.5)' }}>{s.name}</div>
+                    <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.25)', marginTop: 2 }}>
+                      {s.venue}
+                      {s.sold > 0 && <span> · {s.sold} attended</span>}
+                      {s.hype > 0 && <span> · {s.hype} hype</span>}
+                    </div>
+                  </div>
+                  <ShowStatusChip status="ENDED" />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Footer note */}
+        <div style={{ marginTop: 28, padding: '12px 16px', borderRadius: 10, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)', fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', lineHeight: 1.6 }}>
+          Events you publish here appear on your public {artistName} page. Ticketed shows go live for purchase immediately after publishing.
+        </div>
+      </div>
     </div>
   );
 }
