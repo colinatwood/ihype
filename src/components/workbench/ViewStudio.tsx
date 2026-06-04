@@ -524,9 +524,118 @@ function PassedTheAux({ data }: { data: WorkbenchData }) {
   );
 }
 
+// ── Show creator form ─────────────────────────────────────────
+function ShowCreator({ data }: { data: WorkbenchData }) {
+  const [title, setTitle] = useState('');
+  const [startsAt, setStartsAt] = useState('');
+  const [ticketPrice, setTicketPrice] = useState('');
+  const [capacity, setCapacity] = useState('');
+  const [isTicketed, setIsTicketed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState('');
+  const [created, setCreated] = useState<{ id: string; slug: string } | null>(null);
+
+  const profileId = data.profileId;
+  const profileType = data.profileType;
+  const isCreator = profileType === 'ARTIST' || profileType === 'DJ' || profileType === 'VENUE';
+
+  if (!isCreator) {
+    return (
+      <div style={{ padding: '28px 24px', border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', textAlign: 'center' }}>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)' }}>
+          Create an artist, promoter, or venue profile to create shows.
+        </div>
+      </div>
+    );
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!title.trim() || !startsAt) { setStatus('Title and date are required.'); return; }
+    setSubmitting(true);
+    setStatus('');
+    try {
+      const body: Record<string, unknown> = {
+        title: title.trim(),
+        startsAt: new Date(startsAt).toISOString(),
+        status: 'SCHEDULED',
+        isTicketed,
+      };
+      if (profileType === 'VENUE') body.venueProfileId = profileId;
+      else body.headlinerProfileId = profileId;
+      if (isTicketed && ticketPrice) body.ticketPriceCents = Math.round(Number(ticketPrice) * 100);
+      if (isTicketed && capacity) body.ticketCapacity = Number(capacity);
+
+      const res = await fetch('/api/shows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof payload.error === 'string' ? payload.error : 'Could not create show.');
+      setCreated({ id: payload.id ?? '', slug: payload.slug ?? '' });
+      setTitle(''); setStartsAt(''); setTicketPrice(''); setCapacity(''); setIsTicketed(false);
+    } catch (err) {
+      setStatus(err instanceof Error ? err.message : 'Could not create show.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div style={{ border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)', overflow: 'hidden' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.16em', color: 'var(--accent)', marginBottom: 4 }}>📅 SHOW CREATOR</div>
+        <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 18, color: 'var(--ink)' }}>Create a show</div>
+      </div>
+      <form onSubmit={e => void submit(e)} style={{ padding: '18px 20px', display: 'grid', gap: 12 }}>
+        {created && (
+          <div style={{ padding: '12px 14px', borderRadius: 8, background: 'rgba(34,229,212,.08)', border: '1px solid rgba(34,229,212,.25)', fontFamily: 'var(--f-m)', fontSize: 13, color: '#22e5d4' }}>
+            ✓ Show created!{' '}
+            <a href={`/shows/${created.slug}`} target="_blank" rel="noreferrer" style={{ color: '#22e5d4', fontWeight: 700 }}>View show →</a>
+          </div>
+        )}
+        <label style={{ display: 'block' }}>
+          <span style={{ display: 'block', fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.1em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 5 }}>Show title</span>
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Friday Night Sessions" required
+            style={{ width: '100%', padding: '9px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, boxSizing: 'border-box' }} />
+        </label>
+        <label style={{ display: 'block' }}>
+          <span style={{ display: 'block', fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.1em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 5 }}>Date &amp; time</span>
+          <input type="datetime-local" value={startsAt} onChange={e => setStartsAt(e.target.value)} required
+            style={{ width: '100%', padding: '9px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, boxSizing: 'border-box' }} />
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={isTicketed} onChange={e => setIsTicketed(e.target.checked)} style={{ width: 16, height: 16 }} />
+          Enable ticketing
+        </label>
+        {isTicketed && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <label style={{ display: 'block' }}>
+              <span style={{ display: 'block', fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.1em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 5 }}>Ticket price ($)</span>
+              <input type="number" min="0" step="0.01" value={ticketPrice} onChange={e => setTicketPrice(e.target.value)} placeholder="0.00"
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, boxSizing: 'border-box' }} />
+            </label>
+            <label style={{ display: 'block' }}>
+              <span style={{ display: 'block', fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.1em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 5 }}>Capacity</span>
+              <input type="number" min="1" value={capacity} onChange={e => setCapacity(e.target.value)} placeholder="e.g. 200"
+                style={{ width: '100%', padding: '9px 12px', borderRadius: 7, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, boxSizing: 'border-box' }} />
+            </label>
+          </div>
+        )}
+        {status && <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: '#ffb4a7' }}>{status}</div>}
+        <button type="submit" disabled={submitting}
+          style={{ padding: '11px 20px', borderRadius: 8, border: 'none', background: 'linear-gradient(135deg, var(--accent), #ff3e9a)', color: '#fff', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 800, cursor: submitting ? 'wait' : 'pointer', alignSelf: 'flex-start' }}>
+          {submitting ? 'Creating…' : 'Create show'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export function ViewStudio({ data }: { data: WorkbenchData }) {
   const payout = data.lifeStats?.totalEarnings ?? 0;
-  const [studioTab, setStudioTab] = useState<'uploads' | 'hypemap'>('uploads');
+  const [studioTab, setStudioTab] = useState<'uploads' | 'shows' | 'hypemap'>('uploads');
 
   const tabBtn = (id: typeof studioTab, label: string) => (
     <button
@@ -554,8 +663,11 @@ export function ViewStudio({ data }: { data: WorkbenchData }) {
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--line)', marginBottom: 20 }}>
         {tabBtn('uploads', 'UPLOADS')}
+        {tabBtn('shows', 'CREATE SHOW')}
         {tabBtn('hypemap', 'HYPE MAP')}
       </div>
+
+      {studioTab === 'shows' && <ShowCreator data={data} />}
 
       {studioTab === 'hypemap' && <HypeHeatmapLive />}
 

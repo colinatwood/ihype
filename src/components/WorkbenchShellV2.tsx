@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 // ── Re-export types that home/page.tsx imports ────────────────
-export type { WbStat, WbTrack, WbShow, WbActivity, WbNotification, WbRadioShow, WorkbenchData, Prefs, StarterPackItem } from '@/types/workbench';
+export type { WbStat, WbTrack, WbShow, WbActivity, WbNotification, WbRadioShow, WorkbenchData, Prefs, StarterPackItem, WbTrendingProfile } from '@/types/workbench';
 
 import type { WorkbenchData, StarterPackItem } from '@/types/workbench';
 
