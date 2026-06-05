@@ -862,8 +862,36 @@ function ReferralPanel({ data }: { data: WorkbenchData }) {
 }
 
 // ─── Screen: Me ──────────────────────────────────────────────
+function OfflineBanner() {
+  const [online, setOnline] = React.useState(true);
+  React.useEffect(() => {
+    setOnline(navigator.onLine);
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+  if (online) return null;
+  return (
+    <div style={{ background: T.accent, color: '#fff', textAlign: 'center', padding: '6px 16px', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', position: 'relative', zIndex: 9998 }}>
+      ⚠ You&apos;re offline — some features may not work
+    </div>
+  );
+}
+
 function ScreenMe({ data }: { data: WorkbenchData }) {
   const [deletingAccount, setDeletingAccount] = React.useState(false);
+  const [wrappedOpen, setWrappedOpen] = React.useState(false);
+  const [bio, setBio] = React.useState('');
+  const [bioEditing, setBioEditing] = React.useState(false);
+  const [streakData, setStreakData] = React.useState<{ streak: number } | null>(null);
+  React.useEffect(() => {
+    setBio(localStorage.getItem('ihype-fan-bio') ?? 'Halflight EP out now. Writing the next thing in a basement on Western Ave. Recommendations open.');
+  }, []);
+  React.useEffect(() => {
+    fetch('/api/hype-streak').then(r => r.ok ? r.json() : null).then(d => { if (d) setStreakData({ streak: d.streak ?? 0 }); }).catch(() => {});
+  }, []);
 
   const handleDeleteAccount = async () => {
     if (!window.confirm('Are you sure you want to delete your account? This cannot be undone.')) return;
@@ -915,9 +943,20 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
               )}
             </div>
           </div>
-          <p style={{ fontFamily: T.fs, fontStyle: 'italic', fontSize: 14, color: T.ink2, marginTop: 14, lineHeight: 1.4, position: 'relative', zIndex: 2 }}>
-            "Halflight EP out now. Writing the next thing in a basement on Western Ave. Recommendations open."
-          </p>
+          {bioEditing ? (
+            <textarea
+              value={bio}
+              onChange={e => setBio(e.target.value)}
+              onBlur={() => { setBioEditing(false); localStorage.setItem('ihype-fan-bio', bio); }}
+              autoFocus
+              rows={3}
+              style={{ marginTop: 14, width: '100%', background: 'rgba(255,255,255,.06)', border: `1px solid ${T.line2}`, borderRadius: 8, color: T.ink, fontFamily: T.fs, fontStyle: 'italic', fontSize: 14, padding: '8px 10px', resize: 'none', outline: 'none', lineHeight: 1.4, boxSizing: 'border-box', position: 'relative', zIndex: 2 }}
+            />
+          ) : (
+            <p onClick={() => setBioEditing(true)} style={{ fontFamily: T.fs, fontStyle: 'italic', fontSize: 14, color: T.ink2, marginTop: 14, lineHeight: 1.4, position: 'relative', zIndex: 2, cursor: 'text', borderRadius: 6, padding: '2px 4px', border: '1px solid transparent' }}>
+              &ldquo;{bio}&rdquo;
+            </p>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 14, paddingTop: 14, borderTop: `1px dashed ${T.line}` }}>
             {[
               { v: (data.lifeStats?.totalHype ?? 0).toLocaleString(), k: 'Given', accent: true },
@@ -960,6 +999,59 @@ function ScreenMe({ data }: { data: WorkbenchData }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Streak CTA */}
+      {streakData !== null && streakData.streak >= 2 && (
+        <div style={{ padding: '0 18px 14px' }}>
+          <div style={{ background: 'linear-gradient(135deg,rgba(255,80,41,.15),rgba(255,184,74,.08))', border: '1px solid rgba(255,80,41,.25)', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 24 }}>🔥</span>
+              <div>
+                <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, color: T.accent }}>{streakData.streak} day streak</div>
+                <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, marginTop: 2 }}>Keep it alive — hype something today</div>
+              </div>
+            </div>
+            <button
+              onClick={() => (window as Window & { __ihypeNav?: (v: string) => void }).__ihypeNav?.('seeds')}
+              style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: T.accent, color: '#fff', fontFamily: T.fm, fontSize: 11, fontWeight: 700, letterSpacing: '.06em', cursor: 'pointer', flexShrink: 0 }}
+            >Seeds →</button>
+          </div>
+        </div>
+      )}
+
+      {/* Wrapped */}
+      <div style={{ padding: '0 18px 14px' }}>
+        <button
+          onClick={() => setWrappedOpen(w => !w)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(185,131,255,.25)', background: 'rgba(185,131,255,.07)', cursor: 'pointer', textAlign: 'left' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 18 }}>✨</span>
+            <div>
+              <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 13, color: T.ink }}>Your Year in iHYPE</div>
+              <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3 }}>2025 highlights</div>
+            </div>
+          </div>
+          <span style={{ color: T.ink3, fontSize: 16, transform: wrappedOpen ? 'rotate(90deg)' : 'none', transition: 'transform .2s', display: 'inline-block' }}>›</span>
+        </button>
+        {wrappedOpen && (
+          <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+            {[
+              { label: 'Seeds', value: '1,284', color: T.accent },
+              { label: 'Hyped', value: '94', color: T.pink },
+              { label: 'Shows', value: String(data.lifeStats?.eventsAttended ?? 23), color: T.teal },
+              { label: 'Hours', value: '312', color: T.purple },
+              { label: 'Cities', value: '6', color: T.amber },
+              { label: 'Top genre', value: 'Alt-Indie', color: '#4af0b0' },
+            ].map(s => (
+              <div key={s.label} style={{ textAlign: 'center', padding: '10px 6px', background: T.bg2, borderRadius: 10, border: `1px solid ${T.line}` }}>
+                <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, color: s.color, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
+                <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.08em', textTransform: 'uppercase', lineHeight: 1.3 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Top 5 */}
@@ -1230,6 +1322,14 @@ function ScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData; onHypersShe
         }).catch(() => {});
       }
       fetch(`/api/discover/seeds/${encodeURIComponent(front.id)}/${action}`, { method: 'POST' }).catch(() => {});
+      if (action === 'save') {
+        try {
+          const existing = JSON.parse(localStorage.getItem('ihype-saved-tracks') ?? '[]');
+          if (!existing.some((t: { id: string }) => t.id === front.id)) {
+            localStorage.setItem('ihype-saved-tracks', JSON.stringify([front, ...existing].slice(0, 200)));
+          }
+        } catch {}
+      }
     }, 320);
   }, [deck, deckIdx, actionedIds]);
 
@@ -1454,8 +1554,23 @@ function ScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData; onHypersShe
             }}>{b.label}</button>
           ))}
         </div>
-        <div style={{ textAlign: 'center', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 18 }}>
+        <div style={{ textAlign: 'center', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 8 }}>
           swipe · ↑ save · → hype
+        </div>
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
+          <button
+            onClick={async () => {
+              const f = deck.length > 0 && deckIdx < deck.length ? deck[deckIdx] : undefined;
+              if (!f) return;
+              const url = (f as typeof f & { profileSlug?: string; artistSlug?: string }).artistSlug ? `${window.location.origin}/artists/${(f as typeof f & { artistSlug?: string }).artistSlug}` : window.location.href;
+              if (navigator.share) {
+                try { await navigator.share({ title: f.title, text: `${f.title} by ${f.artistName} on iHYPE`, url }); } catch {}
+              } else {
+                await navigator.clipboard.writeText(url).catch(() => {});
+              }
+            }}
+            style={{ background: 'none', border: `1px solid ${T.line2}`, borderRadius: 8, cursor: 'pointer', color: T.ink3, fontFamily: T.fm, fontSize: 11, padding: '5px 16px', letterSpacing: '.08em' }}
+          >↗ Share track</button>
         </div>
 
         {/* Daily quest */}
@@ -1932,6 +2047,15 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
 function ScreenTicketing({ data, onHypersSheet, onRadioTab }: { data: WorkbenchData; onHypersSheet?: (showId: string) => void; onRadioTab?: () => void }) {
   const [subTab, setSubTab] = useState(0);
   const subTabs = ['Upcoming', 'My Tickets', 'Past', 'Sell'];
+  const [remindedIds, setRemindedIds] = React.useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('ihype-reminders') ?? '[]')); } catch { return new Set(); }
+  });
+  function toggleReminder(showId: string) {
+    const next = new Set(remindedIds);
+    if (next.has(showId)) next.delete(showId); else next.add(showId);
+    setRemindedIds(next);
+    try { localStorage.setItem('ihype-reminders', JSON.stringify([...next])); } catch {}
+  }
   const [resendState, setResendState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [transferSheetOrderId, setTransferSheetOrderId] = React.useState<string | null>(null);
   const [transferEmail, setTransferEmail] = React.useState('');
@@ -2023,7 +2147,11 @@ function ScreenTicketing({ data, onHypersSheet, onRadioTab }: { data: WorkbenchD
                     <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.06em', marginTop: 3 }}>{e.sold}/{e.capacity} sold</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <a href={`/api/shows/${e.id}/qr`} target="_blank" rel="noreferrer" style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, textDecoration: 'none', padding: '5px 8px', borderRadius: 6, border: `1px solid ${T.line2}`, letterSpacing: '.06em' }}>QR</a>
+                    <button
+                      onClick={() => toggleReminder(e.id)}
+                      style={{ padding: '5px 8px', borderRadius: 6, border: remindedIds.has(e.id) ? `1px solid ${T.teal}40` : `1px solid ${T.line2}`, background: remindedIds.has(e.id) ? `${T.teal}15` : 'none', color: remindedIds.has(e.id) ? T.teal : T.ink3, fontFamily: T.fm, fontSize: 11, cursor: 'pointer' }}
+                      title={remindedIds.has(e.id) ? 'Remove reminder' : 'Remind me 24h before'}
+                    >{remindedIds.has(e.id) ? '🔔' : '🔕'}</button>
                     <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, letterSpacing: '-.025em', color: T.ink }}>${e.price}</div>
                     <button style={{
                       padding: '7px 14px', borderRadius: 7, fontFamily: T.fm, fontSize: 12, fontWeight: 700,
@@ -2482,6 +2610,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
           Having trouble connecting — some data may be outdated
         </div>
       )}
+      <OfflineBanner />
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
       <WMTopBar tab={tab} onTab={setTab} listeningNow={data.listeningNow} userName={data.userName} initials={data.userInitials} onSearch={() => setSearchOpen(true)} notifCount={notifCount} onFeedback={() => setShowFeedbackSheet(true)} onNotif={() => setShowNotifSheet(true)} activeProfileTypes={data.activeProfileTypes} />
       <div
