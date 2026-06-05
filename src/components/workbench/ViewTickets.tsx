@@ -330,6 +330,7 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
   ] as const;
 
   return (
+    <>
     <div style={{ padding: '24px 32px 32px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 22, gap: 24 }}>
         <div>
@@ -677,5 +678,6 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
         </div>
       </div>
     )}
+    </>
   );
 });

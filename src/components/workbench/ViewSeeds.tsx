@@ -561,6 +561,15 @@ export function ViewSeeds({
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, position: 'relative' }}>
+            {genreFilter.length === 1 && deck.length > 0 && (
+              <button
+                onClick={() => {
+                  const filtered = deck.filter((_, i) => i >= deckIdx);
+                  if (filtered.length > 0 && !seedPlaying) setSeedPlaying(true);
+                }}
+                style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: '#22e5d4', border: '1px solid rgba(34,229,212,.35)', background: 'rgba(34,229,212,.08)' }}
+              >▶ Play {genreFilter[0]}</button>
+            )}
             <button
               onClick={openBattle}
               style={{ padding: '8px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 7, color: '#b983ff', border: '1px solid rgba(185,131,255,.35)', background: 'rgba(185,131,255,.08)' }}

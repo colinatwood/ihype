@@ -470,6 +470,15 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
                   {streakData.daysActive > s && (
                     <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{streakData.daysActive} days active</div>
                   )}
+                  {s >= 2 && (
+                    <a
+                      href="#seeds"
+                      onClick={e => { e.preventDefault(); (window as Window & { __ihypeNav?: (v: string) => void }).__ihypeNav?.('seeds'); }}
+                      style={{ display: 'inline-block', marginTop: 8, padding: '5px 10px', borderRadius: 6, background: 'rgba(255,80,41,.18)', color: '#ff5029', fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textDecoration: 'none', cursor: 'pointer' }}
+                    >
+                      Keep it going →
+                    </a>
+                  )}
                 </>
               )}
             </div>
