@@ -510,12 +510,15 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
     if (!root || !scroll) return;
     const p = t.palette;
     const f = FONTS[t.font] || FONTS.editorial;
+    // heroUrl is always a blob: URL from URL.createObjectURL — applied via CSS var, never innerHTML
+    const safeHeroUrl = t.heroUrl?.startsWith('blob:') ? t.heroUrl : '';
     const map: Record<string, string> = {
       '--p-bg': p.bg, '--p-surface': p.surface, '--p-line': p.line, '--p-ink': p.ink,
       '--p-ink2': p.ink2, '--p-accent': p.accent, '--p-accent2': p.accent2,
       '--p-display': f.display, '--p-body': f.body, '--p-label': f.label, '--p-serif': f.accent,
       '--p-dweight': String(f.dWeight), '--p-tight': f.tight,
       '--p-radius': (t.radius != null ? t.radius : 16) + 'px',
+      '--p-hero-url': safeHeroUrl ? `url(${safeHeroUrl})` : 'none',
     };
     for (const k in map) root.style.setProperty(k, map[k]);
     root.dataset.mood = t.mood || 'dark';
