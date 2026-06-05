@@ -154,7 +154,11 @@ export function ViewSeeds({
   const [deck, setDeck] = useState<SeedTrack[]>([]);
   const [loadingDiscover, setLoadingDiscover] = useState(true);
   const [deckExhausted, setDeckExhausted] = useState(false);
-  const [genreFilter, setGenreFilter] = useState<string[]>([]);
+  const [fetchError, setFetchError] = useState(false);
+  const [genreFilter, setGenreFilter] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem('ihype-seeds-genre-filter') ?? '[]'); } catch { return []; }
+  });
   const [showGenrePicker, setShowGenrePicker] = useState(false);
 
   const [deckIdx, setDeckIdx] = useState(0);
@@ -253,6 +257,7 @@ export function ViewSeeds({
       setDeckIdx(0);
       setDeckExhausted(seeds.length === 0);
     } catch {
+      setFetchError(true);
       const fallback: SeedTrack[] = data.tracks.map(t => ({
         id: t.id,
         title: t.title,
@@ -271,7 +276,13 @@ export function ViewSeeds({
     }
   }, [data.tracks]);
 
+  // Persist genre filter to localStorage
   useEffect(() => {
+    try { localStorage.setItem('ihype-seeds-genre-filter', JSON.stringify(genreFilter)); } catch {}
+  }, [genreFilter]);
+
+  useEffect(() => {
+    setFetchError(false);
     const seen = loadSeen();
     fetchDeck(genreFilter, seen);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -618,7 +629,19 @@ export function ViewSeeds({
 
           {/* Center col — card stack */}
           <div>
-            {loadingDiscover && deck.length === 0 ? (
+            {fetchError && deck.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 460, gap: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 40 }}>⚡</div>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 20, color: 'var(--ink)' }}>Couldn&apos;t load seeds</div>
+                <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', maxWidth: '28ch', lineHeight: 1.5 }}>Check your connection and try again.</div>
+                <button
+                  onClick={() => { setFetchError(false); fetchDeck(genreFilter, loadSeen()); }}
+                  style={{ marginTop: 8, padding: '10px 20px', borderRadius: 8, fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer', border: 'none', color: '#fff', background: 'linear-gradient(135deg, var(--accent), #ff3e9a)' }}
+                >
+                  Retry
+                </button>
+              </div>
+            ) : loadingDiscover && deck.length === 0 ? (
               <div style={{ height: 460, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 13 }}>
                 Loading seeds…
               </div>
