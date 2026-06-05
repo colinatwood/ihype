@@ -605,7 +605,7 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
               <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink)', fontWeight: 600 }}>Large text</div>
               <div style={{ fontFamily: 'var(--f-b)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>Increases font size across the app for easier reading</div>
             </div>
-            <Toggle value={!!prefs.largeText} onChange={v => setPref('largeText', v)} />
+            <Toggle on={!!prefs.largeText} onChange={v => setPref('largeText', v)} />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div>
