@@ -665,6 +665,70 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
         {mode === 'presskit' && (
           <PressKitPanel artistName={artistName} artistSlug={data.pageEditor?.slug ?? 'maya'} />
         )}
+
+        {mode === 'merch' && (
+          <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
+            <div style={{ padding: '28px 32px', maxWidth: 800, margin: '0 auto' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+                <div>
+                  <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>Merch Store</h2>
+                  <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)' }}>Link your merch — fans buy direct, you keep the revenue</div>
+                </div>
+                <button style={{ padding: '9px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#ff5029', color: '#fff', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700 }}>+ Add Item</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
+                {[
+                  { name: 'Halflight Tee', price: '$28', type: 'Apparel', color: '#ff5029' },
+                  { name: 'Basement Sessions Vol. 1', price: '$12', type: 'Physical', color: '#b983ff' },
+                  { name: 'Tour Sticker Pack', price: '$6', type: 'Accessories', color: '#22e5d4' },
+                ].map(item => (
+                  <div key={item.name} style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 14, overflow: 'hidden' }}>
+                    <div style={{ height: 140, background: `linear-gradient(135deg, ${item.color}22, ${item.color}44)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>🛍</div>
+                    <div style={{ padding: '12px 14px' }}>
+                      <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontWeight: 700, fontSize: 14, color: 'var(--ink,#f4efe9)', marginBottom: 2 }}>{item.name}</div>
+                      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.4)', marginBottom: 8 }}>{item.type}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontFamily: 'var(--f-d,sans-serif)', fontWeight: 800, fontSize: 16, color: item.color }}>{item.price}</span>
+                        <button style={{ padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', background: item.color, color: '#fff', fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700 }}>Edit</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mode === 'bookings' && (
+          <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
+            <div style={{ padding: '28px 32px', maxWidth: 800, margin: '0 auto' }}>
+              <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 6 }}>Booking Requests</h2>
+              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 24 }}>Inbound inquiries from venues and promoters</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { venue: 'Empty Bottle', city: 'Chicago, IL', date: 'Jul 18, 2025', offer: '$800 + door', status: 'new' },
+                  { venue: 'Schubas Tavern', city: 'Chicago, IL', date: 'Aug 2, 2025', offer: '$600 guarantee', status: 'new' },
+                  { venue: 'Subterranean', city: 'Chicago, IL', date: 'Sep 14, 2025', offer: '$1,200 + 70% door', status: 'read' },
+                ].map(r => (
+                  <div key={r.venue} style={{ background: 'var(--bg-2,#121009)', border: `1px solid ${r.status === 'new' ? 'rgba(34,229,212,.25)' : 'var(--line-2,rgba(255,255,255,.07))'}`, borderRadius: 12, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        {r.status === 'new' && <span style={{ padding: '2px 6px', borderRadius: 99, background: 'rgba(34,229,212,.15)', color: '#22e5d4', fontFamily: 'var(--f-m,monospace)', fontSize: 9, fontWeight: 700 }}>NEW</span>}
+                        <span style={{ fontFamily: 'var(--f-d,sans-serif)', fontWeight: 700, fontSize: 15, color: 'var(--ink,#f4efe9)' }}>{r.venue}</span>
+                        <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)' }}>{r.city}</span>
+                      </div>
+                      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.5)' }}>{r.date} · {r.offer}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,.1)', background: 'transparent', color: 'rgba(244,239,233,.5)', fontFamily: 'var(--f-m,monospace)', fontSize: 11, cursor: 'pointer' }}>Decline</button>
+                      <button style={{ padding: '7px 14px', borderRadius: 8, border: 'none', background: '#22e5d4', color: '#0a0805', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>Accept</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Share card modal */}
