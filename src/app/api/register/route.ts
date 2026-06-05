@@ -352,8 +352,6 @@ export async function POST(request: Request) {
     // Track referral if present — verify the ref is a real username or hexId first
     if (body.ref) {
       const refValue = body.ref;
-      // Referee XP welcome bonus (fire-and-forget)
-      db.user.update({ where: { id: user.id }, data: { xp: { increment: 25 } } }).catch(() => {});
 
       (async () => {
         try {
@@ -385,9 +383,6 @@ export async function POST(request: Request) {
             entityId: user.id,
             metadata: { referrer: resolvedUsername, referrerHexId: refValue }
           });
-
-          // Referrer XP reward
-          await db.user.update({ where: { id: referrerId }, data: { xp: { increment: 50 } } });
 
           // Referrer badge check
           checkAndAwardBadges(referrerId, { referrerUsername: resolvedUsername }).catch(() => {});
