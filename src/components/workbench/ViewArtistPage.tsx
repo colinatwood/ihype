@@ -512,6 +512,10 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
               <ChartSection title="Discovery Funnel" subtitle="Seed view → attended">
                 <DiscoveryFunnel />
               </ChartSection>
+
+              <ChartSection title="Advertising Recommendations" subtitle="AI-suggested campaigns based on your audience data">
+                <AdvertisingRecs setMode={setMode} />
+              </ChartSection>
             </div>
           </div>
         )}
@@ -531,10 +535,8 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
         {mode === 'library' && (
           <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
             <div style={{ padding: '28px 32px', maxWidth: 800, margin: '0 auto' }}>
-              <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 6 }}>Media Library</h2>
-              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 24 }}>Upload tracks, photos, and stems to your artist page</div>
               {data.profileId ? (
-                <ArtistMediaUploadManager profileId={data.profileId} />
+                <LibraryManager profileId={data.profileId} />
               ) : (
                 <p style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.4)' }}>No artist profile found.</p>
               )}
@@ -1632,6 +1634,479 @@ function TypingDot({ delay, ..._ }: { delay: number; [k: string]: unknown }) {
 
 function esc(s: string) {
   return s.replace(/[&<>"]/g, (c: string) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] ?? c));
+}
+
+/* ── AdvertisingRecs ─────────────────────────────────────── */
+function AdvertisingRecs({ setMode }: { setMode: (m: CkMode) => void }) {
+  const recs = [
+    {
+      color: '#ffb84a',
+      title: 'Boost Milwaukee reach',
+      body: 'Your save rate in Milwaukee jumped 8pts this week. Run a 3-day local boost to capture momentum.',
+      action: 'Create campaign →',
+      onAction: () => {},
+    },
+    {
+      color: '#22e5d4',
+      title: 'Seed a new release',
+      body: 'Tracks submitted to Seeds in the first 48h after upload get 3× more saves. Your next drop should go to Seeds day-of-release.',
+      action: 'Submit to Seeds →',
+      onAction: () => {},
+    },
+    {
+      color: '#b983ff',
+      title: 'DJ radio placement',
+      body: '7 DJs in your genre have open radio show slots this week. Enable free use on your top track to get placed.',
+      action: 'Enable free use →',
+      onAction: () => setMode('library'),
+    },
+  ];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {recs.map(rec => (
+        <div
+          key={rec.title}
+          style={{
+            background: `rgba(${hexToRgb(rec.color)},.05)`,
+            border: `1px solid rgba(${hexToRgb(rec.color)},.18)`,
+            borderRadius: 10,
+            padding: '14px 16px',
+            display: 'flex',
+            gap: 12,
+            alignItems: 'flex-start',
+          }}
+        >
+          <span style={{ fontSize: 14, marginTop: 1, color: rec.color }}>✦</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 13, fontWeight: 700, color: rec.color, marginBottom: 4 }}>{rec.title}</div>
+            <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.6)', lineHeight: 1.5, marginBottom: 10 }}>{rec.body}</div>
+            <button
+              onClick={rec.onAction}
+              style={{
+                background: 'transparent',
+                border: `1px solid rgba(${hexToRgb(rec.color)},.3)`,
+                borderRadius: 6,
+                padding: '5px 12px',
+                fontFamily: 'var(--f-m,monospace)',
+                fontSize: 11,
+                fontWeight: 700,
+                color: rec.color,
+                cursor: 'pointer',
+                letterSpacing: '.04em',
+              }}
+            >
+              {rec.action}
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function hexToRgb(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `${r},${g},${b}`;
+}
+
+/* ── LibraryManager ──────────────────────────────────────── */
+type MediaTrack = {
+  hexId: string;
+  title: string;
+  notes: string;
+  mimeType: string;
+  fileSizeBytes: number;
+  freeUseEnabled: boolean;
+  createdAt: string;
+};
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return Math.round(bytes / 1024) + ' KB';
+}
+
+function LibraryManager({ profileId }: { profileId: string }) {
+  const [tracks, setTracks] = useState<MediaTrack[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editState, setEditState] = useState<Record<string, { title: string; notes: string; freeUseEnabled: boolean }>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [uploading, setUploading] = useState(false);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadNotes, setUploadNotes] = useState('');
+  const [uploadFreeUse, setUploadFreeUse] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [imageDragOver, setImageDragOver] = useState(false);
+  const [imagePreview, setImagePreview] = useState<{ url: string; name: string; width: number; height: number } | null>(null);
+  const [albumNotes, setAlbumNotes] = useState('');
+  const [albumNotesSaved, setAlbumNotesSaved] = useState(false);
+  const [submittedSeeds, setSubmittedSeeds] = useState<Set<string>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadFileRef = useRef<File | null>(null);
+
+  const SUBMITTED_KEY = 'ihype-submitted-seeds';
+  const ALBUM_NOTES_KEY = `ihype-album-notes-${profileId}`;
+
+  useEffect(() => {
+    const raw = localStorage.getItem(SUBMITTED_KEY);
+    if (raw) {
+      try { setSubmittedSeeds(new Set(JSON.parse(raw))); } catch { /* ignore */ }
+    }
+    const an = localStorage.getItem(ALBUM_NOTES_KEY);
+    if (an) setAlbumNotes(an);
+  }, [profileId, ALBUM_NOTES_KEY]);
+
+  const fetchTracks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/artist-media?profileId=${profileId}`);
+      if (res.ok) {
+        const json = await res.json();
+        setTracks(json.tracks ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [profileId]);
+
+  useEffect(() => { fetchTracks(); }, [fetchTracks]);
+
+  function startEdit(t: MediaTrack) {
+    setEditState(prev => ({ ...prev, [t.hexId]: { title: t.title, notes: t.notes, freeUseEnabled: t.freeUseEnabled } }));
+    setExpandedId(t.hexId);
+  }
+
+  async function saveTrack(hexId: string) {
+    const e = editState[hexId];
+    if (!e) return;
+    setSaving(prev => ({ ...prev, [hexId]: true }));
+    try {
+      await fetch(`/api/artist-media/${hexId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(e),
+      });
+      setTracks(prev => prev.map(t => t.hexId === hexId ? { ...t, ...e } : t));
+      setExpandedId(null);
+    } finally {
+      setSaving(prev => ({ ...prev, [hexId]: false }));
+    }
+  }
+
+  async function deleteTrack(hexId: string, title: string) {
+    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+    await fetch(`/api/artist-media/${hexId}`, { method: 'DELETE' });
+    setTracks(prev => prev.filter(t => t.hexId !== hexId));
+  }
+
+  function submitToSeeds(hexId: string) {
+    const next = new Set(submittedSeeds);
+    next.add(hexId);
+    setSubmittedSeeds(next);
+    localStorage.setItem(SUBMITTED_KEY, JSON.stringify([...next]));
+    window.alert('Your track has been added to the Seeds discovery queue.');
+  }
+
+  async function handleUpload(file: File) {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('profileId', profileId);
+      formData.append('title', uploadTitle || file.name.replace(/\.[^.]+$/, ''));
+      formData.append('notes', uploadNotes);
+      formData.append('freeUseEnabled', String(uploadFreeUse));
+      await fetch('/api/artist-media', { method: 'POST', body: formData });
+      setUploadTitle('');
+      setUploadNotes('');
+      setUploadFreeUse(false);
+      uploadFileRef.current = null;
+      await fetchTracks();
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleImageDrop(file: File) {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      setImagePreview({ url, name: file.name, width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.src = url;
+  }
+
+  function saveAlbumNotes() {
+    localStorage.setItem(ALBUM_NOTES_KEY, albumNotes);
+    setAlbumNotesSaved(true);
+    setTimeout(() => setAlbumNotesSaved(false), 2000);
+  }
+
+  const sx = {
+    label: { fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' as const, color: 'rgba(244,239,233,.4)', marginBottom: 6 },
+    card: { background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 12, padding: '16px 18px', marginBottom: 12 },
+    input: { width: '100%', boxSizing: 'border-box' as const, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, padding: '8px 12px', color: 'var(--ink,#f4efe9)', fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, outline: 'none' },
+  };
+
+  return (
+    <div>
+      <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>Library</h2>
+      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 28 }}>
+        {loading ? 'Loading…' : `${tracks.length} track${tracks.length !== 1 ? 's' : ''} in library`}
+      </div>
+
+      {/* ── Upload zone ── */}
+      <div style={{ ...sx.card, marginBottom: 24 }}>
+        <div style={sx.label}>Upload new track</div>
+        <div
+          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={e => {
+            e.preventDefault();
+            setDragOver(false);
+            const file = e.dataTransfer.files[0];
+            if (file) { uploadFileRef.current = file; }
+          }}
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            border: `2px dashed ${dragOver ? '#ff5029' : 'rgba(255,255,255,.12)'}`,
+            borderRadius: 10, padding: '22px', textAlign: 'center', cursor: 'pointer',
+            background: dragOver ? 'rgba(255,80,41,.06)' : 'rgba(255,255,255,.02)',
+            marginBottom: 14, transition: 'all .15s',
+          }}
+        >
+          <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>Drop audio file here</div>
+          <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.35)' }}>or click to browse · MP3, WAV, FLAC, AAC</div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*"
+            style={{ display: 'none' }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) uploadFileRef.current = f; }}
+          />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+          <div>
+            <div style={sx.label}>Title</div>
+            <input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} placeholder="Track title" style={sx.input} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 20 }}>
+            <input
+              type="checkbox"
+              id="lib-free-use"
+              checked={uploadFreeUse}
+              onChange={e => setUploadFreeUse(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#ff5029' }}
+            />
+            <label htmlFor="lib-free-use" style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.7)', cursor: 'pointer' }}>
+              Enable free use <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.35)' }}>(allows DJs to add to radio shows)</span>
+            </label>
+          </div>
+        </div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={sx.label}>Track notes</div>
+          <textarea
+            value={uploadNotes}
+            onChange={e => setUploadNotes(e.target.value)}
+            placeholder="BPM, key, stems available, version info…"
+            rows={2}
+            style={{ ...sx.input, resize: 'none' }}
+          />
+        </div>
+        <button
+          disabled={uploading}
+          onClick={() => { if (uploadFileRef.current) handleUpload(uploadFileRef.current); }}
+          style={{
+            background: uploading ? 'rgba(255,80,41,.4)' : '#ff5029',
+            border: 'none', borderRadius: 8, padding: '9px 20px',
+            fontFamily: 'var(--f-d,sans-serif)', fontSize: 13, fontWeight: 700,
+            color: '#fff', cursor: uploading ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {uploading ? 'Uploading…' : 'Upload Track'}
+        </button>
+      </div>
+
+      {/* ── Track list ── */}
+      {loading ? (
+        <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.3)', padding: '12px 0' }}>Loading tracks…</div>
+      ) : tracks.length === 0 ? (
+        <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.3)', padding: '12px 0' }}>No tracks yet — upload your first track above.</div>
+      ) : (
+        <div style={{ marginBottom: 28 }}>
+          <div style={sx.label}>Tracks</div>
+          {tracks.map(track => {
+            const isExpanded = expandedId === track.hexId;
+            const ed = editState[track.hexId];
+            const isSubmitted = submittedSeeds.has(track.hexId);
+            return (
+              <div key={track.hexId} style={{ ...sx.card, marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: 'var(--ink,#f4efe9)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{track.title}</div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.35)' }}>{formatBytes(track.fileSizeBytes)}</span>
+                      <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.25)' }}>·</span>
+                      <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.35)' }}>{new Date(track.createdAt).toLocaleDateString()}</span>
+                      {track.freeUseEnabled && (
+                        <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, fontWeight: 700, letterSpacing: '.06em', color: '#22e5d4', background: 'rgba(34,229,212,.1)', border: '1px solid rgba(34,229,212,.2)', borderRadius: 4, padding: '2px 6px' }}>FREE USE</span>
+                      )}
+                    </div>
+                    {track.notes && !isExpanded && (
+                      <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginTop: 6, lineHeight: 1.4 }}>
+                        {track.notes.slice(0, 80)}{track.notes.length > 80 ? '…' : ''}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button
+                      onClick={() => isExpanded ? setExpandedId(null) : startEdit(track)}
+                      style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 6, padding: '5px 10px', fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.6)', cursor: 'pointer' }}
+                    >
+                      {isExpanded ? 'Close' : 'Edit'}
+                    </button>
+                    <button
+                      onClick={() => submitToSeeds(track.hexId)}
+                      disabled={isSubmitted}
+                      style={{
+                        background: isSubmitted ? 'rgba(95,211,138,.08)' : 'rgba(185,131,255,.08)',
+                        border: `1px solid ${isSubmitted ? 'rgba(95,211,138,.2)' : 'rgba(185,131,255,.2)'}`,
+                        borderRadius: 6, padding: '5px 10px',
+                        fontFamily: 'var(--f-m,monospace)', fontSize: 11,
+                        color: isSubmitted ? '#5fd38a' : '#b983ff',
+                        cursor: isSubmitted ? 'default' : 'pointer',
+                      }}
+                    >
+                      {isSubmitted ? 'Submitted ✓' : 'Submit to Seeds'}
+                    </button>
+                    <button
+                      onClick={() => deleteTrack(track.hexId, track.title)}
+                      style={{ background: 'rgba(255,80,41,.06)', border: '1px solid rgba(255,80,41,.15)', borderRadius: 6, padding: '5px 10px', fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: '#ff5029', cursor: 'pointer' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                {isExpanded && ed && (
+                  <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,.06)' }}>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={sx.label}>Title</div>
+                      <input
+                        value={ed.title}
+                        onChange={e => setEditState(prev => ({ ...prev, [track.hexId]: { ...prev[track.hexId], title: e.target.value } }))}
+                        style={sx.input}
+                      />
+                    </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={sx.label}>Track notes</div>
+                      <textarea
+                        value={ed.notes}
+                        onChange={e => setEditState(prev => ({ ...prev, [track.hexId]: { ...prev[track.hexId], notes: e.target.value } }))}
+                        placeholder="BPM, key, stems available, version info, licensing notes…"
+                        rows={3}
+                        style={{ ...sx.input, resize: 'vertical' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                      <input
+                        type="checkbox"
+                        id={`fu-${track.hexId}`}
+                        checked={ed.freeUseEnabled}
+                        onChange={e => setEditState(prev => ({ ...prev, [track.hexId]: { ...prev[track.hexId], freeUseEnabled: e.target.checked } }))}
+                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#ff5029' }}
+                      />
+                      <label htmlFor={`fu-${track.hexId}`} style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.7)', cursor: 'pointer' }}>Enable free use (allows DJs to add to radio shows)</label>
+                    </div>
+                    <button
+                      onClick={() => saveTrack(track.hexId)}
+                      disabled={saving[track.hexId]}
+                      style={{
+                        background: saving[track.hexId] ? 'rgba(255,80,41,.4)' : '#ff5029',
+                        border: 'none', borderRadius: 8, padding: '8px 18px',
+                        fontFamily: 'var(--f-d,sans-serif)', fontSize: 13, fontWeight: 700,
+                        color: '#fff', cursor: saving[track.hexId] ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {saving[track.hexId] ? 'Saving…' : 'Save changes'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Cover Art & Graphics ── */}
+      <div style={{ ...sx.card, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <div style={sx.label}>Cover Art & Graphics</div>
+          <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, fontWeight: 700, letterSpacing: '.06em', color: '#ffb84a', background: 'rgba(255,184,74,.1)', border: '1px solid rgba(255,184,74,.2)', borderRadius: 4, padding: '2px 6px' }}>COMING SOON</span>
+        </div>
+        <div
+          onDragOver={e => { e.preventDefault(); setImageDragOver(true); }}
+          onDragLeave={() => setImageDragOver(false)}
+          onDrop={e => {
+            e.preventDefault();
+            setImageDragOver(false);
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) handleImageDrop(file);
+          }}
+          style={{
+            border: `2px dashed ${imageDragOver ? '#ffb84a' : 'rgba(255,255,255,.1)'}`,
+            borderRadius: 10, padding: '20px', textAlign: 'center', cursor: 'default',
+            background: imageDragOver ? 'rgba(255,184,74,.05)' : 'rgba(255,255,255,.02)',
+            marginBottom: imagePreview ? 14 : 0, transition: 'all .15s',
+          }}
+        >
+          <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 13, fontWeight: 700, color: 'rgba(244,239,233,.5)', marginBottom: 4 }}>Drop image here to preview</div>
+          <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.25)' }}>Graphic uploads coming soon — save to your device for now</div>
+        </div>
+        {imagePreview && (
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <img src={imagePreview.url} alt="preview" style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,.1)', flexShrink: 0 }} />
+            <div>
+              <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>{imagePreview.name}</div>
+              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)', marginBottom: 10 }}>{imagePreview.width} × {imagePreview.height} px</div>
+              <a
+                href={imagePreview.url}
+                download={imagePreview.name}
+                style={{
+                  display: 'inline-block', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700,
+                  color: '#ffb84a', border: '1px solid rgba(255,184,74,.3)', borderRadius: 6,
+                  padding: '5px 12px', textDecoration: 'none',
+                }}
+              >
+                Download
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Album / Project Notes ── */}
+      <div style={sx.card}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <div style={sx.label}>Album / Project Notes</div>
+          {albumNotesSaved && <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: '#5fd38a' }}>Saved locally</span>}
+        </div>
+        <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 12, color: 'rgba(244,239,233,.35)', marginBottom: 8 }}>Concept, credits, release context — local scratchpad, not published</div>
+        <textarea
+          value={albumNotes}
+          onChange={e => setAlbumNotes(e.target.value)}
+          onBlur={saveAlbumNotes}
+          placeholder="Album concept, credits, release context…"
+          rows={5}
+          style={{ ...sx.input, resize: 'vertical' }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default ViewArtistPage;
