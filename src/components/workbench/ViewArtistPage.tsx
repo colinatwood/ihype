@@ -5,7 +5,7 @@ import { WorkbenchData } from '@/types/workbench';
 import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
 
 /* ── types ───────────────────────────────────────────────── */
-type CkMode = 'page' | 'insights' | 'tour' | 'release' | 'library' | 'presskit';
+type CkMode = 'page' | 'insights' | 'tour' | 'release' | 'library' | 'presskit' | 'merch' | 'bookings';
 type Device = 'desktop' | 'mobile';
 
 interface Msg { side: 'me' | 'ai'; html: string; applied?: string[]; }
@@ -156,8 +156,20 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
   const [showMerch, setShowMerch] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [following, setFollowing] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
+
+  async function toggleFollow() {
+    setFollowing(f => !f);
+    try {
+      await fetch('/api/follow', {
+        method: following ? 'DELETE' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetType: 'ARTIST', targetId: data.profileId ?? '' }),
+      });
+    } catch { setFollowing(f => !f); }
+  }
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -230,6 +242,8 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
     { k: 'release',   label: 'Release',  icon: <IconRelease /> },
     { k: 'library',   label: 'Library',  icon: <IconLibrary /> },
     { k: 'presskit',  label: 'Press Kit',icon: <IconPressKit /> },
+    { k: 'merch',     label: 'Merch',    icon: <span style={{ fontSize: 14 }}>🛍</span> },
+    { k: 'bookings',  label: 'Bookings', icon: <span style={{ fontSize: 14 }}>📩</span> },
   ];
 
   return (
@@ -263,6 +277,12 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
             <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#22e5d4', display: 'inline-block' }} />
             Page live
           </div>
+          <button
+            onClick={() => void toggleFollow()}
+            style={{ width: '100%', marginTop: 8, padding: '8px 12px', borderRadius: 8, border: following ? '1px solid rgba(255,80,41,.4)' : '1px solid rgba(255,255,255,.12)', cursor: 'pointer', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', background: following ? 'rgba(255,80,41,.12)' : 'transparent', color: following ? '#ff5029' : 'rgba(244,239,233,.5)' }}
+          >
+            {following ? '✓ Following' : '+ Follow'}
+          </button>
         </div>
 
         {/* nav */}
@@ -273,6 +293,8 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
           <RailBtn active={mode === 'release'} onClick={() => setMode('release')} label="Release" icon={<IconRelease />} />
           <RailBtn active={mode === 'library'} onClick={() => setMode('library')} label="Library" icon={<IconLibrary />} />
           <RailBtn active={mode === 'presskit'} onClick={() => setMode('presskit')} label="Press Kit" icon={<IconPressKit />} />
+          <RailBtn active={mode === 'merch'} onClick={() => setMode('merch')} label="Merch" icon={<span style={{ fontSize: 14 }}>🛍</span>} />
+          <RailBtn active={mode === 'bookings'} onClick={() => setMode('bookings')} label="Bookings" icon={<span style={{ fontSize: 14 }}>📩</span>} />
 
           <div style={{ marginTop: 16, padding: '0 4px' }}>
             <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.25)', marginBottom: 8 }}>Quick Jump</div>

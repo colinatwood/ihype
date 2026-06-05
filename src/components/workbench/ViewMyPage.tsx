@@ -187,6 +187,13 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   const [copied, setCopied] = useState(false);
   const [anniversaryDismissed, setAnniversaryDismissed] = useState(false);
   const [streakData, setStreakData] = useState<{ streak: number; daysActive: number } | null>(null);
+  const [wrappedOpen, setWrappedOpen] = useState(false);
+  const [bio, setBio] = useState('');
+  const [bioEditing, setBioEditing] = useState(false);
+
+  useEffect(() => {
+    setBio(localStorage.getItem('ihype-fan-bio') ?? 'Halflight EP out now. Writing the next thing in a basement on Western Ave. Recommendations open.');
+  }, []);
 
   const handleHype = async (showId: string) => {
     if (hypedIds.has(showId)) return; // already hyped
@@ -270,7 +277,26 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
           </div>
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 46, letterSpacing: '-.03em', lineHeight: .95, margin: 0, color: 'var(--ink)' }}>{data.userName}</h1>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.08em' }}>@{data.userName.toLowerCase().replace(/\s/g, '.')} · {data.city} · Joined Mar &apos;25</div>
-          <p style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontSize: 17, color: 'var(--ink-2)', marginTop: 6, lineHeight: 1.4, maxWidth: '50ch' }}>Halflight EP out now. Writing the next thing in a basement on Western Ave. Recommendations open.</p>
+          {bioEditing ? (
+            <div style={{ marginTop: 6 }}>
+              <textarea
+                value={bio}
+                onChange={e => setBio(e.target.value)}
+                onBlur={() => { setBioEditing(false); localStorage.setItem('ihype-fan-bio', bio); }}
+                autoFocus
+                rows={3}
+                style={{ width: '100%', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 8, color: 'var(--ink)', fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontSize: 17, padding: '8px 12px', resize: 'none', outline: 'none', lineHeight: 1.4, boxSizing: 'border-box' }}
+              />
+            </div>
+          ) : (
+            <p
+              onClick={() => setBioEditing(true)}
+              title="Click to edit"
+              style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontSize: 17, color: 'var(--ink-2)', marginTop: 6, lineHeight: 1.4, maxWidth: '50ch', cursor: 'text', borderRadius: 6, padding: '2px 4px', border: '1px solid transparent', transition: 'border-color .15s' }}
+            >
+              {bio}
+            </p>
+          )}
         </div>
 
         {/* Stats 2×2 grid */}
@@ -484,6 +510,40 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
             </div>
           );
         })()}
+      </div>
+
+      {/* Year in iHYPE — Wrapped */}
+      <div style={{ marginBottom: 20 }}>
+        <button
+          onClick={() => setWrappedOpen(w => !w)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 18px', borderRadius: 12, border: '1px solid rgba(185,131,255,.25)', background: 'rgba(185,131,255,.07)', cursor: 'pointer', textAlign: 'left' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>✨</span>
+            <div>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)' }}>Your Year in iHYPE</div>
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)' }}>2025 highlights · tap to reveal</div>
+            </div>
+          </div>
+          <span style={{ color: 'var(--ink-3)', fontSize: 18, transform: wrappedOpen ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}>›</span>
+        </button>
+        {wrappedOpen && (
+          <div style={{ marginTop: 10, padding: '16px 18px', borderRadius: 12, border: '1px solid rgba(185,131,255,.15)', background: 'rgba(185,131,255,.04)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            {[
+              { label: 'Seeds reviewed', value: '1,284', color: '#ff5029' },
+              { label: 'Artists hyped', value: '94', color: '#ff3e9a' },
+              { label: 'Shows attended', value: String(data.lifeStats?.eventsAttended ?? 23), color: '#22e5d4' },
+              { label: 'Hours listened', value: '312', color: '#b983ff' },
+              { label: 'Cities explored', value: '6', color: '#ffb84a' },
+              { label: 'Top genre', value: 'Alt-Indie', color: '#4af0b0' },
+            ].map(s => (
+              <div key={s.label} style={{ textAlign: 'center', padding: '10px 8px', background: 'var(--bg-2)', borderRadius: 10, border: '1px solid var(--line-2)' }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 22, color: s.color, lineHeight: 1, marginBottom: 4 }}>{s.value}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.08em', textTransform: 'uppercase', lineHeight: 1.3 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* See Your Page button */}

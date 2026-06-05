@@ -305,6 +305,18 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
   const [reportingId, setReportingId] = useState<string | null>(null);
   const [reportReason, setReportReason] = useState('');
   const [reportStatus, setReportStatus] = useState<'idle' | 'sending' | 'done'>('idle');
+  const [remindedIds, setRemindedIds] = useState<Set<string>>(() => { try { return new Set(JSON.parse(localStorage.getItem('ihype-reminders') ?? '[]')); } catch { return new Set(); } });
+
+  function toggleReminder(showId: string, showName: string, showDate: string) {
+    void showName; void showDate;
+    const next = new Set(remindedIds);
+    if (next.has(showId)) { next.delete(showId); } else { next.add(showId); }
+    setRemindedIds(next);
+    try { localStorage.setItem('ihype-reminders', JSON.stringify([...next])); } catch {}
+    if (!remindedIds.has(showId) && 'Notification' in window && Notification.permission === 'granted') {
+      // Already granted — could schedule via service worker in future
+    }
+  }
 
   async function submitReport(showId: string) {
     if (!reportReason.trim()) return;
@@ -458,6 +470,13 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, marginTop: 2, borderTop: '1px solid var(--line)', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em' }}>
                       <span>${(s.price * 0.45).toFixed(2)} → artist</span>
                       <span>${(s.price * 0.45).toFixed(2)} → venue</span>
+                      <button
+                        onClick={() => toggleReminder(s.id, s.name, s.date)}
+                        style={{ background: remindedIds.has(s.id) ? 'rgba(34,229,212,.12)' : 'none', border: remindedIds.has(s.id) ? '1px solid rgba(34,229,212,.3)' : 'none', borderRadius: 5, cursor: 'pointer', color: remindedIds.has(s.id) ? '#22e5d4' : 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 11, padding: '2px 8px' }}
+                        title={remindedIds.has(s.id) ? 'Remove reminder' : 'Remind me 24h before'}
+                      >
+                        {remindedIds.has(s.id) ? '🔔 Reminded' : '🔔 Remind me'}
+                      </button>
                       <button
                         onClick={() => { setReportingId(s.id); setReportReason(''); setReportStatus('idle'); }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 11, padding: '2px 4px', opacity: 0.6 }}

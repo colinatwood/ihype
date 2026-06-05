@@ -335,6 +335,13 @@ export function ViewSeeds({
       if (action === 'save') {
         const globalIdx = data.tracks.findIndex(t => t.id === track.id);
         if (globalIdx >= 0) onSave?.(globalIdx);
+        try {
+          const existing = JSON.parse(localStorage.getItem('ihype-saved-tracks') ?? '[]');
+          const already = existing.some((t: { id: string }) => t.id === track.id);
+          if (!already) {
+            localStorage.setItem('ihype-saved-tracks', JSON.stringify([track, ...existing].slice(0, 200)));
+          }
+        } catch {}
       }
 
       const remaining = deck.length - (deckIdx + 1);
@@ -833,6 +840,21 @@ export function ViewSeeds({
                 />
               </div>
               <div style={{ textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.12em', marginTop: 12, textTransform: 'uppercase' }}>← Skip · ↑ Save · → Hype · Space Play/Pause</div>
+              <div style={{ textAlign: 'center', marginTop: 8 }}>
+                <button
+                  onClick={async () => {
+                    const url = frontTrack.profileSlug ? `${window.location.origin}/artists/${frontTrack.profileSlug}` : window.location.href;
+                    if (navigator.share) {
+                      try { await navigator.share({ title: frontTrack.title, text: `${frontTrack.title} by ${frontTrack.artistName} on iHYPE`, url }); } catch {}
+                    } else {
+                      await navigator.clipboard.writeText(url).catch(() => {});
+                    }
+                  }}
+                  style={{ background: 'none', border: '1px solid var(--line-2)', borderRadius: 8, cursor: 'pointer', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 11, padding: '5px 14px', letterSpacing: '.08em' }}
+                >
+                  ↗ Share track
+                </button>
+              </div>
 
             </>) : null}
           </div>

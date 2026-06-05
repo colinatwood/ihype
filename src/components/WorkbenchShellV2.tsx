@@ -30,6 +30,7 @@ import { PasskeyNudge } from './workbench/PasskeyNudge';
 import { WMGenreQuizSheet } from './workbench/MobilePrimitives';
 import { AgentShell } from './AgentShell';
 import { SkeletonMeView } from './workbench/SkeletonMeView';
+import { ViewSaved } from './workbench/ViewSaved';
 
 // ─────────────────────────────────────────────────────────────
 // Main WorkbenchShell export
@@ -54,6 +55,16 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     return () => { delete (window as Window & { __ihypeNav?: (v: string) => void }).__ihypeNav; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const [isOnline, setIsOnline] = useState(true);
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
+
   const [prefs, setPrefs] = useState<typeof DEFAULT_PREFS>(DEFAULT_PREFS);
   const [mounted, setMounted] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
@@ -366,6 +377,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       case 'artistpage':   return <ViewErrorBoundary viewName="Artist Page"><ViewArtistPage data={liveData} /></ViewErrorBoundary>;
       case 'venuepage':       return <ViewErrorBoundary viewName="Venue Page"><ViewVenuePage data={liveData} /></ViewErrorBoundary>;
       case 'notifications':   return <ViewErrorBoundary viewName="Notifications"><ViewNotifications /></ViewErrorBoundary>;
+      case 'saved':           return <ViewErrorBoundary viewName="Saved Queue"><ViewSaved /></ViewErrorBoundary>;
       default:                return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
     }
   })();
@@ -383,8 +395,15 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         *:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
         button, [role="button"] { min-height: 44px; }
         .wb-tab-btn { min-height: 44px !important; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+        [aria-live] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
       `}</style>
       <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', fontFamily: 'var(--f-b)', color: 'var(--ink)' }}>
+      {!isOnline && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9999, background: '#ff5029', color: '#fff', textAlign: 'center', padding: '6px 16px', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em' }}>
+          ⚠ You&apos;re offline — some features may not work
+        </div>
+      )}
       <div
         className="wb-shell"
         style={{
@@ -483,6 +502,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         onNavigate={(v) => navigateTo(v as Parameters<typeof navigateTo>[0])}
         onOpenSearch={() => setSearchOpen(true)}
       />
+      <div aria-live="polite" aria-atomic="true" id="wb-live-region" />
       {showGenreQuiz && liveData.profileId && (
         <WMGenreQuizSheet
           profileId={liveData.profileId}
