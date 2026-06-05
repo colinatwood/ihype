@@ -34,6 +34,7 @@ function dollars(cents: number): string {
 
 function ReferralEarningsCard() {
   const [stats, setStats] = useState<ReferralStats | null>(null);
+  const [referralLink, setReferralLink] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     fetch('/api/referrals/stats')
@@ -43,35 +44,53 @@ function ReferralEarningsCard() {
         else setErr('Could not load referrals.');
       })
       .catch(() => setErr('Could not load referrals.'));
+    fetch('/api/referral')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.referralLink) setReferralLink(j.referralLink); })
+      .catch(() => {});
   }, []);
   return (
-    <section className="wb-panel" style={{ marginTop: 16, padding: '14px 22px' }}>
-      <div style={eyebrow}>● REFERRAL EARNINGS</div>
+    <section className="wb-panel" style={{
+      marginTop: 16,
+      padding: '14px 22px',
+      border: '1px solid rgba(255,184,74,.3)',
+      background: 'linear-gradient(135deg, rgba(255,184,74,.04), rgba(255,80,41,.03))'
+    }}>
+      <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, color: 'var(--ink)', marginBottom: 8 }}>
+        💸 Invite &amp; Earn
+      </div>
       {err ? (
         <p className="wb-page-sub" style={{ margin: 0, fontSize: 12 }}>{err}</p>
       ) : !stats ? (
         <p className="wb-page-sub" style={{ margin: 0, fontSize: 12 }}>Loading…</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-          <div>
-            <div style={eyebrow}>CLICKS</div>
-            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18 }}>{stats.clicks}</div>
-          </div>
-          <div>
-            <div style={eyebrow}>SIGNUPS</div>
-            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18 }}>{stats.signups}</div>
-          </div>
-          <div>
-            <div style={eyebrow}>TICKETS</div>
-            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18 }}>{stats.ticketSales}</div>
-          </div>
-          <div>
-            <div style={eyebrow}>EST. COMMISSION</div>
-            <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 18 }}>
-              {dollars(stats.estimatedCommissionCents)}
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+            <div>
+              <div style={eyebrow}>CLICKS</div>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 24, color: '#ffb84a' }}>{stats.clicks}</div>
+            </div>
+            <div>
+              <div style={eyebrow}>SIGNUPS</div>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 24, color: '#22e5d4' }}>{stats.signups}</div>
+            </div>
+            <div>
+              <div style={eyebrow}>TICKETS</div>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 24, color: '#b983ff' }}>{stats.ticketSales}</div>
+            </div>
+            <div>
+              <div style={eyebrow}>EST. COMMISSION</div>
+              <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 24, color: '#ff5029' }}>
+                {dollars(stats.estimatedCommissionCents)}
+              </div>
             </div>
           </div>
-        </div>
+          {stats.clicks === 0 && referralLink && (
+            <div style={{ marginTop: 10, fontFamily: 'var(--f-b)', fontSize: 13, color: '#ff5029' }}>
+              Share your link to start earning → <span style={{ color: 'var(--ink-2)' }}>{referralLink}</span>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
@@ -230,11 +249,12 @@ function PremiumInterestCard({ userEmail }: { userEmail: string | null }) {
 
 export function WorkbenchExtras({ activeProfileTypes, profileId, profilePath: _profilePath, profileSlug, userEmail }: Props) {
   const isArtist = activeProfileTypes.includes('ARTIST');
+  const isPromoter = activeProfileTypes.includes('DJ') || activeProfileTypes.includes('VENUE') || isArtist;
   const isFan = activeProfileTypes.length === 0 || activeProfileTypes.includes('LISTENER');
   return (
     <>
       {isArtist && profileId && profileSlug ? <RoadJournalWidget profileId={profileId} profileSlug={profileSlug} /> : null}
-      <ReferralEarningsCard />
+      {isPromoter ? <ReferralEarningsCard /> : null}
       {(isFan || activeProfileTypes.includes('LISTENER')) ? (
         <PremiumInterestCard userEmail={userEmail} />
       ) : null}

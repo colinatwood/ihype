@@ -16,6 +16,8 @@ import { slugify } from '@/lib/utils';
 import { sendDay1Email } from '@/lib/onboarding-emails';
 import { checkForSpam } from '@/lib/spam-detection';
 import { log } from '@/lib/logger';
+import { checkAndAwardBadges } from '@/lib/badges';
+import { sendGenericEmail } from '@/lib/mailer';
 
 const schema = z.object({
   name: z.preprocess(v => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().min(2).optional()),
@@ -347,20 +349,69 @@ export async function POST(request: Request) {
         .catch(() => {});
     }
 
-    // Track referral if present — verify the ref is a real username first
+    // Track referral if present — verify the ref is a real username or hexId first
     if (body.ref) {
-      db.user.findUnique({ where: { username: body.ref }, select: { id: true } })
-        .then(refUser => {
-          if (!refUser) return;
-          return recordAuditEvent({
+      const refValue = body.ref;
+      // Referee XP welcome bonus (fire-and-forget)
+      db.user.update({ where: { id: user.id }, data: { xp: { increment: 25 } } }).catch(() => {});
+
+      (async () => {
+        try {
+          // Try username first, then hexId-based profile lookup
+          let resolvedUsername: string | null = null;
+          let referrerId: string | null = null;
+
+          const refUser = await db.user.findUnique({ where: { username: refValue }, select: { id: true, username: true } });
+          if (refUser) {
+            resolvedUsername = refUser.username;
+            referrerId = refUser.id;
+          } else {
+            const refProfile = await db.profile.findUnique({
+              where: { hexId: refValue },
+              select: { owner: { select: { id: true, username: true } } }
+            });
+            if (refProfile?.owner) {
+              resolvedUsername = refProfile.owner.username;
+              referrerId = refProfile.owner.id;
+            }
+          }
+
+          if (!resolvedUsername || !referrerId) return;
+
+          await recordAuditEvent({
             actorUserId: null,
             action: 'REFERRAL_SIGNUP',
             entityType: 'User',
             entityId: user.id,
-            metadata: { referrer: body.ref }
+            metadata: { referrer: resolvedUsername, referrerHexId: refValue }
           });
-        })
-        .catch(() => {});
+
+          // Referrer XP reward
+          await db.user.update({ where: { id: referrerId }, data: { xp: { increment: 50 } } });
+
+          // Referrer badge check
+          checkAndAwardBadges(referrerId, { referrerUsername: resolvedUsername }).catch(() => {});
+
+          // Milestone email
+          const milestones = [1, 5, 10, 25];
+          const totalReferrals = await db.auditLog.count({
+            where: { action: 'REFERRAL_SIGNUP', metadata: { path: ['referrer'], equals: resolvedUsername } }
+          });
+          if (milestones.includes(totalReferrals)) {
+            const referrerUser = await db.user.findUnique({ where: { id: referrerId }, select: { email: true, name: true } });
+            if (referrerUser?.email) {
+              sendGenericEmail({
+                to: referrerUser.email,
+                subject: `🎉 You've referred ${totalReferrals} ${totalReferrals === 1 ? 'person' : 'people'} to iHYPE!`,
+                text: `Congrats! You've now referred ${totalReferrals} ${totalReferrals === 1 ? 'person' : 'people'} to iHYPE. Keep sharing your link to earn more rewards!`,
+                html: `<p>Congrats${referrerUser.name ? `, ${referrerUser.name}` : ''}!</p><p>You've now brought <strong>${totalReferrals} ${totalReferrals === 1 ? 'person' : 'people'}</strong> to iHYPE. Keep sharing to earn more XP and unlock badges!</p>`
+              }).catch(() => {});
+            }
+          }
+        } catch {
+          // Best-effort
+        }
+      })();
     }
 
     // Fire-and-forget onboarding email
