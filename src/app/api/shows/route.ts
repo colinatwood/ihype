@@ -283,7 +283,7 @@ export async function POST(request: NextRequest) {
         slug,
         title: body.title,
         description: body.description,
-        startsAt: new Date(body.startsAt),
+        startsAt: new Date(body.startsAt!),
         endsAt: body.endsAt ? new Date(body.endsAt) : undefined,
         creatorId: session.user.id,
         venueProfileId: body.venueProfileId,
