@@ -187,7 +187,7 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   data: WorkbenchData; onPickTrack: (i: number) => void; currentIdx: number;
 }) {
   const [hypedIds, setHypedIds] = useState<Set<string>>(new Set());
-  const [referral, setReferral] = useState<{ link: string; count: number } | null>(null);
+  const [referral, setReferral] = useState<{ link: string; count: number; referrals?: Array<{ username: string; joinedAt: string }>; shareText?: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [anniversaryDismissed, setAnniversaryDismissed] = useState(false);
   const [degradedDismissed, setDegradedDismissed] = useState(false);
@@ -249,7 +249,7 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   useEffect(() => {
     fetch('/api/referral')
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.referralLink) setReferral({ link: d.referralLink, count: d.referralCount ?? 0 }); })
+      .then(d => { if (d?.referralLink) setReferral({ link: d.referralLink, count: d.referralCount ?? 0, referrals: d.referrals, shareText: d.shareText }); })
       .catch(() => {});
   }, []);
 
@@ -462,10 +462,11 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
 
       {/* Referral link */}
       {referral && (
+        <>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
-          border: '1px solid var(--line)', borderRadius: 10, background: 'var(--bg-2)',
-          marginBottom: 14,
+          border: '1px solid var(--line)', borderRadius: referral.referrals && referral.referrals.length > 0 ? '10px 10px 0 0' : 10, background: 'var(--bg-2)',
+          marginBottom: referral.referrals && referral.referrals.length > 0 ? 0 : 14,
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.18em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 4 }}>
@@ -490,10 +491,55 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
           >
             {copied ? '✓ Copied' : 'Copy link'}
           </button>
+          <button
+            onClick={async () => {
+              const text = referral.shareText ?? `Join me on iHYPE → ${referral.link}`;
+              if (navigator.share) {
+                try { await navigator.share({ text, url: referral.link }); } catch {}
+              } else {
+                await navigator.clipboard.writeText(text).catch(() => {});
+              }
+            }}
+            style={{
+              padding: '8px 10px', borderRadius: 7, border: '1px solid var(--line-2)',
+              fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              background: 'var(--bg-3)', color: 'var(--ink-2)', transition: 'all .2s', flexShrink: 0,
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}
+            title="Share your referral link"
+          >
+            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+            </svg>
+            Share
+          </button>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', flexShrink: 0, textAlign: 'right', maxWidth: 100, lineHeight: 1.4 }}>
             Earn 10% of each ticket sale
           </div>
         </div>
+        {referral.referrals && referral.referrals.length > 0 && (
+          <div style={{ marginBottom: 14, padding: '10px 18px', border: '1px solid var(--line)', borderTop: 'none', borderRadius: '0 0 10px 10px', background: 'var(--bg-2)' }}>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.14em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 6 }}>
+              Friends who joined
+            </div>
+            {referral.referrals.slice(0, 5).map((r) => {
+              const daysAgo = Math.floor((Date.now() - new Date(r.joinedAt).getTime()) / 86400000);
+              const when = daysAgo === 0 ? 'today' : daysAgo === 1 ? 'yesterday' : `${daysAgo}d ago`;
+              return (
+                <div key={r.username} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '3px 0', fontFamily: 'var(--f-m)', fontSize: 12 }}>
+                  <span style={{ color: 'var(--ink-2)' }}>@{r.username}</span>
+                  <span style={{ color: 'var(--ink-3)' }}>{when}</span>
+                </div>
+              );
+            })}
+            {referral.referrals.length > 5 && (
+              <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>
+                +{referral.referrals.length - 5} more
+              </div>
+            )}
+          </div>
+        )}
+        </>
       )}
 
       {/* Artist Anniversary Card */}
