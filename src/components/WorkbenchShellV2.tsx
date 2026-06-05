@@ -33,6 +33,7 @@ import { WMGenreQuizSheet } from './workbench/MobilePrimitives';
 // ─────────────────────────────────────────────────────────────
 export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData; starterPack?: StarterPackItem[] }) {
   void starterPack;
+  const [liveData, setLiveData] = useState<WorkbenchData>(data);
   const [view, setView] = useState<View>('me');
   const [prevView, setPrevView] = useState<View>('me');
   const mainRef = useRef<HTMLDivElement>(null);
@@ -49,7 +50,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const [showWelcome, setShowWelcome] = useState(false);
 
   // Tracks for player
-  const tracks = data.tracks.length > 0 ? data.tracks : [];
+  const tracks = liveData.tracks.length > 0 ? liveData.tracks : [];
   const [currentIdx, setCurrentIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -63,6 +64,22 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     setMounted(true);
     const seen = localStorage.getItem('ihype-welcome-seen');
     if (!seen) setShowWelcome(true);
+  }, []);
+
+  // Client-side revalidation — fixes persistent degraded/cached-view banner
+  // after a DB cold-start. Runs once on mount and silently refreshes data.
+  useEffect(() => {
+    fetch('/api/workbench')
+      .then(r => r.ok ? r.json() : null)
+      .then((freshData: WorkbenchData | null) => {
+        if (!freshData) return;
+        // Always apply fresh data: clears degraded state if DB recovered,
+        // and keeps data current even when the initial SSR load succeeded.
+        setLiveData(freshData);
+      })
+      .catch(() => {
+        // Network failure — keep whatever SSR data we have (degraded or real).
+      });
   }, []);
 
   // Apply prefs as CSS vars
@@ -233,11 +250,11 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const dismissed = !!localStorage.getItem('ihype_genre_quiz_dismissed');
-    if (!dismissed && data.needsGenreQuiz === true) {
+    if (!dismissed && liveData.needsGenreQuiz === true) {
       const t = setTimeout(() => setShowGenreQuiz(true), 2000);
       return () => clearTimeout(t);
     }
-  }, [data.needsGenreQuiz]);
+  }, [liveData.needsGenreQuiz]);
 
   // Search overlay state
   const [searchOpen, setSearchOpen] = useState(false);
@@ -289,17 +306,17 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
   const viewEl = (() => {
     switch (view) {
-      case 'me':       return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
-      case 'seeds':    return <ViewErrorBoundary viewName="Seeds"><ViewSeeds data={data} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSave={onSeedSave} /></ViewErrorBoundary>;
-      case 'radio':    return <ViewErrorBoundary viewName="Radio"><ViewRadio data={data} onPickTrack={onPickTrack} /></ViewErrorBoundary>;
-      case 'studio':   return <ViewErrorBoundary viewName="Studio"><ViewStudio data={data} /></ViewErrorBoundary>;
-      case 'tickets':  return <ViewErrorBoundary viewName="Live Events"><ViewTickets data={data} /></ViewErrorBoundary>;
-      case 'settings':     return <ViewErrorBoundary viewName="Settings"><ViewSettings prefs={prefs} setPref={setPref} data={data} onBack={() => navigateTo(prevView)} /></ViewErrorBoundary>;
-      case 'tour':         return <ViewErrorBoundary viewName="Tour Planner"><ViewTour data={data} /></ViewErrorBoundary>;
-      case 'pagestudio':   return <ViewErrorBoundary viewName="Fan Page"><ViewPageStudio data={data} /></ViewErrorBoundary>;
-      case 'artistpage':   return <ViewErrorBoundary viewName="Artist Page"><ViewArtistPage data={data} /></ViewErrorBoundary>;
-      case 'venuepage':    return <ViewErrorBoundary viewName="Venue Page"><ViewVenuePage data={data} /></ViewErrorBoundary>;
-      default:             return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
+      case 'me':       return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
+      case 'seeds':    return <ViewErrorBoundary viewName="Seeds"><ViewSeeds data={liveData} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSave={onSeedSave} /></ViewErrorBoundary>;
+      case 'radio':    return <ViewErrorBoundary viewName="Radio"><ViewRadio data={liveData} onPickTrack={onPickTrack} /></ViewErrorBoundary>;
+      case 'studio':   return <ViewErrorBoundary viewName="Studio"><ViewStudio data={liveData} /></ViewErrorBoundary>;
+      case 'tickets':  return <ViewErrorBoundary viewName="Live Events"><ViewTickets data={liveData} /></ViewErrorBoundary>;
+      case 'settings':     return <ViewErrorBoundary viewName="Settings"><ViewSettings prefs={prefs} setPref={setPref} data={liveData} onBack={() => navigateTo(prevView)} /></ViewErrorBoundary>;
+      case 'tour':         return <ViewErrorBoundary viewName="Tour Planner"><ViewTour data={liveData} /></ViewErrorBoundary>;
+      case 'pagestudio':   return <ViewErrorBoundary viewName="Fan Page"><ViewPageStudio data={liveData} /></ViewErrorBoundary>;
+      case 'artistpage':   return <ViewErrorBoundary viewName="Artist Page"><ViewArtistPage data={liveData} /></ViewErrorBoundary>;
+      case 'venuepage':    return <ViewErrorBoundary viewName="Venue Page"><ViewVenuePage data={liveData} /></ViewErrorBoundary>;
+      default:             return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
     }
   })();
 
@@ -336,17 +353,17 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
           <AppTopbar
             view={view}
             setView={navigateTo}
-            listeningNow={data.listeningNow}
-            initials={data.userInitials}
-            userName={data.userName}
-            activeProfileTypes={data.activeProfileTypes}
+            listeningNow={liveData.listeningNow}
+            initials={liveData.userInitials}
+            userName={liveData.userName}
+            activeProfileTypes={liveData.activeProfileTypes}
             onSettings={() => navigateTo('settings')}
             onSearch={() => setSearchOpen(true)}
             onShortcuts={() => setShortcutsOpen(true)}
             badges={{
-              seeds: data.tracks.length > 0 ? String(data.tracks.length) : undefined,
-              radio: data.radioShows.some(r => r.live) ? 'LIVE' : undefined,
-              tickets: data.tickets.length > 0 ? String(data.tickets.length) : undefined,
+              seeds: liveData.tracks.length > 0 ? String(liveData.tracks.length) : undefined,
+              radio: liveData.radioShows.some(r => r.live) ? 'LIVE' : undefined,
+              tickets: liveData.tickets.length > 0 ? String(liveData.tickets.length) : undefined,
             }}
             notifCount={notifCount}
             notifications={notifications}
@@ -410,9 +427,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       {shortcutsOpen && <KeyboardShortcutsDialog onDismiss={() => setShortcutsOpen(false)} />}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <PasskeyNudge />
-      {showGenreQuiz && data.profileId && (
+      {showGenreQuiz && liveData.profileId && (
         <WMGenreQuizSheet
-          profileId={data.profileId}
+          profileId={liveData.profileId}
           onComplete={() => { setShowGenreQuiz(false); localStorage.setItem('ihype_genre_quiz_dismissed', '1'); }}
         />
       )}
