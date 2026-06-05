@@ -27,6 +27,7 @@ import { ViewErrorBoundary } from './workbench/ErrorBoundary';
 import { SearchOverlay } from './workbench/SearchOverlay';
 import { PasskeyNudge } from './workbench/PasskeyNudge';
 import { WMGenreQuizSheet } from './workbench/MobilePrimitives';
+import { SkeletonMeView } from './workbench/SkeletonMeView';
 
 // ─────────────────────────────────────────────────────────────
 // Main WorkbenchShell export
@@ -34,6 +35,7 @@ import { WMGenreQuizSheet } from './workbench/MobilePrimitives';
 export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData; starterPack?: StarterPackItem[] }) {
   void starterPack;
   const [liveData, setLiveData] = useState<WorkbenchData>(data);
+  const [revalidating, setRevalidating] = useState(data.degraded === true);
   const [view, setView] = useState<View>('me');
   const [prevView, setPrevView] = useState<View>('me');
   const mainRef = useRef<HTMLDivElement>(null);
@@ -72,15 +74,47 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     fetch('/api/workbench')
       .then(r => r.ok ? r.json() : null)
       .then((freshData: WorkbenchData | null) => {
-        if (!freshData) return;
-        // Always apply fresh data: clears degraded state if DB recovered,
-        // and keeps data current even when the initial SSR load succeeded.
-        setLiveData(freshData);
+        if (freshData) {
+          // Always apply fresh data: clears degraded state if DB recovered,
+          // and keeps data current even when the initial SSR load succeeded.
+          setLiveData(freshData);
+        }
+        setRevalidating(false);
       })
       .catch(() => {
         // Network failure — keep whatever SSR data we have (degraded or real).
+        setRevalidating(false);
       });
   }, []);
+
+  // 30-second hype count polling — silently updates counts in place
+  useEffect(() => {
+    function poll() {
+      if (document.visibilityState !== 'visible') return;
+      const trackIds = liveData.tracks.map(t => t.id);
+      const showIds = liveData.shows.map(s => s.id);
+      if (trackIds.length === 0 && showIds.length === 0) return;
+      const params = new URLSearchParams();
+      if (trackIds.length > 0) params.set('trackIds', trackIds.join(','));
+      if (showIds.length > 0) params.set('showIds', showIds.join(','));
+      fetch(`/api/hype/counts?${params.toString()}`)
+        .then(r => r.ok ? r.json() : null)
+        .then((freshCounts: { tracks: Record<string, number>; shows: Record<string, number> } | null) => {
+          if (!freshCounts) return;
+          setLiveData(prev => ({
+            ...prev,
+            tracks: prev.tracks.map(t => ({ ...t, hypeCount: freshCounts.tracks[t.id] ?? t.hypeCount })),
+            shows: prev.shows.map(s => ({ ...s, hype: freshCounts.shows[s.id] ?? s.hype })),
+          }));
+        })
+        .catch(() => {
+          // Network failure — keep existing counts
+        });
+    }
+
+    const interval = setInterval(poll, 30_000);
+    return () => clearInterval(interval);
+  }, [liveData.tracks, liveData.shows]);
 
   // Apply prefs as CSS vars
   useEffect(() => {
@@ -306,7 +340,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
   const viewEl = (() => {
     switch (view) {
-      case 'me':       return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
+      case 'me':       return revalidating
+        ? <SkeletonMeView />
+        : <ViewErrorBoundary viewName="My Page"><ViewMyPage data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
       case 'seeds':    return <ViewErrorBoundary viewName="Seeds"><ViewSeeds data={liveData} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSave={onSeedSave} /></ViewErrorBoundary>;
       case 'radio':    return <ViewErrorBoundary viewName="Radio"><ViewRadio data={liveData} onPickTrack={onPickTrack} /></ViewErrorBoundary>;
       case 'studio':   return <ViewErrorBoundary viewName="Studio"><ViewStudio data={liveData} /></ViewErrorBoundary>;
