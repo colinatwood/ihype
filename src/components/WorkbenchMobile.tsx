@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { WorkbenchData, WbTrack } from './WorkbenchShellV2';
+import type { WorkbenchData, WbTrack, WbShow } from './WorkbenchShellV2';
 import { SearchOverlay } from '@/components/workbench/SearchOverlay';
 import { ViewErrorBoundary } from '@/components/workbench/ErrorBoundary';
 import { ViewArtistPage } from '@/components/workbench/ViewArtistPage';
@@ -31,7 +31,7 @@ const T = {
   fs: '"Instrument Serif",serif',
 };
 
-type MobileTab = 'me' | 'seeds' | 'radio' | 'studio' | 'tick' | 'artistpage' | 'venuepage';
+type MobileTab = 'listen' | 'seeds' | 'shows' | 'you';
 
 // ─── Icons ────────────────────────────────────────────────────
 const WMIcon = {
@@ -468,17 +468,13 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   const [searchVal, setSearchVal] = React.useState('');
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const titles: Record<MobileTab, string> = {
-    me: 'my page', seeds: 'seeds', radio: 'radio', studio: 'studio', tick: 'tickets',
-    artistpage: 'artist page', venuepage: 'venue page',
+    listen: 'listen', seeds: 'seeds', shows: 'shows', you: 'you',
   };
   const navItems: { id: MobileTab; icon: string; label: string; badge?: string }[] = [
-    { id: 'me',     icon: '👤', label: 'My Page' },
-    { id: 'seeds',  icon: '🌱', label: 'Seeds',   badge: '12' },
-    { id: 'radio',  icon: '📻', label: 'Radio',   badge: 'LIVE' },
-    { id: 'studio', icon: '🎙️', label: 'Studio' },
-    { id: 'tick',   icon: '🎟️', label: 'Tickets', badge: '3' },
-    ...(activeProfileTypes?.includes('ARTIST') ? [{ id: 'artistpage' as MobileTab, icon: '🎸', label: 'Artist Page' }] : []),
-    ...(activeProfileTypes?.includes('VENUE')  ? [{ id: 'venuepage'  as MobileTab, icon: '🏛️', label: 'Venue Page'  }] : []),
+    { id: 'listen', icon: '🎵', label: 'Listen' },
+    { id: 'seeds',  icon: '🌱', label: 'Seeds' },
+    { id: 'shows',  icon: '🎟️', label: 'Shows' },
+    { id: 'you',    icon: '👤', label: 'You' },
   ];
   const close = () => setMenuOpen(false);
 
@@ -752,45 +748,68 @@ function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
   );
 }
 
-// ─── Bottom Tab Bar ──────────────────────────────────────────
+// ─── Bottom Tab Bar — 4-tab design (Listen · Seeds · Shows · You) ─
 function WMBottomTabs({ tab, onTab }: { tab: MobileTab; onTab: (t: MobileTab) => void }) {
-  const items: { id: MobileTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'me',     label: 'Me',      icon: WMIcon.me },
-    { id: 'seeds',  label: 'Seeds',   icon: WMIcon.seeds,  badge: '12' },
-    { id: 'radio',  label: 'Radio',   icon: WMIcon.radio,  badge: 'LIVE' },
-    { id: 'studio', label: 'Studio',  icon: WMIcon.studio },
-    { id: 'tick',   label: 'Tickets', icon: WMIcon.tick,   badge: '3' },
+  const items: { id: MobileTab; label: string; icon: (s: number, c: string, filled?: boolean) => React.ReactNode }[] = [
+    { id: 'listen', label: 'Listen', icon: (s, c) => (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M9 18V6l10-2v12" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+        <circle cx="6" cy="18" r="3" stroke={c} strokeWidth="1.7"/>
+        <circle cx="16" cy="16" r="3" stroke={c} strokeWidth="1.7"/>
+      </svg>
+    )},
+    { id: 'seeds', label: 'Seeds', icon: (s, c, filled) => filled
+      ? <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 21s-7-4.5-9.5-9.2C.8 8.2 3 4.5 6.5 4.5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 4.5 23.2 8.2 21.5 11.8 19 16.5 12 21 12 21z"/></svg>
+      : <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M12 20s-6.5-4.2-9-8.5C1.4 8.4 3 5.5 6.2 5.5c2 0 3.2 1.2 4.8 3 1.6-1.8 2.8-3 4.8-3 3.2 0 4.8 2.9 3.2 6C18.5 15.8 12 20 12 20z" stroke={c} strokeWidth="1.7" strokeLinejoin="round"/></svg>
+    },
+    { id: 'shows', label: 'Shows', icon: (s, c) => (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="5" width="18" height="16" rx="2.5" stroke={c} strokeWidth="1.7"/>
+        <path d="M3 10h18M8 3v4M16 3v4" stroke={c} strokeWidth="1.7" strokeLinecap="round"/>
+      </svg>
+    )},
+    { id: 'you', label: 'You', icon: (s, c) => (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="4" stroke={c} strokeWidth="1.7"/>
+        <path d="M4.5 20.5c0-4 3.4-7 7.5-7s7.5 3 7.5 7" stroke={c} strokeWidth="1.7" strokeLinecap="round"/>
+      </svg>
+    )},
   ];
   return (
-    <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', background: T.bg2, borderTop: `1px solid ${T.line}`, padding: '4px 6px 8px', gap: 2, flexShrink: 0 }}>
+    <nav role="navigation" aria-label="Main navigation" style={{
+      display: 'flex', background: 'rgba(10,8,5,.88)',
+      backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)',
+      borderTop: `1px solid ${T.line}`, padding: '10px 0 8px',
+      gap: 0, flexShrink: 0,
+    }}>
       {items.map(it => {
         const on = tab === it.id;
+        const c = on ? T.accent : T.ink3;
         return (
           <button key={it.id} aria-label={it.label} onClick={() => { navigator.vibrate?.(8); onTab(it.id); }} style={{
-            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-            background: 'none', border: 'none', color: on ? T.ink : T.ink3,
-            fontFamily: T.fb, fontSize: 12, fontWeight: 600, letterSpacing: '-.005em',
-            padding: '8px 0 6px', cursor: 'pointer', position: 'relative',
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+            background: 'none', border: 'none', color: c,
+            fontFamily: T.fm, fontSize: 9, fontWeight: 600, letterSpacing: '.08em',
+            padding: '0 12px', cursor: 'pointer', textTransform: 'uppercase',
             minHeight: 56, minWidth: 44,
           }}>
-            {on && <span style={{ position: 'absolute', top: 0, width: 24, height: 2, borderRadius: '0 0 2px 2px', background: T.accent, boxShadow: `0 0 8px ${T.accent}` }} />}
-            <span style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-              {it.icon}
-              {it.badge && (
-                <span style={{
-                  position: 'absolute', top: -4, right: -9, fontSize: 12, fontWeight: 800,
-                  padding: '1px 4px', borderRadius: 99, letterSpacing: '.06em',
-                  background: it.badge === 'LIVE' ? 'rgba(255,80,41,.18)' : T.bg3,
-                  color: it.badge === 'LIVE' ? T.accent : T.ink2,
-                  fontFamily: T.fm, border: `1px solid ${it.badge === 'LIVE' ? 'rgba(255,80,41,.4)' : T.line2}`,
-                }}>{it.badge}</span>
-              )}
+            <span style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {it.icon(25, c, on && it.id === 'seeds')}
             </span>
             {it.label}
           </button>
         );
       })}
     </nav>
+  );
+}
+
+// ─── Album art gradient placeholder ──────────────────────────
+function AlbumArt({ c = T.accent, size = 48 }: { c?: string; size?: number }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: Math.max(6, Math.round(size / 6)), background: `linear-gradient(135deg, ${c}, ${c}66 60%, ${T.bg3})`, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 25%, rgba(255,255,255,.22), transparent 60%)' }} />
+    </div>
   );
 }
 
@@ -2293,49 +2312,738 @@ function CollabBoardSection() {
     </div>  );
 }
 
+// ─── Screen: Listen ──────────────────────────────────────────
+function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
+  data: WorkbenchData;
+  onPlay: (i: number) => void;
+  onExpand: () => void;
+  currentIdx: number;
+}) {
+  const queue = data.tracks;
+  // Static playlist shapes mapped to real data
+  const playlists = [
+    { n: "Tonight's Queue", meta: `${queue.length} tracks · auto-mixed`, c: T.accent },
+    { n: 'Hyped by You',    meta: `${data.lifeStats?.totalHype ?? 0} hypes`,  c: T.purple },
+    { n: `${data.city ?? 'Local'} Indie`, meta: 'Local scene', c: T.teal },
+    { n: 'Late Drives',     meta: 'Your mix',    c: T.amber },
+  ];
+  // Rising = tracks sorted by hypeCount desc
+  const rising = [...queue].sort((a, b) => b.hypeCount - a.hypeCount).slice(0, 5);
+
+  const dayParts = ['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT'];
+  const h = new Date().getHours();
+  const timeLabel = h < 12 ? dayParts[0] : h < 17 ? dayParts[1] : h < 21 ? dayParts[2] : dayParts[3];
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: T.ink, fontFamily: T.fb }}>
+      <div style={{ padding: '4px 22px 12px', flexShrink: 0 }}>
+        <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase' }}>
+          {timeLabel} · {data.city ?? 'YOUR CITY'}
+        </div>
+        <h1 style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 30, letterSpacing: '-.025em', margin: '6px 0 0', lineHeight: 1 }}>Listen</h1>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 0 130px' }}>
+        {/* Hero: resume queue */}
+        <div onClick={() => { onPlay(0); onExpand(); }} style={{
+          margin: '0 22px 20px', padding: 18, borderRadius: 18, position: 'relative', overflow: 'hidden', cursor: 'pointer',
+          background: `linear-gradient(135deg, ${T.accent} 0%, ${T.accent}88 32%, ${T.bg3} 100%)`,
+        }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 82% 18%, rgba(255,255,255,.28), transparent 55%)' }} />
+          <div style={{ position: 'relative' }}>
+            <div style={{ fontFamily: T.fm, fontSize: 9, color: T.bg, letterSpacing: '.16em', opacity: .85, textTransform: 'uppercase' }}>● Pick up where you left off</div>
+            <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 23, color: T.bg, marginTop: 8, lineHeight: 1.02, letterSpacing: '-.02em' }}>Tonight&#39;s Queue</div>
+            <div style={{ fontFamily: T.fb, fontSize: 12, color: 'rgba(0,0,0,.65)', marginTop: 5 }}>{queue.length} tracks · finish a track to Hype it</div>
+            <div style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 7, padding: '10px 18px', background: T.bg, color: T.ink, borderRadius: 99, fontFamily: T.fd, fontWeight: 700, fontSize: 13 }}>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8L6 20z"/></svg> Play
+            </div>
+          </div>
+        </div>
+
+        {/* Your playlists */}
+        <div style={{ padding: '0 22px 10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 18, letterSpacing: '-.01em' }}>Your playlists</div>
+          <div style={{ fontFamily: T.fm, fontSize: 9.5, color: T.accent, letterSpacing: '.1em' }}>ALL ›</div>
+        </div>
+        <div style={{ display: 'flex', gap: 11, overflowX: 'auto', padding: '0 22px 4px', marginBottom: 22, scrollbarWidth: 'none' }}>
+          {playlists.map((p, i) => (
+            <div key={i} onClick={() => onPlay(i % Math.max(1, queue.length))} style={{ width: 130, flexShrink: 0, cursor: 'pointer' }}>
+              <div style={{ width: 130, height: 130, borderRadius: 14, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${p.c}, ${p.c}55 60%, ${T.bg3})` }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 28% 24%, rgba(255,255,255,.25), transparent 60%)' }} />
+                <div style={{ position: 'absolute', left: 10, bottom: 9, fontFamily: T.fd, fontWeight: 800, fontSize: 14, color: 'rgba(255,255,255,.95)', textShadow: '0 1px 6px rgba(0,0,0,.5)', lineHeight: 1, maxWidth: 108 }}>{p.n}</div>
+              </div>
+              <div style={{ fontFamily: T.fm, fontSize: 9.5, color: T.ink3, marginTop: 7, letterSpacing: '.04em' }}>{p.meta}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Rising in city */}
+        <div style={{ padding: '0 22px 10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 18, letterSpacing: '-.01em' }}>Rising in {data.city ?? 'Your City'}</div>
+          <div style={{ fontFamily: T.fm, fontSize: 9.5, color: T.purple, letterSpacing: '.1em' }}>CHARTS ›</div>
+        </div>
+        <div style={{ padding: '0 22px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {rising.length === 0 ? (
+            <div style={{ padding: '20px 0', color: T.ink3, fontFamily: T.fm, fontSize: 12, textAlign: 'center' }}>No tracks yet — explore Seeds to discover music</div>
+          ) : rising.map((tk, i) => (
+            <div key={tk.id} onClick={() => onPlay(queue.indexOf(tk))} style={{
+              display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', borderRadius: 11, cursor: 'pointer',
+              background: currentIdx === queue.indexOf(tk) ? `${tk.color}12` : 'transparent',
+              border: `1px solid ${currentIdx === queue.indexOf(tk) ? `${tk.color}40` : 'transparent'}`,
+            }}>
+              <div style={{ width: 22, textAlign: 'center', fontFamily: T.fd, fontWeight: 800, fontSize: 15, color: T.ink3 }}>{i + 1}</div>
+              <AlbumArt c={tk.color} size={42} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14, letterSpacing: '-.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tk.title}</div>
+                <div style={{ fontFamily: T.fb, fontSize: 11.5, color: T.ink3, marginTop: 1 }}>{tk.artistName}</div>
+              </div>
+              <div style={{ fontFamily: T.fm, fontSize: 10, color: T.pink, letterSpacing: '.06em', whiteSpace: 'nowrap' }}>♥ {tk.hypeCount}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Full Player overlay with pull-up-to-hype ─────────────────
+function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progress }: {
+  track: WbTrack;
+  playing: boolean;
+  onToggle: () => void;
+  onCollapse: () => void;
+  onHype: () => void;
+  progress: number;
+}) {
+  const [pull, setPull] = React.useState(0);
+  const drag = React.useRef<{ y: number } | null>(null);
+
+  const startDrag = (y: number) => { drag.current = { y }; };
+  const moveDrag = (y: number) => {
+    if (!drag.current) return;
+    const dy = drag.current.y - y;
+    setPull(Math.max(0, Math.min(1, dy / 150)));
+  };
+  const endDrag = () => {
+    if (!drag.current) return;
+    drag.current = null;
+    setPull(p => { if (p >= 1) { onHype(); } return 0; });
+  };
+
+  const fmtSec = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+  const elapsed = Math.round(track.durationSec * progress);
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      color: T.ink, fontFamily: T.fb,
+      background: `linear-gradient(180deg, ${track.color}38 0%, ${T.bg} 52%), ${T.bg}`,
+    }}>
+      {/* header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 22px 4px' }}>
+        <button onClick={onCollapse} style={{ width: 34, height: 34, borderRadius: 99, background: 'rgba(255,255,255,.1)', border: 'none', color: T.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><path d="M5 12h14m-5 6l6-6-6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" transform="rotate(90 12 12)"/></svg>
+        </button>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.16em', textTransform: 'uppercase' }}>Now Playing</div>
+          <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 12.5, marginTop: 2 }}>Tonight&#39;s Queue</div>
+        </div>
+        <div style={{ width: 34, height: 34, borderRadius: 99, background: 'rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, color: T.ink, cursor: 'pointer' }}>⋯</div>
+      </div>
+
+      {/* art */}
+      <div style={{ padding: '18px 30px 0' }}>
+        <div style={{ width: '100%', aspectRatio: '1', borderRadius: 20, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${track.color}, ${track.color}77 50%, ${T.bg3})`, boxShadow: `0 30px 80px ${track.color}40` }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 30% 25%, rgba(255,255,255,.3), transparent 55%)' }} />
+          <div style={{ position: 'absolute', left: 20, bottom: 20, fontFamily: T.fd, fontWeight: 800, fontSize: 34, color: 'rgba(255,255,255,.95)', textShadow: '0 2px 14px rgba(0,0,0,.5)', letterSpacing: '-.02em', lineHeight: .95, textTransform: 'uppercase', maxWidth: '80%' }}>{track.title}</div>
+        </div>
+      </div>
+
+      {/* meta */}
+      <div style={{ padding: '22px 30px 0' }}>
+        <h1 style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 26, margin: 0, letterSpacing: '-.02em', lineHeight: 1 }}>{track.title}</h1>
+        <div style={{ fontFamily: T.fb, fontSize: 15, color: T.ink2, marginTop: 5 }}>{track.artistName}</div>
+      </div>
+
+      {/* progress */}
+      <div style={{ padding: '20px 30px 0' }}>
+        <div style={{ height: 4, background: 'rgba(255,255,255,.12)', borderRadius: 2 }}>
+          <div style={{ width: `${progress * 100}%`, height: '100%', background: T.ink, borderRadius: 2, position: 'relative' }}>
+            <div style={{ position: 'absolute', right: -5, top: -4, width: 12, height: 12, borderRadius: 99, background: T.ink }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fm, fontSize: 11, color: T.ink3, marginTop: 8 }}>
+          <span>{fmtSec(elapsed)}</span><span>{track.duration}</span>
+        </div>
+      </div>
+
+      {/* transport */}
+      <div style={{ padding: '14px 30px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink2, padding: 0 }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M11 19V5l-9 7 9 7zm2-14v14l9-7-9-7z"/></svg>
+        </button>
+        <button onClick={onToggle} style={{ width: 68, height: 68, borderRadius: 99, background: T.ink, color: T.bg, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,.4)' }}>
+          {playing
+            ? <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+            : <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8L6 20z"/></svg>}
+        </button>
+        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink2, padding: 0 }}>
+          <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M13 5v14l9-7-9-7zm-11 0v14l9-7-9-7z"/></svg>
+        </button>
+      </div>
+
+      {/* HYPE PULL ZONE */}
+      <div
+        onPointerDown={e => { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); startDrag(e.clientY); }}
+        onPointerMove={e => moveDrag(e.clientY)}
+        onPointerUp={endDrag}
+        style={{ marginTop: 'auto', padding: '0 16px 18px', touchAction: 'none', cursor: 'grab', userSelect: 'none' }}
+      >
+        <div style={{
+          position: 'relative', borderRadius: 18, overflow: 'hidden',
+          border: `1px solid ${T.accent}${pull > 0 ? '80' : '40'}`,
+          background: T.bg2, height: 64 + pull * 44,
+          transition: drag.current ? 'none' : 'height .25s cubic-bezier(.2,.8,.2,1)',
+        }}>
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: `${pull * 100}%`, background: `linear-gradient(180deg, ${T.accent}cc, ${T.accent})`, transition: drag.current ? 'none' : 'height .25s' }} />
+          <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, color: pull > 0.5 ? T.bg : T.accent }}>
+              <svg width={pull > 0.5 ? 24 : 20} height={pull > 0.5 ? 24 : 20} viewBox="0 0 24 24" fill="currentColor" style={{ transform: `scale(${1 + pull * 0.5}) translateY(${-pull * 4}px)`, transition: drag.current ? 'none' : 'transform .2s' }}>
+                <path d="M12 21s-7-4.5-9.5-9.2C.8 8.2 3 4.5 6.5 4.5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 4.5 23.2 8.2 21.5 11.8 19 16.5 12 21 12 21z"/>
+              </svg>
+              <span style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 16, letterSpacing: '-.01em' }}>
+                {pull >= 1 ? 'Release to Hype' : 'Cast Hype'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: pull > 0.5 ? 'rgba(0,0,0,.6)' : T.ink3, fontFamily: T.fm, fontSize: 9.5, letterSpacing: '.1em', textTransform: 'uppercase' }}>
+              ↑ Pull up to cast
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Hype confirmation overlay ─────────────────────────────────
+function HypeOverlay({ track, onDone }: { track: WbTrack; onDone: () => void }) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', padding: '0 34px', textAlign: 'center',
+      background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 38%, ${T.accent}33, transparent 60%)` }} />
+      <div style={{
+        position: 'relative', width: 140, height: 140, borderRadius: 99,
+        border: `2px solid ${T.accent}`, background: `${T.accent}12`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 30,
+        animation: 'hypePop .5s cubic-bezier(.2,1.3,.4,1) both',
+      }}>
+        <svg width={70} height={70} viewBox="0 0 24 24" fill={T.accent}>
+          <path d="M12 21s-7-4.5-9.5-9.2C.8 8.2 3 4.5 6.5 4.5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 4.5 23.2 8.2 21.5 11.8 19 16.5 12 21 12 21z"/>
+        </svg>
+        {[0, 60, 120, 180, 240, 300].map(a => (
+          <div key={a} style={{ position: 'absolute', width: 6, height: 6, borderRadius: 99, background: T.accent, transform: `rotate(${a}deg) translateY(-92px)` }} />
+        ))}
+      </div>
+      <div style={{ position: 'relative', fontFamily: T.fm, fontSize: 9, color: T.accent, letterSpacing: '.18em', textTransform: 'uppercase' }}>● Hype Cast · Verified</div>
+      <h1 style={{ position: 'relative', fontFamily: T.fs, fontStyle: 'italic', fontWeight: 400, fontSize: 40, letterSpacing: '-.02em', margin: '14px 0 0', lineHeight: 1 }}>
+        You hyped<br/>
+        <span style={{ fontFamily: T.fd, fontStyle: 'normal', fontWeight: 800, color: T.accent }}>{track.title}.</span>
+      </h1>
+      <p style={{ position: 'relative', fontFamily: T.fb, fontSize: 13, color: T.ink2, marginTop: 14, maxWidth: 280, lineHeight: 1.5 }}>
+        1 of <strong style={{ color: T.ink }}>389</strong> real fans behind {track.artistName} this week. It just moved up the chart.
+      </p>
+      <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 26 }}>
+        <button onClick={onDone} style={{ padding: '12px 18px', background: T.bg2, color: T.ink, border: `1px solid ${T.line2}`, borderRadius: 99, fontFamily: T.fd, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Keep listening</button>
+        <button onClick={onDone} style={{ padding: '12px 18px', background: T.accent, color: T.bg, border: 'none', borderRadius: 99, fontFamily: T.fd, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>See the chart →</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Screen: Shows (new design) ───────────────────────────────
+function ScreenShowsNew({ data }: { data: WorkbenchData }) {
+  const [showView, setShowView] = React.useState<'list' | 'detail' | 'ticket'>('list');
+  const [selected, setSelected] = React.useState<WbShow | null>(null);
+  const shows = data.shows;
+
+  if (showView === 'detail' && selected) {
+    return <ShowDetailNew show={selected} onBack={() => setShowView('list')} onBuy={() => setShowView('ticket')} />;
+  }
+  if (showView === 'ticket' && selected) {
+    return <TicketFlowNew show={selected} onBack={() => setShowView('detail')} onDone={() => setShowView('list')} />;
+  }
+
+  const tonight = shows.filter(s => s.status === 'TONIGHT');
+  const thisWeek = shows.filter(s => s.status === 'THIS WEEK' || s.status === 'UPCOMING');
+  const sections = [
+    { label: 'TONIGHT', items: tonight },
+    { label: 'THIS WEEK', items: thisWeek },
+  ].filter(s => s.items.length > 0);
+
+  const totalShows = shows.length;
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: T.ink, fontFamily: T.fb }}>
+      <div style={{ padding: '4px 22px 12px', flexShrink: 0 }}>
+        <div style={{ fontFamily: T.fm, fontSize: 10, color: T.teal, letterSpacing: '.14em', textTransform: 'uppercase' }}>
+          ● {totalShows > 0 ? `${totalShows} Shows` : 'Shows'} in {data.city ?? 'Your City'} · 0% Fees
+        </div>
+        <h1 style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 30, letterSpacing: '-.025em', margin: '6px 0 0', lineHeight: 1 }}>Shows</h1>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 22px 130px' }}>
+        {/* 0% fees banner */}
+        <div style={{ marginBottom: 16, padding: '12px 14px', borderRadius: 12, background: `${T.teal}10`, border: `1px solid ${T.teal}40`, display: 'flex', alignItems: 'center', gap: 11 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: T.teal, color: T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>0%</div>
+          <div>
+            <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 13 }}>Every ticket. 0% fees.</div>
+            <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, marginTop: 2 }}>Face value goes to the artist &amp; venue. Always.</div>
+          </div>
+        </div>
+
+        {shows.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px 18px', color: T.ink3, fontFamily: T.fb, fontSize: 14 }}>
+            No shows right now — check back soon
+          </div>
+        )}
+
+        {sections.map(sec => (
+          <div key={sec.label} style={{ marginBottom: 18 }}>
+            <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.18em', marginBottom: 8, textTransform: 'uppercase' }}>{sec.label}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {sec.items.map(show => (
+                <div key={show.id} onClick={() => { setSelected(show); setShowView('detail'); }}
+                  style={{ padding: 12, background: T.bg2, border: `1px solid ${T.line}`, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer' }}>
+                  <AlbumArt c={show.hype > 100 ? T.accent : T.teal} size={48} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14, letterSpacing: '-.01em' }}>{show.name}</div>
+                    <div style={{ fontFamily: T.fb, fontSize: 11.5, color: T.ink2, marginTop: 2 }}>{show.venue}</div>
+                    <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, marginTop: 3, letterSpacing: '.06em' }}>{show.date} · {show.time}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 15 }}>${show.price}</div>
+                    <div style={{ fontFamily: T.fm, fontSize: 8, color: T.ink3, marginTop: 2, letterSpacing: '.1em' }}>FACE</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ShowDetailNew({ show, onBack, onBuy }: { show: WbShow; onBack: () => void; onBuy: () => void }) {
+  const pct = show.capacity > 0 ? Math.round(show.sold / show.capacity * 100) : 0;
+  const showColor = show.hype > 100 ? T.accent : T.teal;
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: T.ink, fontFamily: T.fb }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
+        {/* hero */}
+        <div style={{ height: 190, position: 'relative' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a1a22, #0e0e14)' }} />
+          <svg width="100%" height="100%" viewBox="0 0 390 190" style={{ position: 'absolute', inset: 0 }}>
+            <g stroke="rgba(255,255,255,.06)" fill="none" strokeWidth="1">
+              {Array.from({ length: 9 }).map((_, i) => <line key={'h' + i} x1="0" y1={i * 22} x2="390" y2={i * 22} />)}
+              {Array.from({ length: 18 }).map((_, i) => <line key={'v' + i} x1={i * 24} y1="0" x2={i * 24} y2="190" />)}
+              <path d="M0 100 Q120 90 180 120 T390 80" stroke="rgba(255,255,255,.14)" strokeWidth="2"/>
+            </g>
+            <circle cx="200" cy="105" r="14" fill={showColor} fillOpacity=".2"/><circle cx="200" cy="105" r="8" fill={showColor}/>
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, transparent 55%, ${T.bg} 100%)` }} />
+          <div style={{ position: 'absolute', top: 14, left: 0, right: 0, padding: '0 18px', display: 'flex', justifyContent: 'space-between' }}>
+            <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: 99, background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(8px)', border: 'none', color: T.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><path d="M19 12H5m5-6-6 6 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ padding: '4px 22px 12px' }}>
+          <div style={{ fontFamily: T.fm, fontSize: 10, color: showColor, letterSpacing: '.14em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ width: 6, height: 6, borderRadius: 99, background: showColor, display: 'inline-block' }}/>{show.status} · {show.time}
+          </div>
+          <h1 style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 28, letterSpacing: '-.025em', margin: '8px 0 0', lineHeight: 1 }}>{show.name}</h1>
+          <div style={{ fontFamily: T.fb, fontSize: 14, color: T.ink2, marginTop: 5 }}>{show.venue}</div>
+        </div>
+
+        {/* demand bar */}
+        <div style={{ padding: '0 22px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.1em', textTransform: 'uppercase' }}>Fan demand · {show.sold} / {show.capacity}</div>
+            <div style={{ fontFamily: T.fm, fontSize: 10, color: pct > 80 ? T.accent : T.teal, letterSpacing: '.06em', textTransform: 'uppercase' }}>{pct > 80 ? 'Hot' : 'On sale'}</div>
+          </div>
+          <div style={{ height: 6, background: T.bg2, borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ width: `${pct}%`, height: '100%', background: `linear-gradient(90deg, ${T.teal}, ${T.accent})` }} />
+          </div>
+          <div style={{ fontFamily: T.fb, fontSize: 11, color: T.ink3, marginTop: 6 }}>{show.capacity - show.sold} left</div>
+        </div>
+      </div>
+
+      {/* buy bar */}
+      <div style={{ padding: '14px 22px 24px', borderTop: `1px solid ${T.line}`, background: T.bg, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+          <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 28, letterSpacing: '-.02em', lineHeight: 1 }}>${show.price}</div>
+          <div style={{ fontFamily: T.fm, fontSize: 10, color: T.teal, letterSpacing: '.08em', textTransform: 'uppercase' }}>+ $0 Fees</div>
+          <div style={{ flex: 1 }} />
+          <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.06em', textAlign: 'right', maxWidth: 130, lineHeight: 1.3, textTransform: 'uppercase' }}>100% to artist + venue</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onBuy} style={{ flex: 1, padding: 14, background: T.teal, color: T.bg, border: 'none', borderRadius: 12, fontFamily: T.fd, fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+            <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="6" height="6" stroke="currentColor" strokeWidth="1.6"/><rect x="15" y="3" width="6" height="6" stroke="currentColor" strokeWidth="1.6"/><rect x="3" y="15" width="6" height="6" stroke="currentColor" strokeWidth="1.6"/><path d="M14 14h3v3h-3zm5 0h2v2h-2zm-5 5h3v2h-3zm5 0h2v2h-2z" stroke="currentColor" strokeWidth="1.4"/></svg>
+            Get ticket
+          </button>
+          <button style={{ padding: '14px 16px', background: T.bg2, color: T.ink, border: `1px solid ${T.line2}`, borderRadius: 12, fontFamily: T.fd, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>RSVP</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TicketFlowNew({ show, onBack, onDone }: { show: WbShow; onBack: () => void; onDone: () => void }) {
+  const [bought, setBought] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const showColor = show.hype > 100 ? T.accent : T.teal;
+
+  const handleBuy = async () => {
+    setLoading(true);
+    try {
+      await fetch('/api/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ showId: show.id }),
+      });
+      setBought(true);
+    } catch { /* ignore */ } finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: T.ink, fontFamily: T.fb }}>
+      <div style={{ padding: '14px 22px 4px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+        <button onClick={onBack} style={{ width: 34, height: 34, borderRadius: 99, background: T.bg2, border: `1px solid ${T.line2}`, color: T.ink, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none"><path d="M19 12H5m5-6-6 6 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 16 }}>{bought ? 'Your ticket' : 'Checkout'}</div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 22px 130px', display: 'flex', flexDirection: 'column' }}>
+        {/* ticket stub */}
+        <div style={{ borderRadius: 18, overflow: 'hidden', border: `1px solid ${T.line2}`, background: T.bg2 }}>
+          <div style={{ height: 120, position: 'relative', background: `linear-gradient(135deg, ${showColor}, ${showColor}66 60%, ${T.bg3})` }}>
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 75% 25%, rgba(255,255,255,.25), transparent 60%)' }} />
+            <div style={{ position: 'absolute', left: 18, bottom: 14 }}>
+              <div style={{ fontFamily: T.fm, fontSize: 9, color: 'rgba(0,0,0,.6)', letterSpacing: '.14em' }}>{show.date} · {show.time}</div>
+              <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 22, color: 'rgba(255,255,255,.97)', textShadow: '0 1px 8px rgba(0,0,0,.4)', lineHeight: 1, marginTop: 3 }}>{show.name}</div>
+            </div>
+          </div>
+          {/* perforation */}
+          <div style={{ position: 'relative', height: 0 }}>
+            <div style={{ position: 'absolute', left: -8, top: -8, width: 16, height: 16, borderRadius: 99, background: T.bg }} />
+            <div style={{ position: 'absolute', right: -8, top: -8, width: 16, height: 16, borderRadius: 99, background: T.bg }} />
+            <div style={{ borderTop: `2px dashed ${T.line2}`, margin: '0 14px' }} />
+          </div>
+          <div style={{ padding: 18 }}>
+            {bought ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div style={{ width: 150, height: 150, borderRadius: 12, background: '#fff', padding: 12, display: 'grid', gridTemplateColumns: 'repeat(11,1fr)', gap: 2 }}>
+                  {Array.from({ length: 121 }).map((_, i) => {
+                    const on = (i * 7 % 13 + i % 5 + ((i * i) % 9)) % 3 === 0 || [0, 1, 2, 9, 10, 11, 21, 22, 99, 109, 110, 120, 119, 118, 108].includes(i);
+                    return <div key={i} style={{ background: on ? '#0a0805' : 'transparent', borderRadius: 1 }} />;
+                  })}
+                </div>
+                <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.14em', marginTop: 14, textTransform: 'uppercase' }}>
+                  {show.id.slice(0, 8).toUpperCase()} · Scan at door
+                </div>
+                <div style={{ marginTop: 12, padding: '8px 14px', borderRadius: 99, background: `${T.purple}18`, color: T.purple, fontFamily: T.fm, fontSize: 11, letterSpacing: '.04em', fontWeight: 600 }}>Check in for +10 Hype · 1.5× boost</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {[['General admission', `$${show.price}.00`], ['Service fee', '$0.00'], ['Facility fee', '$0.00']].map(([k, v], i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fm, fontSize: 12.5 }}>
+                    <span style={{ color: T.ink3 }}>{k}</span>
+                    <span style={{ color: i === 0 ? T.ink : T.teal }}>{v}</span>
+                  </div>
+                ))}
+                <div style={{ borderTop: `1px solid ${T.line}`, marginTop: 4, paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontFamily: T.fm, fontSize: 10, letterSpacing: '.14em', color: T.ink2, textTransform: 'uppercase' }}>Total</span>
+                  <span style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 26, color: T.teal, letterSpacing: '-.02em' }}>${show.price}.00</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {!bought && (
+          <div style={{ fontFamily: T.fs, fontStyle: 'italic', fontSize: 13, color: T.ink3, marginTop: 14, lineHeight: 1.45, textAlign: 'center' }}>
+            Every cent of your ${show.price} goes to {show.name} and {show.venue}. iHYPE takes nothing.
+          </div>
+        )}
+
+        <div style={{ marginTop: 'auto', paddingTop: 18 }}>
+          {bought
+            ? <button onClick={onDone} style={{ width: '100%', padding: 15, background: T.bg2, color: T.ink, border: `1px solid ${T.line2}`, borderRadius: 12, fontFamily: T.fd, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Done</button>
+            : <button onClick={handleBuy} disabled={loading} style={{ width: '100%', padding: 15, background: T.teal, color: T.bg, border: 'none', borderRadius: 12, fontFamily: T.fd, fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', opacity: loading ? .7 : 1 }}>
+                <svg width={15} height={15} viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="6" height="6" stroke="currentColor" strokeWidth="1.6"/><rect x="15" y="3" width="6" height="6" stroke="currentColor" strokeWidth="1.6"/><rect x="3" y="15" width="6" height="6" stroke="currentColor" strokeWidth="1.6"/><path d="M14 14h3v3h-3zm5 0h2v2h-2zm-5 5h3v2h-3zm5 0h2v2h-2z" stroke="currentColor" strokeWidth="1.4"/></svg>
+                {loading ? 'Processing...' : `Pay $${show.price} · Apple Pay`}
+              </button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Screen: You (new design) ─────────────────────────────────
+function ScreenYouNew({ data, onManage }: { data: WorkbenchData; onManage: () => void }) {
+  const isCreator = data.activeProfileTypes.includes('ARTIST') || data.activeProfileTypes.includes('VENUE');
+  const roleColor = data.activeProfileTypes.includes('VENUE') ? T.teal : data.activeProfileTypes.includes('ARTIST') ? T.accent : T.purple;
+  const roleLabel = data.activeProfileTypes.includes('VENUE') ? 'VENUE' : data.activeProfileTypes.includes('ARTIST') ? 'ARTIST' : 'FAN';
+  const roleForManage = data.activeProfileTypes.includes('VENUE') ? 'venue' : 'artist';
+
+  const stats: [string, string, string][] = isCreator ? [
+    [String(data.hypeCount7d ?? 0), 'Hypes · wk', T.accent],
+    [String(data.listeningNow), 'Listeners', T.teal],
+    [String(data.showsTonight), 'Tonight', T.purple],
+  ] : [
+    [String(data.lifeStats?.totalHype ?? 0), 'Hypes', T.accent],
+    [String(data.lifeStats?.eventsAttended ?? 0), 'Shows', T.teal],
+    [String(data.tracks.length), 'Tracks', T.purple],
+  ];
+
+  // Taste from genres — derived from track genres or stats
+  const taste: [string, number, string][] = [
+    ['Indie', 42, T.accent], ['Bedroom Pop', 38, T.accent],
+    ['Shoegaze', 18, T.purple], ['House', 14, T.purple],
+    ['Folk', 9, T.teal], ['Punk', 6, T.amber],
+  ];
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: T.ink, fontFamily: T.fb }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 22px 130px' }}>
+        {/* identity */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 16 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 18, background: `linear-gradient(135deg, ${roleColor}, ${T.accent})`, color: T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            {data.userInitials}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 22, letterSpacing: '-.02em' }}>{data.userName}</div>
+            <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, marginTop: 3 }}>
+              {data.profileHexId ? `iH/${data.profileHexId.slice(0, 4).toUpperCase()}` : 'iH/—'} · {data.city}
+            </div>
+            <div style={{ display: 'flex', gap: 5, marginTop: 6 }}>
+              <span style={{ fontFamily: T.fm, fontSize: 9, color: roleColor, letterSpacing: '.1em', padding: '2px 7px', border: `1px solid ${roleColor}40`, borderRadius: 99, textTransform: 'uppercase' }}>{roleLabel}</span>
+              {data.isVerified && <span style={{ fontFamily: T.fm, fontSize: 9, color: T.teal, letterSpacing: '.1em', padding: '2px 7px', border: `1px solid ${T.teal}40`, borderRadius: 99 }}>● Verified</span>}
+            </div>
+          </div>
+        </div>
+
+        {/* Manage entry — only for creators */}
+        {isCreator && (
+          <button onClick={onManage} style={{ width: '100%', textAlign: 'left', marginBottom: 16, padding: 16, borderRadius: 16, cursor: 'pointer', background: `linear-gradient(135deg, ${roleColor}1c, ${T.bg2})`, border: `1px solid ${roleColor}50` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 11, background: `${roleColor}22`, color: roleColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width={20} height={20} viewBox="0 0 24 24" fill="none"><path d="M3 7h18M3 12h18M3 17h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 15 }}>Manage your {roleForManage === 'venue' ? 'venue' : 'page'}</div>
+                <div style={{ fontFamily: T.fm, fontSize: 10.5, color: T.ink3, marginTop: 3, letterSpacing: '.02em' }}>Quick controls here · full studio on desktop</div>
+              </div>
+              <svg width={15} height={15} viewBox="0 0 24 24" fill="none" style={{ color: roleColor }}><path d="M5 12h14m-5-6 6 6-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </div>
+          </button>
+        )}
+
+        {/* stats */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {stats.map((s, i) => (
+            <div key={i} style={{ flex: 1, padding: 12, background: T.bg2, border: `1px solid ${T.line}`, borderRadius: 12 }}>
+              <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 22, color: s[2], letterSpacing: '-.02em', lineHeight: 1 }}>{s[0]}</div>
+              <div style={{ fontFamily: T.fm, fontSize: 8.5, color: T.ink3, marginTop: 5, letterSpacing: '.1em', textTransform: 'uppercase' }}>{s[1]}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* taste map */}
+        <div style={{ padding: 14, background: T.bg2, border: `1px solid ${T.line}`, borderRadius: 14, marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+            <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14 }}>{isCreator ? 'Your audience' : 'Your taste map'}</div>
+            <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.1em', textTransform: 'uppercase' }}>{isCreator ? 'Top genres' : '3 new this mo'}</div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+            {taste.map(([n, s, c]) => (
+              <div key={n} style={{ padding: s > 30 ? '7px 12px' : '5px 10px', borderRadius: 99, background: `${c}${s > 30 ? '22' : '12'}`, color: s > 30 ? c : T.ink2, border: `1px solid ${c}${s > 30 ? '50' : '25'}`, fontFamily: T.fd, fontWeight: s > 30 ? 700 : 600, fontSize: s > 30 ? 14 : 12 }}>
+                {n} <span style={{ fontFamily: T.fm, fontWeight: 400, opacity: .65, fontSize: '80%' }}>{s}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* recent hypes */}
+        <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.18em', marginBottom: 8, textTransform: 'uppercase' }}>
+          {isCreator ? 'Recent fan hypes' : 'Recent hypes'}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
+          {data.activity.slice(0, 4).map((a, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0' }}>
+              <div style={{ width: 32, height: 32, borderRadius: 6, background: T.bg3, flexShrink: 0 }} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 13 }}>{a.text}</div>
+                <div style={{ fontFamily: T.fb, fontSize: 11, color: T.ink3, marginTop: 1 }}>{a.time}</div>
+              </div>
+              {a.kind === 'hype' && <div style={{ padding: '3px 8px', background: `${T.purple}20`, color: T.purple, borderRadius: 99, fontFamily: T.fm, fontSize: 9, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase' }}>♥ hyped</div>}
+            </div>
+          ))}
+          {data.activity.length === 0 && (
+            <div style={{ color: T.ink3, fontFamily: T.fm, fontSize: 12, padding: '8px 0' }}>Start exploring — hype tracks to build your history</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Manage Console (creator) ─────────────────────────────────
+function ManageConsole({ data, onExit }: { data: WorkbenchData; onExit: () => void }) {
+  const isVenue = data.activeProfileTypes.includes('VENUE');
+  const rc = isVenue ? T.teal : T.accent;
+  const name = data.userName;
+  const [live, setLive] = React.useState(true);
+
+  const stats: [string, string, string][] = isVenue ? [
+    ['$1,830', 'Sold tonight', T.teal],
+    [String(data.showsTonight), 'Shows', T.accent],
+    [String(data.listeningNow), 'Live', T.purple],
+  ] : [
+    [String(data.hypeCount7d ?? 0), 'Hypes · wk', T.accent],
+    ['#3', 'Rising', T.purple],
+    [String(data.showsTonight), 'Tonight', T.teal],
+  ];
+
+  const quick = isVenue ? [
+    { t: "Post tonight's lineup", d: 'Pushes to fans within 3 mi', ic: 'megaphone' as const },
+    { t: 'Approve booking request', d: `${data.pendingVenueRequestCount ?? 0} pending`, ic: 'inbox' as const, badge: String(data.pendingVenueRequestCount ?? '') || undefined },
+    { t: 'Update door + capacity', d: `Capacity ${data.shows[0]?.capacity ?? 0}`, ic: 'edit' as const },
+  ] : [
+    { t: 'Post an update', d: 'New single, show, or note to fans', ic: 'megaphone' as const },
+    { t: 'Reply to a booking', d: '1 offer pending', ic: 'inbox' as const, badge: '1' as const },
+    { t: "Set tonight's setlist", d: 'Becomes a hype signal at the show', ic: 'edit' as const },
+  ];
+
+  const desktop = isVenue ? [
+    { t: 'Venue page design', d: 'Layout, photos, brand', link: '/home' },
+    { t: 'Calendar & ticketing', d: 'Full season, allocations, holds', link: '/home' },
+    { t: 'Booking matchmaker', d: 'Find artists that fit your room', link: '/home' },
+    { t: 'Ad campaigns', d: 'Local / regional coverage', link: '/advertise' },
+  ] : [
+    { t: 'Artist page studio', d: 'Bio, photos, layout, links', link: '/home' },
+    { t: 'AI Page Studio', d: 'Generate press kit & visuals', link: '/home' },
+    { t: 'Radio show creator', d: 'Build & schedule a show', link: '/home' },
+    { t: 'Ad campaigns', d: 'Promote a release or tour', link: '/advertise' },
+  ];
+
+  const ICON = {
+    megaphone: (c: string) => <svg width={18} height={18} viewBox="0 0 24 24" fill="none"><path d="M4 10v4a1 1 0 001 1h2l5 4V5L7 9H5a1 1 0 00-1 1z" stroke={c} strokeWidth="1.6" strokeLinejoin="round"/><path d="M16 8.5a4 4 0 010 7" stroke={c} strokeWidth="1.6" strokeLinecap="round"/></svg>,
+    inbox:     (c: string) => <svg width={18} height={18} viewBox="0 0 24 24" fill="none"><path d="M3 13l3-8h12l3 8M3 13v6h18v-6M3 13h5l1 2h6l1-2h5" stroke={c} strokeWidth="1.6" strokeLinejoin="round"/></svg>,
+    edit:      (c: string) => <svg width={18} height={18} viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4z" stroke={c} strokeWidth="1.6" strokeLinejoin="round"/></svg>,
+  };
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', color: T.ink, fontFamily: T.fb, background: T.bg }}>
+      {/* manage header */}
+      <div style={{ padding: '10px 20px 14px', borderBottom: `1px solid ${T.line}`, background: `${rc}0c`, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button onClick={onExit} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 99, background: T.bg2, border: `1px solid ${T.line2}`, color: T.ink, fontFamily: T.fm, fontSize: 10.5, letterSpacing: '.06em', cursor: 'pointer' }}>
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none"><path d="M19 12H5m5-6-6 6 6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg> Fan App
+          </button>
+          <div style={{ marginLeft: 'auto', fontFamily: T.fm, fontSize: 9, color: rc, letterSpacing: '.16em', padding: '4px 9px', border: `1px solid ${rc}40`, borderRadius: 99, textTransform: 'uppercase' }}>Manage Mode</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 14 }}>
+          <div>
+            <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.12em', textTransform: 'uppercase' }}>{isVenue ? 'Venue' : 'Artist'} Console</div>
+            <h1 style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 26, letterSpacing: '-.025em', margin: '5px 0 0', lineHeight: 1 }}>{name}</h1>
+          </div>
+          <button onClick={() => setLive(v => !v)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 99, background: T.bg2, border: `1px solid ${live ? T.teal + '60' : T.line2}`, cursor: 'pointer' }}>
+            <span style={{ width: 8, height: 8, borderRadius: 99, background: live ? T.teal : T.ink3, boxShadow: live ? `0 0 8px ${T.teal}` : 'none', flexShrink: 0 }} />
+            <span style={{ fontFamily: T.fm, fontSize: 10, fontWeight: 600, letterSpacing: '.06em', color: live ? T.teal : T.ink3, textTransform: 'uppercase' }}>{live ? 'Live' : 'Offline'}</span>
+          </button>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 30px' }}>
+        {/* stats */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          {stats.map((s, i) => (
+            <div key={i} style={{ flex: 1, padding: '12px 12px', background: T.bg2, border: `1px solid ${T.line}`, borderRadius: 12 }}>
+              <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, color: s[2], letterSpacing: '-.02em', lineHeight: 1 }}>{s[0]}</div>
+              <div style={{ fontFamily: T.fm, fontSize: 8, color: T.ink3, marginTop: 5, letterSpacing: '.1em', textTransform: 'uppercase' }}>{s[1]}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* quick tasks */}
+        <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.18em', marginBottom: 10, textTransform: 'uppercase' }}>Quick — do it from your phone</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+          {quick.map((q, i) => (
+            <button key={i} style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 13, padding: 14, background: T.bg2, border: `1px solid ${T.line}`, borderRadius: 13, cursor: 'pointer' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: `${rc}18`, color: rc, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{ICON[q.ic](rc)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14 }}>{q.t}</div>
+                <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, marginTop: 2, letterSpacing: '.02em' }}>{q.d}</div>
+              </div>
+              {q.badge && <div style={{ minWidth: 20, height: 20, borderRadius: 99, background: rc, color: T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>{q.badge}</div>}
+            </button>
+          ))}
+        </div>
+
+        {/* desktop punts */}
+        <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.18em', marginBottom: 6, textTransform: 'uppercase' }}>Build on desktop</div>
+        <div style={{ fontFamily: T.fs, fontStyle: 'italic', fontSize: 13, color: T.ink3, marginBottom: 12, lineHeight: 1.4 }}>
+          Heavy lifting — page design, ticketing, AI tools — is built for a big screen.
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {desktop.map((dk, i) => (
+            <a key={i} href={dk.link} style={{ display: 'block', padding: '13px 14px', background: T.bg2, border: `1px solid ${T.line}`, borderRadius: 13, cursor: 'pointer', textDecoration: 'none', color: 'inherit' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 9, background: T.bg3, border: `1px solid ${T.line2}`, color: T.ink3, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width={17} height={17} viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.6"/><path d="M8 21h8M12 17v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 13.5 }}>{dk.t}</div>
+                  <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, marginTop: 2 }}>{dk.d}</div>
+                </div>
+                <span style={{ padding: '7px 11px', borderRadius: 8, border: `1px solid ${rc}45`, color: rc, fontFamily: T.fm, fontSize: 9.5, letterSpacing: '.04em', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  Open <svg width={11} height={11} viewBox="0 0 24 24" fill="none"><path d="M14 5h5v5M19 5l-8 8M11 5H6a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1v-5" stroke={rc} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main mobile export ───────────────────────────────────────
 export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
-  const [tab, setTab] = useState<MobileTab>('me');
+  const [tab, setTab] = useState<MobileTab>('listen');
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0.42);
   const [currentTrackIdx, setCurrentTrackIdx] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [notifCount, setNotifCount] = useState(0);
-  const [showNotifSheet, setShowNotifSheet] = useState(false);
-  const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
-  const [seedsTooltipSeen, setSeedsTooltipSeen] = React.useState(() => {
-    if (typeof window === 'undefined') return true;
-    return !!localStorage.getItem('ihype_tooltip_seeds_seen');
-  });
-  const [radioTooltipSeen, setRadioTooltipSeen] = React.useState(() => {
-    if (typeof window === 'undefined') return true;
-    return !!localStorage.getItem('ihype_tooltip_radio_seen');
-  });
-
-  useEffect(() => {
-    fetch('/api/notifications')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.notifications) setNotifCount(d.notifications.length); })
-      .catch(() => {});
-  }, []);
-
-  // Auto-trigger genre quiz for users with no genres who haven't dismissed it
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const dismissed = !!localStorage.getItem('ihype_genre_quiz_dismissed');
-    if (!dismissed && (data.needsGenreQuiz === true)) {
-      const t = setTimeout(() => setShowGenreQuiz(true), 2000);
-      return () => clearTimeout(t);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [expanded, setExpanded] = useState(false);
+  const [hypeTrack, setHypeTrack] = useState<WbTrack | null>(null);
+  const [manageMode, setManageMode] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const pullStartY = useRef(0);
+  const pullDeltaRef = useRef(0);
+  const [pullDelta, setPullDelta] = useState(0);
 
   const currentTrack = data.tracks[currentTrackIdx % Math.max(data.tracks.length, 1)];
-  // keep track as alias for first-track compat used below
   const track = currentTrack ?? data.tracks[0];
 
-  // Real audio playback effect
+  // Real audio playback
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !currentTrack?.mediaUrl) return;
@@ -2369,7 +3077,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     };
   }, [data.tracks.length]);
 
-  // Fallback tick progress when no mediaUrl
+  // Fallback tick when no mediaUrl
   useEffect(() => {
     if (!playing || !track || track.mediaUrl) return;
     const iv = setInterval(() => {
@@ -2381,20 +3089,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     return () => clearInterval(iv);
   }, [playing, track]);
 
-  const [trackSheetOpen, setTrackSheetOpen] = useState(false);
-  const [hypersSheetShowId, setHypersSheetShowId] = useState<string | null>(null);
-  const [setlistSheetShowId, setSetlistSheetShowId] = useState<string | null>(null);
-  const [showGenreQuiz, setShowGenreQuiz] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const pullStartY = useRef(0);
-  const pullDeltaRef = useRef(0);
-  const [pullDelta, setPullDelta] = useState(0);
-
-  const TABS_ORDER: MobileTab[] = [
-    'me', 'seeds', 'radio', 'studio', 'tick',
-    ...(data.activeProfileTypes?.includes('ARTIST') ? ['artistpage' as MobileTab] : []),
-    ...(data.activeProfileTypes?.includes('VENUE')  ? ['venuepage'  as MobileTab] : []),
-  ];
+  const TABS_ORDER: MobileTab[] = ['listen', 'seeds', 'shows', 'you'];
   const tabSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const tabSwipeLocked = useRef<'h' | 'v' | null>(null);
 
@@ -2415,7 +3110,6 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   function handleMainTouchMove(e: React.TouchEvent) {
     const t = e.touches[0];
-    // Pull-to-refresh (seeds excluded — has its own drag)
     if (tab !== 'seeds') {
       const el = e.currentTarget as HTMLElement;
       if (el.scrollTop === 0) {
@@ -2426,7 +3120,6 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
         }
       }
     }
-    // Tab swipe detection
     if (tabSwipeStart.current && !tabSwipeLocked.current) {
       const dx = t.clientX - tabSwipeStart.current.x;
       const dy = t.clientY - tabSwipeStart.current.y;
@@ -2437,14 +3130,9 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   }
 
   function handleMainTouchEnd(e: React.TouchEvent) {
-    // Pull-to-refresh commit
-    if (pullDeltaRef.current > 50) {
-      handleRefresh();
-    }
+    if (pullDeltaRef.current > 50) handleRefresh();
     pullDeltaRef.current = 0;
     setPullDelta(0);
-
-    // Tab swipe commit
     if (tabSwipeLocked.current === 'h' && tabSwipeStart.current) {
       const dx = e.changedTouches[0].clientX - tabSwipeStart.current.x;
       if (Math.abs(dx) > 60 && tab !== 'seeds') {
@@ -2459,40 +3147,43 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   const screenEl = (() => {
     switch (tab) {
-      case 'me':         return <ScreenMe data={data} />;
-      case 'seeds':      return <ScreenSeeds data={data} onHypersSheet={setHypersSheetShowId} />;
-      case 'radio':      return <ScreenRadio data={data} onSetlistSheet={setSetlistSheetShowId} onHypersSheet={setHypersSheetShowId} onSeedsTab={() => setTab('seeds')} />;
-      case 'studio':     return <ScreenStudio data={data} />;
-      case 'tick':       return <ScreenTicketing data={data} onHypersSheet={setHypersSheetShowId} onRadioTab={() => setTab('radio')} />;
-      case 'artistpage': return <ViewArtistPage data={data} />;
-      case 'venuepage':  return <ViewVenuePage data={data} />;
+      case 'listen': return <ScreenListen data={data} onPlay={setCurrentTrackIdx} onExpand={() => setExpanded(true)} currentIdx={currentTrackIdx} />;
+      case 'seeds':  return <ScreenSeeds data={data} />;
+      case 'shows':  return <ScreenShowsNew data={data} />;
+      case 'you':    return <ScreenYouNew data={data} onManage={() => setManageMode(true)} />;
     }
   })();
 
+  if (manageMode) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden' }}>
+        <style>{eqCss}</style>
+        <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
+        <ManageConsole data={data} onExit={() => setManageMode(false)} />
+      </div>
+    );
+  }
+
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      display: 'flex', flexDirection: 'column',
-      background: T.bg, color: T.ink, fontFamily: T.fb,
-      overflow: 'hidden',
-    }}>
+    <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden' }}>
       <style>{eqCss}</style>
+      <style>{`@keyframes hypePop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }`}</style>
       {data.degraded && (
         <div style={{ background: '#f59e0b', color: '#000', textAlign: 'center', padding: '6px 12px', fontSize: 12, fontWeight: 600, position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}>
           Having trouble connecting — some data may be outdated
         </div>
       )}
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
-      <WMTopBar tab={tab} onTab={setTab} listeningNow={data.listeningNow} userName={data.userName} initials={data.userInitials} onSearch={() => setSearchOpen(true)} notifCount={notifCount} onFeedback={() => setShowFeedbackSheet(true)} onNotif={() => setShowNotifSheet(true)} activeProfileTypes={data.activeProfileTypes} />
+
+      {/* Main scrollable area */}
       <div
         role="main"
         className="wm-scroll"
-        style={{ flex: 1, overflowY: (tab === 'seeds' || tab === 'artistpage' || tab === 'venuepage') ? 'hidden' : 'auto', overflowX: 'hidden', position: 'relative', scrollbarWidth: 'none' }}
+        style={{ flex: 1, overflowY: tab === 'seeds' ? 'hidden' : 'auto', overflowX: 'hidden', position: 'relative', scrollbarWidth: 'none' }}
         onTouchStart={handleMainTouchStart}
         onTouchMove={handleMainTouchMove}
         onTouchEnd={handleMainTouchEnd}
       >
-        {/* Pull-to-refresh indicator */}
         {tab !== 'seeds' && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -2507,96 +3198,42 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
         )}
         <ViewErrorBoundary viewName={tab}>{screenEl}</ViewErrorBoundary>
       </div>
-      {track && (
+
+      {/* Mini player sits above tab bar */}
+      {track && !expanded && (
         <WMMiniPlayer
           track={track}
           playing={playing}
           onToggle={() => setPlaying(p => !p)}
           progress={progress}
-          onAlbumTap={() => setTrackSheetOpen(true)}
+          onAlbumTap={() => setExpanded(true)}
         />
       )}
-      <WMTrackSheet track={track ?? null} open={trackSheetOpen} onClose={() => setTrackSheetOpen(false)} />
-      <WMShowHypersSheet showId={hypersSheetShowId} onClose={() => setHypersSheetShowId(null)} />
-      <WMSetlistVoteSheet showId={setlistSheetShowId} onClose={() => setSetlistSheetShowId(null)} />
-      {showGenreQuiz && data.profileId && (
-        <WMGenreQuizSheet profileId={data.profileId} onComplete={() => { setShowGenreQuiz(false); localStorage.setItem('ihype_genre_quiz_dismissed', '1'); }} />
+
+      {/* Bottom tab bar */}
+      <WMBottomTabs tab={tab} onTab={setTab} />
+
+      {/* Full player overlay */}
+      {expanded && track && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 50 }}>
+          <FullPlayer
+            track={track}
+            playing={playing}
+            onToggle={() => setPlaying(p => !p)}
+            onCollapse={() => setExpanded(false)}
+            onHype={() => { setHypeTrack(track); setExpanded(false); }}
+            progress={progress}
+          />
+        </div>
       )}
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-      {showFeedbackSheet && <WMFeedbackSheet onClose={() => setShowFeedbackSheet(false)} />}
-      {/* Notification sheet */}
-      {showNotifSheet && (
-        <>
-          <div onClick={() => setShowNotifSheet(false)} style={{ position: 'fixed', inset: 0, zIndex: 59, background: 'rgba(0,0,0,.6)' }} />
-          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 60, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', maxHeight: '70vh', display: 'flex', flexDirection: 'column', paddingBottom: 'env(safe-area-inset-bottom)' }}>
-            <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${T.line}`, flexShrink: 0 }}>
-              <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 15, color: T.ink }}>Notifications{notifCount > 0 ? ` · ${notifCount}` : ''}</div>
-              <button onClick={() => setShowNotifSheet(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, fontSize: 20, lineHeight: 1, padding: 0 }}>✕</button>
-            </div>
-            <div style={{ overflowY: 'auto', padding: '10px 18px 18px' }}>
-              {(!data.notifications || data.notifications.length === 0) ? (
-                <div style={{ textAlign: 'center', padding: '32px 0', color: T.ink3, fontFamily: T.fb, fontSize: 14 }}>You&#39;re all caught up!</div>
-              ) : data.notifications.map((n, i) => {
-                const kindIcon: Record<string, string> = { hype: '♥', show: '🎟️', radio: '📻', payout: '💸', request: '📩', security: '🔐' };
-                return (
-                  <div key={n.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 0', borderBottom: i < (data.notifications?.length ?? 0) - 1 ? `1px solid ${T.line}` : 'none' }}>
-                    <span style={{ width: 34, height: 34, borderRadius: '50%', background: T.bg4, border: `1px solid ${T.line2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{kindIcon[n.kind] ?? '🔔'}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: T.fb, fontWeight: 600, fontSize: 13.5, color: T.ink, lineHeight: 1.2 }}>{n.title}</div>
-                      <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2, marginTop: 3, lineHeight: 1.4 }}>{n.body}</div>
-                    </div>
-                    <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, letterSpacing: '.06em', whiteSpace: 'nowrap', flexShrink: 0, paddingTop: 2 }}>{n.time}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-      {/* Seeds tooltip */}
-      {!seedsTooltipSeen && data.tracks.length === 0 && tab === 'seeds' && (
-        <SeedsTooltip onDismiss={() => { localStorage.setItem('ihype_tooltip_seeds_seen', '1'); setSeedsTooltipSeen(true); }} />
-      )}
-      {/* Radio tooltip */}
-      {!radioTooltipSeen && data.radioShows.length === 0 && tab === 'radio' && (
-        <RadioTooltip onDismiss={() => { localStorage.setItem('ihype_tooltip_radio_seen', '1'); setRadioTooltipSeen(true); }} />
+
+      {/* Hype confirmation overlay */}
+      {hypeTrack && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 60 }}>
+          <HypeOverlay track={hypeTrack} onDone={() => setHypeTrack(null)} />
+        </div>
       )}
     </div>
   );
 }
 
-function SeedsTooltip({ onDismiss }: { onDismiss: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onDismiss, 4000);
-    return () => clearTimeout(t);
-  }, [onDismiss]);
-  return (
-    <div style={{
-      position: 'fixed', bottom: 100, left: 18, right: 18, zIndex: 70,
-      background: T.bg3, border: `1px solid ${T.line2}`, borderRadius: 12,
-      padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      boxShadow: '0 8px 32px rgba(0,0,0,.6)',
-    }}>
-      <span style={{ fontFamily: T.fb, fontSize: 14, color: T.ink }}>Swipe right to hype, left to skip, up to save</span>
-      <button onClick={onDismiss} style={{ background: 'none', border: 'none', color: T.ink3, cursor: 'pointer', fontSize: 18, padding: '0 0 0 10px' }}>✕</button>
-    </div>
-  );
-}
-
-function RadioTooltip({ onDismiss }: { onDismiss: () => void }) {
-  useEffect(() => {
-    const t = setTimeout(onDismiss, 4000);
-    return () => clearTimeout(t);
-  }, [onDismiss]);
-  return (
-    <div style={{
-      position: 'fixed', bottom: 100, left: 18, right: 18, zIndex: 70,
-      background: T.bg3, border: `1px solid ${T.line2}`, borderRadius: 12,
-      padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      boxShadow: '0 8px 32px rgba(0,0,0,.6)',
-    }}>
-      <span style={{ fontFamily: T.fb, fontSize: 14, color: T.ink }}>Tune into live shows and upcoming events</span>
-      <button onClick={onDismiss} style={{ background: 'none', border: 'none', color: T.ink3, cursor: 'pointer', fontSize: 18, padding: '0 0 0 10px' }}>✕</button>
-    </div>
-  );
-}
