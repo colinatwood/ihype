@@ -228,13 +228,6 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
   return (
     <div style={{ padding: '32px 48px 48px', maxWidth: 1600, margin: '0 auto' }}>
 
-      {data.degraded && (
-        <div style={{ marginBottom: 16, padding: '11px 16px', borderRadius: 10, border: '1px solid rgba(255,184,74,.25)', background: 'rgba(255,184,74,.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 16 }}>⚠️</span>
-          <span style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: '#ffb84a' }}>Some data couldn't load — you're seeing a cached view. Refresh to retry.</span>
-        </div>
-      )}
-
       {/* Hero — 3-col grid */}
       <div className="me-hero-grid" style={{
         display: 'grid', gridTemplateColumns: '200px 1fr auto', gap: 28, alignItems: 'center',

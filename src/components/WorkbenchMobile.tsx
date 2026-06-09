@@ -3177,11 +3177,6 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     <div style={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden' }}>
       <style>{eqCss}</style>
       <style>{`@keyframes hypePop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }`}</style>
-      {liveData.degraded && (
-        <div style={{ background: '#f59e0b', color: '#000', textAlign: 'center', padding: '6px 12px', fontSize: 12, fontWeight: 600, position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }}>
-          Having trouble connecting — some data may be outdated
-        </div>
-      )}
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
 
       {/* Main scrollable area */}
