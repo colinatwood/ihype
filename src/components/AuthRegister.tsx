@@ -121,7 +121,7 @@ export function RegisterScreen({
     if (!optRes.ok) throw new Error('Could not start passkey setup.');
     const options = await optRes.json();
     trackSignupFunnel('passkey_prompt_ready', { role, method: 'passkey', step: 'register', variant: signupVariant, ...getPasskeyDiagnostics() });
-    const credential = await startRegistration(options);
+    const credential = await startRegistration({ optionsJSON: options });
     const verifyRes = await postJson<{ redirect?: string }>('/api/auth/passkey/register-first', credential);
     trackSignupFunnel('passkey_success', { role, method: 'passkey', step: 'register', variant: signupVariant, ...getPasskeyDiagnostics() });
     window.location.href = resolvePostAuthRedirect(verifyRes.redirect);

@@ -22,14 +22,14 @@ export async function getPasskeyRegistrationOptions(userId: string, userName: st
   const { rpID, rpName } = getRpInfo();
   const existing = await db.passkey.findMany({ where: { userId }, select: { credentialId: true } });
   const excludeCredentials = existing.map(p => ({
-    id: Uint8Array.from(Buffer.from(p.credentialId, 'base64url')),
+    id: p.credentialId,
     type: 'public-key' as const,
   }));
 
   const options = await generateRegistrationOptions({
     rpName,
     rpID,
-    userID: userId,
+    userID: new TextEncoder().encode(userId),
     userName,
     attestationType: 'none',
     excludeCredentials,
@@ -58,15 +58,14 @@ export async function verifyPasskeyRegistration(
 
   if (!verification.verified || !verification.registrationInfo) return false;
 
-  const { credentialID, credentialPublicKey, counter, credentialDeviceType, credentialBackedUp } =
-    verification.registrationInfo;
+  const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
 
   await db.passkey.create({
     data: {
       userId,
-      credentialId: Buffer.from(credentialID).toString('base64url'),
-      publicKey: Buffer.from(credentialPublicKey),
-      counter: BigInt(counter),
+      credentialId: credential.id,
+      publicKey: Buffer.from(credential.publicKey),
+      counter: BigInt(credential.counter),
       deviceType: credentialDeviceType,
       backedUp: credentialBackedUp,
       transports: (response.response.transports ?? []).join(','),
@@ -80,11 +79,11 @@ export async function verifyPasskeyRegistration(
 export async function getPasskeyAuthenticationOptions(userId?: string) {
   const { rpID } = getRpInfo();
 
-  let allowCredentials: { id: Uint8Array; type: 'public-key'; transports?: AuthenticatorTransportFuture[] }[] | undefined;
+  let allowCredentials: { id: string; type: 'public-key'; transports?: AuthenticatorTransportFuture[] }[] | undefined;
   if (userId) {
     const passkeys = await db.passkey.findMany({ where: { userId }, select: { credentialId: true, transports: true } });
     allowCredentials = passkeys.map(p => ({
-      id: Uint8Array.from(Buffer.from(p.credentialId, 'base64url')),
+      id: p.credentialId,
       type: 'public-key' as const,
     }));
   }
@@ -115,9 +114,9 @@ export async function verifyPasskeyAuthentication(
     expectedChallenge,
     expectedOrigin: origin,
     expectedRPID: rpID,
-    authenticator: {
-      credentialID: Uint8Array.from(Buffer.from(passkey.credentialId, 'base64url')),
-      credentialPublicKey: new Uint8Array(Buffer.isBuffer(passkey.publicKey) ? passkey.publicKey : Buffer.from(passkey.publicKey as unknown as ArrayBuffer)),
+    credential: {
+      id: passkey.credentialId,
+      publicKey: new Uint8Array(Buffer.isBuffer(passkey.publicKey) ? passkey.publicKey : Buffer.from(passkey.publicKey as unknown as ArrayBuffer)),
       counter: Number(passkey.counter),
       transports: passkey.transports ? (passkey.transports.split(',') as AuthenticatorTransportFuture[]) : undefined,
     },
