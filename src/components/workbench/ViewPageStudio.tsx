@@ -9,6 +9,9 @@ type Device = 'desktop' | 'mobile';
 type FontKey = 'editorial' | 'grotesk' | 'serif' | 'mono';
 type LayoutKey = 'spotlight' | 'zine' | 'poster' | 'gallery';
 type MoodKey = 'dark' | 'light';
+type ApTab = 'sections' | 'photos' | 'music' | 'links' | 'library';
+
+interface LibItem { id: string; label: string; kw: string[]; bg: string; }
 
 interface Palette { bg: string; surface: string; line: string; ink: string; ink2: string; accent: string; accent2: string; }
 interface Theme { name: string; mood: MoodKey; font: FontKey; layout: LayoutKey; palette: Palette; tagline: string | null; bio: string | null; radius: number; heroUrl?: string; }
@@ -48,6 +51,25 @@ const LOOKS: Look[] = [
   { id:'noir',      name:'Concrete Noir',      mood:'dark',  font:'mono',      layout:'zine',      kw:['industrial','techno','minimal','brutal','grey','underground','warehouse','noir'],      palette:{bg:'#0a0a0b',surface:'#141416',line:'#262629',ink:'#f2f2f3',ink2:'#9a9a9e',accent:'#e8e8ea',accent2:'#ff5029'} },
   { id:'jazz',      name:'Blue Note',          mood:'dark',  font:'serif',     layout:'spotlight', kw:['jazz','soul','blues','smooth','bebop','classic','vinyl'],                              palette:{bg:'#08080f',surface:'#12121e',line:'#20203a',ink:'#f0ece4',ink2:'#9090a8',accent:'#4060ff',accent2:'#d4b060'} },
   { id:'lofi',      name:'Lo-Fi Bedroom',      mood:'dark',  font:'mono',      layout:'zine',      kw:['lofi','bedroom','cassette','tape','chill','hazy','vintage'],                           palette:{bg:'#1a1610',surface:'#231e18',line:'#352e24',ink:'#f0e8d0',ink2:'#a89070',accent:'#d4a060',accent2:'#8090a0'} },
+];
+
+const LIBRARY: LibItem[] = [
+  {id:'l01',label:'Late night stage', kw:['dark','moody','stage','night','r&b','soul'],          bg:'linear-gradient(160deg,#0b0712 0%,#231040 55%,#0e0818 100%)'},
+  {id:'l02',label:'Crowd energy',     kw:['concert','energy','crowd','show','live','rock'],      bg:'linear-gradient(145deg,#0c0805 0%,#3a0c02 55%,#c03010 100%)'},
+  {id:'l03',label:'Neon club',        kw:['neon','electronic','club','rave','synth','hyperpop'], bg:'linear-gradient(145deg,#07060f 0%,#0c1f2e 55%,#1ab5a8 100%)'},
+  {id:'l04',label:'Sun-faded paper',  kw:['folk','indie','warm','acoustic','vintage'],           bg:'linear-gradient(160deg,#e8dcc8 0%,#c4a878 55%,#9a7040 100%)'},
+  {id:'l05',label:'Pink dawn',        kw:['dream','pop','soft','pastel','shoegaze','ethereal'],  bg:'linear-gradient(160deg,#180824 0%,#5a1040 55%,#e03088 100%)'},
+  {id:'l06',label:'Concrete noir',    kw:['industrial','minimal','dark','raw','techno'],         bg:'linear-gradient(145deg,#0a0a0b 0%,#1c1c1e 50%,#2e2e32 100%)'},
+  {id:'l07',label:'Cobalt midnight',  kw:['blue','cool','deep','shoegaze','wave'],               bg:'linear-gradient(160deg,#070a14 0%,#0f2040 55%,#3060cc 100%)'},
+  {id:'l08',label:'Forest ambient',   kw:['ambient','green','calm','organic','peaceful'],        bg:'linear-gradient(160deg,#081408 0%,#142814 55%,#187044 100%)'},
+  {id:'l09',label:'Amber festival',   kw:['summer','festival','warm','outdoor','golden'],        bg:'linear-gradient(145deg,#0c0805 0%,#3a2205 55%,#d09020 100%)'},
+  {id:'l10',label:'Purple haze',      kw:['psychedelic','purple','dream','trip','soul'],         bg:'linear-gradient(160deg,#0d0816 0%,#2a1040 55%,#9060e0 100%)'},
+  {id:'l11',label:'Bright minimal',   kw:['minimal','clean','bright','modern','fresh'],          bg:'linear-gradient(160deg,#f2f2f4 0%,#dde0e8 55%,#c8ccda 100%)'},
+  {id:'l12',label:'Red heat',         kw:['rock','punk','hard','aggressive','metal','fire'],     bg:'linear-gradient(145deg,#0a0000 0%,#2a0808 55%,#a81010 100%)'},
+  {id:'l13',label:'Jazz smoke',       kw:['jazz','blues','moody','smooth','late night'],         bg:'linear-gradient(160deg,#080608 0%,#201020 55%,#504060 100%)'},
+  {id:'l14',label:'Tropical',         kw:['tropical','dancehall','afrobeats','summer','bright'], bg:'linear-gradient(160deg,#060e08 0%,#0a2818 55%,#20a840 100%)'},
+  {id:'l15',label:'Ice arena',        kw:['edm','rave','trance','bright','electronic','festival'],bg:'linear-gradient(160deg,#080c14 0%,#102030 55%,#20c8f0 100%)'},
+  {id:'l16',label:'Warm R&B',         kw:['r&b','soul','warm','smooth','sultry','evening'],      bg:'linear-gradient(145deg,#100806 0%,#2e1408 55%,#c84820 100%)'},
 ];
 
 const ROLES: Record<Role, RoleDef> = {
@@ -162,13 +184,15 @@ function sectionHTML(s: Section): string {
   return `<section class="pg-sec"><h2 class="pg-sec-t">${esc(s.title)}</h2><div class="pg-cards">${s.items.map(it=>`<div class="pg-card plain"><div class="pg-card-b"><b>${esc(it.t)}</b><small>${esc(it.m)}</small></div></div>`).join('')}</div></section>`;
 }
 
-function renderPreviewHTML(content: Content, theme: Theme): string {
+function renderPreviewHTML(content: Content, theme: Theme, heroBgCss?: string): string {
   const c = content; const h = c.hero;
   const ini = c.name.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
   const safeHero = theme.heroUrl?.startsWith('blob:') ? theme.heroUrl : '';
   const heroPart = safeHero
     ? `<img src="${safeHero}" style="width:100%;height:100%;object-fit:cover;display:block" alt="">`
-    : `<div style="width:100%;height:100%;background:${theme.palette.surface}"></div>`;
+    : heroBgCss
+      ? `<div style="width:100%;height:100%;${heroBgCss}"></div>`
+      : `<div style="width:100%;height:100%;background:${theme.palette.surface}"></div>`;
   return `
     <div class="pg-hero" style="min-height:${theme.layout==='poster'?'360px':'270px'}">
       <div class="pg-hbg">${heroPart}</div>
@@ -357,6 +381,37 @@ const STYLES = `
 .ps2-stage[data-d="mobile"] #ps2-pr .pg-tag { font-size:16px; }
 .ps2-stage[data-d="mobile"] #ps2-pr .pg-body { padding:8px 20px 32px; }
 .ps2-stage[data-d="mobile"] #ps2-pr .pg-cards { grid-template-columns:1fr !important; }
+
+/* ── AP-OPEN GRID ── */
+.ps2-app.ap-open { grid-template-columns:370px 1fr 300px; }
+
+/* ── ASSET PANEL ── */
+.ps2-ap { background:#100d09; border-left:1px solid rgba(255,255,255,.07); display:flex; flex-direction:column; overflow:hidden; }
+.ps2-ap-hd { display:flex; align-items:center; padding:10px; border-bottom:1px solid rgba(255,255,255,.07); gap:3px; flex-shrink:0; }
+.ps2-ap-tab { width:30px; height:28px; border-radius:7px; font-size:14px; color:#5a5048; transition:all .13s; display:flex; align-items:center; justify-content:center; }
+.ps2-ap-tab:hover { background:#1a1612; }
+.ps2-ap-tab.on { background:#1a1612; border:1px solid rgba(255,255,255,.15); }
+.ps2-ap-x { margin-left:auto; width:26px; height:26px; border-radius:7px; background:#1a1612; border:1px solid rgba(255,255,255,.07); color:#5a5048; display:flex; align-items:center; justify-content:center; font-size:16px; line-height:1; }
+.ps2-ap-x:hover { color:#f0ebe5; }
+.ps2-ap-body { flex:1; overflow-y:auto; padding:12px; }
+.ps2-ap-body::-webkit-scrollbar { width:5px; }
+.ps2-ap-body::-webkit-scrollbar-thumb { background:#3a342e; border-radius:5px; }
+.ps2-ap-label { font-family:'JetBrains Mono',monospace; font-size:9px; color:#5a5048; letter-spacing:.14em; font-weight:700; margin-bottom:10px; margin-top:4px; }
+.ps2-ap-hint { font-family:'JetBrains Mono',monospace; font-size:9px; color:#5a5048; letter-spacing:.04em; margin-bottom:12px; line-height:1.5; }
+
+/* ── LIBRARY ── */
+.ps2-lib-bar { display:flex; gap:6px; margin-bottom:8px; }
+.ps2-lib-bar input { flex:1; background:#1a1612; border:1px solid rgba(255,255,255,.15); border-radius:9px; padding:9px 11px; font-size:12px; color:#f0ebe5; outline:none; font-family:'JetBrains Mono',monospace; }
+.ps2-lib-bar input::placeholder { color:#5a5048; }
+.ps2-lib-bar input:focus { border-color:#ff5029; }
+.ps2-lib-cc { font-family:'JetBrains Mono',monospace; font-size:9px; color:#5a5048; letter-spacing:.04em; margin-bottom:10px; display:flex; align-items:center; gap:5px; line-height:1.4; }
+.ps2-lib-cc::before { content:''; width:6px; height:6px; border-radius:99px; background:#22e5d4; flex-shrink:0; }
+.ps2-lib-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.ps2-li { border-radius:8px; overflow:hidden; cursor:pointer; border:2px solid transparent; transition:border-color .14s; position:relative; }
+.ps2-li:hover { border-color:rgba(255,255,255,.15); }
+.ps2-li.on { border-color:#ff5029; }
+.ps2-li-img { width:100%; aspect-ratio:4/3; display:block; }
+.ps2-li-cap { position:absolute; bottom:0; left:0; right:0; padding:5px 7px 6px; background:linear-gradient(transparent,rgba(0,0,0,.88)); font-family:'JetBrains Mono',monospace; font-size:8.5px; letter-spacing:.04em; color:rgba(255,255,255,.82); pointer-events:none; }
 `;
 
 const FONT_HREF = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Bricolage+Grotesque:wght@400;600;700;800&display=swap';
@@ -381,6 +436,10 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
   const [toastOn, setToastOn] = useState(false);
   const [pubLabel, setPubLabel] = useState('↗ Publish page');
   const [showTyping, setShowTyping] = useState(false);
+  const [heroBg, setHeroBg] = useState('');
+  const [apOpen, setApOpen] = useState(false);
+  const [apTab, setApTab] = useState<ApTab>('library');
+  const [libQ, setLibQ] = useState('');
 
   // artist-specific
   const [artistGenre, setArtistGenre] = useState('');
@@ -398,6 +457,7 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
   const directionsRef = useRef<Theme[]>([]);
   const artistGenreRef = useRef('');
   const artistStageRef = useRef('');
+  const heroBgRef = useRef('');
 
   /* inject styles + fonts once */
   useEffect(() => {
@@ -449,6 +509,8 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
     setDirections([]); directionsRef.current = [];
     setArtistGenre(''); artistGenreRef.current = '';
     setArtistStage(''); artistStageRef.current = '';
+    setHeroBg(''); heroBgRef.current = '';
+    setApOpen(false);
     contentRef.current = makeContent(roleRef.current);
     if (pageScrollRef.current) pageScrollRef.current.innerHTML = '';
 
@@ -653,7 +715,8 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
     root.dataset.mood = t.mood;
     root.dataset.layout = t.layout;
 
-    scroll.innerHTML = renderPreviewHTML(content, t);
+    const heroBgItem = LIBRARY.find(l => l.id === heroBgRef.current);
+    scroll.innerHTML = renderPreviewHTML(content, t, heroBgItem?.bg);
 
     scroll.querySelectorAll<HTMLElement>('[data-edit]').forEach((el: HTMLElement) => {
       const field = el.dataset.edit;
@@ -669,6 +732,18 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
       });
     });
   }, []);
+
+  function toggleAP(tab: ApTab) {
+    if (apOpen && apTab === tab) { setApOpen(false); return; }
+    setApTab(tab); setApOpen(true);
+  }
+
+  function applyHeroBg(id: string) {
+    const next = heroBg === id ? '' : id;
+    setHeroBg(next);
+    heroBgRef.current = next;
+    if (themeRef.current) applyTheme(themeRef.current);
+  }
 
   function resetAll() {
     startFlow();
@@ -753,7 +828,7 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
 
   /* ── MAIN RENDER ── */
   return (
-    <div className="ps2-app">
+    <div className={'ps2-app' + (apOpen ? ' ap-open' : '')}>
       {/* ── CHAT PANEL ── */}
       <div className="ps2-chat">
         <div className="ps2-chat-hd">
@@ -811,23 +886,23 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
             </button>
           </div>
           <div className="ps2-ast-strip">
-            <button className="ps2-ab ps2-ab-prime">
+            <button className={'ps2-ab ps2-ab-prime' + (apOpen && apTab === 'sections' ? ' on' : '')} onClick={() => toggleAP('sections')}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="4" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="4" y="10" width="16" height="4" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="4" y="16" width="10" height="4" rx="1" stroke="currentColor" strokeWidth="1.7"/></svg>
               Sections
             </button>
-            <button className="ps2-ab">
+            <button className={'ps2-ab' + (apOpen && apTab === 'photos' ? ' on' : '')} onClick={() => toggleAP('photos')}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.7"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><path d="M3 16l5-5 4 4 3-3 6 5" stroke="currentColor" strokeWidth="1.7"/></svg>
               Photos
             </button>
-            <button className="ps2-ab">
+            <button className={'ps2-ab' + (apOpen && apTab === 'music' ? ' on' : '')} onClick={() => toggleAP('music')}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="currentColor" strokeWidth="1.7"/><circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="1.7"/><circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="1.7"/></svg>
               Music
             </button>
-            <button className="ps2-ab">
+            <button className={'ps2-ab' + (apOpen && apTab === 'links' ? ' on' : '')} onClick={() => toggleAP('links')}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>
               Links
             </button>
-            <button className="ps2-ab">
+            <button className={'ps2-ab' + (apOpen && apTab === 'library' ? ' on' : '')} onClick={() => toggleAP('library')}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.7"/></svg>
               Library
             </button>
@@ -872,6 +947,96 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
 
         <div className={'ps2-toast' + (toastOn ? ' show' : '')}>{toastMsg}</div>
       </main>
+
+      {/* ── ASSET PANEL ── */}
+      {apOpen && (
+        <aside className="ps2-ap">
+          <div className="ps2-ap-hd">
+            {(['sections', 'photos', 'music', 'links', 'library'] as ApTab[]).map(tab => {
+              const icons: Record<ApTab, React.ReactNode> = {
+                sections: <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="4" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="4" y="10" width="16" height="4" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="4" y="16" width="10" height="4" rx="1" stroke="currentColor" strokeWidth="1.7"/></svg>,
+                photos:   <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.7"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><path d="M3 16l5-5 4 4 3-3 6 5" stroke="currentColor" strokeWidth="1.7"/></svg>,
+                music:    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 18V5l12-2v13" stroke="currentColor" strokeWidth="1.7"/><circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="1.7"/><circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="1.7"/></svg>,
+                links:    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg>,
+                library:  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.7"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.7"/></svg>,
+              };
+              return (
+                <button
+                  key={tab}
+                  title={tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  className={'ps2-ap-tab' + (apTab === tab ? ' on' : '')}
+                  onClick={() => setApTab(tab)}
+                >
+                  {icons[tab]}
+                </button>
+              );
+            })}
+            <button className="ps2-ap-x" onClick={() => setApOpen(false)} title="Close">×</button>
+          </div>
+
+          <div className="ps2-ap-body">
+            {apTab === 'library' && (() => {
+              const q = libQ.trim().toLowerCase();
+              const items = q
+                ? LIBRARY.filter(l => l.label.toLowerCase().includes(q) || l.kw.some(k => k.includes(q)))
+                : LIBRARY;
+              return (
+                <>
+                  <div className="ps2-ap-label">BACKGROUND LIBRARY</div>
+                  <div className="ps2-lib-bar">
+                    <input
+                      placeholder="Search…"
+                      value={libQ}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLibQ(e.target.value)}
+                    />
+                  </div>
+                  <div className="ps2-lib-cc">CC0 · royalty-free · no attribution needed</div>
+                  <div className="ps2-lib-grid">
+                    {items.map(l => (
+                      <div
+                        key={l.id}
+                        className={'ps2-li' + (heroBg === l.id ? ' on' : '')}
+                        onClick={() => applyHeroBg(l.id)}
+                      >
+                        <div className="ps2-li-img" style={{ background: l.bg }} />
+                        <div className="ps2-li-cap">{l.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
+
+            {apTab === 'photos' && (
+              <>
+                <div className="ps2-ap-label">PHOTOS</div>
+                <div className="ps2-ap-hint">Upload a hero photo or avatar. Coming soon.</div>
+              </>
+            )}
+
+            {apTab === 'music' && (
+              <>
+                <div className="ps2-ap-label">MUSIC</div>
+                <div className="ps2-ap-hint">Attach tracks or embeds. Coming soon.</div>
+              </>
+            )}
+
+            {apTab === 'links' && (
+              <>
+                <div className="ps2-ap-label">LINKS</div>
+                <div className="ps2-ap-hint">Add Spotify, Apple Music, SoundCloud links. Coming soon.</div>
+              </>
+            )}
+
+            {apTab === 'sections' && (
+              <>
+                <div className="ps2-ap-label">PAGE SECTIONS</div>
+                <div className="ps2-ap-hint">Toggle and reorder sections. Coming soon.</div>
+              </>
+            )}
+          </div>
+        </aside>
+      )}
     </div>
   );
 }
