@@ -808,6 +808,10 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
     artistStageRef.current = stage;
     setArtistStage(stage);
     addMsg({ id: makeId(), type: 'user', text: { starting: 'Just starting out', releasing: 'Releasing music', touring: 'Actively touring', booking: 'Looking for gigs' }[stage] || stage });
+    // Auto-enable relevant sections based on career stage
+    if (stage === 'releasing') { const s = sectionsRef.current.find(x => x.id === 'release'); if (s) s.on = true; }
+    if (stage === 'touring' || stage === 'booking') { const s = sectionsRef.current.find(x => x.id === 'booking'); if (s) s.on = true; }
+    if (stage === 'starting') { const s = sectionsRef.current.find(x => x.id === 'newsletter'); if (s) s.on = true; }
     stepRef.current = 4;
     setFlowStep(4);
     setTimeout(() => {
@@ -854,7 +858,12 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
       addMsg({ id: makeId(), type: 'ai', html: `Live in preview ✦ Tap a direction to compare, or type a change below.` });
       stepRef.current = 7;
       setFlowStep(7);
-      setInputPlaceholder('"make it darker", "purple accent", "serif font"…');
+      const r = roleRef.current;
+      setInputPlaceholder(
+        r === 'artist' ? '"darker", "add shows section", "punk energy"…'
+        : r === 'venue' ? '"darker", "add booking section", "industrial vibe"…'
+        : '"darker", "purple accent", "serif font"…'
+      );
       setInputEnabled(true);
       scrollChat();
     }, 700);

@@ -2319,6 +2319,7 @@ function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
   onExpand: () => void;
   currentIdx: number;
 }) {
+  const [q, setQ] = useState('');
   const queue = data.tracks;
   // Static playlist shapes mapped to real data
   const playlists = [
@@ -2327,8 +2328,11 @@ function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
     { n: `${data.city ?? 'Local'} Indie`, meta: 'Local scene', c: T.teal },
     { n: 'Late Drives',     meta: 'Your mix',    c: T.amber },
   ];
-  // Rising = tracks sorted by hypeCount desc
-  const rising = [...queue].sort((a, b) => b.hypeCount - a.hypeCount).slice(0, 5);
+  // Rising = tracks sorted by hypeCount desc, filtered by search query
+  const allRising = [...queue].sort((a, b) => b.hypeCount - a.hypeCount).slice(0, 5);
+  const rising = q.trim()
+    ? allRising.filter(t => t.title.toLowerCase().includes(q.toLowerCase()) || t.artistName.toLowerCase().includes(q.toLowerCase()))
+    : allRising;
 
   const dayParts = ['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT'];
   const h = new Date().getHours();
@@ -2341,6 +2345,24 @@ function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
           {timeLabel} · {data.city ?? 'YOUR CITY'}
         </div>
         <h1 style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 30, letterSpacing: '-.025em', margin: '6px 0 0', lineHeight: 1 }}>Listen</h1>
+        <div style={{ marginTop: 12, position: 'relative' }}>
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+            style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: T.ink3, pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input
+            value={q}
+            onChange={e => setQ(e.target.value)}
+            placeholder="Search tracks & artists…"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '9px 12px 9px 32px',
+              background: T.bg3, border: `1px solid rgba(255,255,255,.07)`,
+              borderRadius: 12, color: T.ink, fontFamily: T.fb, fontSize: 13,
+              outline: 'none',
+            }}
+          />
+        </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 0 130px' }}>
