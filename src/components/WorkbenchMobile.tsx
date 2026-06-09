@@ -2328,11 +2328,13 @@ function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
     { n: `${data.city ?? 'Local'} Indie`, meta: 'Local scene', c: T.teal },
     { n: 'Late Drives',     meta: 'Your mix',    c: T.amber },
   ];
-  // Rising = tracks sorted by hypeCount desc, filtered by search query
+  // Rising = top 5 by hypeCount; search covers the full queue
   const allRising = [...queue].sort((a, b) => b.hypeCount - a.hypeCount).slice(0, 5);
-  const rising = q.trim()
-    ? allRising.filter(t => t.title.toLowerCase().includes(q.toLowerCase()) || t.artistName.toLowerCase().includes(q.toLowerCase()))
-    : allRising;
+  const rising = allRising;
+  const ql = q.toLowerCase().trim();
+  const searchResults = ql
+    ? queue.filter(t => t.title.toLowerCase().includes(ql) || t.artistName.toLowerCase().includes(ql)).slice(0, 20)
+    : [];
 
   const dayParts = ['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT'];
   const h = new Date().getHours();
@@ -2366,6 +2368,37 @@ function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '0 0 130px' }}>
+        {ql ? (
+          /* ── search results ── */
+          <div style={{ padding: '0 22px' }}>
+            <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 14 }}>
+              {searchResults.length ? `${searchResults.length} result${searchResults.length !== 1 ? 's' : ''} for "${q}"` : `No results for "${q}"`}
+            </div>
+            {searchResults.length === 0 ? (
+              <div style={{ paddingTop: 40, color: T.ink3, fontFamily: T.fm, fontSize: 12, textAlign: 'center' }}>
+                Try searching for a track title or artist name
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {searchResults.map((tk, i) => (
+                  <div key={tk.id} onClick={() => onPlay(queue.indexOf(tk))} style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '8px 10px', borderRadius: 11, cursor: 'pointer',
+                    background: currentIdx === queue.indexOf(tk) ? `${tk.color}12` : 'transparent',
+                    border: `1px solid ${currentIdx === queue.indexOf(tk) ? `${tk.color}40` : 'transparent'}`,
+                  }}>
+                    <div style={{ width: 22, textAlign: 'center', fontFamily: T.fd, fontWeight: 800, fontSize: 15, color: T.ink3 }}>{i + 1}</div>
+                    <AlbumArt c={tk.color} size={42} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14, letterSpacing: '-.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tk.title}</div>
+                      <div style={{ fontFamily: T.fb, fontSize: 11.5, color: T.ink3, marginTop: 1 }}>{tk.artistName}</div>
+                    </div>
+                    <div style={{ fontFamily: T.fm, fontSize: 10, color: T.pink, letterSpacing: '.06em', whiteSpace: 'nowrap' }}>♥ {tk.hypeCount}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (<>
         {/* Hero: resume queue */}
         <div onClick={() => { onPlay(0); onExpand(); }} style={{
           margin: '0 22px 20px', padding: 18, borderRadius: 18, position: 'relative', overflow: 'hidden', cursor: 'pointer',
@@ -2423,6 +2456,7 @@ function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
             </div>
           ))}
         </div>
+        </>)}
       </div>
     </div>
   );

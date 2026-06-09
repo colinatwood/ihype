@@ -664,6 +664,8 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
   const msgsRef = useRef<HTMLDivElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pubTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveKeyRef = useRef('ps2_' + (data?.profileId || data?.profileHexId || 'anon'));
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepRef = useRef(0);
   const themeRef = useRef<Theme | null>(null);
   const directionsRef = useRef<Theme[]>([]);
@@ -694,6 +696,7 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
     return () => {
       if (toastTimer.current) clearTimeout(toastTimer.current);
       if (pubTimer.current) clearTimeout(pubTimer.current);
+      if (saveTimer.current) clearTimeout(saveTimer.current);
     };
   }, []);
 
@@ -723,7 +726,7 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
   }
 
   /* ── FLOW ── */
-  function startFlow() {
+  function startFlow(fresh = false) {
     stepRef.current = 0;
     setChatMsgs([]);
     setFlowStep(0);
@@ -748,6 +751,68 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
     newsletterRef.current = { headline:'Stay in the loop', cta:'Subscribe' };
     contentRef.current = makeContent(roleRef.current);
     if (pageScrollRef.current) pageScrollRef.current.innerHTML = '';
+
+    // Restore from localStorage
+    const savedRaw = typeof window !== 'undefined' ? localStorage.getItem(saveKeyRef.current) : null;
+    if (!fresh && savedRaw) {
+      try {
+        const saved = JSON.parse(savedRaw) as { role: Role; theme: Theme; content: { name: string; tagline: string; bio: string }; sections: SectionDef[]; heroBg: string; tracks: TrackItem[]; links: Record<string, string> };
+        roleRef.current = saved.role;
+        setRole(saved.role);
+        contentRef.current = { ...makeContent(saved.role), ...saved.content };
+        sectionsRef.current = saved.sections || clone(DEFAULT_SECTIONS);
+        heroBgRef.current = saved.heroBg || '';
+        setHeroBg(saved.heroBg || '');
+        tracksRef.current = saved.tracks || [];
+        linksRef.current = saved.links || {};
+        themeRef.current = saved.theme;
+        setTheme(saved.theme);
+        stepRef.current = 7;
+        setFlowStep(7);
+        setUrlName(toSlug(saved.content.name));
+        setTimeout(() => {
+          applyTheme(saved.theme);
+          addMsg({ id: makeId(), type: 'ai', html: `Welcome back! Your page for <b>${esc(saved.content.name)}</b> is live. Keep refining or hit ↗ Publish.` });
+          const r = saved.role;
+          setInputPlaceholder(
+            r === 'artist' ? '"darker", "add shows section", "punk energy"…'
+            : r === 'venue' ? '"darker", "add booking section", "industrial vibe"…'
+            : '"darker", "purple accent", "serif font"…'
+          );
+          setInputEnabled(true);
+          scrollChat();
+        }, 200);
+        return;
+      } catch { /* ignore corrupt save */ }
+    }
+
+    // Pre-populate from linked profile on first open
+    const pe = data?.pageEditor;
+    if (!fresh && pe?.name) {
+      roleRef.current = initRole;
+      setRole(initRole);
+      contentRef.current = makeContent(initRole);
+      contentRef.current.name = pe.name;
+      if (pe.bio) contentRef.current.bio = pe.bio;
+      if (pe.headline) contentRef.current.tagline = pe.headline;
+      if (pe.songs?.length) {
+        tracksRef.current = pe.songs.slice(0, 8).map((s: { hexId: string; title: string }) => ({ id: s.hexId, name: s.title, dur: '' }));
+      }
+      stepRef.current = 4;
+      setFlowStep(4);
+      setTimeout(() => {
+        addMsg({ id: makeId(), type: 'ai', html: `Found your profile — let's style your page, <b>${esc(pe.name)}</b>. <b>Describe your vibe</b>:` });
+        const vMsgId = makeId();
+        addMsg({
+          id: vMsgId, type: 'chips', kind: 'vibe',
+          chips: (VIBE_CHIPS[initRole] as string[]).map((v: string) => ({ value: v, label: v })),
+        });
+        setInputPlaceholder(`e.g. "${ROLES[initRole].defaultVibe}"`);
+        setInputEnabled(true);
+        scrollChat();
+      }, 300);
+      return;
+    }
 
     setTimeout(() => {
       addMsg({ id: makeId(), type: 'ai', html: "Hey! I'm your <b>AI page builder</b>. Let's create a page that truly represents your brand. <b>What kind of page are you making?</b>" });
@@ -986,6 +1051,24 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
         if (e.key === 'Enter' && single) { e.preventDefault(); el.blur(); }
       });
     });
+
+    // Debounce save to localStorage once a full page has been built
+    if (stepRef.current >= 7) {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      saveTimer.current = setTimeout(() => {
+        try {
+          localStorage.setItem(saveKeyRef.current, JSON.stringify({
+            role: roleRef.current,
+            theme: t,
+            content: { name: content.name, tagline: content.tagline, bio: content.bio },
+            sections: sectionsRef.current,
+            heroBg: heroBgRef.current,
+            tracks: tracksRef.current,
+            links: linksRef.current,
+          }));
+        } catch { /* ignore quota errors */ }
+      }, 800);
+    }
   }, []);
 
   function toggleAP(tab: ApTab) {
@@ -1094,7 +1177,8 @@ ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a 
   }
 
   function resetAll() {
-    startFlow();
+    if (typeof window !== 'undefined') localStorage.removeItem(saveKeyRef.current);
+    startFlow(true);
     if (pageScrollRef.current) pageScrollRef.current.innerHTML = '';
     if (pageRootRef.current) {
       pageRootRef.current.dataset.mood = 'dark';
