@@ -42,7 +42,7 @@ export function AdminSetupClient() {
         throw new Error(typeof options.error === 'string' ? options.error : 'Could not start passkey registration.');
       }
 
-      const attestation = await startRegistration(options);
+      const attestation = await startRegistration({ optionsJSON: options });
 
       const verifyRes = await fetch('/api/auth/passkey/register-first', {
         method: 'POST',
