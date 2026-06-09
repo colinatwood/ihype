@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
 
-const CHAT_CONFIG: DOMPurify.Config = {
+const CHAT_CONFIG = {
   ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'code', 'pre', 'span'],
   ALLOWED_ATTR: ['href', 'target', 'rel'],
 };
