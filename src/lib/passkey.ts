@@ -8,7 +8,7 @@ import type {
   RegistrationResponseJSON,
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,
-} from '@simplewebauthn/types';
+} from '@simplewebauthn/server';
 import { db } from '@/lib/db';
 import { getBaseUrl } from '@/lib/utils';
 

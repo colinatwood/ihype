@@ -41,7 +41,7 @@ export function PasskeyManager() {
     try {
       const optRes = await fetch('/api/auth/passkey/register');
       if (!optRes.ok) throw new Error('Could not start passkey setup.');
-      const options = await optRes.json() as Record<string, unknown>;
+      const options = await optRes.json();
       const credential = await startRegistration({ optionsJSON: options });
       const verifyRes = await fetch('/api/auth/passkey/register', {
         method: 'POST',

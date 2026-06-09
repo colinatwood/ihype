@@ -51,7 +51,7 @@ export async function POST(request: Request) {
   if (name) delete raw._name;
   let ok: boolean;
   try {
-    ok = await verifyPasskeyRegistration(session.user.id, raw as unknown as import('@simplewebauthn/types').RegistrationResponseJSON, challenge, name);
+    ok = await verifyPasskeyRegistration(session.user.id, raw as unknown as import('@simplewebauthn/server').RegistrationResponseJSON, challenge, name);
   } catch (err) {
     console.error('[passkey/register] verification threw:', err);
     const resp = NextResponse.json({ error: 'Passkey registration failed.' }, { status: 400 });
