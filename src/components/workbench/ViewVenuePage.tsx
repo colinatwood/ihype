@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { WorkbenchData } from '@/types/workbench';
+import ViewPageStudio from './ViewPageStudio';
 
 /* ── types ───────────────────────────────────────────────── */
 type VenueMode = 'overview' | 'shows' | 'bookings' | 'page' | 'gallery';
@@ -198,7 +199,7 @@ export function ViewVenuePage({ data }: { data: WorkbenchData }) {
         {mode === 'overview'  && <OverviewPanel data={data} />}
         {mode === 'shows'     && <ShowsPanel venueName={venueName} />}
         {mode === 'bookings'  && <BookingsPanel />}
-        {mode === 'page'      && <PageAIPanel venueName={venueName} initials={initials} />}
+        {mode === 'page'      && <ViewPageStudio data={data} />}
         {mode === 'gallery'   && <GalleryPanel />}
       </div>
 
