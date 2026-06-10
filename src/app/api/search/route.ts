@@ -178,6 +178,9 @@ export async function GET(request: NextRequest) {
       shows:     shows.length,
       genres:    genreMatches.size,
     }
+  }, {
+    // Results are public; let the CDN absorb repeated popular queries.
+    headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' }
   });
   } catch (err) {
     console.error('[api/search] error', err);

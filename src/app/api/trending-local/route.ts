@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
       take: 5,
     });
 
-    return NextResponse.json({ shows });
+    return NextResponse.json(
+      { shows },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    );
   } catch (err) {
     console.error('[api/trending-local] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

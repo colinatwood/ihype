@@ -20,11 +20,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Login required.' }, { status: 401 });
   }
 
-  const rl = await consumeRateLimit(
-    `email-verify:${readClientAddress(request)}`,
-    { limit: 10, windowMs: 15 * 60 * 1000 }
-  );
-  if (!rl.allowed) {
+  // Limit per IP and per account so a distributed attacker can't brute-force
+  // one user's 6-digit code from many addresses.
+  const [ipLimit, userLimit] = await Promise.all([
+    consumeRateLimit(`email-verify:${readClientAddress(request)}`, { limit: 10, windowMs: 15 * 60 * 1000 }),
+    consumeRateLimit(`email-verify:user:${session.user.id}`, { limit: 10, windowMs: 15 * 60 * 1000 })
+  ]);
+  if (!ipLimit.allowed || !userLimit.allowed) {
     return NextResponse.json({ error: 'Too many requests.' }, { status: 429 });
   }
 
