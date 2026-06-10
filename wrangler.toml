@@ -52,6 +52,12 @@ binding = "D1"
 database_name = "ihype-cron"
 database_id = "72feb348-a07a-4bd5-a6ee-5b27b751999d"
 
+# Pooled Postgres access — read by src/lib/db.ts, which falls back to
+# DATABASE_URL when the binding is absent (local dev, build, scripts).
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "03f39c51f80a45d3bb6792a9676e292e"
+
 [[analytics_engine_datasets]]
 binding = "AE"
 dataset = "ihype_analytics"
