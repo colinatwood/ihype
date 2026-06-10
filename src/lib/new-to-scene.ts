@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { sendGenericEmail } from '@/lib/mailer';
+import { sendMarketingEmail } from '@/lib/mailer';
 import { getBaseUrl } from '@/lib/utils';
 
 export async function sendNewToSceneEmail(): Promise<{ sent: number }> {
@@ -20,14 +20,14 @@ export async function sendNewToSceneEmail(): Promise<{ sent: number }> {
 
   const users = await db.user.findMany({
     where: { notificationPreference: { weeklyDigest: true }, email: { not: null } },
-    select: { email: true }
+    select: { id: true, email: true }
   });
 
   let sent = 0;
   for (const user of users) {
     if (!user.email) continue;
     try {
-      await sendGenericEmail({ to: user.email, subject: 'New to the iHYPE scene this week', html: `<h2>Fresh artists on iHYPE</h2>${items}<p><a href="${baseUrl}/discover">Discover more</a></p>`, text: newProfiles.map(p => `${p.name} — ${baseUrl}/artists/${p.slug}`).join('\n') });
+      await sendMarketingEmail(user.id, { to: user.email, subject: 'New to the iHYPE scene this week', html: `<h2>Fresh artists on iHYPE</h2>${items}<p><a href="${baseUrl}/discover">Discover more</a></p>`, text: newProfiles.map(p => `${p.name} — ${baseUrl}/artists/${p.slug}`).join('\n') });
       sent++;
     } catch { /* continue */ }
   }

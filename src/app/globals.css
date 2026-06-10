@@ -6,7 +6,7 @@
   --bg-4: #221c16;
   --ink: #f0ebe5;
   --ink-2: #9e9080;
-  --ink-3: #5a5048;
+  --ink-3: #7a7060;
   --ink-4: #3a342e;
   --line: rgba(255,255,255,.06);
   --line-2: rgba(255,255,255,.14);
@@ -21,7 +21,7 @@
   --top-h: 42px;
   /* Legacy compat */
   --text: #f0ebe5;
-  --muted: #5a5048;
+  --muted: #7a7060;
   --shadow: 0 18px 42px rgba(0,0,0,.35);
 }
 
@@ -36,12 +36,12 @@
     --bg-4: #1f1c25;
     --ink: #f4f1ea;
     --ink-2: #a8a094;
-    --ink-3: #645b50;
+    --ink-3: #7a7060;
     --ink-4: #3f372f;
     --line: rgba(255,255,255,.08);
     --line-2: rgba(255,255,255,.16);
     --text: #f4f1ea;
-    --muted: #645b50;
+    --muted: #7a7060;
   }
 }
 
@@ -59,6 +59,16 @@
   --line-2: rgba(0,0,0,.16);
   --text: #1a1410;
   --muted: #7a6e64;
+}
+
+/* Reduced-motion: cut animations to a flash so vestibular users aren't affected. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 * {

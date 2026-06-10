@@ -54,16 +54,34 @@ export function ShowEngagement({
       .catch(() => {});
   }, [showId]);
 
+  const [rsvpError, setRsvpError] = useState<string | null>(null);
+  const [remindError, setRemindError] = useState<string | null>(null);
+  const [attendeeError, setAttendeeError] = useState<string | null>(null);
+
   async function toggleRsvp() {
     if (!canRsvp || rsvpBusy) return;
     setRsvpBusy(true);
+    setRsvpError(null);
+    const prevGoing = going;
+    const prevCount = count;
+    // Optimistic update
+    setGoing(!prevGoing);
+    setCount(prevGoing ? Math.max(0, prevCount - 1) : prevCount + 1);
     try {
       const res = await fetch(`/api/shows/${showId}/rsvp`, { method: 'POST' });
-      const json = (await res.json().catch(() => ({}))) as { going?: boolean; count?: number };
+      const json = (await res.json().catch(() => ({}))) as { going?: boolean; count?: number; error?: string };
       if (res.ok) {
         if (typeof json.count === 'number') setCount(json.count);
         if (typeof json.going === 'boolean') setGoing(json.going);
+      } else {
+        setGoing(prevGoing);
+        setCount(prevCount);
+        setRsvpError(json.error ?? 'Could not update RSVP');
       }
+    } catch {
+      setGoing(prevGoing);
+      setCount(prevCount);
+      setRsvpError('Could not update RSVP (network error)');
     } finally {
       setRsvpBusy(false);
     }
@@ -72,29 +90,61 @@ export function ShowEngagement({
   async function toggleRemind() {
     if (!canRemind || showEnded) return;
     setRemindLoading(true);
+    setRemindError(null);
+    const prevReminded = reminded;
+    // Optimistic update
+    setReminded(!prevReminded);
     try {
       const res = await fetch(`/api/shows/${showId}/remind`, { method: 'POST' });
       if (res.ok) {
         const data = (await res.json()) as { reminded?: boolean };
         setReminded(Boolean(data.reminded));
+      } else {
+        setReminded(prevReminded);
+        setRemindError('Could not update reminder');
       }
-    } catch { /* ignore */ } finally {
+    } catch {
+      setReminded(prevReminded);
+      setRemindError('Could not update reminder (network error)');
+    } finally {
       setRemindLoading(false);
     }
   }
 
   async function toggleAttendee() {
     setAttendeeLoading(true);
+    setAttendeeError(null);
+    const prevOptedIn = optedIn;
+    const prevAttendees = attendees;
+    const prevAttendeeCount = attendeeCount;
+    // Optimistic update
+    const nextOptedIn = !prevOptedIn;
+    setOptedIn(nextOptedIn);
+    setAttendeeCount(nextOptedIn ? prevAttendeeCount + 1 : Math.max(0, prevAttendeeCount - 1));
     try {
       const res = await fetch(`/api/shows/${showId}/attendees`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setOptedIn(data.optedIn);
-        const refresh = await fetch(`/api/shows/${showId}/attendees`);
-        const refreshData = await refresh.json();
-        setAttendees(refreshData.attendees ?? []);
-        setAttendeeCount(refreshData.count ?? 0);
+        // Refresh the attendee list in the background
+        fetch(`/api/shows/${showId}/attendees`)
+          .then((r) => r.json())
+          .then((refreshData) => {
+            setAttendees(refreshData.attendees ?? []);
+            setAttendeeCount(refreshData.count ?? 0);
+          })
+          .catch(() => {});
+      } else {
+        setOptedIn(prevOptedIn);
+        setAttendees(prevAttendees);
+        setAttendeeCount(prevAttendeeCount);
+        setAttendeeError('Could not update attendance');
       }
+    } catch {
+      setOptedIn(prevOptedIn);
+      setAttendees(prevAttendees);
+      setAttendeeCount(prevAttendeeCount);
+      setAttendeeError('Could not update attendance (network error)');
     } finally {
       setAttendeeLoading(false);
     }
@@ -112,6 +162,7 @@ export function ShowEngagement({
           disabled={!canRsvp || rsvpBusy}
           className={`button small ${going ? '' : 'secondary'}`}
           aria-pressed={going}
+          aria-label={going ? 'Cancel RSVP' : 'RSVP to this show'}
           title={canRsvp ? 'Toggle RSVP' : 'Sign in to RSVP'}
         >
           {going ? '✓ Going' : 'Going?'} ({count})
@@ -122,11 +173,16 @@ export function ShowEngagement({
             className={`button small ${reminded ? '' : 'secondary'}`}
             onClick={toggleRemind}
             disabled={remindLoading}
+            type="button"
+            aria-pressed={reminded}
+            aria-label={reminded ? 'Remove reminder for this show' : 'Set reminder for this show'}
           >
             {reminded ? 'Reminder set ✓' : 'Remind me'}
           </button>
         )}
       </div>
+      {rsvpError ? <span className="meta">{rsvpError}</span> : null}
+      {remindError ? <span className="meta">{remindError}</span> : null}
 
       {/* Who's going */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
@@ -157,14 +213,18 @@ export function ShowEngagement({
           </span>
         )}
         <button
-          className="button small secondary"
+          className={`button small ${optedIn ? '' : 'secondary'}`}
           disabled={attendeeLoading}
           onClick={toggleAttendee}
+          type="button"
+          aria-pressed={optedIn ?? false}
+          aria-label={optedIn ? 'Remove yourself from attendee list' : 'Add yourself to attendee list'}
           style={{ marginLeft: 4 }}
         >
           {optedIn === true ? "I'm going ✓" : optedIn === false ? 'Not going' : "I'm going!"}
         </button>
       </div>
+      {attendeeError ? <span className="meta">{attendeeError}</span> : null}
     </div>
   );
 }

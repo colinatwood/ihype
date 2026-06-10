@@ -2,6 +2,12 @@ const CACHE_VERSION = 'ihype-87ef62b';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 
+// Tickets cache is intentionally version-independent so purchased ticket pages
+// and their QR codes survive SW updates and are never wiped by the activate
+// cleanup below. A user must be able to show their ticket at the venue door
+// even with no connectivity.
+const TICKETS_CACHE = 'ihype-tickets';
+
 const STATIC_ASSETS = [
   '/manifest.json',
   '/icons/icon-180.png',
@@ -53,7 +59,9 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => key.startsWith('ihype-') && key !== STATIC_CACHE && key !== PAGE_CACHE)
+            // Exclude TICKETS_CACHE — it is version-independent and must never
+            // be deleted during SW updates so offline ticket access is preserved.
+            .filter((key) => key.startsWith('ihype-') && key !== STATIC_CACHE && key !== PAGE_CACHE && key !== TICKETS_CACHE)
             .map((key) => caches.delete(key))
         )
       )
@@ -74,6 +82,13 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Cache QR code images from qrserver.com for offline ticket display.
+  // These are cross-origin image requests embedded in /tickets/[id] pages.
+  if (url.hostname === 'api.qrserver.com' && request.method === 'GET') {
+    event.respondWith(cacheFirst(request, TICKETS_CACHE));
+    return;
+  }
+
   if (url.origin !== location.origin) return;
   if (isNetworkOnly(url.pathname)) return;
 
@@ -83,6 +98,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (request.destination === 'document' || url.pathname.endsWith('.html')) {
+    // Individual purchased ticket pages — network-first, fall back to cache
+    // so the holder can show their QR at the venue door with no connectivity.
+    if (url.pathname.startsWith('/tickets/')) {
+      event.respondWith(networkWithCacheFallback(request, TICKETS_CACHE));
+      return;
+    }
     // Show and artist pages: stale-while-revalidate (ticket availability changes)
     if (SWR_PATHS.some((p) => url.pathname.startsWith(p))) {
       event.respondWith(staleWhileRevalidate(request, PAGE_CACHE));

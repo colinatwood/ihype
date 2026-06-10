@@ -75,9 +75,44 @@ export function DiscoverDailyCard() {
     try { sessionStorage.setItem(DISMISS_KEY, '1'); } catch {}
   };
 
-  if (dismissed || !picks) return null;
+  if (dismissed) return null;
+
+  // API responded with all-empty picks — show a city nudge instead of nothing
+  if (picks && !picks.show && !picks.profile && !picks.track) {
+    return (
+      <div style={{ padding: '24px 48px 0', maxWidth: 1600, margin: '0 auto' }}>
+        <div style={{
+          background: 'var(--bg-2)', border: '1px solid var(--line-2)', borderRadius: 14,
+          padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20, opacity: .6 }}>📍</span>
+            <span style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)' }}>
+              Nothing nearby yet — set your city to see local shows and artists.
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <a
+              href="/home?view=settings"
+              style={{ padding: '6px 14px', borderRadius: 7, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.06em', textDecoration: 'none', color: 'var(--accent)', border: '1px solid rgba(255,80,41,.3)', background: 'rgba(255,80,41,.07)' }}
+            >
+              Set city
+            </a>
+            <button
+              onClick={dismiss}
+              aria-label="Dismiss"
+              style={{ border: 'none', background: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 14, lineHeight: 1, padding: '4px 6px' }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!picks) return null;
   const { show, profile, track } = picks;
-  if (!show && !profile && !track) return null;
 
   return (
     // Container metrics match ViewMyPage's root so the card aligns with the content below it

@@ -52,6 +52,8 @@ export function FollowButton({ profileId }: { profileId: string }) {
       disabled={busy}
       onClick={toggle}
       type="button"
+      aria-pressed={following}
+      aria-label={following ? 'Unfollow' : 'Follow'}
     >
       {following ? 'Following' : 'Follow'} · {count}
     </button>

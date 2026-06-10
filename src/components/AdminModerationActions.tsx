@@ -2,9 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { AdminReauthPrompt } from '@/components/AdminReauthPrompt';
 
 type ReportStatus = 'OPEN' | 'REVIEWED' | 'RESOLVED' | 'DISMISSED' | 'HIDDEN';
 type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED' | 'UNVERIFIED';
+
+class ReauthRequiredError extends Error {
+  constructor() {
+    super('Recent passkey check required.');
+  }
+}
 
 async function patchJson(url: string, body: unknown) {
   const response = await fetch(url, {
@@ -15,6 +22,9 @@ async function patchJson(url: string, body: unknown) {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
+    if (payload.requiresReauth) {
+      throw new ReauthRequiredError();
+    }
     throw new Error(typeof payload.error === 'string' ? payload.error : 'Action failed.');
   }
 
@@ -24,17 +34,23 @@ async function patchJson(url: string, body: unknown) {
 export function AdminReportActions({ reportId }: { reportId: string }) {
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<ReportStatus | null>(null);
+  const [reauthStatus, setReauthStatus] = useState<ReportStatus | null>(null);
   const [error, setError] = useState('');
 
   async function run(status: ReportStatus) {
     setPendingStatus(status);
+    setReauthStatus(null);
     setError('');
 
     try {
       await patchJson(`/api/admin/content-reports/${reportId}`, { status });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed.');
+      if (err instanceof ReauthRequiredError) {
+        setReauthStatus(status);
+      } else {
+        setError(err instanceof Error ? err.message : 'Action failed.');
+      }
     } finally {
       setPendingStatus(null);
     }
@@ -53,6 +69,16 @@ export function AdminReportActions({ reportId }: { reportId: string }) {
           {pendingStatus === status ? 'Saving...' : status}
         </button>
       ))}
+      {reauthStatus ? (
+        <AdminReauthPrompt
+          onCancel={() => setReauthStatus(null)}
+          onSuccess={() => {
+            const status = reauthStatus;
+            setReauthStatus(null);
+            void run(status);
+          }}
+        />
+      ) : null}
       {error ? <small className="status-note status-note-error">{error}</small> : null}
     </div>
   );
@@ -61,17 +87,23 @@ export function AdminReportActions({ reportId }: { reportId: string }) {
 export function AdminVerificationActions({ profileId }: { profileId: string }) {
   const router = useRouter();
   const [pendingStatus, setPendingStatus] = useState<VerificationStatus | null>(null);
+  const [reauthStatus, setReauthStatus] = useState<VerificationStatus | null>(null);
   const [error, setError] = useState('');
 
   async function run(status: VerificationStatus) {
     setPendingStatus(status);
+    setReauthStatus(null);
     setError('');
 
     try {
-      await patchJson(`/api/admin/verifications/${profileId}`, { status });
+      await patchJson(`/api/admin/verifications/${profileId}`, { decision: status });
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed.');
+      if (err instanceof ReauthRequiredError) {
+        setReauthStatus(status);
+      } else {
+        setError(err instanceof Error ? err.message : 'Action failed.');
+      }
     } finally {
       setPendingStatus(null);
     }
@@ -85,6 +117,16 @@ export function AdminVerificationActions({ profileId }: { profileId: string }) {
       <button className="button small danger" disabled={Boolean(pendingStatus)} onClick={() => run('REJECTED')} type="button">
         {pendingStatus === 'REJECTED' ? 'Saving...' : 'Reject'}
       </button>
+      {reauthStatus ? (
+        <AdminReauthPrompt
+          onCancel={() => setReauthStatus(null)}
+          onSuccess={() => {
+            const status = reauthStatus;
+            setReauthStatus(null);
+            void run(status);
+          }}
+        />
+      ) : null}
       {error ? <small className="status-note status-note-error">{error}</small> : null}
     </div>
   );

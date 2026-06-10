@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { sendGenericEmail } from '@/lib/mailer';
+import { sendMarketingEmail } from '@/lib/mailer';
 import Anthropic from '@anthropic-ai/sdk';
 import { getBaseUrl } from '@/lib/utils';
 
@@ -45,7 +45,7 @@ export async function sendWeeklyPicksEmails(): Promise<{ sent: number; skipped: 
   for (const user of users) {
     if (!user.email) { skipped++; continue; }
     try {
-      await sendGenericEmail({
+      await sendMarketingEmail(user.id, {
         to: user.email,
         subject: '🎵 iHYPE Weekly Picks',
         html: `<p>${aiBlurb}</p><h2>This week's top picks</h2>${picksHtml}<p><a href="${baseUrl}/discover">Discover more on iHYPE</a></p>`,

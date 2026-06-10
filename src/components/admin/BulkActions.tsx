@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { AdminReauthPrompt } from '@/components/AdminReauthPrompt';
 
 interface BulkItem {
   id: string;
@@ -19,6 +20,7 @@ export function BulkActions({ items, type }: BulkActionsProps) {
   const [action, setAction] = useState<BulkAction>(type === 'profiles' ? 'verify_profiles' : 'feature_shows');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [needsReauth, setNeedsReauth] = useState(false);
 
   const toggle = (id: string) => {
     setSelected((prev) => {
@@ -36,14 +38,17 @@ export function BulkActions({ items, type }: BulkActionsProps) {
     if (selected.size === 0) return;
     setLoading(true);
     setResult(null);
+    setNeedsReauth(false);
     try {
       const res = await fetch('/api/admin/bulk-actions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids: Array.from(selected), action }),
       });
-      const data = (await res.json()) as { ok?: boolean; updated?: number; error?: string };
-      if (data.ok) {
+      const data = (await res.json()) as { ok?: boolean; updated?: number; error?: string; requiresReauth?: boolean };
+      if (data.requiresReauth) {
+        setNeedsReauth(true);
+      } else if (data.ok) {
         setResult(`Updated ${data.updated ?? selected.size} records`);
         setSelected(new Set());
       } else {
@@ -88,6 +93,17 @@ export function BulkActions({ items, type }: BulkActionsProps) {
         </button>
         {result && <span style={{ fontSize: 13, color: result.startsWith('Error') ? '#e74c3c' : '#2ecc71' }}>{result}</span>}
       </div>
+      {needsReauth && (
+        <div style={{ marginBottom: 8 }}>
+          <AdminReauthPrompt
+            onCancel={() => setNeedsReauth(false)}
+            onSuccess={() => {
+              setNeedsReauth(false);
+              void apply();
+            }}
+          />
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 200, overflowY: 'auto' }}>
         {items.map((item) => (
           <label key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
