@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
 import { readClientAddress } from '@/lib/request-meta';
+import { requireRecentAdminReauth } from '@/lib/admin-confirmation';
 
 const schema = z.object({
   status: z.enum(['OPEN', 'REVIEWED', 'RESOLVED', 'DISMISSED', 'HIDDEN']),
@@ -53,8 +54,13 @@ export async function PATCH(
 ) {
   const session = await auth();
 
-  if (!isAdminSession(session)) {
+  if (!isAdminSession(session) || !session?.user?.id) {
     return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+  }
+
+  const reauthed = await requireRecentAdminReauth(session.user.id);
+  if (!reauthed) {
+    return NextResponse.json({ requiresReauth: true }, { status: 401 });
   }
 
   try {

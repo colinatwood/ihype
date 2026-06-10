@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { sendGenericEmail } from '@/lib/mailer';
+import { sendMarketingEmail } from '@/lib/mailer';
 
 async function getUserForEmail(userId: string) {
   return db.user.findUnique({
@@ -25,7 +25,7 @@ export async function sendDay1Email(userId: string): Promise<void> {
     '',
     'The iHYPE team'
   ].join('\n');
-  await sendGenericEmail({ to: user.email, subject: 'Welcome to iHYPE — start discovering music', text, html: wrapText(text) });
+  await sendMarketingEmail(user.id, { to: user.email, subject: 'Welcome to iHYPE — start discovering music', text, html: wrapText(text) });
 }
 
 export async function sendDay3Email(userId: string): Promise<void> {
@@ -43,7 +43,7 @@ export async function sendDay3Email(userId: string): Promise<void> {
     '',
     'The iHYPE team'
   ].join('\n');
-  await sendGenericEmail({ to: user.email, subject: 'Your first hype is waiting', text, html: wrapText(text) });
+  await sendMarketingEmail(user.id, { to: user.email, subject: 'Your first hype is waiting', text, html: wrapText(text) });
 }
 
 export async function sendDay7Email(userId: string): Promise<void> {
@@ -61,5 +61,5 @@ export async function sendDay7Email(userId: string): Promise<void> {
     '',
     'The iHYPE team'
   ].join('\n');
-  await sendGenericEmail({ to: user.email, subject: 'The scene misses you — come back to iHYPE', text, html: wrapText(text) });
+  await sendMarketingEmail(user.id, { to: user.email, subject: 'The scene misses you — come back to iHYPE', text, html: wrapText(text) });
 }

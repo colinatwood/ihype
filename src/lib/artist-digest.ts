@@ -1,10 +1,17 @@
 import { db } from '@/lib/db';
-import { sendGenericEmail } from '@/lib/mailer';
+import { sendMarketingEmail } from '@/lib/mailer';
 
-type ProfileStub = { id: string; name: string; owner: { email: string | null; name: string | null } | null };
+type ProfileStub = { id: string; name: string; owner: { id: string; email: string | null; name: string | null } | null };
 
 async function sendDigestForProfile(profile: ProfileStub): Promise<void> {
   if (!profile.owner?.email) return;
+
+  // Respect the owner's weekly digest preference before doing any work.
+  const prefs = await db.notificationPreference.findUnique({
+    where: { userId: profile.owner.id },
+    select: { weeklyDigest: true }
+  });
+  if (prefs?.weeklyDigest === false) return;
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -33,14 +40,14 @@ async function sendDigestForProfile(profile: ProfileStub): Promise<void> {
     `The iHYPE team`
   ].join('\n');
 
-  await sendGenericEmail({ to: profile.owner.email, subject, text, html: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text}</pre>` });
+  await sendMarketingEmail(profile.owner.id, { to: profile.owner.email, subject, text, html: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text}</pre>` });
 }
 
 // Legacy single-profile entry point (used by direct API calls)
 export async function sendArtistWeeklyDigest(profileId: string): Promise<void> {
   const profile = await db.profile.findUnique({
     where: { id: profileId },
-    select: { id: true, name: true, owner: { select: { email: true, name: true } } }
+    select: { id: true, name: true, owner: { select: { id: true, email: true, name: true } } }
   });
   if (!profile) return;
   await sendDigestForProfile(profile);

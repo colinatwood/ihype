@@ -249,7 +249,12 @@ export function MediaPlayerProvider({ children }: { children: ReactNode }) {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: currentTrack.title,
       artist: currentTrack.artistName,
-      artwork: currentTrack.artworkUrl ? [{ src: currentTrack.artworkUrl, sizes: '512x512', type: 'image/jpeg' }] : []
+      artwork: currentTrack.artworkUrl
+        ? [
+            { src: currentTrack.artworkUrl, sizes: '512x512', type: 'image/jpeg' },
+            { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          ]
+        : [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
     });
     navigator.mediaSession.setActionHandler('play', () => setIsPlaying(true));
     navigator.mediaSession.setActionHandler('pause', () => setIsPlaying(false));

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { EmptyState } from '@/components/EmptyState';
 export const metadata: Metadata = {
   title: 'Shows',
   description: 'Upcoming and archived independent music shows. Browse by city, artist, or genre on iHYPE.',
@@ -132,15 +133,12 @@ export default async function ShowsIndexPage({
         </div>
         <div className="grid grid-2">
           {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} reasonChips={locationChips(show)} />) : (
-            <div className="empty">
-              <span className="empty-icon">🗓️</span>
-              <span className="empty-title">No upcoming shows scheduled</span>
-              <div className="cta-row">
-                <Link className="button small secondary" href="/register?role=ARTIST">Add artist date</Link>
-                <Link className="button small secondary" href="/register?role=VENUE">List venue night</Link>
-              </div>
-              <p>Artists add new dates regularly — check back or <Link href="/artists">browse artists</Link>.</p>
-            </div>
+            <EmptyState
+              icon="🗓️"
+              title="No shows listed yet — creating one takes 2 minutes."
+              ctaLabel="Add your first show"
+              ctaHref={session ? '/home' : '/register'}
+            />
           )}
         </div>
       </section>
@@ -154,12 +152,13 @@ export default async function ShowsIndexPage({
         </div>
         <div className="grid grid-2">
           {recentShows.length ? recentShows.map((show) => <ShowCard key={show.id} show={show} />) : (
-            <div className="empty">
-              <span className="empty-icon">📼</span>
-              <span className="empty-title">No recent archives yet</span>
-              <div className="empty-example-card">Promoters and artists can turn a show into an archive once the first broadcast lands.</div>
-              <p>Past broadcasts will appear here once the platform launches.</p>
-            </div>
+            <EmptyState
+              icon="📼"
+              title="No archived shows yet."
+              body="Past broadcasts appear here once an artist or venue publishes a recap."
+              ctaLabel={session ? 'Go to workbench' : 'Create an account'}
+              ctaHref={session ? '/home' : '/register'}
+            />
           )}
         </div>
       </section>

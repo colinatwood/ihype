@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       const { db } = await import('@/lib/db');
       const profiles = await db.profile.findMany({
         where: { type: { in: ['ARTIST', 'DJ'] } },
-        select: { id: true, name: true, owner: { select: { email: true, name: true } } }
+        select: { id: true, name: true, owner: { select: { id: true, email: true, name: true } } }
       });
       const { sent } = await sendArtistWeeklyDigestBatch(profiles);
       return NextResponse.json({ ok: true, sent });

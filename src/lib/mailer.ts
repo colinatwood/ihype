@@ -2,6 +2,8 @@ import { recordEmailDelivery } from '@/lib/audit';
 import { env } from '@/lib/env';
 import { db } from '@/lib/db';
 import { enqueueEmail } from '@/lib/email-queue';
+import { createUnsubscribeToken } from '@/lib/unsubscribe';
+import { getBaseUrl } from '@/lib/utils';
 
 function getEmailFrom() {
   return env.EMAIL_FROM;
@@ -41,6 +43,7 @@ type ConfiguredEmailInput = {
   subject: string;
   text: string;
   html: string;
+  headers?: Record<string, string>;
 };
 
 /**
@@ -56,6 +59,55 @@ export async function sendEmailToUser(
     return { mode: 'skipped', skipped: true };
   }
   return sendGenericEmail(input);
+}
+
+function buildUnsubscribeUrl(userId: string): string {
+  return `${getBaseUrl()}/api/email/unsubscribe?token=${encodeURIComponent(createUnsubscribeToken(userId))}`;
+}
+
+/**
+ * Wrapper for non-transactional (marketing / digest / nudge) email.
+ *
+ * - Skips delivery if the address bounced or the user turned every
+ *   NotificationPreference toggle off (the one-click unsubscribe state).
+ * - Appends an unsubscribe footer to the text and HTML bodies.
+ * - Sets a `List-Unsubscribe` header so mail clients show a native control.
+ *
+ * Do NOT use this for transactional email (OTP, password reset, tickets) —
+ * those must always deliver and never carry an unsubscribe link.
+ */
+export async function sendMarketingEmail(
+  userId: string,
+  input: ConfiguredEmailInput
+): Promise<{ mode: string; skipped?: boolean }> {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: {
+      emailBounced: true,
+      notificationPreference: {
+        select: { newShows: true, journalPosts: true, milestones: true, weeklyDigest: true }
+      }
+    }
+  });
+  if (!user || user.emailBounced) {
+    return { mode: 'skipped', skipped: true };
+  }
+  const prefs = user.notificationPreference;
+  if (prefs && !prefs.newShows && !prefs.journalPosts && !prefs.milestones && !prefs.weeklyDigest) {
+    return { mode: 'skipped', skipped: true };
+  }
+
+  const unsubscribeUrl = buildUnsubscribeUrl(userId);
+  return sendGenericEmail({
+    ...input,
+    text: `${input.text}\n\n—\nUnsubscribe from iHYPE emails: ${unsubscribeUrl}`,
+    html: `${input.html}<p style="margin-top:24px;padding-top:12px;border-top:1px solid #e3e8f0;font-family:Arial,sans-serif;font-size:12px;color:#8a93a6;">You&apos;re receiving this because you have an iHYPE account. <a href="${unsubscribeUrl}" style="color:#8a93a6;">Unsubscribe</a></p>`,
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      ...input.headers
+    }
+  });
 }
 
 export async function sendGenericEmail(input: ConfiguredEmailInput) {
@@ -91,7 +143,8 @@ async function sendConfiguredEmail(input: ConfiguredEmailInput) {
       to: input.to,
       subject: input.subject,
       text: input.text,
-      html: input.html
+      html: input.html,
+      ...(input.headers ? { headers: input.headers } : {})
     })
   });
 

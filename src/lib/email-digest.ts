@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { sendGenericEmail } from '@/lib/mailer';
+import { sendMarketingEmail } from '@/lib/mailer';
 import { getBaseUrl } from '@/lib/utils';
 
 type DigestResult = { sent: boolean; reason?: string; showCount?: number };
@@ -104,7 +104,7 @@ export async function sendWeeklyDigest(userId: string): Promise<DigestResult> {
     </div>
   `;
 
-  await sendGenericEmail({
+  await sendMarketingEmail(user.id, {
     to: user.email,
     subject: 'Your weekly iHYPE digest',
     text,

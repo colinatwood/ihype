@@ -83,6 +83,9 @@ export function HypeButton({ targetType, targetId, initialCount, initiallyHyped,
         className={`button${hyped ? ' secondary' : ''}${popping ? ' hype-pop' : ''}`}
         onClick={handleClick}
         disabled={pending}
+        type="button"
+        aria-pressed={hyped}
+        aria-label={hyped ? `Remove hype from this ${noun}` : `Hype this ${noun}`}
         title={hyped ? `Remove hype from this ${noun}` : `Hype this ${noun}`}
       >
         {pending

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { VerificationProfile } from '@/lib/types/admin';
+import { AdminReauthPrompt } from '@/components/AdminReauthPrompt';
 
 function formatDate(value: Date | string | null) {
   if (!value) return '—';
@@ -25,10 +26,12 @@ function VerificationCard({ profile }: { profile: VerificationProfile }) {
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [decided, setDecided] = useState(false);
+  const [reauthDecision, setReauthDecision] = useState<'VERIFIED' | 'REJECTED' | null>(null);
 
   async function decide(decision: 'VERIFIED' | 'REJECTED') {
     setPending(true);
     setMessage(null);
+    setReauthDecision(null);
     const res = await fetch(`/api/admin/verifications/${profile.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -36,6 +39,11 @@ function VerificationCard({ profile }: { profile: VerificationProfile }) {
     });
     const data = await res.json();
     if (!res.ok) {
+      if (data.requiresReauth) {
+        setReauthDecision(decision);
+        setPending(false);
+        return;
+      }
       setMessage(data.error ?? 'Something went wrong.');
       setPending(false);
       return;
@@ -147,6 +155,19 @@ function VerificationCard({ profile }: { profile: VerificationProfile }) {
               View public page ↗
             </Link>
           </div>
+
+          {reauthDecision && (
+            <div style={{ marginTop: '0.75rem' }}>
+              <AdminReauthPrompt
+                onCancel={() => setReauthDecision(null)}
+                onSuccess={() => {
+                  const decision = reauthDecision;
+                  setReauthDecision(null);
+                  void decide(decision);
+                }}
+              />
+            </div>
+          )}
         </>
       )}
 

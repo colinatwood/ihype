@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { postJson } from '@/lib/api-client';
 import { resolvePostAuthRedirect } from '@/lib/auth-redirects';
@@ -37,6 +37,13 @@ export function LoginScreen({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tosAccepted, setTosAccepted] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState('');
+
+  useEffect(() => {
+    // Passkey is the primary lane, but only when the browser supports WebAuthn.
+    if (typeof window.PublicKeyCredential === 'undefined') {
+      setMode('email');
+    }
+  }, []);
 
   async function signInWithPasskey() {
     setError('');

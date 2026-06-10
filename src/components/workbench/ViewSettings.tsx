@@ -243,6 +243,72 @@ function PasskeyPanel() {
   );
 }
 
+function EmailPreferencesPanel() {
+  type EmailPrefs = { newShows: boolean; journalPosts: boolean; milestones: boolean; weeklyDigest: boolean };
+  const [emailPrefs, setEmailPrefs] = React.useState<EmailPrefs | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [status, setStatus] = React.useState('');
+
+  React.useEffect(() => {
+    fetch('/api/notification-preferences')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.preferences) setEmailPrefs(d.preferences); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function togglePref(key: keyof EmailPrefs, value: boolean) {
+    if (!emailPrefs) return;
+    const previous = emailPrefs;
+    setEmailPrefs({ ...emailPrefs, [key]: value });
+    setStatus('');
+    try {
+      const res = await fetch('/api/notification-preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: value }),
+      });
+      if (!res.ok) throw new Error('Could not save email preferences.');
+    } catch (err) {
+      setEmailPrefs(previous);
+      setStatus(err instanceof Error ? err.message : 'Could not save email preferences.');
+    }
+  }
+
+  const rows: Array<{ key: keyof EmailPrefs; label: string; hint: string }> = [
+    { key: 'newShows', label: 'New shows', hint: 'Show announcements from artists and venues you follow' },
+    { key: 'journalPosts', label: 'Journal posts', hint: 'New journal entries from artists you follow' },
+    { key: 'milestones', label: 'Milestones', hint: 'Hype streaks, badges, and milestone updates' },
+    { key: 'weeklyDigest', label: 'Weekly digest', hint: 'Weekly picks, fresh artists, and upcoming shows' },
+  ];
+
+  return (
+    <EditorPanel title="Email preferences" eyebrow="Notifications">
+      <p style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)', margin: 0, lineHeight: 1.5 }}>
+        Choose which emails iHYPE sends you. Every email also includes a one-click unsubscribe link.
+      </p>
+      {loading ? (
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)' }}>Loading…</div>
+      ) : emailPrefs ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {rows.map(row => (
+            <div key={row.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink)', fontWeight: 600 }}>{row.label}</div>
+                <div style={{ fontFamily: 'var(--f-b)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{row.hint}</div>
+              </div>
+              <Toggle on={emailPrefs[row.key]} onChange={v => void togglePref(row.key, v)} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)' }}>Could not load email preferences.</div>
+      )}
+      {status ? <p style={{ margin: 0, fontFamily: 'var(--f-m)', fontSize: 12, color: '#ffb4a7' }}>{status}</p> : null}
+    </EditorPanel>
+  );
+}
+
 function StripeConnectPanel({ data }: { data: WorkbenchData }) {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState('');
@@ -364,6 +430,7 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
         <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Create your page</h1>
         <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 620, lineHeight: 1.5 }}>Create a listener, artist, promoter, or venue profile to unlock page editing.</p>
         <div style={{ marginTop: 24 }}><StripeConnectPanel data={data} /></div>
+        <div style={{ marginTop: 14 }}><EmailPreferencesPanel /></div>
         <div style={{ marginTop: 14 }}><PasskeyPanel /></div>
       </div>
     );
@@ -635,6 +702,8 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
       </div>
 
       <div style={{ marginTop: 14 }}><StripeConnectPanel data={data} /></div>
+
+      <div style={{ marginTop: 14 }}><EmailPreferencesPanel /></div>
 
       <div style={{ marginTop: 14 }}><PasskeyPanel /></div>
 

@@ -257,7 +257,7 @@ export function WMShowHypersSheet({ showId, onClose }: { showId: string | null; 
       }}>
         <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${T.line}` }}>
           <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 15, color: T.ink }}>Who Hyped This · {total.toLocaleString()}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, fontSize: 20, lineHeight: 1 }}>✕</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, fontSize: 20, lineHeight: 1 }}>✕</button>
         </div>
         <div style={{ overflowY: 'auto', padding: '10px 18px 18px' }}>
           {loading && <div style={{ textAlign: 'center', padding: 24, color: T.ink3, fontFamily: T.fm, fontSize: 13 }}>Loading...</div>}
@@ -336,7 +336,7 @@ export function WMSetlistVoteSheet({ showId, onClose }: { showId: string | null;
       }}>
         <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${T.line}` }}>
           <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 15, color: T.ink }}>Vote for Setlist</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, fontSize: 20, lineHeight: 1 }}>✕</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, fontSize: 20, lineHeight: 1 }}>✕</button>
         </div>
         <div style={{ overflowY: 'auto', padding: '10px 18px 18px' }}>
           {loading && <div style={{ textAlign: 'center', padding: 24, color: T.ink3, fontFamily: T.fm, fontSize: 13 }}>Loading...</div>}
@@ -458,7 +458,7 @@ export function WMFeedbackSheet({ onClose }: { onClose: () => void }) {
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, letterSpacing: '-.025em' }}>Send feedback</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: T.ink2, cursor: 'pointer', fontSize: 20, padding: 4 }}>✕</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: 'none', color: T.ink2, cursor: 'pointer', fontSize: 20, padding: 4 }}>✕</button>
         </div>
         {submitted ? (
           <div style={{ textAlign: 'center', padding: '24px 0', fontFamily: T.fb, fontSize: 15, color: T.teal }}>

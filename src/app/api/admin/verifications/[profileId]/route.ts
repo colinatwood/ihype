@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
+import { requireRecentAdminReauth } from '@/lib/admin-confirmation';
 
 const schema = z.object({
   decision: z.enum(['VERIFIED', 'REJECTED']),
@@ -20,8 +21,13 @@ export async function PATCH(
   { params }: { params: Promise<{ profileId: string }> }
 ) {
   const session = await auth();
-  if (!isAdminSession(session)) {
+  if (!isAdminSession(session) || !session?.user?.id) {
     return NextResponse.json({ error: 'Admin only.' }, { status: 403 });
+  }
+
+  const reauthed = await requireRecentAdminReauth(session.user.id);
+  if (!reauthed) {
+    return NextResponse.json({ requiresReauth: true }, { status: 401 });
   }
 
   let body: z.infer<typeof schema>;

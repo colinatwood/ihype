@@ -10,9 +10,12 @@ interface SearchResult {
   href?: string;
 }
 
+const GENRE_SUGGESTIONS = ['Hip-Hop', 'Electronic', 'R&B', 'Indie', 'Jazz', 'Soul', 'House', 'Punk'];
+
 export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [apiGenres, setApiGenres] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -20,19 +23,20 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     if (open) {
       setQuery('');
       setResults([]);
+      setApiGenres([]);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
   useEffect(() => {
-    if (!query.trim()) { setResults([]); return; }
+    if (!query.trim()) { setResults([]); setApiGenres([]); return; }
     setLoading(true);
     const timer = setTimeout(() => {
       fetch(`/api/search?q=${encodeURIComponent(query)}`)
         .then(r => r.ok ? r.json() : null)
         .then(d => {
-          if (!d?.results) return;
-          const items: SearchResult[] = d.results.map((r: Record<string, unknown>) => {
+          if (!d) return;
+          const items: SearchResult[] = (d.results ?? []).map((r: Record<string, unknown>) => {
             const type = r.type === 'song' ? 'track' : r.type === 'show' ? 'show' : r.type === 'genre' ? 'genre' : 'artist';
             const href = r.type === 'song'
               ? undefined  // tracks play inline
@@ -50,6 +54,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
             };
           });
           setResults(items.slice(0, 12));
+          setApiGenres(Array.isArray(d.genres) ? d.genres : []);
         })
         .catch(() => {})
         .finally(() => setLoading(false));
@@ -117,7 +122,27 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
           </div>
         )}
         {!loading && query && results.length === 0 && (
-          <div style={{ padding: '24px 18px', fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-3)', textAlign: 'center' }}>No results for &quot;{query}&quot;</div>
+          <div style={{ padding: '20px 18px' }}>
+            <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-3)', textAlign: 'center', marginBottom: 14 }}>
+              No matches for &quot;{query}&quot; — try a genre
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center' }}>
+              {(apiGenres.length > 0 ? apiGenres : GENRE_SUGGESTIONS).map(g => (
+                <button
+                  key={g}
+                  onClick={() => setQuery(g)}
+                  style={{
+                    padding: '5px 13px', borderRadius: 99, cursor: 'pointer',
+                    fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.06em',
+                    background: 'rgba(255,184,74,.1)', color: '#ffb84a',
+                    border: '1px solid rgba(255,184,74,.25)',
+                  }}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {!query && (
           <div style={{ padding: '20px 18px', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.06em' }}>
