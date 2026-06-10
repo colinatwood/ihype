@@ -6,9 +6,6 @@ export function ServiceWorkerRegister() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
-    // Capture whether a SW already controls this page *before* registering.
-    // If null, this is first install — no reload needed. If set, a controller
-    // change means a new deployment just took over and we should reload.
     const hadController = Boolean(navigator.serviceWorker.controller);
     let reloading = false;
 
@@ -18,9 +15,16 @@ export function ServiceWorkerRegister() {
       window.location.reload();
     });
 
-    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch((err) => {
-      console.error('SW registration failed:', err);
-    });
+    navigator.serviceWorker
+      .register('/sw.js', { updateViaCache: 'none' })
+      .then((registration) => {
+        // Explicitly trigger an update check on every page load.
+        // Covers PWAs restored from background where no navigation event fires.
+        registration.update().catch(() => {});
+      })
+      .catch((err) => {
+        console.error('SW registration failed:', err);
+      });
   }, []);
 
   return null;
