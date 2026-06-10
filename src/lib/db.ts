@@ -47,6 +47,21 @@ function readRuntimeEnv(name: string): string | undefined {
   return process.env[name]?.trim() || readCloudflareEnv(name);
 }
 
+function readHyperdriveConnectionString(): string | undefined {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getCloudflareContext } = require('@opennextjs/cloudflare');
+    const ctx = getCloudflareContext();
+    const hyperdrive = (ctx.env as Record<string, unknown>).HYPERDRIVE as
+      | { connectionString?: unknown }
+      | undefined;
+    const value = hyperdrive?.connectionString;
+    return typeof value === 'string' && isPostgresUrl(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function normalizeRuntimeDatabaseUrl() {
   const databaseUrl = readRuntimeEnv('DATABASE_URL');
   if (isPostgresUrl(databaseUrl)) {
@@ -64,6 +79,13 @@ function normalizeRuntimeDatabaseUrl() {
 }
 
 function getConnectionString() {
+  // Prefer Hyperdrive on Workers: it pools connections at Cloudflare's edge
+  // instead of dialing Postgres directly on every invocation.
+  const hyperdrive = readHyperdriveConnectionString();
+  if (hyperdrive) {
+    return hyperdrive;
+  }
+
   normalizeRuntimeDatabaseUrl();
   return readRuntimeEnv('DATABASE_URL');
 }
