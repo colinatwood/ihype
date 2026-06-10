@@ -10,6 +10,7 @@ import {
 } from '@/lib/password-reset';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
+import { constantTimeEqual } from '@/lib/secret-compare';
 
 const confirmSchema = z
   .object({
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
 
     const codeHash = hashPasswordResetCode(email, body.code);
 
-    if (codeHash !== resetCode.codeHash) {
+    if (!constantTimeEqual(codeHash, resetCode.codeHash)) {
       const nextAttempts = resetCode.attempts + 1;
 
       await withDbRetry(() =>

@@ -8,9 +8,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const lat = parseFloat(searchParams.get('lat') ?? '');
     const lng = parseFloat(searchParams.get('lng') ?? '');
-    const radiusKm = parseFloat(searchParams.get('radius') ?? '50');
+    const radiusParam = parseFloat(searchParams.get('radius') ?? '50');
+    // Postgres treats NaN as greater than every number, so an unclamped or
+    // non-finite radius would match all shows.
+    const radiusKm = Number.isFinite(radiusParam) ? Math.min(Math.max(radiusParam, 1), 500) : 50;
 
-    if (isNaN(lat) || isNaN(lng)) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
       // Fall back to recently added shows
       const shows = await db.show.findMany({
         where: { status: 'SCHEDULED', startsAt: { gte: new Date() } },

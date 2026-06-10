@@ -230,6 +230,7 @@ model Profile {
 
   @@index([name])
   @@index([city, type])
+  @@index([ownerId])
 }
 
 model FanPlaylist {
@@ -669,6 +670,9 @@ model VenueConnectionRequest {
   venueProfile    Profile                 @relation("VenueConnectionRequests", fields: [venueProfileId], references: [id], onDelete: Cascade)
   artistProfile   Profile?                @relation("RecommendedProfileConnectionRequests", fields: [artistProfileId], references: [id], onDelete: SetNull)
   requester       User                    @relation(fields: [requesterId], references: [id], onDelete: Cascade)
+
+  @@index([venueProfileId, requesterId])
+  @@index([requesterId])
 }
 
 model VerificationToken {

@@ -26,10 +26,7 @@ const publicShowArgs = Prisma.validator<Prisma.ShowDefaultArgs>()({
         name: true,
         city: true,
         stateRegion: true,
-        country: true,
-        postalCode: true,
-        latitude: true,
-        longitude: true
+        country: true
       }
     },
     headlinerProfile: {
@@ -49,16 +46,11 @@ const publicProfileArgs = Prisma.validator<Prisma.ProfileDefaultArgs>()({
     slug: true,
     hexId: true,
     name: true,
-    contactInfo: true,
-    addressLine1: true,
     hoursText: true,
     city: true,
     stateRegion: true,
     country: true,
     hometown: true,
-    postalCode: true,
-    latitude: true,
-    longitude: true,
     hypeCount: true,
     bio: true,
     genres: true,
@@ -84,9 +76,24 @@ const publicRequestArgs = Prisma.validator<Prisma.VenueConnectionRequestDefaultA
   }
 });
 
-type PublicShow = Prisma.ShowGetPayload<typeof publicShowArgs>;
-type PublicProfile = Prisma.ProfileGetPayload<typeof publicProfileArgs>;
+type PublicShowRow = Prisma.ShowGetPayload<typeof publicShowArgs>;
+type PublicProfileRow = Prisma.ProfileGetPayload<typeof publicProfileArgs>;
 type PublicRequest = Prisma.VenueConnectionRequestGetPayload<typeof publicRequestArgs>;
+
+// Contact and precise-location fields are never fetched for public pages —
+// they stay in the response shape as nulls so consumers keep compiling.
+type RedactedProfileFields = {
+  contactInfo: null;
+  addressLine1: null;
+  postalCode: null;
+  latitude: null;
+  longitude: null;
+};
+type RedactedVenueFields = { postalCode: null; latitude: null; longitude: null };
+type PublicProfile = PublicProfileRow & RedactedProfileFields;
+type PublicShow = Omit<PublicShowRow, 'venueProfile'> & {
+  venueProfile: (NonNullable<PublicShowRow['venueProfile']> & RedactedVenueFields) | null;
+};
 
 function publicProfileWhere(type?: ProfileType) {
   return {
@@ -102,7 +109,7 @@ function publicShowWhere() {
   };
 }
 
-function sanitizePublicProfile(profile: PublicProfile): PublicProfile {
+function sanitizePublicProfile(profile: PublicProfileRow): PublicProfile {
   return {
     ...profile,
     contactInfo: null,
@@ -113,7 +120,7 @@ function sanitizePublicProfile(profile: PublicProfile): PublicProfile {
   };
 }
 
-function sanitizePublicShow(show: PublicShow): PublicShow {
+function sanitizePublicShow(show: PublicShowRow): PublicShow {
   return {
     ...show,
     venueProfile: show.venueProfile
@@ -129,24 +136,32 @@ function sanitizePublicShow(show: PublicShow): PublicShow {
 
 const getHomePageDataCached = unstable_cache(
   async () => {
-    let shows: PublicShow[] = [];
-    let profiles: PublicProfile[] = [];
+    let shows: PublicShowRow[] = [];
+    let profiles: PublicProfileRow[] = [];
     let requests: PublicRequest[] = [];
 
     try {
+      // Bounded so the cached payload can't grow without limit as the
+      // Show/Profile tables grow; the home page renders far fewer than this.
       [shows, profiles, requests] = await withDbRetry(() =>
         db.$transaction([
           db.show.findMany({
             where: publicShowWhere(),
             orderBy: [{ startsAt: 'asc' }],
+            take: 500,
             ...publicShowArgs
           }),
           db.profile.findMany({
             where: publicProfileWhere(),
             orderBy: [{ verified: 'desc' }, { hypeCount: 'desc' }, { name: 'asc' }],
+            take: 1000,
             ...publicProfileArgs
           }),
-          db.venueConnectionRequest.findMany(publicRequestArgs)
+          db.venueConnectionRequest.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 500,
+            ...publicRequestArgs
+          })
         ])
       );
     } catch (error) {
@@ -174,6 +189,7 @@ const getDirectoryProfilesCached = unstable_cache(
       db.profile.findMany({
         where: publicProfileWhere(type),
         orderBy: [{ verified: 'desc' }, { hypeCount: 'desc' }, { name: 'asc' }],
+        take: 1000,
         ...publicProfileArgs
       })
     ).catch((error) => {
@@ -190,6 +206,7 @@ const getShowsDirectoryDataCached = unstable_cache(
       db.show.findMany({
         where: publicShowWhere(),
         orderBy: [{ startsAt: 'asc' }],
+        take: 500,
         ...publicShowArgs
       })
     ).then((shows) => shows.map(sanitizePublicShow))
