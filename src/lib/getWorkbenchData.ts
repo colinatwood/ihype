@@ -96,7 +96,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       hypedToday, listeningNowCount, trendingProfiles,
       mediaUploads, hostedShows, headlinerShows, accountsPayableEntries,
       dbNotifications, weeklyListensCount, totalHypeGivenCount,
-      userBadges, dbCollabPosts,
+      userBadges, dbCollabPosts, dbAvailabilityDates,
     ] = await Promise.all([
       // Fetch user's ticket orders
       db.ticketOrder.findMany({
@@ -299,6 +299,15 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         take: 20,
         select: { id: true, type: true, role: true, body: true, contact: true, createdAt: true, userId: true },
       }).catch(() => [] as { id: string; type: string; role: string; body: string; contact: string | null; createdAt: Date; userId: string }[]),
+      // Upcoming availability dates for creator profiles
+      isCreatorProfile && primaryProfile
+        ? db.availabilityDate.findMany({
+            where: { profileId: primaryProfile.id, date: { gte: new Date() } },
+            orderBy: { date: 'asc' },
+            take: 30,
+            select: { id: true, date: true, note: true },
+          }).catch(() => [] as { id: string; date: Date; note: string | null }[])
+        : Promise.resolve([] as { id: string; date: Date; note: string | null }[]),
     ]);
 
     // Count songs played by this user
@@ -558,6 +567,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       })),
       badges: userBadges.map(b => ({ type: b.type, awardedAt: b.awardedAt.toISOString() })),
       followerCount,
+      availabilityDates: dbAvailabilityDates.map(d => ({ id: d.id, date: d.date.toISOString(), note: d.note })),
       collabPosts: dbCollabPosts.map(p => ({
         id: p.id,
         type: p.type,
@@ -702,6 +712,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       venueRequests: [],
       badges: [],
       collabPosts: [],
+      availabilityDates: [],
     };
   }
 }

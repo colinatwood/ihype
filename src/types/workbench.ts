@@ -125,6 +125,12 @@ export type WbCollabPost = {
   isOwn: boolean;
 };
 
+export type WbAvailabilityDate = {
+  id: string;
+  date: string;
+  note: string | null;
+};
+
 export type WbPageEditor = {
   profileId: string;
   slug: string;
@@ -191,6 +197,7 @@ export type WorkbenchData = {
   badges?: WbBadge[];
   followerCount?: number;
   collabPosts?: WbCollabPost[];
+  availabilityDates?: WbAvailabilityDate[];
   referralStats?: { clicks: number; buyers: number; grossCents: number; payoutCents: number };
   listeningNow: number;
   hypedToday: number;
