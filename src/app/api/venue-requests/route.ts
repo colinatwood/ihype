@@ -16,6 +16,28 @@ const schema = z.object({
   path: ['artistName']
 });
 
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const venueProfiles = await db.profile.findMany({
+    where: { ownerId: session.user.id, type: 'VENUE' },
+    select: { id: true },
+  });
+  if (!venueProfiles.length) return NextResponse.json({ requests: [] });
+
+  const requests = await db.venueConnectionRequest.findMany({
+    where: { venueProfileId: { in: venueProfiles.map(p => p.id) }, status: 'PENDING' },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true, artistName: true, note: true, requesterType: true, createdAt: true, status: true,
+      artistProfile: { select: { slug: true } },
+    },
+  });
+
+  return NextResponse.json({ requests });
+}
+
 export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {

@@ -43,6 +43,7 @@ const viewLoading = () => (
 const ViewArtistPage = dynamic(() => import('./workbench/ViewArtistPage').then(m => m.ViewArtistPage), { loading: viewLoading });
 const ViewVenuePage = dynamic(() => import('./workbench/ViewVenuePage').then(m => m.ViewVenuePage), { loading: viewLoading });
 const ViewPageStudio = dynamic(() => import('./workbench/ViewPageStudio'), { loading: viewLoading });
+import ViewCollabBoard from './workbench/ViewCollabBoard';
 
 // ─────────────────────────────────────────────────────────────
 // Main WorkbenchShell export
@@ -397,6 +398,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       case 'pagestudio':   return <ViewErrorBoundary viewName="Fan Page"><ViewPageStudio data={liveData} /></ViewErrorBoundary>;
       case 'artistpage':   return <ViewErrorBoundary viewName="Artist Page"><ViewArtistPage data={liveData} /></ViewErrorBoundary>;
       case 'venuepage':       return <ViewErrorBoundary viewName="Venue Page"><ViewVenuePage data={liveData} /></ViewErrorBoundary>;
+      case 'collab':          return <ViewErrorBoundary viewName="Collab Board"><ViewCollabBoard data={liveData} /></ViewErrorBoundary>;
       case 'notifications':   return <ViewErrorBoundary viewName="Notifications"><ViewNotifications /></ViewErrorBoundary>;
       default:                return <ViewErrorBoundary viewName="My Page"><ViewMyPage data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
     }
