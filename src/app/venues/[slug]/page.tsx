@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { parsePublishedPage } from '@/lib/page-builder';
 import { cache } from 'react';
 
 export const revalidate = 60;
@@ -124,6 +125,8 @@ export default async function VenuePage({
   if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
   const profileSlug = profile.slug;
   const isOwner = canManageOwnedResource(session, profile.ownerId);
+  // Published page-builder overrides (plain text only; see parsePublishedPage).
+  const published = parsePublishedPage(profile.pagePublished);
 
   const [shows, bookableProfiles, connectionRequests, myRequests, totalRequestCount, fanHypeCount] = await Promise.all([
     db.show.findMany({
@@ -272,8 +275,8 @@ export default async function VenuePage({
                 </span>
               ) : null}
             </h1>
-            <p className="artist-headline">{profile.headline || 'Set the tone for the room and what kind of nights belong here.'}</p>
-            <p className="subtitle">{profile.bio}</p>
+            <p className="artist-headline">{published?.headline || profile.headline || 'Set the tone for the room and what kind of nights belong here.'}</p>
+            <p className="subtitle">{published?.bio || profile.bio}</p>
             <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
             <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
             <p className="meta">Fan hype: {fanHypeCount}</p>
@@ -372,7 +375,7 @@ export default async function VenuePage({
                   ) : null}
                 </div>
               ) : null}
-              <div className="artist-copy">{profile.aboutContent || profile.bio || 'This venue has not filled out the About section yet.'}</div>
+              <div className="artist-copy">{profile.aboutContent || published?.bio || profile.bio || 'This venue has not filled out the About section yet.'}</div>
             </>
           ) : null}
 

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { parsePublishedPage } from '@/lib/page-builder';
 import Link from 'next/link';
 
 export const revalidate = 60;
@@ -188,6 +189,8 @@ export default async function ListenerPage({
       }
     }
   });
+  // Published page-builder overrides (plain text only; see parsePublishedPage).
+  const published = profile ? parsePublishedPage(profile.pagePublished) : null;
   if (!profile || profile.type !== 'LISTENER') return notFound();
   if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
   const viewerLocationPromise = detectRequestLocation();
@@ -557,7 +560,7 @@ export default async function ListenerPage({
           <div className="artist-banner-copy">
             <div className="badge">FAN</div>
             <h1 className="title fan-page-title">{profile.name}</h1>
-            <p className="artist-headline">{profile.headline || 'Capture the shows, artists, and moments you keep coming back to.'}</p>
+            <p className="artist-headline">{published?.headline || profile.headline || 'Capture the shows, artists, and moments you keep coming back to.'}</p>
             <p className="subtitle">{profile.bio}</p>
             <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
             <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>

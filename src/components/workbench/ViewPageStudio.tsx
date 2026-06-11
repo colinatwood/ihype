@@ -172,6 +172,15 @@ function darken(h: string, f: number): string { const [r,g,b]=parseHex(h); retur
 function saturate(h: string): string { const [r,g,b]=parseHex(h); const mx=Math.max(r,g,b); return '#'+[r,g,b].map(v=>hx(v+(v===mx?40:-15))).join(''); }
 function makeId(): string { return Math.random().toString(36).slice(2); }
 function toSlug(s: string): string { return s.toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'') || 'you'; }
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diff) || diff < 60_000) return 'just now';
+  const m = Math.floor(diff / 60_000);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
 
 // ── FALLBACK DIRECTIONS ────────────────────────────────────────────────────
 function fallbackDirections(vibe: string, role: Role): Theme[] {
@@ -429,7 +438,9 @@ const STYLES = `
 .ps2-epk-btn { padding:7px 13px; border-radius:7px; background:#1a1612; border:1px solid rgba(255,255,255,.15); font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; letter-spacing:.04em; display:inline-flex; align-items:center; gap:6px; color:#f0ebe5; }
 .ps2-epk-btn:hover { border-color:#ff5029; color:#ff5029; }
 .ps2-pub-btn { padding:7px 15px; border-radius:7px; background:#ff5029; color:#0a0805; font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; letter-spacing:.05em; display:inline-flex; align-items:center; gap:6px; }
-.ps2-pub-btn:hover { filter:brightness(1.08); }
+.ps2-pub-btn:hover:not(:disabled) { filter:brightness(1.08); }
+.ps2-pub-btn:disabled { opacity:.4; cursor:default; }
+.ps2-save-tag { font-family:'JetBrains Mono',monospace; font-size:9.5px; color:#5a5048; letter-spacing:.06em; white-space:nowrap; }
 
 /* ── VIEWPORT ── */
 .ps2-vp { position:relative; border-radius:16px; overflow:hidden; background:#111; box-shadow:0 40px 90px -30px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.05); transition:box-shadow .3s; }
@@ -650,6 +661,9 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
   const [toastMsg, setToastMsg] = useState('');
   const [toastOn, setToastOn] = useState(false);
   const [pubLabel, setPubLabel] = useState('↗ Publish page');
+  const [publishing, setPublishing] = useState(false);
+  const [publishedAtIso, setPublishedAtIso] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showTyping, setShowTyping] = useState(false);
   const [heroBg, setHeroBg] = useState('');
   const [apOpen, setApOpen] = useState(false);
@@ -671,6 +685,9 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
   const pubTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveKeyRef = useRef('ps2_' + (data?.profileId || data?.profileHexId || 'anon'));
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const serverSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // DB profile id used for server-side draft/publish persistence.
+  const profileIdRef = useRef(data?.pageEditor?.profileId || data?.profileId || '');
   const stepRef = useRef(0);
   const themeRef = useRef<Theme | null>(null);
   const directionsRef = useRef<Theme[]>([]);
@@ -708,11 +725,92 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
       if (toastTimer.current) clearTimeout(toastTimer.current);
       if (pubTimer.current) clearTimeout(pubTimer.current);
       if (saveTimer.current) clearTimeout(saveTimer.current);
+      if (serverSaveTimer.current) clearTimeout(serverSaveTimer.current);
     };
   }, []);
 
-  /* start flow on mount */
-  useEffect(() => { startFlow(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  /* ── SERVER DRAFT PERSISTENCE ── */
+  function buildDraftJson(): string {
+    const content = contentRef.current;
+    return JSON.stringify({
+      role: roleRef.current,
+      theme: themeRef.current,
+      content: { name: content.name, tagline: content.tagline, bio: content.bio },
+      sections: sectionsRef.current,
+      heroBg: heroBgRef.current,
+      tracks: tracksRef.current,
+      links: linksRef.current,
+    });
+  }
+
+  async function putDraft(json: string): Promise<boolean> {
+    const profileId = profileIdRef.current;
+    if (!profileId) return false;
+    try {
+      const res = await fetch('/api/page-builder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, draft: json }),
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /** Debounced PUT of the current builder state (~2 s after the last change). */
+  function scheduleServerSave(json: string) {
+    if (!profileIdRef.current) return;
+    if (serverSaveTimer.current) clearTimeout(serverSaveTimer.current);
+    setSaveState('saving');
+    serverSaveTimer.current = setTimeout(async () => {
+      const ok = await putDraft(json);
+      setSaveState(ok ? 'saved' : 'error');
+    }, 2000);
+  }
+
+  /** Write the current builder state to localStorage (offline cache) + server. */
+  function persistDraft() {
+    if (stepRef.current < 7 || !themeRef.current) return;
+    const json = buildDraftJson();
+    try { localStorage.setItem(saveKeyRef.current, json); } catch { /* ignore quota errors */ }
+    scheduleServerSave(json);
+  }
+
+  /* start flow on mount — hydrate the draft from the server first */
+  useEffect(() => {
+    let cancelled = false;
+    const profileId = profileIdRef.current;
+    if (!profileId) { startFlow(); return; }
+    (async () => {
+      try {
+        const res = await fetch(`/api/page-builder?profileId=${encodeURIComponent(profileId)}`);
+        if (res.ok) {
+          const json = await res.json() as { draft: string | null; draftUpdatedAt: string | null; publishedAt: string | null };
+          if (cancelled) return;
+          if (json.publishedAt) setPublishedAtIso(json.publishedAt);
+          if (json.draft) {
+            // Server draft wins — prime the localStorage cache so the
+            // existing restore path below hydrates from it.
+            try { localStorage.setItem(saveKeyRef.current, json.draft); } catch { /* ignore */ }
+            setSaveState('saved');
+          } else {
+            // One-time migration: an existing local-only draft moves to the server.
+            const local = typeof window !== 'undefined' ? localStorage.getItem(saveKeyRef.current) : null;
+            if (local) {
+              try {
+                JSON.parse(local);
+                const ok = await putDraft(local);
+                if (!cancelled) setSaveState(ok ? 'saved' : 'error');
+              } catch { /* corrupt local save — ignore */ }
+            }
+          }
+        }
+      } catch { /* offline — fall back to the localStorage cache */ }
+      if (!cancelled) startFlow();
+    })();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* scroll chat to bottom */
   const scrollChat = useCallback(() => {
@@ -1058,28 +1156,17 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
         if (field === 'name') { content.name = v; setUrlName(toSlug(v)); }
         else if (field === 'tagline') content.tagline = v;
         else if (field === 'bio') content.bio = v;
+        persistDraft();
       });
       el.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' && single) { e.preventDefault(); el.blur(); }
       });
     });
 
-    // Debounce save to localStorage once a full page has been built
+    // Debounce save (localStorage cache + server draft) once a full page has been built
     if (stepRef.current >= 7) {
       if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        try {
-          localStorage.setItem(saveKeyRef.current, JSON.stringify({
-            role: roleRef.current,
-            theme: t,
-            content: { name: content.name, tagline: content.tagline, bio: content.bio },
-            sections: sectionsRef.current,
-            heroBg: heroBgRef.current,
-            tracks: tracksRef.current,
-            links: linksRef.current,
-          }));
-        } catch { /* ignore quota errors */ }
-      }, 800);
+      saveTimer.current = setTimeout(() => persistDraft(), 800);
     }
   }, []);
 
@@ -1190,6 +1277,9 @@ ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a 
 
   function resetAll() {
     if (typeof window !== 'undefined') localStorage.removeItem(saveKeyRef.current);
+    if (serverSaveTimer.current) clearTimeout(serverSaveTimer.current);
+    if (profileIdRef.current) { void putDraft(''); } // clear the server draft too
+    setSaveState('idle');
     startFlow(true);
     if (pageScrollRef.current) pageScrollRef.current.innerHTML = '';
     if (pageRootRef.current) {
@@ -1200,19 +1290,48 @@ ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a 
     setPubLabel('↗ Publish page');
   }
 
-  function onPublish() {
+  async function onPublish() {
     if (!themeRef.current) return toast('Generate your page first!');
-    if (publicPath) {
-      // Surface + copy the real public URL for this profile.
-      const url = new URL(publicPath, window.location.origin).toString();
-      navigator.clipboard?.writeText(url).catch(() => {});
-      toast(`✓ Published — your page is live at ihype.org${publicPath} (link copied)`);
-    } else {
-      toast('✓ Published — create your profile to get a public URL');
+    if (!profileIdRef.current) return toast('Create your profile to publish your page');
+    if (publishing) return;
+    setPublishing(true);
+    setPubLabel('Publishing…');
+    try {
+      // Flush the current state to the server draft first, then publish it.
+      if (serverSaveTimer.current) clearTimeout(serverSaveTimer.current);
+      const json = buildDraftJson();
+      try { localStorage.setItem(saveKeyRef.current, json); } catch { /* ignore */ }
+      const saved = await putDraft(json);
+      if (!saved) throw new Error('Could not save your draft — check your connection and try again.');
+      setSaveState('saved');
+
+      const res = await fetch('/api/page-builder/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: profileIdRef.current }),
+      });
+      const out = await res.json().catch(() => null) as { publishedAt?: string; url?: string; error?: string } | null;
+      if (!res.ok) throw new Error(out?.error || 'Publish failed — try again.');
+
+      if (out?.publishedAt) setPublishedAtIso(out.publishedAt);
+      const path = out?.url || publicPath;
+      if (path) {
+        // Surface + copy the real public URL for this profile.
+        const url = new URL(path, window.location.origin).toString();
+        navigator.clipboard?.writeText(url).catch(() => {});
+        toast(`✓ Published — your page is live at ihype.org${path} (link copied)`);
+      } else {
+        toast('✓ Published');
+      }
+      setPubLabel('✓ Published');
+      if (pubTimer.current) clearTimeout(pubTimer.current);
+      pubTimer.current = setTimeout(() => setPubLabel('↗ Publish page'), 2800);
+    } catch (err) {
+      toast(err instanceof Error ? err.message : 'Publish failed — try again.');
+      setPubLabel('↗ Publish page');
+    } finally {
+      setPublishing(false);
     }
-    setPubLabel('✓ Published');
-    if (pubTimer.current) clearTimeout(pubTimer.current);
-    pubTimer.current = setTimeout(() => setPubLabel('↗ Publish page'), 2800);
   }
 
   /* ── RENDER CHIP ROW ── */
@@ -1378,8 +1497,24 @@ ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a 
               </button>
             </div>
             <div className="ps2-theme-tag">THEME · <b>{theme?.name ?? '—'}</b></div>
+            {profileIdRef.current ? (
+              <div className="ps2-save-tag" title={publishedAtIso ? `Published ${relTime(publishedAtIso)}` : undefined}>
+                {saveState === 'saving' ? 'Saving…'
+                  : saveState === 'saved' ? 'Saved · draft'
+                  : saveState === 'error' ? '⚠ Save failed'
+                  : publishedAtIso ? `Published ${relTime(publishedAtIso)}` : ''}
+                {saveState !== 'idle' && publishedAtIso ? ` · Published ${relTime(publishedAtIso)}` : ''}
+              </div>
+            ) : (
+              <div className="ps2-save-tag" title="Create a profile to save and publish your page">local only</div>
+            )}
             <button className="ps2-epk-btn" onClick={exportEPK}>⎘ Export EPK</button>
-            <button className="ps2-pub-btn" onClick={onPublish}>{pubLabel}</button>
+            <button
+              className="ps2-pub-btn"
+              onClick={onPublish}
+              disabled={publishing || !profileIdRef.current}
+              title={!profileIdRef.current ? 'Create a profile to publish your page' : undefined}
+            >{pubLabel}</button>
           </div>
         </div>
 

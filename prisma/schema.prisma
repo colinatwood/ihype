@@ -161,6 +161,10 @@ model Profile {
   recommendContent              String?
   topFiveContent                String?
   widgetConfig                  String?
+  pageDraft                     String?
+  pageDraftUpdatedAt            DateTime?
+  pagePublished                 String?
+  pagePublishedAt               DateTime?
   addressLine1                  String?
   contactInfo                   String?
   hoursText                     String?
