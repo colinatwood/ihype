@@ -21,6 +21,7 @@ import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
 import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars } from '@/lib/profile-design';
+import { parsePublishedPage } from '@/lib/page-builder';
 import { detectRequestLocation } from '@/lib/request-location';
 import { AdBanner } from '@/components/AdBanner';
 import { AvailabilityCalendar } from '@/components/AvailabilityCalendar';
@@ -242,7 +243,12 @@ export default async function ArtistPage({
   const isBookMeReady = Boolean(profile.contactInfo && profile.genres.length > 0 && media.entries.length > 0);
   const isOwner = canManageOwnedResource(session, profile.ownerId);
   const canViewCustomPage = isOwner || profile.fanShareEnabled;
-  const sharedThemePreset = canViewCustomPage ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET;
+  // Page-builder publish is an explicit owner action, so published overrides
+  // apply for every viewer. All values are plain text (see parsePublishedPage)
+  // and must only ever be rendered as React text nodes.
+  const publishedPage = parsePublishedPage(profile.pagePublished);
+  const sharedThemePreset = publishedPage?.themePreset
+    ?? (canViewCustomPage ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET);
   const bannerStyle = canViewCustomPage ? getSafeBackgroundImageStyle(profile.heroImage) : undefined;
   const pageDesignStyle = getProfileDesignStyleVars(sharedThemePreset, {
     accentTone: canViewCustomPage ? profile.themeAccentTone : undefined,
@@ -329,8 +335,8 @@ export default async function ArtistPage({
                 </span>
               ) : null}
             </h1>
-            <p className="artist-headline">{profile.headline || 'Build your headline banner and tell people what this chapter sounds like.'}</p>
-            <p className="subtitle">{profile.bio}</p>
+            <p className="artist-headline">{publishedPage?.headline || profile.headline || 'Build your headline banner and tell people what this chapter sounds like.'}</p>
+            <p className="subtitle">{publishedPage?.bio || profile.bio}</p>
             <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
             {profile.contactInfo ? <p className="meta">Contact: {profile.contactInfo}</p> : null}
             <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
