@@ -7,6 +7,13 @@ import { getProfilePathForType } from '@/lib/account-routing';
 // Accent palette for tracks/shows when no color is stored
 const PALETTE = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#7fb3ff'];
 
+function fmtDuration(secs: number | null | undefined): string {
+  if (!secs) return '—';
+  const m = Math.floor(secs / 60);
+  const s = String(secs % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
 export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
   try {
     // Step 1: Lean user + profile scalar query (no nested relations).
@@ -18,6 +25,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         id: true,
         name: true,
         role: true,
+        createdAt: true,
         profiles: {
           select: {
             id: true,
@@ -87,6 +95,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       uploadStreak, weeklyHypeCounts, pastShows,
       hypedToday, listeningNowCount, trendingProfiles,
       mediaUploads, hostedShows, headlinerShows, accountsPayableEntries,
+      dbNotifications, weeklyListensCount, totalHypeGivenCount,
     ] = await Promise.all([
       // Fetch user's ticket orders
       db.ticketOrder.findMany({
@@ -137,10 +146,10 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         take: 5,
         orderBy: [{ featured: 'desc' }, { startsAt: 'desc' }],
         select: {
-          id: true, title: true, status: true, startsAt: true, featured: true,
+          id: true, title: true, description: true, status: true, startsAt: true, featured: true,
           headlinerProfile: { select: { name: true } },
         },
-      }).catch(() => [] as { id: string; title: string; status: string; startsAt: Date; featured: boolean; headlinerProfile: { name: string } | null }[]),
+      }).catch(() => [] as { id: string; title: string; description: string | null; status: string; startsAt: Date; featured: boolean; headlinerProfile: { name: string } | null }[]),
       // Upload streak (skip for listener-only profiles)
       isCreatorProfile ? getArtistUploadStreak(primaryProfile!.id).catch(() => 0) : Promise.resolve(0),
       // Weekly hype counts per profile
@@ -204,9 +213,9 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             where: { profileId: { in: profileIds } },
             take: 50,
             orderBy: { createdAt: 'desc' },
-            select: { id: true, hexId: true, title: true, storageUrl: true, notes: true, freeUseEnabled: true, profileId: true },
-          }).catch(() => [] as { id: string; hexId: string; title: string; storageUrl: string | null; notes: string | null; freeUseEnabled: boolean; profileId: string }[])
-        : Promise.resolve([] as { id: string; hexId: string; title: string; storageUrl: string | null; notes: string | null; freeUseEnabled: boolean; profileId: string }[]),
+            select: { id: true, hexId: true, title: true, storageUrl: true, notes: true, freeUseEnabled: true, profileId: true, durationSecs: true },
+          }).catch(() => [] as { id: string; hexId: string; title: string; storageUrl: string | null; notes: string | null; freeUseEnabled: boolean; profileId: string; durationSecs: number | null }[])
+        : Promise.resolve([] as { id: string; hexId: string; title: string; storageUrl: string | null; notes: string | null; freeUseEnabled: boolean; profileId: string; durationSecs: number | null }[]),
       // Upcoming hosted shows (venue perspective)
       profileIds.length > 0
         ? db.show.findMany({
@@ -264,12 +273,36 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             select: { id: true, amountCents: true, payeeLabel: true, createdAt: true, profileId: true },
           }).catch(() => [] as { id: string; amountCents: number; payeeLabel: string; createdAt: Date; profileId: string | null }[])
         : Promise.resolve([] as { id: string; amountCents: number; payeeLabel: string; createdAt: Date; profileId: string | null }[]),
+      // Recent notifications for this user
+      db.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, type: true, body: true, read: true, link: true, createdAt: true },
+      }).catch(() => [] as { id: string; type: string; body: string; read: boolean; link: string | null; createdAt: Date }[]),
+      // Media listens in the last 7 days (weekly listens)
+      db.mediaListen.count({
+        where: { userId, createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      }).catch(() => 0),
+      // Total profile hypes this user has given
+      db.profileHypeEvent.count({ where: { userId } }).catch(() => 0),
     ]);
 
     // Count songs played by this user
     const songsPlayedCount = await db.mediaListen.count({
       where: { userId },
     }).catch(() => 0);
+
+    // Recent listener counts for radio shows (ShowListen in last 5 min)
+    const radioShowIds = radioShows.map(r => r.id);
+    const radioListenerRows = radioShowIds.length > 0
+      ? await db.showListen.groupBy({
+          by: ['showId'],
+          where: { showId: { in: radioShowIds }, completedAt: { gte: new Date(Date.now() - 5 * 60 * 1000) } },
+          _count: { showId: true },
+        }).catch(() => [] as { showId: string; _count: { showId: number } }[])
+      : [] as { showId: string; _count: { showId: number } }[];
+    const radioListenerMap = new Map(radioListenerRows.map(r => [r.showId, r._count.showId]));
 
     // ── Shape the response ──────────────────────────────────────
 
@@ -310,8 +343,8 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         id: m.id,
         title: m.title,
         artistName: primaryProfile?.name ?? userName,
-        duration: '3:00',
-        durationSec: 180,
+        duration: fmtDuration(m.durationSecs),
+        durationSec: m.durationSecs ?? 0,
         hypeCount: 0,
         color: PALETTE[i % PALETTE.length],
         album: 'Single',
@@ -411,9 +444,9 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       time: r.startsAt.toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }),
       next: r.status === 'LIVE' ? 'now' : 'upcoming',
       live: r.status === 'LIVE',
-      listeners: 0,
+      listeners: radioListenerMap.get(r.id) ?? 0,
       color: PALETTE[i % PALETTE.length],
-      desc: '',
+      desc: r.description ?? '',
     }));
 
     // Stats
@@ -475,13 +508,24 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       tickets,
       activity: allActivity,
       radioShows: wbRadioShows,
-      notifications: [],
+      notifications: dbNotifications.map(n => ({
+        id: n.id,
+        title: n.type.replace(/_/g, ' '),
+        body: n.body,
+        time: timeAgo(n.createdAt),
+        kind: (['hype', 'show', 'radio', 'payout', 'request', 'security'] as const).find(k => n.type.toLowerCase().includes(k)) ?? 'hype' as const,
+        href: n.link ?? undefined,
+        unread: !n.read,
+      })),
       uploadStreak: uploadStreak ?? 0,
       needsGenreQuiz: needsGenreQuiz ?? false,
       stripeConnectOnboarded: primaryProfile?.stripeConnectOnboarded ?? false,
       hypeCount7d: primaryProfile ? (weeklyMap[primaryProfile.id] ?? 0) : 0,
+      joinedAt: user.createdAt.toISOString(),
+      weeklyListens: weeklyListensCount,
       lifeStats: {
         totalHype,
+        totalHypeGiven: totalHypeGivenCount,
         totalEarnings: pendingCents / 100,
         songsPlayed: songsPlayedCount,
         eventsAttended: ticketOrders.filter(o => o.status === 'CAPTURED').length,

@@ -7,6 +7,7 @@ import { isBlobMediaStorageAvailable, uploadArtistMediaToBlob } from '@/lib/medi
 import { canManageOwnedResource } from '@/lib/permissions';
 import { areDatabaseMediaUploadsEnabledRuntime } from '@/lib/runtime-flags';
 import { validateAudioMagicBytes } from '@/lib/validate-upload';
+import { parseAudioDuration } from '@/lib/audio-duration';
 
 export const dynamic = 'force-dynamic';
 
@@ -147,10 +148,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const fileBytes = new Uint8Array(await file.arrayBuffer());
+    const durationSecs = parseAudioDuration(fileBytes) ?? null;
+
     const storedMedia = hasBlobStorage
       ? await uploadArtistMediaToBlob({ file, hexId, profileId: profile.id })
       : null;
-    const fileDataBase64 = storedMedia ? null : Buffer.from(await file.arrayBuffer()).toString('base64');
+    const fileDataBase64 = storedMedia ? null : Buffer.from(fileBytes).toString('base64');
 
     const updatedProfile = await withDbRetry(() =>
       db.profile.update({
@@ -171,7 +175,8 @@ export async function POST(request: Request) {
               storageProvider: storedMedia?.provider ?? 'database',
               storageKey: storedMedia?.key ?? null,
               storageUrl: storedMedia?.url ?? null,
-              freeUseEnabled
+              freeUseEnabled,
+              durationSecs,
             }
           }
         },

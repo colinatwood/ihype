@@ -170,7 +170,9 @@ export type WorkbenchData = {
   showsTonight: number;
   isVerified?: boolean;
   verificationRequested?: boolean;
-  lifeStats?: { totalHype: number; totalEarnings: number; songsPlayed: number; eventsAttended: number };
+  lifeStats?: { totalHype: number; totalHypeGiven?: number; totalEarnings: number; songsPlayed: number; eventsAttended: number };
+  joinedAt?: string;
+  weeklyListens?: number;
   isAdmin?: boolean;
   uploadStreak?: number;
   needsGenreQuiz?: boolean;
