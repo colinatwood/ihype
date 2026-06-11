@@ -268,7 +268,7 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
           </div>
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 46, letterSpacing: '-.03em', lineHeight: .95, margin: 0, color: 'var(--ink)' }}>{data.userName}</h1>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.08em' }}>
-            {data.city ? `${data.city} · ` : ''}{data.joinedAt ? `Joined ${new Date(data.joinedAt).toLocaleDateString('en-US', { month: 'short', year: '\'yy' })}` : ''}
+            {data.city ? `${data.city} · ` : ''}{data.joinedAt ? `Joined ${new Date(data.joinedAt).toLocaleDateString('en-US', { month: 'short' })} '${String(new Date(data.joinedAt).getFullYear()).slice(-2)}` : ''}
           </div>
           {(data.pageEditor?.bio || data.pageEditor?.headline) && (
             <p style={{ fontFamily: "'Instrument Serif', serif", fontStyle: 'italic', fontSize: 17, color: 'var(--ink-2)', marginTop: 6, lineHeight: 1.4, maxWidth: '50ch' }}>
