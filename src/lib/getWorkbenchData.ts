@@ -2,6 +2,7 @@ import type { WorkbenchData, WbTrendingProfile } from '@/components/WorkbenchShe
 import { db, withDbRetry } from '@/lib/db';
 import { MOCK_DATA } from '@/lib/workbench-mock';
 import { getArtistUploadStreak } from '@/lib/streaks';
+import { getProfilePathForType } from '@/lib/account-routing';
 
 // Accent palette for tracks/shows when no color is stored
 const PALETTE = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#7fb3ff'];
@@ -447,7 +448,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       profileId: primaryProfile?.id,
       profileHexId: primaryProfile?.hexId,
       isAdmin: user.role === 'ADMIN',
-      profilePath: primaryProfile ? `/${primaryProfile.type.toLowerCase()}s/${primaryProfile.slug}` : '',
+      profilePath: primaryProfile ? getProfilePathForType(primaryProfile.type, primaryProfile.slug) : '',
       isVerified: primaryProfile?.isVerified ?? false,
       verificationRequested: primaryProfile?.verificationRequested ?? false,
       pendingVenueRequestCount: 0,

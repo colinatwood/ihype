@@ -3,6 +3,7 @@ import React from 'react';
 import type { WorkbenchData } from '@/types/workbench';
 import { T } from './MobilePrimitives';
 import { EmailPreferencesPanel } from './ViewSettings';
+import { PageActions } from './PageActions';
 
 export function ScreenYouNew({ data, onManage }: { data: WorkbenchData; onManage: () => void }) {
   const isCreator = data.activeProfileTypes.includes('ARTIST') || data.activeProfileTypes.includes('VENUE');
@@ -45,6 +46,15 @@ export function ScreenYouNew({ data, onManage }: { data: WorkbenchData; onManage
             </div>
           </div>
         </div>
+
+        {/* View / Share your public page (works for fans, artists, venues, DJs) */}
+        <PageActions
+          compact
+          type={data.pageEditor?.type ?? data.profileType}
+          slug={data.pageEditor?.slug}
+          title={data.pageEditor?.name || data.userName}
+          style={{ marginBottom: 16 }}
+        />
 
         {/* Manage entry — only for creators */}
         {isCreator && (

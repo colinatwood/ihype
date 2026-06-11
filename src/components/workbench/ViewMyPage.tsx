@@ -5,6 +5,7 @@ import type { WorkbenchData } from '@/components/WorkbenchShellV2';
 import type { WbTicket, WbTrendingProfile } from '@/types/workbench';
 import { IcHeart } from './icons';
 import { Panel, TrackCard } from './primitives';
+import { PageActions } from './PageActions';
 
 const STUB_ACCENT_PALETTE = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#4af0b0'];
 
@@ -479,35 +480,13 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
         })()}
       </div>
 
-      {/* See Your Page button */}
-      {(() => {
-        const slug = data.pageEditor?.slug;
-        const type = data.pageEditor?.type;
-        const href = slug
-          ? (type === 'ARTIST' ? `/artists/${slug}` : type === 'VENUE' ? `/venues/${slug}` : `/fans/${slug}`)
-          : '/home';
-        return (
-          <div style={{ marginBottom: 14 }}>
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                padding: '8px 16px', borderRadius: 8,
-                border: '1px solid rgba(255,80,41,.4)',
-                background: 'rgba(255,80,41,.06)',
-                color: '#ff5029',
-                fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700,
-                cursor: 'pointer', letterSpacing: '.06em',
-                textDecoration: 'none',
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-              }}
-            >
-              See Your Page →
-            </a>
-          </div>
-        );
-      })()}
+      {/* View / Share your public page (all profile types incl. fans) */}
+      <PageActions
+        type={data.pageEditor?.type}
+        slug={data.pageEditor?.slug}
+        title={data.pageEditor?.name || data.userName}
+        style={{ marginBottom: 14 }}
+      />
 
       {/* Referral link */}
       {referral && (

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { WorkbenchData } from '@/types/workbench';
 import { ArtistMediaUploadManager } from '@/components/ArtistMediaUploadManager';
 import ViewPageStudio from './ViewPageStudio';
+import { getProfilePathForType } from '@/lib/profile-paths';
 
 /* ── types ───────────────────────────────────────────────── */
 type CkMode = 'page' | 'insights' | 'tour' | 'release' | 'library' | 'presskit';
@@ -157,6 +158,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
   const [showMerch, setShowMerch] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -220,7 +222,10 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
     setMsgs(m => [...m, { side: 'ai', html: esc(res.reply) + chip, applied: res.applied }]);
   }, [pageVars, data]);
 
-  const artistSlug = 'ihype.fm/maya';
+  const profilePath = data.pageEditor?.slug
+    ? getProfilePathForType(data.pageEditor.type, data.pageEditor.slug)
+    : '';
+  const artistSlug = profilePath ? `ihype.org${profilePath}` : 'ihype.org';
   const artistName = data.userName || 'Maya Reyes';
   const initials = artistName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
@@ -529,7 +534,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                     </div>
                   ))}
                 </div>
-                <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', letterSpacing: '.06em' }}>ihype.fm/maya · iHYPE</div>
+                <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', letterSpacing: '.06em' }}>{artistSlug} · iHYPE</div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
@@ -544,13 +549,19 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 Close
               </button>
               <button
+                onClick={() => {
+                  const url = new URL(profilePath || '/', window.location.origin).toString();
+                  navigator.clipboard?.writeText(url).catch(() => {});
+                  setShareLinkCopied(true);
+                  setTimeout(() => setShareLinkCopied(false), 2000);
+                }}
                 style={{
                   padding: '9px 20px', borderRadius: 8, border: 'none',
                   background: '#ff5029', color: '#fff',
                   fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
                 }}
               >
-                Copy link
+                {shareLinkCopied ? 'Copied!' : 'Copy link'}
               </button>
             </div>
           </div>
@@ -680,7 +691,7 @@ function PressKitPanel({ artistName, artistSlug }: { artistName: string; artistS
   }
 
   function copyLink() {
-    const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://ihype.fm'}/artists/${artistSlug}/epk`;
+    const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://ihype.org'}/artists/${artistSlug}/epk`;
     navigator.clipboard.writeText(url).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -808,7 +819,7 @@ function PressKitPanel({ artistName, artistSlug }: { artistName: string; artistS
               background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)',
               fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.55)',
             }}>
-              ihype.fm/{artistSlug}/epk
+              ihype.org/artists/{artistSlug}/epk
             </div>
             <button
               onClick={copyLink}

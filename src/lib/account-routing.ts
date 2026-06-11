@@ -1,20 +1,10 @@
 import { db } from '@/lib/db';
-import type { ProfileType } from '@prisma/client/wasm';
 import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 
-export function getProfilePathForType(type: ProfileType, slug: string) {
-  if (type === 'DJ') return `/promoters/${slug}`;
-  if (type === 'VENUE') return `/venues/${slug}`;
-  if (type === 'LISTENER') return `/fans/${slug}`;
-  return `/artists/${slug}`;
-}
-
-export function getDiscoverPathForType(type: ProfileType) {
-  if (type === 'DJ') return '/promoters';
-  if (type === 'VENUE') return '/venues';
-  if (type === 'LISTENER') return '/fans';
-  return '/artists';
-}
+// The canonical type→path mapping lives in '@/lib/profile-paths' (a
+// client-safe module with no DB import) and is re-exported here so server
+// code keeps importing it from this module.
+export { getProfilePathForType, getDiscoverPathForType } from '@/lib/profile-paths';
 
 export async function getDefaultLandingPathForUser({
   userId

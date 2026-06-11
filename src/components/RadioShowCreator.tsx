@@ -448,7 +448,7 @@ export const RadioShowCreator = memo(function RadioShowCreator() {
       { k: 'TITLE', v: show.title },
       { k: 'STATION', v: `${show.station} · EP ${show.ep}` },
       { k: 'AIRS', v: show.schedule },
-      { k: 'URL', v: `ihype.fm/you/halflight-${show.ep}` },
+      { k: 'URL', v: `ihype.org/shows/${show.title.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'show'}-${show.ep}` },
       { k: 'SPLITS', v: '45% artists · 45% you · 10% referrers' },
       { k: 'REACH', v: `${reach} fans pinged` },
     ];
