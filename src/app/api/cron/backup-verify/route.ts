@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCronRequestAuthorized } from '@/lib/cron-auth';
 import { db } from '@/lib/db';
+import { ADMIN_EMAIL } from '@/lib/env';
 import { sendGenericEmail } from '@/lib/mailer';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-
-const ADMIN_EMAIL = 'admin@ihype.org';
 
 export async function GET(request: NextRequest) {
   try {

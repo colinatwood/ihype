@@ -245,6 +245,9 @@ type IssuedTicketEmailInput = {
     label: string;
     serializedId: string;
     verificationUrl: string;
+    // QR codes are now generated in-house as `data:image/svg+xml` URLs. Most email
+    // clients (Gmail, Outlook) strip data: image URIs, so the email skips embedding
+    // them and links to the hosted ticket page (which renders the QR) instead.
     qrCodeDataUrl?: string | null;
   }>;
 };
@@ -367,8 +370,8 @@ export async function sendIssuedTicketEmail({
                 <div style="padding:16px 18px;border-radius:18px;border:1px solid #d6deea;background:#f8fbff;">
                   <p style="margin:0 0 8px;font-weight:700;">${ticket.label}</p>
                   <p style="margin:0 0 8px;"><strong>ID:</strong> ${ticket.serializedId}</p>
-                  <p style="margin:0 0 12px;"><a href="${ticket.verificationUrl}" style="color:#1f6feb;">Verify ticket</a></p>
-                  ${ticket.qrCodeDataUrl ? `<img src="${ticket.qrCodeDataUrl}" alt="QR code for ${ticket.label}" style="width:160px;height:160px;border-radius:14px;border:1px solid #d6deea;background:#ffffff;padding:8px;" />` : ''}
+                  <p style="margin:0 0 12px;"><a href="${ticket.verificationUrl}" style="color:#1f6feb;">View ticket &amp; QR code</a></p>
+                  ${ticket.qrCodeDataUrl && !ticket.qrCodeDataUrl.startsWith('data:') ? `<img src="${ticket.qrCodeDataUrl}" alt="QR code for ${ticket.label}" style="width:160px;height:160px;border-radius:14px;border:1px solid #d6deea;background:#ffffff;padding:8px;" />` : ''}
                 </div>
               `
             )

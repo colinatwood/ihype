@@ -2,6 +2,7 @@
 import React from 'react';
 import type { WorkbenchData } from '@/types/workbench';
 import { T } from './MobilePrimitives';
+import { EmailPreferencesPanel } from './ViewSettings';
 
 export function ScreenYouNew({ data, onManage }: { data: WorkbenchData; onManage: () => void }) {
   const isCreator = data.activeProfileTypes.includes('ARTIST') || data.activeProfileTypes.includes('VENUE');
@@ -104,6 +105,12 @@ export function ScreenYouNew({ data, onManage }: { data: WorkbenchData; onManage
           {data.activity.length === 0 && (
             <div style={{ color: T.ink3, fontFamily: T.fm, fontSize: 12, padding: '8px 0' }}>Start exploring — hype tracks to build your history</div>
           )}
+        </div>
+
+        {/* Email preferences — same panel as desktop Settings */}
+        <div style={{ marginTop: 22 }}>
+          <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 18, letterSpacing: '-.01em', marginBottom: 10 }}>Email preferences</div>
+          <EmailPreferencesPanel />
         </div>
       </div>
     </div>

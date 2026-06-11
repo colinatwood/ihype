@@ -68,6 +68,22 @@ const JOBS: CronJob[] = [
   { path: '/api/cron/post-show-recap',    schedule: '0 16 * * *'  },  // morning-after recap for attendees at 4pm UTC
 ];
 
+/** Report a job outcome so the app can track consecutive failures and alert. */
+async function reportOutcome(env: Env, path: string, outcome: { ok: true } | { status: number }): Promise<void> {
+  try {
+    await fetch(`${env.APP_BASE_URL}/api/cron/report-failure`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.CRON_SECRET}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ path, ...outcome }),
+    });
+  } catch (err) {
+    console.error(`[cron] outcome report for ${path} failed:`, err);
+  }
+}
+
 export default {
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     const matched = JOBS.filter((job) => job.schedule === event.cron);
@@ -89,11 +105,14 @@ export default {
           if (!res.ok) {
             const body = await res.text().catch(() => '');
             console.error(`[cron] ${job.path} → ${res.status}: ${body}`);
+            ctx.waitUntil(reportOutcome(env, job.path, { status: res.status }));
           } else {
             console.log(`[cron] ${job.path} → ${res.status}`);
+            ctx.waitUntil(reportOutcome(env, job.path, { ok: true }));
           }
         } catch (err) {
           console.error(`[cron] ${job.path} fetch failed:`, err);
+          ctx.waitUntil(reportOutcome(env, job.path, { status: 0 }));
         }
       })
     );
