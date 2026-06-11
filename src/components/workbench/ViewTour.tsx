@@ -10,7 +10,7 @@ interface TourStop {
   dist: string;
   score: number;
   reach: string;
-  venues: { n: string; cap: number; fit: number }[];
+  venues: { n: string; cap: number; fit: number; id?: string }[];
 }
 
 interface ArtistResult {
@@ -59,6 +59,8 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
   const [radius, setRadius] = useState('250mi');
   const [genre, setGenre] = useState('');
   const [artistResults, setArtistResults] = useState<TourStop[] | null>(null);
+  const [stopsLoading, setStopsLoading] = useState(false);
+  const [artistsLoading, setArtistsLoading] = useState(false);
 
   const [venueCapFilter, setVenueCapFilter] = useState<string>('Any');
   const [venueGenre, setVenueGenre] = useState('');
@@ -70,25 +72,49 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
   const [tourAdded, setTourAdded] = useState<Set<string>>(new Set());
 
   function handleFindStops() {
-    setArtistResults(ARTIST_STOPS);
+    setStopsLoading(true);
+    fetch('/api/tour/suggestions')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { stops: Array<{ city: string; score: number; reach: string; showCount: number; venues: Array<{ id: string; name: string; slug: string; hypeCount: number; upcomingShows: number }> }> } | null) => {
+        if (d?.stops && d.stops.length > 0) {
+          setArtistResults(d.stops.map(s => ({
+            city: s.city,
+            dist: '—',
+            score: s.score,
+            reach: s.reach,
+            venues: s.venues.map(v => ({ n: v.name, cap: 0, fit: Math.min(99, Math.round(50 + v.hypeCount / 20)), id: v.id })),
+          })));
+        } else {
+          setArtistResults(ARTIST_STOPS);
+        }
+      })
+      .catch(() => setArtistResults(ARTIST_STOPS))
+      .finally(() => setStopsLoading(false));
   }
 
   function handleFindArtists() {
-    const liveArtists: ArtistResult[] = (data.trending ?? [])
-      .filter(a => a.type === 'ARTIST' || a.type === 'DJ')
-      .slice(0, 6)
-      .map(a => ({
-        name: a.name,
-        genre: a.genre || 'Independent',
-        city: a.city || 'Unknown',
-        score: Math.min(99, Math.round(50 + a.hypeCount / 100)),
-        hype: a.hypeCount,
-        overlap: '',
-        ask: 'Contact to book',
-        draw: Math.max(20, Math.round(a.hypeCount / 8)),
-      }));
-    setVenueResults(liveArtists.length > 0 ? liveArtists : VENUE_ARTISTS);
-    setSelectedArtist(null);
+    setArtistsLoading(true);
+    fetch('/api/tour/suggestions')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { artists: Array<{ id: string; name: string; city: string | null; genres: string[]; hypeCount: number; slug: string; type: string }> } | null) => {
+        if (d?.artists && d.artists.length > 0) {
+          setVenueResults(d.artists.map(a => ({
+            name: a.name,
+            genre: a.genres[0] || 'Independent',
+            city: a.city || 'Unknown',
+            score: Math.min(99, Math.round(50 + Math.log2(a.hypeCount + 2) * 4)),
+            hype: a.hypeCount,
+            overlap: '',
+            ask: 'Contact to book',
+            draw: Math.max(20, Math.round(a.hypeCount / 8)),
+          })));
+        } else {
+          setVenueResults(VENUE_ARTISTS);
+        }
+        setSelectedArtist(null);
+      })
+      .catch(() => { setVenueResults(VENUE_ARTISTS); setSelectedArtist(null); })
+      .finally(() => setArtistsLoading(false));
   }
 
   function toggleAdded(city: string) {
@@ -179,8 +205,8 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
                 placeholder="e.g. Alt-R&B, Bedroom Pop"
               />
 
-              <button onClick={handleFindStops} style={accentBtnStyle}>
-                Find tour stops
+              <button onClick={handleFindStops} disabled={stopsLoading} style={{ ...accentBtnStyle, opacity: stopsLoading ? 0.6 : 1 }}>
+                {stopsLoading ? 'Searching…' : 'Find tour stops'}
               </button>
 
               {artistResults && (
@@ -260,8 +286,8 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
                 ))}
               </div>
 
-              <button onClick={handleFindArtists} style={accentBtnStyle}>
-                Find artists
+              <button onClick={handleFindArtists} disabled={artistsLoading} style={{ ...accentBtnStyle, opacity: artistsLoading ? 0.6 : 1 }}>
+                {artistsLoading ? 'Searching…' : 'Find artists'}
               </button>
 
               {venueResults && (

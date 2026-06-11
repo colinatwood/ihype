@@ -7,6 +7,13 @@ import { getProfilePathForType } from '@/lib/account-routing';
 // Accent palette for tracks/shows when no color is stored
 const PALETTE = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#7fb3ff'];
 
+function fmtDuration(secs: number | null | undefined): string {
+  if (!secs) return '—';
+  const m = Math.floor(secs / 60);
+  const s = String(secs % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
 export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
   try {
     // Step 1: Lean user + profile scalar query (no nested relations).
@@ -206,9 +213,9 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             where: { profileId: { in: profileIds } },
             take: 50,
             orderBy: { createdAt: 'desc' },
-            select: { id: true, hexId: true, title: true, storageUrl: true, notes: true, freeUseEnabled: true, profileId: true },
-          }).catch(() => [] as { id: string; hexId: string; title: string; storageUrl: string | null; notes: string | null; freeUseEnabled: boolean; profileId: string }[])
-        : Promise.resolve([] as { id: string; hexId: string; title: string; storageUrl: string | null; notes: string | null; freeUseEnabled: boolean; profileId: string }[]),
+            select: { id: true, hexId: true, title: true, storageUrl: true, notes: true, freeUseEnabled: true, profileId: true, durationSecs: true },
+          }).catch(() => [] as { id: string; hexId: string; title: string; storageUrl: string | null; notes: string | null; freeUseEnabled: boolean; profileId: string; durationSecs: number | null }[])
+        : Promise.resolve([] as { id: string; hexId: string; title: string; storageUrl: string | null; notes: string | null; freeUseEnabled: boolean; profileId: string; durationSecs: number | null }[]),
       // Upcoming hosted shows (venue perspective)
       profileIds.length > 0
         ? db.show.findMany({
@@ -286,6 +293,17 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       where: { userId },
     }).catch(() => 0);
 
+    // Recent listener counts for radio shows (ShowListen in last 5 min)
+    const radioShowIds = radioShows.map(r => r.id);
+    const radioListenerRows = radioShowIds.length > 0
+      ? await db.showListen.groupBy({
+          by: ['showId'],
+          where: { showId: { in: radioShowIds }, completedAt: { gte: new Date(Date.now() - 5 * 60 * 1000) } },
+          _count: { showId: true },
+        }).catch(() => [] as { showId: string; _count: { showId: number } }[])
+      : [] as { showId: string; _count: { showId: number } }[];
+    const radioListenerMap = new Map(radioListenerRows.map(r => [r.showId, r._count.showId]));
+
     // ── Shape the response ──────────────────────────────────────
 
     const needsGenreQuiz = (primaryProfile?.genres?.length ?? 0) === 0 && !!primaryProfile;
@@ -325,8 +343,8 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         id: m.id,
         title: m.title,
         artistName: primaryProfile?.name ?? userName,
-        duration: '3:00',
-        durationSec: 180,
+        duration: fmtDuration(m.durationSecs),
+        durationSec: m.durationSecs ?? 0,
         hypeCount: 0,
         color: PALETTE[i % PALETTE.length],
         album: 'Single',
@@ -426,7 +444,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       time: r.startsAt.toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }),
       next: r.status === 'LIVE' ? 'now' : 'upcoming',
       live: r.status === 'LIVE',
-      listeners: 0,
+      listeners: radioListenerMap.get(r.id) ?? 0,
       color: PALETTE[i % PALETTE.length],
       desc: r.description ?? '',
     }));
