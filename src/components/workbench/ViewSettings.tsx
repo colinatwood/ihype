@@ -2,14 +2,14 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { WorkbenchData, WbPageEditor } from '@/types/workbench';
+import type { WorkbenchData, WbPageEditor, WbAvailabilityDate } from '@/types/workbench';
 import { DEFAULT_PREFS } from './types';
 import { IcLibrary, IcRadio, IcTicket, IcDisco, IcStudio, IcCheck } from './icons';
 import { Toggle } from './Toggle';
 import { Panel, TrackCard } from './primitives';
 
 // ─────────────────────────────────────────────────────────────
-// ViewLibrary (stub)
+// ViewLibrary
 // ─────────────────────────────────────────────────────────────
 export function ViewLibrary({ data, onPickTrack, currentIdx }: { data: WorkbenchData; onPickTrack: (i: number) => void; currentIdx: number }) {
   return (
@@ -43,7 +43,7 @@ export function ViewLibrary({ data, onPickTrack, currentIdx }: { data: Workbench
 }
 
 // ─────────────────────────────────────────────────────────────
-// ViewDiscover (stub)
+// ViewDiscover
 // ─────────────────────────────────────────────────────────────
 export function ViewDiscover({ data, onPickTrack, currentIdx }: { data: WorkbenchData; onPickTrack: (i: number) => void; currentIdx: number }) {
   return (
@@ -305,6 +305,74 @@ export function EmailPreferencesPanel() {
         <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)' }}>Could not load email preferences.</div>
       )}
       {status ? <p style={{ margin: 0, fontFamily: 'var(--f-m)', fontSize: 12, color: '#ffb4a7' }}>{status}</p> : null}
+    </EditorPanel>
+  );
+}
+
+export function AvailabilityPanel({ data }: { data: WorkbenchData }) {
+  const [dates, setDates] = useState<WbAvailabilityDate[]>(data.availabilityDates ?? []);
+  const [adding, setAdding] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [newNote, setNewNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const profileId = data.profileId;
+
+  async function addDate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newDate || !profileId) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/profile/availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, date: new Date(newDate).toISOString(), note: newNote.trim() || null }),
+      });
+      if (res.ok) {
+        const { date } = await res.json();
+        setDates(ds => [...ds, { id: date.id, date: date.date, note: date.note }].sort((a, b) => a.date.localeCompare(b.date)));
+        setNewDate('');
+        setNewNote('');
+        setAdding(false);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeDate(id: string) {
+    await fetch(`/api/profile/availability?id=${id}`, { method: 'DELETE' });
+    setDates(ds => ds.filter(d => d.id !== id));
+  }
+
+  return (
+    <EditorPanel title="Availability" eyebrow="Booking">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {dates.length === 0 && !adding && (
+          <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.3)', padding: '8px 0' }}>No upcoming availability added yet</div>
+        )}
+        {dates.map(d => (
+          <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', background: 'var(--bg-2,#121009)', borderRadius: 8, border: '1px solid var(--line-2,rgba(255,255,255,.07))' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, fontWeight: 700, color: 'var(--ink,#f4efe9)' }}>{new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</div>
+              {d.note && <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 12, color: 'rgba(244,239,233,.5)', marginTop: 2 }}>{d.note}</div>}
+            </div>
+            <button onClick={() => void removeDate(d.id)} style={{ padding: '3px 8px', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--f-m,monospace)', fontSize: 10, background: 'transparent', border: '1px solid rgba(255,80,41,.2)', color: 'rgba(255,80,41,.6)' }}>remove</button>
+          </div>
+        ))}
+        {adding ? (
+          <form onSubmit={e => void addDate(e)} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 12px', background: 'var(--bg-2,#121009)', borderRadius: 8, border: '1px solid var(--line-2,rgba(255,255,255,.08))' }}>
+            <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required style={{ padding: '7px 10px', background: 'var(--bg-3,#1a1612)', border: '1px solid var(--line-2,rgba(255,255,255,.08))', borderRadius: 6, color: 'var(--ink,#f4efe9)', fontFamily: 'var(--f-m,monospace)', fontSize: 12 }} />
+            <input value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Note (optional)" maxLength={120} style={{ padding: '7px 10px', background: 'var(--bg-3,#1a1612)', border: '1px solid var(--line-2,rgba(255,255,255,.08))', borderRadius: 6, color: 'var(--ink,#f4efe9)', fontFamily: 'var(--f-m,monospace)', fontSize: 12 }} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="submit" disabled={saving} style={{ flex: 1, padding: '7px 0', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, background: 'rgba(34,229,212,.12)', border: '1px solid rgba(34,229,212,.3)', color: '#22e5d4' }}>{saving ? 'Saving…' : 'Add date'}</button>
+              <button type="button" onClick={() => setAdding(false)} style={{ padding: '7px 14px', borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--f-m,monospace)', fontSize: 11, background: 'transparent', border: '1px solid var(--line-2,rgba(255,255,255,.1))', color: 'rgba(244,239,233,.5)' }}>Cancel</button>
+            </div>
+          </form>
+        ) : (
+          <button onClick={() => setAdding(true)} style={{ padding: '8px 0', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, background: 'rgba(34,229,212,.08)', border: '1px solid rgba(34,229,212,.2)', color: '#22e5d4' }}>+ Add available date</button>
+        )}
+      </div>
     </EditorPanel>
   );
 }
@@ -704,6 +772,10 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
       <div style={{ marginTop: 14 }}><StripeConnectPanel data={data} /></div>
 
       <div style={{ marginTop: 14 }}><EmailPreferencesPanel /></div>
+
+      {(data.profileType === 'ARTIST' || data.profileType === 'DJ') && (
+        <div style={{ marginTop: 14 }}><AvailabilityPanel data={data} /></div>
+      )}
 
       <div style={{ marginTop: 14 }}><PasskeyPanel /></div>
 

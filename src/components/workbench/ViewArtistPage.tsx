@@ -1750,12 +1750,15 @@ function LibraryManager({ profileId }: { profileId: string }) {
     setTracks(prev => prev.filter(t => t.hexId !== hexId));
   }
 
+  const [seedMsg, setSeedMsg] = useState('');
+
   function submitToSeeds(hexId: string) {
     const next = new Set(submittedSeeds);
     next.add(hexId);
     setSubmittedSeeds(next);
     localStorage.setItem(SUBMITTED_KEY, JSON.stringify([...next]));
-    window.alert('Your track has been added to the Seeds discovery queue.');
+    setSeedMsg('Added to Seeds discovery queue');
+    setTimeout(() => setSeedMsg(''), 3000);
   }
 
   async function handleUpload(file: File) {
@@ -1938,6 +1941,9 @@ function LibraryManager({ profileId }: { profileId: string }) {
                     >
                       Delete
                     </button>
+                    {seedMsg && isSubmitted && (
+                      <span style={{ color: '#22e5d4', fontFamily: 'var(--f-m,monospace)', fontSize: 11, marginLeft: 8, alignSelf: 'center' }}>{seedMsg}</span>
+                    )}
                   </div>
                 </div>
 

@@ -82,13 +82,13 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
             dist: '—',
             score: s.score,
             reach: s.reach,
-            venues: s.venues.map(v => ({ n: v.name, cap: 0, fit: Math.min(99, Math.round(50 + v.hypeCount / 20)), id: v.id })),
+            venues: s.venues.map(v => ({ n: v.name, cap: 0, fit: Math.min(99, Math.round(50 + v.hypeCount / 20)) })),
           })));
         } else {
           setArtistResults(ARTIST_STOPS);
         }
       })
-      .catch(() => setArtistResults(ARTIST_STOPS))
+      .catch(() => { setStopsLoading(false); })
       .finally(() => setStopsLoading(false));
   }
 
@@ -113,7 +113,7 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
         }
         setSelectedArtist(null);
       })
-      .catch(() => { setVenueResults(VENUE_ARTISTS); setSelectedArtist(null); })
+      .catch(() => { setArtistsLoading(false); })
       .finally(() => setArtistsLoading(false));
   }
 

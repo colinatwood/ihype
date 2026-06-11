@@ -16,12 +16,60 @@ export const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
   const FREQS = ['88.3','94.1','101.7','107.9','104.5','99.5'];
   const showIdx = shows.findIndex(r => r.id === activeId);
 
+  const [showForm, setShowForm] = useState(false);
+  const [title, setTitle] = useState('');
+  const [desc, setDesc] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createErr, setCreateErr] = useState('');
+
+  async function createRadioShow() {
+    if (!title.trim()) return;
+    setCreating(true);
+    setCreateErr('');
+    try {
+      const res = await fetch('/api/shows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title.trim(), description: desc.trim() || null, isRadioShow: true }),
+      });
+      if (res.ok) {
+        setShowForm(false);
+        setTitle('');
+        setDesc('');
+        window.location.reload();
+      } else {
+        const d = await res.json();
+        setCreateErr(d.error ?? 'Failed to create show');
+      }
+    } finally {
+      setCreating(false);
+    }
+  }
+
   if (!show) {
     return (
       <div style={{ padding: '24px 32px' }}>
         <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.18em', color: '#ff3e9a', marginBottom: 10 }}>● RADIO · iHYPE NETWORK</div>
         <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Radio</h1>
-        <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 16 }}>No radio shows yet. Start one in Studio.</p>
+        <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 16 }}>No radio shows yet.</p>
+        {showForm ? (
+          <div style={{ marginTop: 20, padding: '18px 20px', border: '1px solid var(--line-2)', borderRadius: 12, background: 'var(--bg-2)', maxWidth: 480 }}>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 14 }}>New Radio Show</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Show title *" style={{ padding: '9px 12px', background: 'var(--bg-3)', border: '1px solid var(--line-2)', borderRadius: 8, color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, outline: 'none' }} />
+              <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Description (optional)" rows={3} style={{ padding: '9px 12px', background: 'var(--bg-3)', border: '1px solid var(--line-2)', borderRadius: 8, color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, resize: 'vertical', outline: 'none' }} />
+              {createErr && <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: '#ff5029' }}>{createErr}</div>}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => void createRadioShow()} disabled={creating || !title.trim()} style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: 'none', cursor: creating ? 'wait' : 'pointer', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, background: 'rgba(255,62,154,.15)', color: '#ff3e9a' }}>{creating ? 'Creating…' : 'Create show'}</button>
+                <button onClick={() => setShowForm(false)} style={{ padding: '9px 16px', borderRadius: 8, border: '1px solid var(--line-2)', background: 'none', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowForm(true)} style={{ marginTop: 20, padding: '10px 20px', border: '1px solid rgba(255,62,154,.3)', borderRadius: 8, background: 'rgba(255,62,154,.08)', color: '#ff3e9a', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <IcBolt s={12} /> Start a radio show
+          </button>
+        )}
       </div>
     );
   }
@@ -37,9 +85,24 @@ export const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Radio</h1>
           <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>Curated shows from promoters, DJs, and artists. No ads, no algorithm — just real people picking music.</p>
         </div>
-        <button style={{ padding: '9px 16px', border: '1px solid var(--accent-2)', color: 'var(--accent-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', display: 'flex', alignItems: 'center', gap: 6, background: 'none', cursor: 'pointer' }}>
-          <IcBolt s={12} /> Start your show →
-        </button>
+        {showForm ? (
+          <div style={{ padding: '14px 16px', border: '1px solid var(--line-2)', borderRadius: 12, background: 'var(--bg-2)', minWidth: 300 }}>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 10 }}>New Radio Show</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Show title *" style={{ padding: '8px 10px', background: 'var(--bg-3)', border: '1px solid var(--line-2)', borderRadius: 7, color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, outline: 'none' }} />
+              <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Description (optional)" rows={2} style={{ padding: '8px 10px', background: 'var(--bg-3)', border: '1px solid var(--line-2)', borderRadius: 7, color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13, resize: 'none', outline: 'none' }} />
+              {createErr && <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff5029' }}>{createErr}</div>}
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button onClick={() => void createRadioShow()} disabled={creating || !title.trim()} style={{ flex: 1, padding: '7px 0', borderRadius: 6, border: 'none', cursor: creating ? 'wait' : 'pointer', fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 700, background: 'rgba(255,62,154,.15)', color: '#ff3e9a' }}>{creating ? 'Creating…' : 'Create'}</button>
+                <button onClick={() => setShowForm(false)} style={{ padding: '7px 12px', borderRadius: 6, border: '1px solid var(--line-2)', background: 'none', color: 'var(--ink-3)', fontFamily: 'var(--f-m)', fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowForm(true)} style={{ padding: '9px 16px', border: '1px solid var(--accent-2)', color: 'var(--accent-2)', borderRadius: 6, fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 600, letterSpacing: '.04em', display: 'flex', alignItems: 'center', gap: 6, background: 'none', cursor: 'pointer' }}>
+            <IcBolt s={12} /> Start your show →
+          </button>
+        )}
       </div>
 
       {/* Body */}

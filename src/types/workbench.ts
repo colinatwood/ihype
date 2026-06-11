@@ -171,6 +171,12 @@ export type WbPageEditor = {
   previousShows: WbShow[];
 };
 
+export type WbAvailabilityDate = {
+  id: string;
+  date: string;
+  note: string | null;
+};
+
 export type WorkbenchData = {
   userName: string;
   userInitials: string;
@@ -191,6 +197,8 @@ export type WorkbenchData = {
   profilePath?: string;
   profileLocation?: WbProfileLocation;
   pendingVenueRequestCount?: number;
+  followerCount?: number;
+  availabilityDates?: WbAvailabilityDate[];
   profileCompletion?: { percent: number; missing: string[]; checks?: Array<{ label: string; ok: boolean }> };
   notifications?: WbNotification[];
   venueRequests?: WbVenueRequest[];

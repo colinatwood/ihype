@@ -24,14 +24,20 @@ const DEFAULT_VARS: PageVars = {
 interface Msg { side: 'me' | 'ai'; html: string; }
 
 /* ── data constants ──────────────────────────────────────── */
-const GEO_BREAKDOWN = [
-  { area: 'Ukrainian Village, Chicago', followers: 380 },
-  { area: 'Logan Square, Chicago', followers: 240 },
-  { area: 'Wicker Park, Chicago', followers: 220 },
-  { area: 'Brooklyn, NY', followers: 180 },
-  { area: 'Austin, TX', followers: 140 },
+const ARTIST_REQUESTS = [
+  { id: 'ar1', name: 'Jordan Nore', genre: 'Alt-R&B', city: 'Chicago, IL', draw: 280, date: 'Jun 28', ask: '$1,200', overlap: '74%', message: "Hi! I'd love to play the room on Jun 28. I've got a solid draw in the neighborhood and my last 3 shows averaged 280 heads. Happy to do door deal or flat fee." },
+  { id: 'ar2', name: 'Mau Lwin', genre: 'Bedroom Pop', city: 'Chicago, IL', draw: 180, date: 'Jul 12', ask: '$800', overlap: '68%', message: "Hey, big fan of your space. Looking for a July date — my audience skews 21–28, drinks well. I can bring my own PA if needed." },
+  { id: 'ar3', name: 'The Veldt Kids', genre: 'Post-Punk', city: 'Milwaukee, WI', draw: 220, date: 'Jul 26', ask: '$1,100', overlap: '61%', message: "We're coming down from Milwaukee for a run. Your venue is exactly the vibe we want — love to do Jul 26 if you have it open." },
+  { id: 'ar4', name: 'Night Transit', genre: 'Shoegaze', city: 'Indianapolis, IN', draw: 150, date: 'Aug 9', ask: '$700', overlap: '48%', message: "Expanding our touring radius — would love to add your room to an August run. Flexible on date and deal structure." },
 ];
 
+const ACTIVITY = [
+  { text: 'Jordan Nore sent a booking request', time: '1h ago', color: '#ff3e9a' },
+  { text: '38 new followers from Brooklyn this week', time: '6h ago', color: '#22e5d4' },
+  { text: 'Your HYPE count crossed 600 this month', time: '1d ago', color: '#ff5029' },
+  { text: "Mau Lwin's fans are listening in your area", time: '2d ago', color: '#b983ff' },
+  { text: 'Page view spike: +240% on Saturday', time: '3d ago', color: '#ffb84a' },
+];
 
 /* ── AI command interpreter ──────────────────────────────── */
 function applyVenueCommand(text: string, vars: PageVars): { reply: string; applied: string[]; newVars: PageVars } {
@@ -218,7 +224,6 @@ export function ViewVenuePage({ data }: { data: WorkbenchData }) {
 
 /* ── Overview ────────────────────────────────────────────── */
 function OverviewPanel({ data }: { data: WorkbenchData }) {
-  const maxFollowers = Math.max(...GEO_BREAKDOWN.map(g => g.followers));
   return (
     <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
       <div style={{ padding: '28px 36px', maxWidth: 1100, margin: '0 auto' }}>
@@ -227,10 +232,9 @@ function OverviewPanel({ data }: { data: WorkbenchData }) {
 
         {/* KPIs */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14, marginBottom: 32 }}>
-          <KpiCard label="HYPE Count"          value={(data.lifeStats?.totalHype ?? 640).toLocaleString()} delta="+22% this month"   color="#ff5029" />
-          <KpiCard label="Followers"           value="1,840"  delta="+140 this month"    color="#ff3e9a" />
-          <KpiCard label="Monthly Page Views"  value="12,400" delta="+31% vs last month" color="#b983ff" />
-          <KpiCard label="Booking Requests"    value={(data.pendingVenueRequestCount ?? 0).toString()} delta={`${data.pendingVenueRequestCount ?? 0} pending`} color="#22e5d4" />
+          <KpiCard label="HYPE Count" value={(data.lifeStats?.totalHype ?? 0).toLocaleString()} delta="" color="#ff5029" />
+          <KpiCard label="Followers" value={(data.followerCount ?? 0).toLocaleString()} delta="" color="#ff3e9a" />
+          <KpiCard label="Booking Requests" value={(data.pendingVenueRequestCount ?? 0).toString()} delta={`${data.pendingVenueRequestCount ?? 0} pending`} color="#22e5d4" />
         </div>
 
         {/* Listens chart */}
@@ -238,28 +242,12 @@ function OverviewPanel({ data }: { data: WorkbenchData }) {
           <SparkLine color="#22e5d4" />
         </SectionCard>
 
-        {/* AI nudge */}
-        <div style={{ background: 'rgba(34,229,212,.05)', border: '1px solid rgba(34,229,212,.15)', borderRadius: 12, padding: '14px 18px', marginBottom: 20, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 16 }}>✦</span>
-          <div>
-            <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: '#22e5d4', marginBottom: 4 }}>Peak crowd for Post-Punk in your area is Sat 9–11pm</div>
-            <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.6)', lineHeight: 1.5 }}>Your last 3 post-punk nights averaged 312 attendees vs 180 avg. The Veldt Kids' request fits that slot perfectly.</div>
+        {/* Audience */}
+        <SectionCard title="Audience" subtitle="Followers on iHYPE">
+          <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 32, fontWeight: 800, color: 'var(--ink,#f4efe9)', lineHeight: 1 }}>
+            {(data.followerCount ?? 0).toLocaleString()}
           </div>
-        </div>
-
-        {/* Geo breakdown */}
-        <SectionCard title="Geo Breakdown" subtitle="Where your followers are coming from">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {GEO_BREAKDOWN.map(g => (
-              <div key={g.area} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 200, fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'var(--ink-2,rgba(244,239,233,.6))', flexShrink: 0 }}>{g.area}</div>
-                <div style={{ flex: 1, height: 6, background: 'var(--line-2,rgba(255,255,255,.07))', borderRadius: 99, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', borderRadius: 99, width: `${(g.followers / maxFollowers) * 100}%`, background: 'linear-gradient(90deg, #22e5d4, #5fd38a)' }} />
-                </div>
-                <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, fontWeight: 700, color: 'var(--ink,#f4efe9)', width: 50, textAlign: 'right', flexShrink: 0 }}>{g.followers}</div>
-              </div>
-            ))}
-          </div>
+          <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginTop: 6 }}>total followers</div>
         </SectionCard>
 
         {/* Recent Activity */}
@@ -304,6 +292,7 @@ function ShowsPanel({ venueName }: { venueName: string }) {
   const [showArtist, setShowArtist] = useState('');
   const [showPrice, setShowPrice] = useState('');
   const [showCap, setShowCap] = useState('');
+  const [showErr, setShowErr] = useState('');
   const [scheduledShows, setScheduledShows] = useState([
     { id: '1', title: 'Jordan Nore', date: `${year}-${String(month + 1).padStart(2, '0')}-15`, time: '9:00 PM', cap: 180, sold: 142, price: 15 },
     { id: '2', title: 'The Veldt Kids', date: `${year}-${String(month + 1).padStart(2, '0')}-22`, time: '9:30 PM', cap: 200, sold: 85, price: 18 },
@@ -316,7 +305,7 @@ function ShowsPanel({ venueName }: { venueName: string }) {
     const titleNorm = showTitle.trim().toLowerCase();
     const duplicate = scheduledShows.find(s => s.title.toLowerCase() === titleNorm && s.date === showDate);
     if (duplicate) {
-      alert(`A show named "${duplicate.title}" is already scheduled on ${showDate}. Change the title or date to add another.`);
+      setShowErr(`A show named "${duplicate.title}" is already scheduled on ${showDate}.`);
       return;
     }
     const d = new Date(showDate + 'T00:00');
@@ -331,7 +320,7 @@ function ShowsPanel({ venueName }: { venueName: string }) {
       sold: 0,
       price: showPrice ? parseFloat(showPrice) : 0,
     }, ...prev]);
-    setShowTitle(''); setShowDate(''); setShowArtist(''); setShowPrice(''); setShowCap('');
+    setShowTitle(''); setShowDate(''); setShowArtist(''); setShowPrice(''); setShowCap(''); setShowErr('');
     setSchedView('list');
   }
 
@@ -382,12 +371,12 @@ function ShowsPanel({ venueName }: { venueName: string }) {
           <form onSubmit={addShow} style={{ background: 'var(--bg-2,#121009)', border: '1px solid var(--line-2,rgba(255,255,255,.07))', borderRadius: 14, padding: '22px 26px', marginBottom: 24 }}>
             <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 16 }}>New Show</div>
             <div style={{ display: 'grid', gap: 12 }}>
-              <input style={INPUT_STYLE} placeholder="Show / event title *" value={showTitle} onChange={e => setShowTitle(e.target.value)} required />
+              <input style={INPUT_STYLE} placeholder="Show / event title *" value={showTitle} onChange={e => { setShowTitle(e.target.value); setShowErr(''); }} required />
               <input style={INPUT_STYLE} placeholder="Headliner / artist name" value={showArtist} onChange={e => setShowArtist(e.target.value)} />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
                   <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.4)', marginBottom: 5 }}>DATE *</div>
-                  <input type="date" style={INPUT_STYLE} value={showDate} onChange={e => setShowDate(e.target.value)} required />
+                  <input type="date" style={INPUT_STYLE} value={showDate} onChange={e => { setShowDate(e.target.value); setShowErr(''); }} required />
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.4)', marginBottom: 5 }}>DOORS</div>
@@ -408,6 +397,7 @@ function ShowsPanel({ venueName }: { venueName: string }) {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
               <button type="submit" style={{ padding: '10px 24px', borderRadius: 10, border: 'none', cursor: 'pointer', background: '#22e5d4', color: '#0a0805', fontFamily: 'var(--f-m,monospace)', fontSize: 12, fontWeight: 700, letterSpacing: '.06em' }}>PUBLISH SHOW</button>
             </div>
+            {showErr && <div style={{ color: '#ff5029', fontFamily: 'var(--f-m,monospace)', fontSize: 12, marginTop: 8 }}>{showErr}</div>}
           </form>
         )}
 
