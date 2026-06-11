@@ -3,6 +3,7 @@
 import React from 'react';
 import type { WorkbenchData } from '@/types/workbench';
 import { T, WMPill, WMChip, WMViewHead, WMCard } from './MobilePrimitives';
+import { PageActions } from './PageActions';
 
 // ─── Screen: Studio ──────────────────────────────────────────
 export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
@@ -88,6 +89,12 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
           <WMChip accent>⬤ Publish</WMChip>
           <WMChip onClick={handleCopyEmbed}>{embedCopied ? '✓ Copied!' : '⊞ Embed'}</WMChip>
           <WMChip onClick={() => setFanMailOpen(true)}>✉ Fan mail</WMChip>
+          <PageActions
+            compact
+            type={data.pageEditor?.type ?? data.profileType}
+            slug={data.pageEditor?.slug}
+            title={data.pageEditor?.name || data.userName}
+          />
         </>}
       />
 

@@ -12,7 +12,7 @@ import { readClientAddress } from '@/lib/request-meta';
 import { verifyTurnstileToken } from '@/lib/turnstile';
 import { isInviteCodeRequiredRuntime, isReservedPlatformEmail, isValidInviteCode } from '@/lib/runtime-flags';
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
-import { slugify } from '@/lib/utils';
+import { generateUniqueNonwordSlug } from '@/lib/nonword-slug';
 import { sendDay1Email } from '@/lib/onboarding-emails';
 import { checkForSpam } from '@/lib/spam-detection';
 import { log } from '@/lib/logger';
@@ -282,15 +282,9 @@ export async function POST(request: Request) {
 
     const profileType = getProfileType(body.role);
     const hexId = await generateUniqueProfileHexId();
-    const slugSource = body.role === 'FAN' ? normalizedUsername : trimmedName;
-    const baseSlug = slugify(slugSource);
-    let slug = baseSlug || `profile-${user.id.slice(0, 6)}`;
-    let suffix = 1;
-
-    while (await db.profile.findUnique({ where: { slug } })) {
-      slug = `${baseSlug || 'profile'}-${suffix}`;
-      suffix += 1;
-    }
+    // New profiles get a pronounceable nonword slug (e.g. "veloka") for
+    // maximum availability; existing profiles keep their slugs.
+    const slug = await generateUniqueNonwordSlug(db);
 
     const profileName = profileType === 'LISTENER' ? hexId : trimmedName;
     const profileCopyName = profileType === 'LISTENER' ? normalizedUsername : trimmedName;

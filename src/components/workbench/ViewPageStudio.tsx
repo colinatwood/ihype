@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { WorkbenchData } from '@/components/WorkbenchShellV2';
 import { sanitizeChatHtml, sanitizePreviewHtml } from '@/lib/sanitize-html';
+import { getProfilePathForType } from '@/lib/profile-paths';
+import { PageActions } from './PageActions';
 
 // ── TYPES ──────────────────────────────────────────────────────────────────
 type Role = 'artist' | 'venue' | 'promoter' | 'fan';
@@ -258,6 +260,8 @@ interface PreviewExtras {
   release?: ReleaseData;
   booking?: BookingData;
   newsletter?: NewsletterData;
+  /** Real public URL label (e.g. "ihype.org/artists/veloka") for footers. */
+  publicUrlLabel?: string;
 }
 
 function renderPreviewHTML(content: Content, theme: Theme, extras: PreviewExtras = {}): string {
@@ -325,7 +329,7 @@ function renderPreviewHTML(content: Content, theme: Theme, extras: PreviewExtras
       ${buildSections()}
       ${uploadedTracks}
       ${linksSection}
-      <div class="pg-foot">Made with <b>iHYPE</b> · ihype.fm/${toSlug(c.name)}</div>
+      <div class="pg-foot">Made with <b>iHYPE</b> · ${esc(extras.publicUrlLabel || `ihype.org/${toSlug(c.name)}`)}</div>
     </div>`;
 }
 
@@ -686,6 +690,12 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
 
   const forcePanel = () => setPanelVersion(v => v + 1);
 
+  // Real public page location for this profile (slug + type from the DB).
+  const profileSlug = data?.pageEditor?.slug ?? '';
+  const profileType = data?.pageEditor?.type ?? '';
+  const publicPath = profileSlug && profileType ? getProfilePathForType(profileType, profileSlug) : '';
+  const publicUrlLabel = publicPath ? `ihype.org${publicPath}` : `ihype.org/${urlName}`;
+
   /* inject styles + fonts once */
   useEffect(() => {
     if (!document.getElementById('ps2-styles')) {
@@ -1037,6 +1047,7 @@ export default function ViewPageStudio({ data }: { data?: WorkbenchData } = {}) 
       release: releaseRef.current,
       booking: bookingRef.current,
       newsletter: newsletterRef.current,
+      publicUrlLabel,
     }));
 
     scroll.querySelectorAll<HTMLElement>('[data-edit]').forEach((el: HTMLElement) => {
@@ -1170,7 +1181,7 @@ ${quotes.length ? `<h2>Press</h2>${quotes.map(q => `<div class="pq"><blockquote>
 ${pressRef.current.mentions ? `<p style="margin-top:14px;font-size:13px;color:#666"><b style="color:#111">As seen in:</b> ${esc(pressRef.current.mentions)}</p>` : ''}
 ${bookingRef.current.contact || bookingRef.current.market ? `<h2>Booking</h2><div class="book">${bookingRef.current.genres.length ? `<p><b>Genres:</b> ${bookingRef.current.genres.join(', ')}</p>` : ''}${bookingRef.current.market ? `<p><b>Market:</b> ${esc(bookingRef.current.market)}</p>` : ''}${bookingRef.current.cap ? `<p><b>Stage size:</b> ${esc(bookingRef.current.cap)}</p>` : ''}${bookingRef.current.note ? `<p>${esc(bookingRef.current.note)}</p>` : ''}${bookingRef.current.contact ? `<p style="margin-top:10px"><b>Booking contact:</b> <a href="mailto:${esc(bookingRef.current.contact)}">${esc(bookingRef.current.contact)}</a></p>` : ''}</div>` : ''}
 ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a class="ltag" href="${esc(u)}">${esc(pl)}</a>`).join('')}</div>` : ''}
-<div class="foot"><div>Electronic Press Kit · ${new Date().toLocaleDateString('en-US', { month:'long', year:'numeric' })}</div><b>ihype.fm/${toSlug(c.name)}</b></div>
+<div class="foot"><div>Electronic Press Kit · ${new Date().toLocaleDateString('en-US', { month:'long', year:'numeric' })}</div><b>${esc(publicPath ? `ihype.org${publicPath}` : `ihype.org/${toSlug(c.name)}`)}</b></div>
 </body></html>`;
     const w = window.open('', '_blank', 'width=860,height=740,scrollbars=yes');
     if (w) { w.document.write(html); w.document.close(); } else toast('Allow popups to open the EPK');
@@ -1191,7 +1202,14 @@ ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a 
 
   function onPublish() {
     if (!themeRef.current) return toast('Generate your page first!');
-    toast(`✓ Published to ihype.fm/${toSlug(contentRef.current.name)}`);
+    if (publicPath) {
+      // Surface + copy the real public URL for this profile.
+      const url = new URL(publicPath, window.location.origin).toString();
+      navigator.clipboard?.writeText(url).catch(() => {});
+      toast(`✓ Published — your page is live at ihype.org${publicPath} (link copied)`);
+    } else {
+      toast('✓ Published — create your profile to get a public URL');
+    }
     setPubLabel('✓ Published');
     if (pubTimer.current) clearTimeout(pubTimer.current);
     pubTimer.current = setTimeout(() => setPubLabel('↗ Publish page'), 2800);
@@ -1346,8 +1364,9 @@ ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a 
       {/* ── STAGE ── */}
       <main className={'ps2-stage' + (generating ? ' gen' : '')} data-d={device}>
         <div className="ps2-stbar">
-          <div className="ps2-url-pill">🔒 ihype.fm/<b>{urlName}</b></div>
+          <div className="ps2-url-pill">🔒 ihype.org<b>{publicPath || `/${urlName}`}</b></div>
           <div className="ps2-stage-r">
+            <PageActions type={profileType} slug={profileSlug} title={data?.pageEditor?.name || data?.userName} />
             <div className="ps2-dev-seg">
               <button className={device === 'desktop' ? 'on' : ''} onClick={() => setDevice('desktop')}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.8"/><path d="M8 20h8M12 16v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>
