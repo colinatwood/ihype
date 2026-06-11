@@ -243,7 +243,7 @@ function PasskeyPanel() {
   );
 }
 
-function EmailPreferencesPanel() {
+export function EmailPreferencesPanel() {
   type EmailPrefs = { newShows: boolean; journalPosts: boolean; milestones: boolean; weeklyDigest: boolean };
   const [emailPrefs, setEmailPrefs] = React.useState<EmailPrefs | null>(null);
   const [loading, setLoading] = React.useState(true);

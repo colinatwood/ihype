@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { WorkbenchData, WbTrack } from '@/types/workbench';
 import { T, WMPill } from './MobilePrimitives';
+import { DiscoverDailyCard } from './DiscoverDailyCard';
 
 // ─── Icons (local, only needed here) ─────────────────────────
 const WMIcon = {
@@ -118,6 +119,11 @@ export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
               <svg width={12} height={12} viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8L6 20z"/></svg> Play
             </div>
           </div>
+        </div>
+
+        {/* Daily discovery pick — same card the desktop workbench shows */}
+        <div style={{ margin: '0 22px 20px' }}>
+          <DiscoverDailyCard />
         </div>
 
         {/* Your playlists */}
