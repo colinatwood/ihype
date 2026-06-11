@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { parsePublishedPage } from '@/lib/page-builder';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
@@ -123,6 +124,8 @@ export default async function PromoterPage({
   if (!profile || profile.type !== 'DJ') return notFound();
   if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
   const profileSlug = profile.slug;
+  // Published page-builder overrides (plain text only; see parsePublishedPage).
+  const published = parsePublishedPage(profile.pagePublished);
   const isOwner = canManageOwnedResource(session, profile.ownerId);
 
   const [shows, sentRecommendations, viewerLocation, venues, fanHypeCount] = await Promise.all([
@@ -221,8 +224,8 @@ export default async function PromoterPage({
             {logoUrl ? <img alt={`${profile.name} logo`} className="artist-logo-mark" src={logoUrl} /> : null}
             <div className="badge">PROMOTER</div>
             <h1 className="title" style={{ fontSize: '2.9rem' }}>{profile.name}</h1>
-            <p className="artist-headline">{profile.headline || 'Set the tone for the nights, talent, and scenes you champion.'}</p>
-            <p className="subtitle">{profile.bio}</p>
+            <p className="artist-headline">{published?.headline || profile.headline || 'Set the tone for the nights, talent, and scenes you champion.'}</p>
+            <p className="subtitle">{published?.bio || profile.bio}</p>
             <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
             {profile.contactInfo ? <p className="meta">{profile.contactInfo}</p> : null}
             <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
@@ -262,7 +265,7 @@ export default async function PromoterPage({
           {activeSection === 'about' ? (
             <>
               <h2>About</h2>
-              <div className="artist-copy">{profile.aboutContent || profile.bio || 'This promoter has not filled out the About section yet.'}</div>
+              <div className="artist-copy">{profile.aboutContent || published?.bio || profile.bio || 'This promoter has not filled out the About section yet.'}</div>
             </>
           ) : null}
 
