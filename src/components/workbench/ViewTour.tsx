@@ -74,7 +74,20 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
   }
 
   function handleFindArtists() {
-    setVenueResults(VENUE_ARTISTS);
+    const liveArtists: ArtistResult[] = (data.trending ?? [])
+      .filter(a => a.type === 'ARTIST' || a.type === 'DJ')
+      .slice(0, 6)
+      .map(a => ({
+        name: a.name,
+        genre: a.genre || 'Independent',
+        city: a.city || 'Unknown',
+        score: Math.min(99, Math.round(50 + a.hypeCount / 100)),
+        hype: a.hypeCount,
+        overlap: '',
+        ask: 'Contact to book',
+        draw: Math.max(20, Math.round(a.hypeCount / 8)),
+      }));
+    setVenueResults(liveArtists.length > 0 ? liveArtists : VENUE_ARTISTS);
     setSelectedArtist(null);
   }
 

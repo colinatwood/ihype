@@ -18,6 +18,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         id: true,
         name: true,
         role: true,
+        createdAt: true,
         profiles: {
           select: {
             id: true,
@@ -87,6 +88,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       uploadStreak, weeklyHypeCounts, pastShows,
       hypedToday, listeningNowCount, trendingProfiles,
       mediaUploads, hostedShows, headlinerShows, accountsPayableEntries,
+      dbNotifications, weeklyListensCount, totalHypeGivenCount,
     ] = await Promise.all([
       // Fetch user's ticket orders
       db.ticketOrder.findMany({
@@ -137,7 +139,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         take: 5,
         orderBy: [{ featured: 'desc' }, { startsAt: 'desc' }],
         select: {
-          id: true, title: true, status: true, startsAt: true, featured: true,
+          id: true, title: true, description: true, status: true, startsAt: true, featured: true,
           headlinerProfile: { select: { name: true } },
         },
       }).catch(() => [] as { id: string; title: string; status: string; startsAt: Date; featured: boolean; headlinerProfile: { name: string } | null }[]),
@@ -264,6 +266,19 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             select: { id: true, amountCents: true, payeeLabel: true, createdAt: true, profileId: true },
           }).catch(() => [] as { id: string; amountCents: number; payeeLabel: string; createdAt: Date; profileId: string | null }[])
         : Promise.resolve([] as { id: string; amountCents: number; payeeLabel: string; createdAt: Date; profileId: string | null }[]),
+      // Recent notifications for this user
+      db.notification.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, type: true, body: true, read: true, link: true, createdAt: true },
+      }).catch(() => [] as { id: string; type: string; body: string; read: boolean; link: string | null; createdAt: Date }[]),
+      // Media listens in the last 7 days (weekly listens)
+      db.mediaListen.count({
+        where: { userId, createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+      }).catch(() => 0),
+      // Total profile hypes this user has given
+      db.profileHypeEvent.count({ where: { userId } }).catch(() => 0),
     ]);
 
     // Count songs played by this user
@@ -413,7 +428,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       live: r.status === 'LIVE',
       listeners: 0,
       color: PALETTE[i % PALETTE.length],
-      desc: '',
+      desc: r.description ?? '',
     }));
 
     // Stats
@@ -475,13 +490,24 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       tickets,
       activity: allActivity,
       radioShows: wbRadioShows,
-      notifications: [],
+      notifications: dbNotifications.map(n => ({
+        id: n.id,
+        title: n.type.replace(/_/g, ' '),
+        body: n.body,
+        time: timeAgo(n.createdAt),
+        kind: (['hype', 'show', 'radio', 'payout', 'request', 'security'] as const).find(k => n.type.toLowerCase().includes(k)) ?? 'hype' as const,
+        href: n.link ?? undefined,
+        unread: !n.read,
+      })),
       uploadStreak: uploadStreak ?? 0,
       needsGenreQuiz: needsGenreQuiz ?? false,
       stripeConnectOnboarded: primaryProfile?.stripeConnectOnboarded ?? false,
       hypeCount7d: primaryProfile ? (weeklyMap[primaryProfile.id] ?? 0) : 0,
+      joinedAt: user.createdAt.toISOString(),
+      weeklyListens: weeklyListensCount,
       lifeStats: {
         totalHype,
+        totalHypeGiven: totalHypeGivenCount,
         totalEarnings: pendingCents / 100,
         songsPlayed: songsPlayedCount,
         eventsAttended: ticketOrders.filter(o => o.status === 'CAPTURED').length,
