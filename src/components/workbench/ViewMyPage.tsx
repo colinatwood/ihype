@@ -226,6 +226,7 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
     { v: totalHypeGiven.toLocaleString(), k: 'HYPE Given', accent: false },
     { v: String(data.lifeStats?.eventsAttended ?? 0), k: 'Shows Attended', accent: false },
     { v: String(data.lifeStats?.songsPlayed ?? 0), k: 'Songs Played', accent: false },
+    { v: String(data.followerCount ?? 0), k: 'Followers', accent: false },
   ];
 
   const trendingArtists = (data.trending ?? []).slice(0, 3);
@@ -266,6 +267,15 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
             })}
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 9px', borderRadius: 99, background: 'rgba(255,184,74,.12)', border: '1px solid rgba(255,184,74,.28)', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.06em', color: '#ffb84a' }}>⚡ LEVEL {level}</span>
           </div>
+          {(data.badges?.length ?? 0) > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+              {data.badges!.map(b => (
+                <span key={b.type} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 9px', borderRadius: 99, background: 'rgba(185,131,255,.12)', border: '1px solid rgba(185,131,255,.28)', fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', color: '#b983ff' }}>
+                  🏅 {b.type.replace(/_/g, ' ')}
+                </span>
+              ))}
+            </div>
+          )}
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 46, letterSpacing: '-.03em', lineHeight: .95, margin: 0, color: 'var(--ink)' }}>{data.userName}</h1>
           <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.08em' }}>
             {data.city ? `${data.city} · ` : ''}{data.joinedAt ? `Joined ${new Date(data.joinedAt).toLocaleDateString('en-US', { month: 'short' })} '${String(new Date(data.joinedAt).getFullYear()).slice(-2)}` : ''}

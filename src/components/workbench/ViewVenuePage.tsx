@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { WorkbenchData } from '@/types/workbench';
+import { WorkbenchData, WbVenueRequest } from '@/types/workbench';
 import ViewPageStudio from './ViewPageStudio';
 import { sanitizeChatHtml } from '@/lib/sanitize-html';
 
@@ -32,20 +32,6 @@ const GEO_BREAKDOWN = [
   { area: 'Austin, TX', followers: 140 },
 ];
 
-const ARTIST_REQUESTS = [
-  { id: 'ar1', name: 'Jordan Nore', genre: 'Alt-R&B', city: 'Chicago, IL', draw: 280, date: 'Jun 28', ask: '$1,200', overlap: '74%', message: "Hi! I'd love to play the room on Jun 28. I've got a solid draw in the neighborhood and my last 3 shows averaged 280 heads. Happy to do door deal or flat fee." },
-  { id: 'ar2', name: 'Mau Lwin', genre: 'Bedroom Pop', city: 'Chicago, IL', draw: 180, date: 'Jul 12', ask: '$800', overlap: '68%', message: "Hey, big fan of your space. Looking for a July date — my audience skews 21–28, drinks well. I can bring my own PA if needed." },
-  { id: 'ar3', name: 'The Veldt Kids', genre: 'Post-Punk', city: 'Milwaukee, WI', draw: 220, date: 'Jul 26', ask: '$1,100', overlap: '61%', message: "We're coming down from Milwaukee for a run. Your venue is exactly the vibe we want — love to do Jul 26 if you have it open." },
-  { id: 'ar4', name: 'Night Transit', genre: 'Shoegaze', city: 'Indianapolis, IN', draw: 150, date: 'Aug 9', ask: '$700', overlap: '48%', message: "Expanding our touring radius — would love to add your room to an August run. Flexible on date and deal structure." },
-];
-
-const ACTIVITY = [
-  { text: 'Jordan Nore sent a booking request', time: '1h ago', color: '#ff3e9a' },
-  { text: '38 new followers from Brooklyn this week', time: '6h ago', color: '#22e5d4' },
-  { text: 'Your HYPE count crossed 600 this month', time: '1d ago', color: '#ff5029' },
-  { text: "Mau Lwin's fans are listening in your area", time: '2d ago', color: '#b983ff' },
-  { text: 'Page view spike: +240% on Saturday', time: '3d ago', color: '#ffb84a' },
-];
 
 /* ── AI command interpreter ──────────────────────────────── */
 function applyVenueCommand(text: string, vars: PageVars): { reply: string; applied: string[]; newVars: PageVars } {
@@ -199,7 +185,7 @@ export function ViewVenuePage({ data }: { data: WorkbenchData }) {
       <div style={{ position: 'relative', overflow: 'hidden', paddingBottom: isMobile ? 58 : 0, boxSizing: 'border-box' }}>
         {mode === 'overview'  && <OverviewPanel data={data} />}
         {mode === 'shows'     && <ShowsPanel venueName={venueName} />}
-        {mode === 'bookings'  && <BookingsPanel />}
+        {mode === 'bookings'  && <BookingsPanel data={data} />}
         {mode === 'page'      && <ViewPageStudio data={data} />}
         {mode === 'gallery'   && <GalleryPanel />}
       </div>
@@ -244,7 +230,7 @@ function OverviewPanel({ data }: { data: WorkbenchData }) {
           <KpiCard label="HYPE Count"          value={(data.lifeStats?.totalHype ?? 640).toLocaleString()} delta="+22% this month"   color="#ff5029" />
           <KpiCard label="Followers"           value="1,840"  delta="+140 this month"    color="#ff3e9a" />
           <KpiCard label="Monthly Page Views"  value="12,400" delta="+31% vs last month" color="#b983ff" />
-          <KpiCard label="Booking Requests"    value={(data.pendingVenueRequestCount ?? 3).toString()} delta="3 pending" color="#22e5d4" />
+          <KpiCard label="Booking Requests"    value={(data.pendingVenueRequestCount ?? 0).toString()} delta={`${data.pendingVenueRequestCount ?? 0} pending`} color="#22e5d4" />
         </div>
 
         {/* Listens chart */}
@@ -279,13 +265,19 @@ function OverviewPanel({ data }: { data: WorkbenchData }) {
         {/* Recent Activity */}
         <SectionCard title="Recent Activity" subtitle="">
           <div>
-            {ACTIVITY.map((a, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 0', borderBottom: i < ACTIVITY.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none' }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, flexShrink: 0 }} />
-                <div style={{ flex: 1, fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.7)' }}>{a.text}</div>
-                <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', flexShrink: 0 }}>{a.time}</div>
-              </div>
-            ))}
+            {(data.activity ?? []).length === 0 ? (
+              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.3)', padding: '12px 0' }}>No recent activity</div>
+            ) : (data.activity ?? []).slice(0, 5).map((a, i, arr) => {
+              const dotColors: Record<string, string> = { hype: '#ff3e9a', show: '#22e5d4', radio: '#b983ff', payout: '#ffb84a' };
+              const color = dotColors[a.kind] ?? '#22e5d4';
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(255,255,255,.05)' : 'none' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                  <div style={{ flex: 1, fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.7)' }}>{a.text}</div>
+                  <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', flexShrink: 0 }}>{a.time}</div>
+                </div>
+              );
+            })}
           </div>
         </SectionCard>
       </div>
@@ -452,16 +444,31 @@ function ShowsPanel({ venueName }: { venueName: string }) {
 }
 
 /* ── Bookings ────────────────────────────────────────────── */
-type RequestStatus = 'pending' | 'accepted' | 'declined';
 
-function BookingsPanel() {
-  const [statuses, setStatuses] = useState<Record<string, RequestStatus>>(Object.fromEntries(ARTIST_REQUESTS.map(r => [r.id, 'pending' as RequestStatus])));
+function BookingsPanel({ data }: { data: WorkbenchData }) {
+  const [requests, setRequests] = useState<WbVenueRequest[]>(data.venueRequests ?? []);
+  const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [inquiryForm, setInquiryForm] = useState({ artist: '', date: '', offer: '', message: '' });
   const [sent, setSent] = useState(false);
+  void loading;
 
-  function accept(id: string)  { setStatuses(s => ({ ...s, [id]: 'accepted' })); }
-  function decline(id: string) { setStatuses(s => ({ ...s, [id]: 'declined' })); }
+  async function accept(id: string) {
+    await fetch(`/api/venue-requests/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'BOOKED' }),
+    });
+    setRequests(rs => rs.map(r => r.id === id ? { ...r, status: 'BOOKED' } : r));
+  }
+  async function decline(id: string) {
+    await fetch(`/api/venue-requests/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'DISMISSED' }),
+    });
+    setRequests(rs => rs.map(r => r.id === id ? { ...r, status: 'DISMISSED' } : r));
+  }
 
   function sendInquiry(e: React.FormEvent) {
     e.preventDefault();
@@ -478,39 +485,32 @@ function BookingsPanel() {
         {/* Inbound requests */}
         <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(244,239,233,.4)', marginBottom: 14 }}>Artist Play Requests</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 36 }}>
-          {ARTIST_REQUESTS.map(r => {
-            const status = statuses[r.id];
+          {requests.length === 0 && (
+            <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.3)', padding: '20px 0' }}>No booking requests yet</div>
+          )}
+          {requests.map(r => {
+            const status = r.status;
             const isExp = expanded === r.id;
             return (
               <div key={r.id} style={{
-                background: status === 'declined' ? 'rgba(255,255,255,.02)' : 'var(--bg-2,#121009)',
-                border: `1px solid ${status === 'accepted' ? 'rgba(34,229,212,.25)' : status === 'declined' ? 'rgba(255,255,255,.05)' : 'var(--line-2,rgba(255,255,255,.07))'}`,
+                background: status === 'DISMISSED' ? 'rgba(255,255,255,.02)' : 'var(--bg-2,#121009)',
+                border: `1px solid ${status === 'BOOKED' ? 'rgba(34,229,212,.25)' : status === 'DISMISSED' ? 'rgba(255,255,255,.05)' : 'var(--line-2,rgba(255,255,255,.07))'}`,
                 borderRadius: 12, overflow: 'hidden',
-                opacity: status === 'declined' ? 0.55 : 1,
+                opacity: status === 'DISMISSED' ? 0.55 : 1,
                 transition: 'all .2s',
               }}>
                 <div style={{ padding: '14px 18px' }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div>
-                        <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 15, fontWeight: 700, color: status === 'declined' ? 'rgba(244,239,233,.4)' : 'var(--ink,#f4efe9)', marginBottom: 2 }}>{r.name}</div>
-                        <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)' }}>{r.genre} · {r.city}</div>
+                        <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 15, fontWeight: 700, color: status === 'DISMISSED' ? 'rgba(244,239,233,.4)' : 'var(--ink,#f4efe9)', marginBottom: 2 }}>{r.artistName}</div>
+                        <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)' }}>{r.requesterType}</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, color: '#ff3e9a', background: 'rgba(255,62,154,.1)', border: '1px solid rgba(255,62,154,.25)', padding: '3px 8px', borderRadius: 99 }}>{r.overlap} overlap</span>
-                      {status === 'accepted' && <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, color: '#22e5d4', background: 'rgba(34,229,212,.1)', border: '1px solid rgba(34,229,212,.25)', padding: '3px 8px', borderRadius: 99 }}>Accepted</span>}
-                      {status === 'declined' && <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', padding: '3px 8px' }}>Declined</span>}
+                      {status === 'BOOKED' && <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, color: '#22e5d4', background: 'rgba(34,229,212,.1)', border: '1px solid rgba(34,229,212,.25)', padding: '3px 8px', borderRadius: 99 }}>Accepted</span>}
+                      {status === 'DISMISSED' && <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', padding: '3px 8px' }}>Declined</span>}
                     </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 20, marginBottom: 12 }}>
-                    {[['EST. DRAW', r.draw.toString(), '#ffb84a'], ['DATE', r.date, 'var(--ink,#f4efe9)'], ['ASK', r.ask, '#22e5d4']].map(([label, val, color]) => (
-                      <div key={label}>
-                        <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.35)', marginBottom: 2, letterSpacing: '.08em' }}>{label}</div>
-                        <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 16, fontWeight: 700, color }}>{val}</div>
-                      </div>
-                    ))}
                   </div>
 
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -520,7 +520,7 @@ function BookingsPanel() {
                     >
                       {isExp ? 'Hide message' : 'View request'}
                     </button>
-                    {status === 'pending' && (
+                    {status === 'PENDING' && (
                       <>
                         <button onClick={() => decline(r.id)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, background: 'transparent', border: '1px solid rgba(255,80,41,.2)', color: '#ff5029' }}>Decline</button>
                         <button onClick={() => accept(r.id)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, cursor: 'pointer', fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, background: 'rgba(34,229,212,.12)', border: '1px solid rgba(34,229,212,.3)', color: '#22e5d4' }}>Accept</button>
@@ -532,7 +532,10 @@ function BookingsPanel() {
                 {isExp && (
                   <div style={{ padding: '0 18px 16px', borderTop: '1px solid rgba(255,255,255,.05)', paddingTop: 14, marginTop: 0 }}>
                     <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: 'rgba(244,239,233,.35)', marginBottom: 8, letterSpacing: '.06em', textTransform: 'uppercase' }}>Their message</div>
-                    <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.65)', lineHeight: 1.6, fontStyle: 'italic' }}>"{r.message}"</div>
+                    {r.note
+                      ? <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.65)', lineHeight: 1.6, fontStyle: 'italic' }}>"{r.note}"</div>
+                      : <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.3)' }}>No message provided</div>
+                    }
                   </div>
                 )}
               </div>
