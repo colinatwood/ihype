@@ -92,11 +92,11 @@ export function TabDashboardOps({
           </p>
           <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0', lineHeight: 1.6 }}>
             <li>
-              <strong>Neon:</strong>{' '}
-              <a href="https://console.neon.tech/" rel="noopener noreferrer" target="_blank">
-                console.neon.tech
+              <strong>Supabase:</strong>{' '}
+              <a href="https://supabase.com/dashboard" rel="noopener noreferrer" target="_blank">
+                supabase.com/dashboard
               </a>{' '}
-              — branch the production database for point-in-time snapshots.
+              — use the project&apos;s Database → Backups page for daily backups and point-in-time recovery.
             </li>
             <li>
               <strong>Cloudflare:</strong>{' '}

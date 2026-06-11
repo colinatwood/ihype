@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { renderSVG } from 'uqr';
 import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -19,16 +20,15 @@ export async function GET(
   }
 
   const target = `https://ihype.org/shows/${show.slug}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=512x512&margin=10&data=${encodeURIComponent(target)}`;
 
-  // Proxy the image so the response appears to come from ihype.org
-  const img = await fetch(qrUrl);
-  const body = await img.arrayBuffer();
+  // Generate the QR in-house (uqr runs on Cloudflare Workers with no native deps).
+  // SVG scales losslessly, so it replaces the previous 512x512 PNG download.
+  const svg = renderSVG(target, { ecc: 'M', border: 2 });
 
-  return new NextResponse(body, {
+  return new NextResponse(svg, {
     headers: {
-      'Content-Type': 'image/png',
-      'Content-Disposition': `attachment; filename="qr-${show.slug}.png"`,
+      'Content-Type': 'image/svg+xml',
+      'Content-Disposition': `attachment; filename="qr-${show.slug}.svg"`,
       'Cache-Control': 'public, s-maxage=86400',
     },
   });

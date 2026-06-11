@@ -93,7 +93,36 @@ commits that would be lost from each side and ask before proceeding.
 
 ### Build script
 
-The build runs migrations through `scripts/prisma-migrate-retry.mjs` before
-`prisma generate` and `next build`. The retry wrapper handles transient
-Postgres migration-lock contention, but a real migration failure must block the
-deployment so the app is not published against an incompatible schema.
+`npm run build` (and `cf:build`) does **not** run migrations. Migrations run in
+the **deploy workflow** (`.github/workflows/deploy-production.yml`), which calls
+`prisma migrate deploy` with a retry loop before the build step. The script
+`scripts/prisma-migrate-retry.mjs` is a standalone helper that can be invoked
+directly but is not wired into any npm build script. A migration failure blocks
+the deploy; the old grep-on-status approach (fail-open) must never be
+reintroduced.
+
+## Database & migrations
+
+- **Production database:** Supabase (Postgres 17, us-east-1). The old Neon
+  database is deprecated and pending decommission; do not reference or use it.
+- **GitHub Actions secrets:** `DATABASE_URL` and `DIRECT_URL` both hold the
+  Supabase **session pooler** string
+  (`aws-1-us-east-1.pooler.supabase.com:5432`, username `postgres.<ref>`)
+  because the Supabase direct host is IPv6-only and Actions runners lack IPv6.
+- **schema.prisma** reads `env("DIRECT_DATABASE_URL")` for the direct/migration
+  URL. The deploy workflow maps `secrets.DIRECT_URL` into that env var:
+  `DIRECT_DATABASE_URL: ${{ secrets.DIRECT_URL }}`.
+- **Baseline:** The DB was baselined on 2026-06-10. `_prisma_migrations` now
+  tracks all migrations. `prisma migrate deploy` is always safe to run.
+- **Runtime DB access (Workers):** `src/lib/db.ts` prefers the Cloudflare
+  Hyperdrive binding (`HYPERDRIVE`) and falls back to `DATABASE_URL` when
+  running outside Workers.
+- **Rate limiting:** `RateLimiterDO` Durable Object defined in `worker.js`
+  (binding `RATE_LIMITER_DO`); KV fallback for local dev.
+- **RLS:** Supabase Row Level Security is enabled deny-all on all public tables
+  as defense-in-depth. The app uses Prisma as table owner; PostgREST/Data API
+  is unused. New tables created outside Prisma migrations must have RLS enabled
+  explicitly.
+- **Search:** `pg_trgm` powers the trigram indexes used by `/api/search`.
+- **Email:** Non-transactional email must use `sendMarketingEmail`
+  (`src/lib/mailer.ts`) so unsubscribe footers and preferences are applied.
