@@ -96,6 +96,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       hypedToday, listeningNowCount, trendingProfiles,
       mediaUploads, hostedShows, headlinerShows, accountsPayableEntries,
       dbNotifications, weeklyListensCount, totalHypeGivenCount,
+      userBadges, dbCollabPosts,
     ] = await Promise.all([
       // Fetch user's ticket orders
       db.ticketOrder.findMany({
@@ -286,6 +287,18 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       }).catch(() => 0),
       // Total profile hypes this user has given
       db.profileHypeEvent.count({ where: { userId } }).catch(() => 0),
+      // Badges awarded to this user
+      db.badge.findMany({
+        where: { userId },
+        orderBy: { awardedAt: 'desc' },
+        select: { type: true, awardedAt: true },
+      }).catch(() => [] as { type: string; awardedAt: Date }[]),
+      // Collab board posts (recent 20)
+      db.collabBoardPost.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, type: true, role: true, body: true, contact: true, createdAt: true, userId: true },
+      }).catch(() => [] as { id: string; type: string; role: string; body: string; contact: string | null; createdAt: Date; userId: string }[]),
     ]);
 
     // Count songs played by this user
@@ -303,6 +316,23 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         }).catch(() => [] as { showId: string; _count: { showId: number } }[])
       : [] as { showId: string; _count: { showId: number } }[];
     const radioListenerMap = new Map(radioListenerRows.map(r => [r.showId, r._count.showId]));
+
+    const followerCount = profileIds.length > 0
+      ? await db.follow.count({ where: { followeeProfileId: { in: profileIds } } }).catch(() => 0)
+      : 0;
+
+    const venueProfileIds = user.profiles.filter(p => p.type === 'VENUE').map(p => p.id);
+    const venueRequests = venueProfileIds.length > 0
+      ? await db.venueConnectionRequest.findMany({
+          where: { venueProfileId: { in: venueProfileIds }, status: 'PENDING' },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          select: {
+            id: true, artistName: true, note: true, requesterType: true, createdAt: true, status: true,
+            artistProfile: { select: { slug: true } },
+          },
+        }).catch(() => [] as { id: string; artistName: string; note: string | null; requesterType: string; createdAt: Date; status: string; artistProfile: { slug: string } | null }[])
+      : [];
 
     // ── Shape the response ──────────────────────────────────────
 
@@ -486,7 +516,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       profilePath: primaryProfile ? getProfilePathForType(primaryProfile.type, primaryProfile.slug) : '',
       isVerified: primaryProfile?.isVerified ?? false,
       verificationRequested: primaryProfile?.verificationRequested ?? false,
-      pendingVenueRequestCount: 0,
+      pendingVenueRequestCount: venueRequests.length,
       profileCompletion: (() => {
         if (!primaryProfile) return { percent: 100, missing: [] };
         const checks: Array<{ label: string; ok: boolean }> = [
@@ -516,6 +546,26 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
         kind: (['hype', 'show', 'radio', 'payout', 'request', 'security'] as const).find(k => n.type.toLowerCase().includes(k)) ?? 'hype' as const,
         href: n.link ?? undefined,
         unread: !n.read,
+      })),
+      venueRequests: venueRequests.map(r => ({
+        id: r.id,
+        artistName: r.artistName,
+        note: r.note,
+        requesterType: r.requesterType,
+        createdAt: r.createdAt.toISOString(),
+        artistProfileSlug: r.artistProfile?.slug ?? null,
+        status: r.status as 'PENDING' | 'BOOKED' | 'DISMISSED',
+      })),
+      badges: userBadges.map(b => ({ type: b.type, awardedAt: b.awardedAt.toISOString() })),
+      followerCount,
+      collabPosts: dbCollabPosts.map(p => ({
+        id: p.id,
+        type: p.type,
+        role: p.role,
+        body: p.body,
+        contact: p.contact,
+        createdAt: p.createdAt.toISOString(),
+        isOwn: p.userId === userId,
       })),
       uploadStreak: uploadStreak ?? 0,
       needsGenreQuiz: needsGenreQuiz ?? false,
@@ -649,6 +699,9 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
       tickets: [],
       radioShows: [],
       notifications: [],
+      venueRequests: [],
+      badges: [],
+      collabPosts: [],
     };
   }
 }

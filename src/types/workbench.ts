@@ -100,6 +100,30 @@ export type WbRadioShow = {
   desc: string;
 };
 
+export type WbVenueRequest = {
+  id: string;
+  artistName: string;
+  note: string | null;
+  requesterType: string;
+  createdAt: string;
+  artistProfileSlug?: string | null;
+  status: 'PENDING' | 'BOOKED' | 'DISMISSED';
+};
+
+export type WbBadge = {
+  type: string;
+  awardedAt: string;
+};
+
+export type WbCollabPost = {
+  id: string;
+  type: string;
+  role: string;
+  body: string;
+  contact: string | null;
+  createdAt: string;
+  isOwn: boolean;
+};
 
 export type WbPageEditor = {
   profileId: string;
@@ -163,6 +187,10 @@ export type WorkbenchData = {
   pendingVenueRequestCount?: number;
   profileCompletion?: { percent: number; missing: string[]; checks?: Array<{ label: string; ok: boolean }> };
   notifications?: WbNotification[];
+  venueRequests?: WbVenueRequest[];
+  badges?: WbBadge[];
+  followerCount?: number;
+  collabPosts?: WbCollabPost[];
   referralStats?: { clicks: number; buyers: number; grossCents: number; payoutCents: number };
   listeningNow: number;
   hypedToday: number;
