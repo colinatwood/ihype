@@ -764,7 +764,7 @@ function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
 // ─── More screen ─────────────────────────────────────────────
 interface MoreProps { data: WorkbenchData; onStudio: () => void; onTour: () => void; onCollab: () => void; onPage: () => void; onNotif: () => void; onSettings: () => void; onJournal: () => void; onDiscover: () => void; }
 function MobileScreenMore({ data, onStudio, onTour, onCollab, onPage, onNotif, onSettings, onJournal, onDiscover }: MoreProps) {
-  const role = (data.profileType ?? data.role ?? '').toUpperCase();
+  const role = (data.profileType ?? '').toUpperCase();
   const isCreator = role === 'ARTIST' || role === 'DJ';
   const isVenue = role === 'VENUE';
   type Item = { label: string; sub: string; color: string; on: () => void; icon: React.ReactNode };
