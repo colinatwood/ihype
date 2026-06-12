@@ -7,6 +7,7 @@ import { DEFAULT_PREFS } from './types';
 import { IcLibrary, IcRadio, IcTicket, IcDisco, IcStudio, IcCheck } from './icons';
 import { Toggle } from './Toggle';
 import { Panel, TrackCard } from './primitives';
+import { logoutAction } from '@/app/logout/actions';
 
 // ─────────────────────────────────────────────────────────────
 // ViewLibrary
@@ -782,6 +783,24 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
       <div style={{ marginTop: 20, padding: '14px 18px', border: '1px dashed var(--line-2)', borderRadius: 8, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)', letterSpacing: '.02em' }}>
         This editor changes your public page, not your browsing experience. Use it to curate the layout, background, media, songs, top 5, links, shows, merch, ticketing, and venue info visitors see.
       </div>
+
+      <form action={logoutAction} style={{ marginTop: 20 }}>
+        <button
+          type="submit"
+          style={{
+            width: '100%', padding: '11px 16px', borderRadius: 8,
+            border: '1px solid rgba(255,68,68,.35)', background: 'rgba(255,68,68,.07)',
+            color: '#ff4444', fontFamily: 'var(--f-b)', fontWeight: 600, fontSize: 14,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            transition: 'background .15s, border-color .15s',
+          }}
+        >
+          <svg width={15} height={15} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h3M13 14l3-4-3-4M16 10H8"/>
+          </svg>
+          Sign out
+        </button>
+      </form>
     </div>
   );
 }

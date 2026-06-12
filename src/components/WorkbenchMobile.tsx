@@ -18,6 +18,7 @@ import { ViewTour } from '@/components/workbench/ViewTour';
 import { ViewNotifications } from '@/components/workbench/ViewNotifications';
 import { ViewSettings } from '@/components/workbench/ViewSettings';
 import ViewPageStudio from '@/components/workbench/ViewPageStudio';
+import { logoutAction } from '@/app/logout/actions';
 import { DEFAULT_PREFS, loadPrefs } from '@/components/workbench/types';
 
 // ─── Design tokens (match Workbench Mobile design) ───────────
@@ -486,7 +487,7 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   const navItems: { id: MobileTab; icon: string; label: string; badge?: string }[] = [
     { id: 'listen', icon: '🎵', label: 'Listen' },
     { id: 'seeds',  icon: '🌱', label: 'Seeds' },
-    { id: 'shows',  icon: '🎟️', label: 'Radio' },
+    { id: 'shows',  icon: '🎟️', label: 'Events' },
     { id: 'you',    icon: '👤', label: 'You' },
   ];
   const close = () => setMenuOpen(false);
@@ -778,6 +779,7 @@ function MobileScreenMore({ data, onStudio, onTour, onCollab, onPage, onNotif, o
     { label: 'Discover', sub: 'Artists & venues', color: T.teal, on: onDiscover, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><circle cx="10" cy="10" r="7"/><path d="M13 7l-2 3-3 1.5 2-3L13 7z" fill="currentColor" stroke="none"/></svg> },
     { label: 'Notifications', sub: 'Alerts & activity', color: T.blue, on: onNotif, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M5 8a5 5 0 0 1 10 0v3.5l1.5 2.5h-13L5 11.5V8Z"/><path d="M8.5 16.5a1.5 1.5 0 0 0 3 0" strokeLinecap="round"/></svg> },
     { label: 'Settings', sub: 'Account & preferences', color: T.ink2, on: onSettings, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4" strokeLinecap="round"/></svg> },
+    { label: 'Sign out', sub: 'End your session', color: '#ff4444', on: () => { void logoutAction(); }, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M7 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h3M13 14l3-4-3-4M16 10H8" strokeLinecap="round" strokeLinejoin="round"/></svg> },
   ];
   return (
     <div style={{ overflowY: 'auto', padding: '20px 16px', paddingBottom: 80 }}>
@@ -816,7 +818,7 @@ function WMBottomTabs({ tab, onTab }: { tab: MobileTab; onTab: (t: MobileTab) =>
       ? <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 21s-7-4.5-9.5-9.2C.8 8.2 3 4.5 6.5 4.5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 4.5 23.2 8.2 21.5 11.8 19 16.5 12 21 12 21z"/></svg>
       : <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M12 20s-6.5-4.2-9-8.5C1.4 8.4 3 5.5 6.2 5.5c2 0 3.2 1.2 4.8 3 1.6-1.8 2.8-3 4.8-3 3.2 0 4.8 2.9 3.2 6C18.5 15.8 12 20 12 20z" stroke={c} strokeWidth="1.7" strokeLinejoin="round"/></svg>
     },
-    { id: 'shows', label: 'Radio', icon: (s, c) => (
+    { id: 'shows', label: 'Events', icon: (s, c) => (
       <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
         <rect x="3" y="5" width="18" height="16" rx="2.5" stroke={c} strokeWidth="1.7"/>
         <path d="M3 10h18M8 3v4M16 3v4" stroke={c} strokeWidth="1.7" strokeLinecap="round"/>
