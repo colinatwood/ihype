@@ -19,7 +19,7 @@ export const TABS: { k: View; label: string }[] = [
   { k: 'seeds',       label: 'Seeds' },
   { k: 'radio',       label: 'Radio' },
   { k: 'studio',      label: 'Studio' },
-  { k: 'tickets',     label: 'Live Events' },
+  { k: 'tickets',     label: 'Ticketing' },
   { k: 'pagestudio',  label: 'Fan Page' },
 ];
 

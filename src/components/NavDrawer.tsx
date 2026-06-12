@@ -8,7 +8,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 const primaryLinks = [
   { href: '/home',     label: 'Home' },
   { href: '/discover', label: 'Seeds' },
-  { href: '/shows',    label: 'Shows' },
+  { href: '/shows',    label: 'Radio' },
   { href: '/settings', label: 'You' },
 ];
 

@@ -486,7 +486,7 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   const navItems: { id: MobileTab; icon: string; label: string; badge?: string }[] = [
     { id: 'listen', icon: '🎵', label: 'Listen' },
     { id: 'seeds',  icon: '🌱', label: 'Seeds' },
-    { id: 'shows',  icon: '🎟️', label: 'Shows' },
+    { id: 'shows',  icon: '🎟️', label: 'Radio' },
     { id: 'you',    icon: '👤', label: 'You' },
   ];
   const close = () => setMenuOpen(false);
@@ -816,7 +816,7 @@ function WMBottomTabs({ tab, onTab }: { tab: MobileTab; onTab: (t: MobileTab) =>
       ? <svg width={s} height={s} viewBox="0 0 24 24" fill={c}><path d="M12 21s-7-4.5-9.5-9.2C.8 8.2 3 4.5 6.5 4.5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 4.5 23.2 8.2 21.5 11.8 19 16.5 12 21 12 21z"/></svg>
       : <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M12 20s-6.5-4.2-9-8.5C1.4 8.4 3 5.5 6.2 5.5c2 0 3.2 1.2 4.8 3 1.6-1.8 2.8-3 4.8-3 3.2 0 4.8 2.9 3.2 6C18.5 15.8 12 20 12 20z" stroke={c} strokeWidth="1.7" strokeLinejoin="round"/></svg>
     },
-    { id: 'shows', label: 'Shows', icon: (s, c) => (
+    { id: 'shows', label: 'Radio', icon: (s, c) => (
       <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
         <rect x="3" y="5" width="18" height="16" rx="2.5" stroke={c} strokeWidth="1.7"/>
         <path d="M3 10h18M8 3v4M16 3v4" stroke={c} strokeWidth="1.7" strokeLinecap="round"/>
