@@ -37,4 +37,7 @@ crons = [
   "0 16 * * *",   # post-show-recap (morning-after recap for attendees)
   # NOTE: nearby-show-notify runs at "0 9 * * *" (already covered by daily 9am slot)
   # NOTE: rsvp-reminders runs at "0 * * * *" (already covered by hourly slot)
+  # NOTE: capacity-alerts runs at "0 * * * *" (already covered by hourly slot)
+  # NOTE: weekly-digest runs at "0 9 * * 1" (already covered by Monday 9am slot)
+  "0 9 1 * *",  # artist-earnings-summary (1st of month)
 ]
