@@ -8,64 +8,46 @@ import { postJson } from '@/lib/api-client';
 import { resolvePostAuthRedirect } from '@/lib/auth-redirects';
 import {
   AuthSignalShell,
-  MagicLinkButton,
   getErrorMessage,
   getPasskeyDiagnostics,
   trackSignupFunnel,
 } from '@/components/AuthShared';
-import type { AuthMethod } from '@/components/AuthShared';
-import { TurnstileWidget } from '@/components/TurnstileWidget';
+
+type LoginTab = 'passkey' | 'magic';
 
 export function LoginScreen({
   initialIdentifier = '',
-  justRegistered = false
+  justRegistered = false,
 }: {
   initialIdentifier?: string;
   justRegistered?: boolean;
 }) {
-  const [mode, setMode] = useState<AuthMethod>(justRegistered ? 'email' : 'passkey');
-  const [identifier, setIdentifier] = useState(initialIdentifier);
-  const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [challengeId, setChallengeId] = useState('');
-  const [deliveryEmail, setDeliveryEmail] = useState('');
-  const [emailStep, setEmailStep] = useState<'credentials' | 'code'>('credentials');
-  const [message] = useState(
-    justRegistered ? 'Account created. Sign in with your email code, then add a passkey from Settings when ready.' : ''
-  );
+  const [tab, setTab] = useState<LoginTab>('passkey');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tosAccepted, setTosAccepted] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
+
+  // Magic link state
+  const [mlEmail, setMlEmail] = useState(initialIdentifier);
+  const [mlSent, setMlSent] = useState(false);
 
   useEffect(() => {
-    // Passkey is the primary lane, but only when the browser supports WebAuthn.
-    if (typeof window.PublicKeyCredential === 'undefined') {
-      setMode('email');
-    }
+    if (typeof window.PublicKeyCredential === 'undefined') setTab('magic');
   }, []);
 
   async function signInWithPasskey() {
     setError('');
     setIsSubmitting(true);
     try {
-      const callbackUrl = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('callbackUrl') : null;
+      const callbackUrl = new URLSearchParams(window.location.search).get('callbackUrl');
       const query = callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : '';
-      const optRes = await fetch(`/api/auth/passkey/auth${query}`);
-      if (!optRes.ok) {
-        const errBody = await optRes.json().catch(() => ({}));
-        throw new Error(typeof errBody.error === 'string' ? errBody.error : 'Could not start passkey sign-in.');
-      }
-      const options = await optRes.json();
-      if (!optRes.ok) {
-        throw new Error(typeof options.error === 'string' ? options.error : 'Unable to start passkey sign-in.');
-      }
+      const options = await fetch(`/api/auth/passkey/auth${query}`).then(r => r.json());
+      if (options.error) throw new Error(options.error);
       const assertion = await startAuthentication({ optionsJSON: options });
       const payload = await postJson<{ redirect?: string }>('/api/auth/passkey/auth', assertion);
       trackSignupFunnel('login_passkey_success', { method: 'passkey', step: 'login', ...getPasskeyDiagnostics() });
       window.location.href = resolvePostAuthRedirect(payload.redirect);
     } catch (err) {
-      const reason = getErrorMessage(err, 'Passkey sign-in failed. Please try again or use email code.');
+      const reason = getErrorMessage(err, 'Passkey sign-in failed. Try again or use magic link.');
       trackSignupFunnel('login_passkey_failed', { method: 'passkey', step: 'login', reason, ...getPasskeyDiagnostics(err) });
       setError(reason);
     } finally {
@@ -73,42 +55,16 @@ export function LoginScreen({
     }
   }
 
-  async function requestEmailCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function sendMagicLink(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setError('');
     setIsSubmitting(true);
     try {
-      const payload = await postJson<{ challengeId: string; email?: string | null }>('/api/auth/otp/request', {
-        identifier,
-        password,
-        tosAccepted: tosAccepted || undefined,
-        turnstileToken: turnstileToken || undefined,
-      });
-      setChallengeId(payload.challengeId);
-      setDeliveryEmail(payload.email || identifier);
-      setEmailStep('code');
-      trackSignupFunnel('login_email_code_requested', { method: 'email', step: 'login' });
+      await postJson('/api/auth/magic-link', { email: mlEmail });
+      setMlSent(true);
+      trackSignupFunnel('login_magic_link_sent', { method: 'email', step: 'login' });
     } catch (err) {
-      const reason = getErrorMessage(err, 'Could not send a sign-in code.');
-      trackSignupFunnel('login_email_code_failed', { method: 'email', step: 'login', reason });
-      setError(reason);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function verifyEmailCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-    try {
-      const payload = await postJson<{ redirect?: string }>('/api/auth/otp/signin', { challengeId, otp });
-      trackSignupFunnel('login_email_code_success', { method: 'email', step: 'login' });
-      window.location.href = resolvePostAuthRedirect(payload.redirect);
-    } catch (err) {
-      const reason = getErrorMessage(err, 'Could not verify that code.');
-      trackSignupFunnel('login_email_code_verify_failed', { method: 'email', step: 'login', reason });
-      setError(reason);
+      setError(getErrorMessage(err, 'Could not send link. Try again.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -116,147 +72,85 @@ export function LoginScreen({
 
   return (
     <AuthSignalShell
-      badge={mode === 'passkey' ? 'Passkey sign-in' : 'Email code sign-in'}
+      badge={tab === 'passkey' ? 'Passkey sign-in' : 'Magic link sign-in'}
       cardSubtitle={
-        mode === 'passkey'
-          ? 'Use Face ID, Touch ID, or your device PIN. Email code stays available as a fallback.'
-          : 'Enter your email or username, confirm your password, then use the one-time email code.'
+        tab === 'passkey'
+          ? 'Use Face ID, Touch ID, or your device PIN.'
+          : 'Enter your email and we\'ll send a one-tap sign-in link.'
       }
       cardTitle="Sign in to iHYPE"
-      description="Fast sign-in when passkeys are available, with an email-code lane when the browser or device prompt gets in the way."
+      description="Fast sign-in with passkeys, or a magic link sent to your inbox."
       eyebrow="Secure sign-in"
       highlight="Your lane."
       signals={[
         { label: 'Primary', value: 'Passkey', detail: 'Device biometrics' },
-        { label: 'Fallback', value: 'Email code', detail: 'No stranded account' },
-        { label: 'Session', value: '12 hours', detail: 'Short-lived auth' }
+        { label: 'Fallback', value: 'Magic link', detail: 'One tap from inbox' },
+        { label: 'Session', value: '12 hours', detail: 'Short-lived auth' },
       ]}
       title="Sign in."
     >
+      {justRegistered && (
+        <p className="status-note">Account created — check your inbox for your sign-in link, then add a passkey from Settings.</p>
+      )}
+
       <div className="auth-method-grid" role="tablist" aria-label="Sign-in method">
         <button
-          aria-selected={mode === 'passkey'}
-          className={mode === 'passkey' ? 'auth-method-choice active' : 'auth-method-choice'}
-          onClick={() => {
-            setMode('passkey');
-            setError('');
-          }}
+          aria-selected={tab === 'passkey'}
+          className={tab === 'passkey' ? 'auth-method-choice active' : 'auth-method-choice'}
+          onClick={() => { setTab('passkey'); setError(''); }}
           type="button"
         >
           <strong>Passkey</strong>
           <span>Face ID, Touch ID, or device PIN.</span>
         </button>
         <button
-          aria-selected={mode === 'email'}
-          className={mode === 'email' ? 'auth-method-choice active' : 'auth-method-choice'}
-          onClick={() => {
-            setMode('email');
-            setError('');
-          }}
+          aria-selected={tab === 'magic'}
+          className={tab === 'magic' ? 'auth-method-choice active' : 'auth-method-choice'}
+          onClick={() => { setTab('magic'); setError(''); }}
           type="button"
         >
-          <strong>Email code</strong>
-          <span>Password plus one-time inbox code.</span>
+          <strong>Magic link</strong>
+          <span>One-tap link sent to your inbox.</span>
         </button>
       </div>
 
-      {mode === 'passkey' ? (
+      {tab === 'passkey' ? (
         <>
-          <button
-            className="button"
-            disabled={isSubmitting}
-            onClick={signInWithPasskey}
-            type="button"
-          >
-            {isSubmitting ? 'Checking passkey...' : 'Sign in with passkey'}
+          <button className="button" disabled={isSubmitting} onClick={signInWithPasskey} type="button">
+            {isSubmitting ? 'Checking passkey…' : 'Sign in with passkey'}
           </button>
-          {error ? (
-            <button
-              className="button secondary"
-              onClick={() => { setMode('email'); setError(''); }}
-              type="button"
-              style={{ marginTop: 8 }}
-            >
-              Use email instead
+          {error && (
+            <button className="button secondary" onClick={() => { setTab('magic'); setError(''); }} type="button" style={{ marginTop: 8 }}>
+              Use magic link instead
             </button>
-          ) : null}
+          )}
         </>
-      ) : emailStep === 'credentials' ? (
-        <form className="form" onSubmit={requestEmailCode}>
-          <label className="field">
-            <span>Email or username</span>
-            <input
-              autoComplete="username"
-              onChange={(event) => setIdentifier(event.target.value)}
-              required
-              type="text"
-              value={identifier}
-            />
-          </label>
-          <label className="field">
-            <span>Password <small style={{ opacity: 0.6 }}>(leave blank if you signed up with passkey)</small></span>
-            <input
-              autoComplete="current-password"
-              onChange={(event) => setPassword(event.target.value)}
-              type="password"
-              value={password}
-            />
-          </label>
-          <label className="field" style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, fontSize: 13 }}>
-            <input
-              checked={tosAccepted}
-              onChange={e => setTosAccepted(e.target.checked)}
-              type="checkbox"
-              style={{ marginTop: 2, flexShrink: 0 }}
-            />
-            <span>I agree to the <a href="/terms" style={{ color: 'inherit' }}>Terms of Service</a> and confirm I am 13 or older</span>
-          </label>
-          <TurnstileWidget
-            onToken={setTurnstileToken}
-            onExpire={() => setTurnstileToken('')}
-          />
-          <button className="button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? 'Sending code...' : 'Send email code'}
-          </button>
-        </form>
+      ) : mlSent ? (
+        <p className="status-note">Check your inbox for a sign-in link (expires in 15 min). You can close this tab.</p>
       ) : (
-        <form className="form" onSubmit={verifyEmailCode}>
-          <p className="status-note">Enter the 6-digit code sent to {deliveryEmail}.</p>
+        <form className="form" onSubmit={sendMagicLink}>
           <label className="field">
-            <span>6-digit code</span>
+            <span>Email</span>
             <input
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              maxLength={6}
-              onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              pattern="[0-9]{6}"
+              autoComplete="email"
+              inputMode="email"
+              onChange={(e: { target: HTMLInputElement }) => setMlEmail(e.target.value)}
               required
-              type="text"
-              value={otp}
+              type="email"
+              value={mlEmail}
             />
           </label>
-          <div className="auth-code-actions">
-            <button className="button" disabled={isSubmitting} type="submit">
-              {isSubmitting ? 'Verifying...' : 'Verify code'}
-            </button>
-            <button className="text-link" onClick={() => setEmailStep('credentials')} type="button">
-              Change email
-            </button>
-          </div>
+          <button className="button" disabled={isSubmitting} type="submit">
+            {isSubmitting ? 'Sending…' : 'Send sign-in link'}
+          </button>
         </form>
       )}
 
-      {message ? <p className="status-note">{message}</p> : null}
-      {error ? <p className="status-note status-note-error">{error}</p> : null}
+      {error && <p className="status-note status-note-error">{error}</p>}
 
       <div className="auth-route-links">
-        <Link className="text-link" href="/register">
-          Join free
-        </Link>
-        <Link className="text-link" href="/forgot">
-          Reset password
-        </Link>
-        <MagicLinkButton />
+        <Link className="text-link" href="/register">Join free</Link>
+        <Link className="text-link" href="/forgot">Reset password</Link>
       </div>
     </AuthSignalShell>
   );
