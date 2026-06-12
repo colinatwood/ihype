@@ -481,7 +481,7 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   const [searchVal, setSearchVal] = React.useState('');
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const titles: Record<MobileTab, string> = {
-    listen: 'listen', seeds: 'seeds', shows: 'shows', you: 'you',
+    listen: 'listen', seeds: 'seeds', shows: 'shows', you: 'you', more: 'more',
   };
   const navItems: { id: MobileTab; icon: string; label: string; badge?: string }[] = [
     { id: 'listen', icon: '🎵', label: 'Listen' },
@@ -764,7 +764,7 @@ function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
 // ─── More screen ─────────────────────────────────────────────
 interface MoreProps { data: WorkbenchData; onStudio: () => void; onTour: () => void; onCollab: () => void; onPage: () => void; onNotif: () => void; onSettings: () => void; onJournal: () => void; onDiscover: () => void; }
 function MobileScreenMore({ data, onStudio, onTour, onCollab, onPage, onNotif, onSettings, onJournal, onDiscover }: MoreProps) {
-  const role = data.userType ?? 'FAN';
+  const role = (data.profileType ?? data.role ?? '').toUpperCase();
   const isCreator = role === 'ARTIST' || role === 'DJ';
   const isVenue = role === 'VENUE';
   type Item = { label: string; sub: string; color: string; on: () => void; icon: React.ReactNode };
