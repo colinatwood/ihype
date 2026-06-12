@@ -36,8 +36,8 @@ function getActiveSection(section: string | string[] | undefined): PromoterSecti
 }
 
 function getSectionLabel(section: PromoterSection) {
-  if (section === 'shows') return 'Shows';
-  if (section === 'events') return 'Events';
+  if (section === 'shows') return 'Radio';
+  if (section === 'events') return 'Ticketing';
   return section.charAt(0).toUpperCase() + section.slice(1);
 }
 

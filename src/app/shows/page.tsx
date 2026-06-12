@@ -2,10 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { EmptyState } from '@/components/EmptyState';
 export const metadata: Metadata = {
-  title: 'Shows',
+  title: 'Radio',
   description: 'Upcoming and archived independent music shows. Browse by city, artist, or genre on iHYPE.',
-  openGraph: { title: 'Shows · iHYPE', description: 'Upcoming and archived independent music shows.' },
-  twitter: { card: 'summary_large_image', title: 'Shows · iHYPE', description: 'Upcoming and archived independent music shows.' },
+  openGraph: { title: 'Radio · iHYPE', description: 'Upcoming and archived independent music shows.' },
+  twitter: { card: 'summary_large_image', title: 'Radio · iHYPE', description: 'Upcoming and archived independent music shows.' },
 };
 import { ShowCard } from '@/components/ShowCard';
 import { getShowsDirectoryData } from '@/lib/public-data';
