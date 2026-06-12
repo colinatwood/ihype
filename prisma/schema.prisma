@@ -142,6 +142,8 @@ model User {
   tosAcceptedAt           DateTime?
   welcomeDay3SentAt       DateTime?
   welcomeDay7SentAt       DateTime?
+  weeklyDigestSentAt      DateTime?
+  earningsSummarySentAt   DateTime?
 }
 
 model Profile {
@@ -452,6 +454,7 @@ model Show {
   promoCodes             PromoCode[]
   moderationStatus       String    @default("APPROVED")
   featured               Boolean   @default(false)
+  capacityAlertSentAt    DateTime?
   dmcaDeadline           DateTime?
   dmcaStatus             String?
 

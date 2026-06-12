@@ -93,6 +93,17 @@ export async function GET(request: NextRequest) {
           },
         });
 
+    // Hype count per track
+    const mediaIds = media.map(m => m.id);
+    const hypeCounts = mediaIds.length > 0
+      ? await db.seed.groupBy({
+          by: ['mediaId'],
+          where: { mediaId: { in: mediaIds }, action: 'hype' },
+          _count: { mediaId: true },
+        }).catch(() => [] as { mediaId: string; _count: { mediaId: number } }[])
+      : [];
+    const hypeCountMap = new Map(hypeCounts.map(h => [h.mediaId, h._count.mediaId]));
+
     return NextResponse.json({
       seeds: media.map(m => ({
         id: m.id,
@@ -100,6 +111,7 @@ export async function GET(request: NextRequest) {
         title: m.title,
         artistName: m.profile?.name ?? 'Unknown Artist',
         genres: m.profile?.genres ?? [],
+        hypeCount: hypeCountMap.get(m.id) ?? 0,
         reason: genres.length
           ? `Matches ${genres.join(', ')}`
           : cfMedia.length
