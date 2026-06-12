@@ -1,92 +1,13 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkbenchData, WbVenueRequest } from '@/types/workbench';
 import ViewPageStudio from './ViewPageStudio';
-import { sanitizeChatHtml } from '@/lib/sanitize-html';
 
 /* ── types ───────────────────────────────────────────────── */
 type VenueMode = 'overview' | 'shows' | 'bookings' | 'page' | 'gallery';
-type Device = 'desktop' | 'mobile';
-
-interface PageVars {
-  '--p-bg': string; '--p-surface': string; '--p-ink': string; '--p-ink2': string;
-  '--p-accent': string; '--p-accent2': string; '--p-line': string;
-  '--p-display': string; '--p-radius': string; '--p-hero-url': string;
-}
-const DEFAULT_VARS: PageVars = {
-  '--p-bg': '#080d0a', '--p-surface': '#101a13', '--p-ink': '#e8f4ec',
-  '--p-ink2': '#7a9c84', '--p-accent': '#22e5d4', '--p-accent2': '#5fd38a',
-  '--p-line': 'rgba(255,255,255,.07)', '--p-display': '"Syne",sans-serif', '--p-radius': '12px',
-  '--p-hero-url': '',
-};
-
-interface Msg { side: 'me' | 'ai'; html: string; }
-
-/* ── data constants ──────────────────────────────────────── */
-const ARTIST_REQUESTS = [
-  { id: 'ar1', name: 'Jordan Nore', genre: 'Alt-R&B', city: 'Chicago, IL', draw: 280, date: 'Jun 28', ask: '$1,200', overlap: '74%', message: "Hi! I'd love to play the room on Jun 28. I've got a solid draw in the neighborhood and my last 3 shows averaged 280 heads. Happy to do door deal or flat fee." },
-  { id: 'ar2', name: 'Mau Lwin', genre: 'Bedroom Pop', city: 'Chicago, IL', draw: 180, date: 'Jul 12', ask: '$800', overlap: '68%', message: "Hey, big fan of your space. Looking for a July date — my audience skews 21–28, drinks well. I can bring my own PA if needed." },
-  { id: 'ar3', name: 'The Veldt Kids', genre: 'Post-Punk', city: 'Milwaukee, WI', draw: 220, date: 'Jul 26', ask: '$1,100', overlap: '61%', message: "We're coming down from Milwaukee for a run. Your venue is exactly the vibe we want — love to do Jul 26 if you have it open." },
-  { id: 'ar4', name: 'Night Transit', genre: 'Shoegaze', city: 'Indianapolis, IN', draw: 150, date: 'Aug 9', ask: '$700', overlap: '48%', message: "Expanding our touring radius — would love to add your room to an August run. Flexible on date and deal structure." },
-];
-
-const ACTIVITY = [
-  { text: 'Jordan Nore sent a booking request', time: '1h ago', color: '#ff3e9a' },
-  { text: '38 new followers from Brooklyn this week', time: '6h ago', color: '#22e5d4' },
-  { text: 'Your HYPE count crossed 600 this month', time: '1d ago', color: '#ff5029' },
-  { text: "Mau Lwin's fans are listening in your area", time: '2d ago', color: '#b983ff' },
-  { text: 'Page view spike: +240% on Saturday', time: '3d ago', color: '#ffb84a' },
-];
-
-/* ── AI command interpreter ──────────────────────────────── */
-function applyVenueCommand(text: string, vars: PageVars): { reply: string; applied: string[]; newVars: PageVars } {
-  const t = text.toLowerCase();
-  const v = { ...vars };
-  const applied: string[] = [];
-  const set = (k: keyof PageVars, val: string) => { v[k] = val; };
-
-  const scenes: Record<string, Partial<PageVars>> = {
-    'jazz':      { '--p-bg': '#060810', '--p-surface': '#0e1220', '--p-accent': '#b983ff', '--p-accent2': '#ff3e9a', '--p-display': '"Instrument Serif",serif' },
-    'warehouse': { '--p-bg': '#060606', '--p-surface': '#101010', '--p-accent': '#ff5029', '--p-accent2': '#ffb84a', '--p-radius': '3px' },
-    'dive':      { '--p-bg': '#0c0805', '--p-surface': '#1a110a', '--p-accent': '#ff5029', '--p-accent2': '#ffb84a', '--p-radius': '4px' },
-    'rooftop':   { '--p-bg': '#f5f0ea', '--p-surface': '#ede5d4', '--p-ink': '#1a1612', '--p-ink2': '#6b6056', '--p-accent': '#22e5d4', '--p-line': 'rgba(0,0,0,.1)', '--p-display': '"Instrument Serif",serif' },
-    'lounge':    { '--p-bg': '#080d0a', '--p-surface': '#101a13', '--p-accent': '#22e5d4', '--p-accent2': '#5fd38a' },
-    'teal':      { '--p-accent': '#22e5d4' },
-    'industrial':{ '--p-bg': '#050507', '--p-surface': '#0d0d12', '--p-accent': '#7fb3ff', '--p-accent2': '#ff5029', '--p-radius': '3px' },
-  };
-
-  for (const [key, theme] of Object.entries(scenes)) {
-    if (t.includes(key)) {
-      Object.entries(theme).forEach(([k, val]) => { v[k as keyof PageVars] = val; });
-      applied.push(`Scene → ${key}`);
-      break;
-    }
-  }
-
-  if (/\bdark|moody|midnight/.test(t))   { set('--p-bg', '#040404'); set('--p-surface', '#0a0a0a'); applied.push('Mood → dark'); }
-  if (/\blight|bright|airy/.test(t))     { set('--p-bg', '#f6f0e6'); set('--p-surface', '#ede5d6'); set('--p-ink', '#1a1612'); set('--p-ink2', '#6b6056'); set('--p-line', 'rgba(0,0,0,.1)'); applied.push('Mood → light'); }
-  if (/\bserif|elegant/.test(t))         { set('--p-display', '"Instrument Serif",serif'); applied.push('Headline → serif'); }
-  if (/\bsans|modern|clean/.test(t))     { set('--p-display', '"Syne",sans-serif'); applied.push('Headline → Syne'); }
-  if (/\bround|soft/.test(t))            { set('--p-radius', '22px'); applied.push('Corners → rounded'); }
-  if (/\bsharp|square/.test(t))          { set('--p-radius', '3px'); applied.push('Corners → sharp'); }
-
-  const colors: Record<string, string> = { purple: '#b983ff', teal: '#22e5d4', pink: '#ff3e9a', orange: '#ff5029', amber: '#ffb84a', green: '#5fd38a', blue: '#7fb3ff' };
-  for (const c in colors) {
-    if (new RegExp('\\b' + c + '\\b').test(t)) { set('--p-accent', colors[c]); applied.push('Accent → ' + c); break; }
-  }
-
-  const reply = applied.length
-    ? 'Done — ' + (applied.length > 1 ? applied.length + ' changes applied.' : "that's live on your venue page.")
-    : 'Try "intimate jazz club", "warehouse rave", "teal & dark", "rooftop lounge", or "industrial vibe".';
-  return { reply, applied, newVars: v };
-}
 
 /* ── helpers ─────────────────────────────────────────────── */
-function esc(s: string) {
-  return s.replace(/[&<>"]/g, (c: string) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] ?? c));
-}
-
 const INPUT_STYLE: React.CSSProperties = {
   padding: '9px 12px', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)',
   borderRadius: 8, color: 'var(--ink,#f4efe9)', fontFamily: 'var(--f-b,sans-serif)',
@@ -106,15 +27,6 @@ function RailBtn({ active, onClick, icon, label }: { active: boolean; onClick: (
       <span style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
       <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>{label}</span>
     </button>
-  );
-}
-
-/* ── Typing dot ──────────────────────────────────────────── */
-function TypingDot({ delay }: { delay: number }) {
-  return (
-    <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(244,239,233,.4)', animation: `bounce 1.2s ${delay}ms ease-in-out infinite` }}>
-      <style>{`@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}`}</style>
-    </div>
   );
 }
 
@@ -434,14 +346,11 @@ function ShowsPanel({ venueName }: { venueName: string }) {
 }
 
 /* ── Bookings ────────────────────────────────────────────── */
-
 function BookingsPanel({ data }: { data: WorkbenchData }) {
   const [requests, setRequests] = useState<WbVenueRequest[]>(data.venueRequests ?? []);
-  const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [inquiryForm, setInquiryForm] = useState({ artist: '', date: '', offer: '', message: '' });
   const [sent, setSent] = useState(false);
-  void loading;
 
   async function accept(id: string) {
     await fetch(`/api/venue-requests/${id}`, {
@@ -552,171 +461,6 @@ function BookingsPanel({ data }: { data: WorkbenchData }) {
             </div>
           )}
         </form>
-      </div>
-    </div>
-  );
-}
-
-/* ── Page + AI ───────────────────────────────────────────── */
-function PageAIPanel({ venueName, initials }: { venueName: string; initials: string }) {
-  const [device, setDevice] = useState<Device>('desktop');
-  const [editOn, setEditOn] = useState(true);
-  const [pageVars, setPageVars] = useState<PageVars>(DEFAULT_VARS);
-  const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [typing, setTyping] = useState(false);
-  const [input, setInput] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
-  const threadRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  useEffect(() => {
-    if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
-  }, [msgs, typing]);
-
-  const send = useCallback(async (text: string) => {
-    text = text.trim();
-    if (!text) return;
-    setMsgs(m => [...m, { side: 'me', html: esc(text) }]);
-    setInput('');
-    setTyping(true);
-    const res = applyVenueCommand(text, pageVars);
-    await new Promise(r => setTimeout(r, 900));
-    setPageVars(res.newVars);
-    setTyping(false);
-    const chip = res.applied.length
-      ? '<div style="margin-top:8px;padding:6px 10px;border-radius:6px;background:rgba(34,229,212,.08);border:1px solid rgba(34,229,212,.18);font-size:11px;color:#22e5d4;font-weight:700">✓ ' + res.applied.join(' · ') + '</div>'
-      : '';
-    setMsgs(m => [...m, { side: 'ai', html: esc(res.reply) + chip }]);
-  }, [pageVars]);
-
-  return (
-    <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px' }}>
-      {/* Preview */}
-      <div style={{ position: 'relative', overflow: 'hidden', background: '#1a1612' }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 46, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', background: 'rgba(14,11,9,.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
-          <div style={{ display: 'flex', gap: 4 }}>
-            {(['desktop', 'mobile'] as Device[]).map(d => (
-              <button key={d} onClick={() => setDevice(d)} style={{ padding: '5px 11px', borderRadius: 6, border: 'none', cursor: 'pointer', fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', background: device === d ? 'rgba(34,229,212,.15)' : 'transparent', color: device === d ? '#22e5d4' : 'rgba(244,239,233,.4)' }}>
-                {d === 'desktop' ? '⊞ Desktop' : '▭ Mobile'}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setEditOn(e => !e)} style={{ padding: '5px 12px', borderRadius: 6, border: '1px solid', borderColor: editOn ? 'rgba(34,229,212,.35)' : 'rgba(255,255,255,.1)', background: editOn ? 'rgba(34,229,212,.12)' : 'transparent', color: editOn ? '#22e5d4' : 'rgba(244,239,233,.45)', fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', cursor: 'pointer' }}>
-            {editOn ? '✎ Editing' : '✎ Edit'}
-          </button>
-        </div>
-        <div style={{ position: 'absolute', inset: '46px 0 0', overflow: 'auto', display: 'flex', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ width: device === 'mobile' ? 390 : '100%', maxWidth: device === 'mobile' ? 390 : 800, background: pageVars['--p-bg'], borderRadius: device === 'mobile' ? 32 : 0, overflow: 'hidden', minHeight: '100%', transition: 'all .4s cubic-bezier(.25,.8,.25,1)' }}>
-            <VenuePublicPage venueName={venueName} initials={initials} vars={pageVars} editOn={editOn} />
-          </div>
-        </div>
-      </div>
-
-      {/* AI dock */}
-      <div style={{ display: isMobile ? 'none' : 'flex', flexDirection: 'column', background: 'var(--bg-2,#121009)', borderLeft: '1px solid var(--line-2,rgba(255,255,255,.07))' }}>
-        <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line-2,rgba(255,255,255,.07))' }}>
-          <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: 'var(--ink,#f4efe9)' }}>✦ AI Editor</div>
-          <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)', marginTop: 2 }}>Describe the vibe — changes apply live</div>
-        </div>
-        {msgs.length === 0 && (
-          <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--line-2,rgba(255,255,255,.07))' }}>
-            <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(244,239,233,.3)', marginBottom: 8 }}>Try these</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {['Intimate jazz club', 'Warehouse rave', 'Teal & dark', 'Industrial vibe', 'Serif & elegant', 'Rooftop lounge'].map(s => (
-                <button key={s} onClick={() => send(s)} style={{ padding: '5px 10px', borderRadius: 20, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(255,255,255,.04)', color: 'rgba(244,239,233,.6)', fontFamily: 'var(--f-m,monospace)', fontSize: 10, cursor: 'pointer' }}>
-                  &quot;{s}&quot;
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        <div ref={threadRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {msgs.map((m, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, flexDirection: m.side === 'me' ? 'row-reverse' : 'row' }}>
-              <div style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: m.side === 'ai' ? 'rgba(34,229,212,.15)' : 'rgba(255,255,255,.08)', fontFamily: 'var(--f-m,monospace)', fontSize: 10, fontWeight: 800, color: m.side === 'ai' ? '#22e5d4' : 'rgba(244,239,233,.6)' }}>
-                {m.side === 'ai' ? '✦' : initials.slice(0, 2)}
-              </div>
-              <div style={{ maxWidth: '80%', padding: '8px 11px', borderRadius: m.side === 'ai' ? '4px 12px 12px 12px' : '12px 4px 12px 12px', background: m.side === 'ai' ? 'rgba(255,255,255,.05)' : 'rgba(34,229,212,.1)', border: `1px solid ${m.side === 'ai' ? 'rgba(255,255,255,.07)' : 'rgba(34,229,212,.2)'}`, fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, lineHeight: 1.5, color: 'var(--ink,#f4efe9)' }} dangerouslySetInnerHTML={{ __html: sanitizeChatHtml(m.html) }} />
-            </div>
-          ))}
-          {typing && (
-            <div style={{ display: 'flex', gap: 8 }}>
-              <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(34,229,212,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: '#22e5d4' }}>✦</div>
-              <div style={{ padding: '10px 14px', borderRadius: '4px 12px 12px 12px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', gap: 4, alignItems: 'center' }}>
-                {[0, 1, 2].map(i => <TypingDot key={i} delay={i * 160} />)}
-              </div>
-            </div>
-          )}
-        </div>
-        <div style={{ padding: '10px 12px', borderTop: '1px solid var(--line-2,rgba(255,255,255,.07))' }}>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-            <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }} placeholder="Describe a change…" rows={1} style={{ flex: 1, resize: 'none', border: '1px solid rgba(255,255,255,.1)', borderRadius: 10, padding: '9px 12px', background: 'rgba(255,255,255,.05)', color: 'var(--ink,#f4efe9)', fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, lineHeight: 1.5, outline: 'none', maxHeight: 120, overflow: 'auto' }} />
-            <button onClick={() => send(input)} style={{ width: 36, height: 36, borderRadius: 10, border: 'none', cursor: 'pointer', background: input.trim() ? '#22e5d4' : 'rgba(34,229,212,.2)', color: '#0a0805', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background .15s', flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" strokeLinejoin="round" strokeLinecap="round" /></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Venue public page preview ───────────────────────────── */
-function VenuePublicPage({ venueName, initials, vars, editOn }: { venueName: string; initials: string; vars: PageVars; editOn: boolean }) {
-  const s = vars;
-  const hasHero = !!s['--p-hero-url'];
-  return (
-    <div style={{ background: s['--p-bg'], color: s['--p-ink'], minHeight: '100%', fontFamily: 'system-ui,sans-serif' }}>
-      {/* hero */}
-      <div style={{ padding: '48px 36px 32px', borderBottom: `1px solid ${s['--p-line']}`, position: 'relative', overflow: 'hidden', ...(hasHero ? { backgroundImage: s['--p-hero-url'], backgroundSize: 'cover', backgroundPosition: 'center' } : {}) }}>
-        {hasHero && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgba(0,0,0,.45) 0%, ${s['--p-bg']}ee 90%)`, zIndex: 0 }} />}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
-          <div style={{ width: 72, height: 72, borderRadius: s['--p-radius'], background: `linear-gradient(135deg,${s['--p-accent']},${s['--p-accent2']})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: s['--p-display'], fontSize: 24, fontWeight: 800, color: '#0a0805', flexShrink: 0 }}>{initials}</div>
-          <div>
-            <div style={{ fontFamily: s['--p-display'], fontSize: 28, fontWeight: 800, color: hasHero ? '#fff' : s['--p-ink'], lineHeight: 1.1 }} contentEditable={editOn} suppressContentEditableWarning>{venueName}</div>
-            <div style={{ fontFamily: 'system-ui', fontSize: 14, color: hasHero ? 'rgba(255,255,255,.65)' : s['--p-ink2'], marginTop: 4 }}>Live Music Venue · Chicago, IL · Cap. 250</div>
-          </div>
-        </div>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: 'system-ui', fontSize: 15, color: hasHero ? 'rgba(255,255,255,.8)' : s['--p-ink2'], lineHeight: 1.6, maxWidth: 520 }} contentEditable={editOn} suppressContentEditableWarning>
-            Independent music venue in the heart of Chicago. All-ages. Full bar. All genres welcome — curated for the city&apos;s underground scene.
-          </div>
-          <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
-            <button style={{ padding: '10px 22px', borderRadius: s['--p-radius'], border: 'none', background: s['--p-accent'], color: '#0a0805', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Follow</button>
-            <button style={{ padding: '10px 22px', borderRadius: s['--p-radius'], border: `1px solid ${s['--p-accent']}`, background: 'transparent', color: s['--p-accent'], fontSize: 14, cursor: 'pointer' }}>Book an event</button>
-          </div>
-        </div>
-      </div>
-      {/* upcoming shows */}
-      <div style={{ padding: '28px 36px', borderBottom: `1px solid ${s['--p-line']}` }}>
-        <div style={{ fontFamily: s['--p-display'], fontSize: 20, fontWeight: 800, color: s['--p-ink'], marginBottom: 16 }}>Upcoming Shows</div>
-        {[{ date: 'Jun 15', name: 'Jordan Nore', note: 'Alt-R&B · doors 8pm · $15' }, { date: 'Jun 22', name: 'The Veldt Kids', note: 'Post-Punk · doors 9pm · $18' }, { date: 'Jun 28', name: 'Night Transit', note: 'Shoegaze · doors 8pm · $12' }].map(show => (
-          <div key={show.date} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: `1px solid ${s['--p-line']}` }}>
-            <div style={{ width: 44, fontFamily: 'system-ui', fontSize: 13, fontWeight: 700, color: s['--p-accent'] }}>{show.date}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: 'system-ui', fontSize: 14, fontWeight: 600, color: s['--p-ink'] }}>{show.name}</div>
-              <div style={{ fontFamily: 'system-ui', fontSize: 12, color: s['--p-ink2'] }}>{show.note}</div>
-            </div>
-            <button style={{ padding: '7px 16px', borderRadius: s['--p-radius'], border: `1px solid ${s['--p-accent']}`, background: 'transparent', color: s['--p-accent'], fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Tickets</button>
-          </div>
-        ))}
-      </div>
-      {/* booking inquiry */}
-      <div style={{ padding: '28px 36px' }}>
-        <div style={{ fontFamily: s['--p-display'], fontSize: 20, fontWeight: 800, color: s['--p-ink'], marginBottom: 8 }}>Book This Venue</div>
-        <div style={{ fontFamily: 'system-ui', fontSize: 14, color: s['--p-ink2'], marginBottom: 18 }}>Artists and promoters — send a booking inquiry.</div>
-        <div style={{ background: s['--p-surface'], borderRadius: s['--p-radius'], padding: '20px 22px', maxWidth: 440, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {['Your name', 'Email', 'Proposed date', 'Genre / draw estimate'].map(ph => (
-            <input key={ph} placeholder={ph} readOnly style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink2'], fontFamily: 'system-ui', fontSize: 13, outline: 'none' }} />
-          ))}
-          <button style={{ padding: '11px', borderRadius: 8, border: 'none', background: s['--p-accent'], color: '#0a0805', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Send Inquiry</button>
-        </div>
       </div>
     </div>
   );
