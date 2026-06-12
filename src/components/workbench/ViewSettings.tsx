@@ -244,7 +244,7 @@ function PasskeyPanel() {
   );
 }
 
-function urlBase64ToUint8Array(b64: string): Uint8Array {
+function urlBase64ToUint8Array(b64: string) {
   const pad = '='.repeat((4 - (b64.length % 4)) % 4);
   const bin = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
   const arr = new Uint8Array(bin.length);
