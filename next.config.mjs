@@ -1,5 +1,4 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
-import { withSentryConfig } from '@sentry/nextjs';
 
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === 'production';
@@ -480,4 +479,4 @@ const nextConfig = {
 };
 
 const bundleAnalyzer = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
-export default withSentryConfig(bundleAnalyzer(nextConfig), { silent: true, hideSourceMaps: true });
+export default bundleAnalyzer(nextConfig);
