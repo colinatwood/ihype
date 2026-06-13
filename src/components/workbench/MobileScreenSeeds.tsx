@@ -240,7 +240,7 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
           <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 10, background: `${T.accent}12`, border: `1px solid ${T.accent}30`, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>⚡</span>
             <div>
-              <div style={{ fontFamily: T.fm, fontSize: 9, color: T.accent, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 2 }}>Today's Pick</div>
+              <div style={{ fontFamily: T.fm, fontSize: 11, color: T.accent, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 2 }}>Today's Pick</div>
               <div style={{ fontFamily: T.fb, fontSize: 12, color: T.ink, lineHeight: 1.4 }}>{dailyPick}</div>
             </div>
           </div>
@@ -265,7 +265,7 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
           </div>
           {(data.hypeStreak ?? 0) > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.12em', textTransform: 'uppercase' }}>Streak</div>
+              <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, letterSpacing: '.12em', textTransform: 'uppercase' }}>Streak</div>
               <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 14, color: T.accent, marginTop: 2 }}>🔥{data.hypeStreak}d</div>
             </div>
           )}
@@ -274,13 +274,13 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
         {/* Saved seeds strip */}
         {history.length > 0 && (
           <div style={{ marginBottom: 14 }}>
-            <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 7 }}>Saved &amp; Hyped</div>
+            <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 7 }}>Saved &amp; Hyped</div>
             <div style={{ display: 'flex', gap: 7, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
               {history.map(h => (
                 <div key={h.id} style={{ flexShrink: 0, padding: '7px 10px', borderRadius: 8, background: T.bg2, border: `1px solid ${h.action === 'hype' ? T.pink + '40' : T.teal + '40'}`, minWidth: 130, maxWidth: 130 }}>
                   <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 11, color: T.ink, letterSpacing: '-.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.title}</div>
                   <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.artistName}</div>
-                  <div style={{ fontFamily: T.fm, fontSize: 9, color: h.action === 'hype' ? T.pink : T.teal, marginTop: 3, letterSpacing: '.1em', textTransform: 'uppercase' }}>{h.action === 'hype' ? '♥ Hyped' : '↑ Saved'}</div>
+                  <div style={{ fontFamily: T.fm, fontSize: 11, color: h.action === 'hype' ? T.pink : T.teal, marginTop: 3, letterSpacing: '.1em', textTransform: 'uppercase' }}>{h.action === 'hype' ? '♥ Hyped' : '↑ Saved'}</div>
                 </div>
               ))}
             </div>

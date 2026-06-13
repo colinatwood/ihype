@@ -11,13 +11,13 @@ function AlbumArt({ c = T.accent, size = 48 }: { c?: string; size?: number }) {
   );
 }
 
-export function ScreenShowsNew({ data }: { data: WorkbenchData }) {
+export function ScreenShowsNew({ data, onToast }: { data: WorkbenchData; onToast?: (msg: string) => void }) {
   const [showView, setShowView] = React.useState<'list' | 'detail' | 'ticket'>('list');
   const [selected, setSelected] = React.useState<WbShow | null>(null);
   const shows = data.shows;
 
   if (showView === 'detail' && selected) {
-    return <ShowDetailNew show={selected} onBack={() => setShowView('list')} onBuy={() => setShowView('ticket')} />;
+    return <ShowDetailNew show={selected} onBack={() => setShowView('list')} onBuy={() => setShowView('ticket')} onToast={onToast} />;
   }
   if (showView === 'ticket' && selected) {
     return <TicketFlowNew show={selected} onBack={() => setShowView('detail')} onDone={() => setShowView('list')} />;
@@ -61,7 +61,7 @@ export function ScreenShowsNew({ data }: { data: WorkbenchData }) {
 
         {sections.map(sec => (
           <div key={sec.label} style={{ marginBottom: 18 }}>
-            <div style={{ fontFamily: T.fm, fontSize: 9, color: sec.hot ? sec.accent : T.ink3, letterSpacing: '.18em', marginBottom: 8, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <div style={{ fontFamily: T.fm, fontSize: 11, color: sec.hot ? sec.accent : T.ink3, letterSpacing: '.18em', marginBottom: 8, textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 5 }}>
               {sec.hot && <span style={{ width: 5, height: 5, borderRadius: 99, background: sec.accent, display: 'inline-block', flexShrink: 0 }} />}
               {sec.label}
             </div>
@@ -77,12 +77,12 @@ export function ScreenShowsNew({ data }: { data: WorkbenchData }) {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14, letterSpacing: '-.01em' }}>{show.name}</div>
                         <div style={{ fontFamily: T.fb, fontSize: 11.5, color: T.ink2, marginTop: 2 }}>{show.venue}</div>
-                        <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, marginTop: 3, letterSpacing: '.06em' }}>{show.date} · {show.time}</div>
+                        <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, marginTop: 3, letterSpacing: '.06em' }}>{show.date} · {show.time}</div>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
                         <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 15 }}>${show.price}</div>
-                        <div style={{ fontFamily: T.fm, fontSize: 8, color: T.ink3, marginTop: 2, letterSpacing: '.1em' }}>FACE</div>
-                        {pct > 0 && <div style={{ fontFamily: T.fm, fontSize: 8, color: pct >= 85 ? T.pink : T.ink3, marginTop: 3, letterSpacing: '.06em' }}>{pct}% sold</div>}
+                        <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, marginTop: 2, letterSpacing: '.1em' }}>FACE</div>
+                        {pct > 0 && <div style={{ fontFamily: T.fm, fontSize: 11, color: pct >= 85 ? T.pink : T.ink3, marginTop: 3, letterSpacing: '.06em' }}>{pct}% sold</div>}
                       </div>
                     </div>
                     {pct > 0 && (
@@ -101,7 +101,7 @@ export function ScreenShowsNew({ data }: { data: WorkbenchData }) {
   );
 }
 
-function ShowDetailNew({ show, onBack, onBuy }: { show: WbShow; onBack: () => void; onBuy: () => void }) {
+function ShowDetailNew({ show, onBack, onBuy, onToast }: { show: WbShow; onBack: () => void; onBuy: () => void; onToast?: (msg: string) => void }) {
   const pct = show.capacity > 0 ? Math.round(show.sold / show.capacity * 100) : 0;
   const showColor = show.hype > 100 ? T.accent : T.teal;
   const [rsvpState, setRsvpState] = React.useState<'idle' | 'loading' | 'done'>('idle');
@@ -128,6 +128,7 @@ function ShowDetailNew({ show, onBack, onBuy }: { show: WbShow; onBack: () => vo
     try {
       await fetch(`/api/shows/${show.id}/rsvp`, { method: 'POST' });
       setRsvpState('done');
+      onToast?.(`✓ RSVP'd to ${show.name.slice(0, 30)}`);
     } catch { setRsvpState('idle'); }
   };
 
