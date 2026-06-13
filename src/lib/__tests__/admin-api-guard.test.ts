@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { globSync } from 'glob';
 
 const ADMIN_API_EXCEPTIONS = new Set([
-  'src/app/api/admin/setup/route.ts'
+  'src/app/api/admin/setup/route.ts',
+  // device-setup is protected by ADMIN_SETUP_SECRET bearer token — no admin session exists yet during bootstrap
+  'src/app/api/admin/device-setup/route.ts',
 ]);
 
 describe('admin API guard coverage', () => {
