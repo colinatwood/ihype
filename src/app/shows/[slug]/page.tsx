@@ -15,7 +15,7 @@ import { detectRequestLocation } from '@/lib/request-location';
 import { parseShowProductionPlan } from '@/lib/show-composer';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import { formatShowTime, getBaseUrl } from '@/lib/utils';
-import { ShowComments } from '@/components/ShowComments';
+
 import { ShowEngagement } from '@/components/ShowEngagement';
 import { ShowSetlistVote } from '@/components/ShowSetlistVote';
 import { ShowSetlistEditor } from '@/components/ShowSetlistEditor';
@@ -759,12 +759,7 @@ export default async function ShowDetailPage({
           </div>
         </section>
       )}
-      <ShowComments
-        showId={show.id}
-        canPost={Boolean(session?.user?.id)}
-        isLive={show.status === 'LIVE'}
-        goingCount={rsvpCount}
-      />
+
       <div style={{ marginTop: 24 }}>
         <AdBanner />
       </div>
