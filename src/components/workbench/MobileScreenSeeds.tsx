@@ -19,6 +19,8 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
   const [deckIdx, setDeckIdx] = useState(0);
   const [actionedIds, setActionedIds] = useState<Set<string>>(new Set());
   const [sessionStats, setSessionStats] = useState({ saved: 0, skipped: 0, hyped: 0 });
+  const [pendingUndo, setPendingUndo] = useState<{ id: string; action: 'save' | 'skip' | 'hype'; title: string } | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [loadingDeck, setLoadingDeck] = useState(true);
   const [dailyPick, setDailyPick] = useState<string | null>(null);
   useEffect(() => {
@@ -129,9 +131,33 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
           }
         }).catch(() => {});
       }
-      fetch(`/api/discover/seeds/${encodeURIComponent(front.id)}/${action}`, { method: 'POST' }).catch(() => {});
+      // Defer API call 2s to allow undo
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      const capturedId = front.id;
+      const capturedAction = action;
+      const capturedTitle = front.title;
+      setPendingUndo({ id: capturedId, action: capturedAction, title: capturedTitle });
+      undoTimerRef.current = setTimeout(() => {
+        fetch(`/api/discover/seeds/${encodeURIComponent(capturedId)}/${capturedAction}`, { method: 'POST' }).catch(() => {});
+        setPendingUndo(null);
+        undoTimerRef.current = null;
+      }, 2000);
     }, 320);
   }, [deck, deckIdx, actionedIds]);
+
+  function handleUndo() {
+    if (undoTimerRef.current) { clearTimeout(undoTimerRef.current); undoTimerRef.current = null; }
+    if (!pendingUndo) return;
+    setActionedIds(prev => { const next = new Set(prev); next.delete(pendingUndo.id); return next; });
+    setDeckIdx(i => Math.max(0, i - 1));
+    setSessionStats(prev => ({
+      ...prev,
+      saved:   pendingUndo.action === 'save'  ? Math.max(0, prev.saved - 1)  : prev.saved,
+      skipped: pendingUndo.action === 'skip'  ? Math.max(0, prev.skipped - 1) : prev.skipped,
+      hyped:   pendingUndo.action === 'hype'  ? Math.max(0, prev.hyped - 1)  : prev.hyped,
+    }));
+    setPendingUndo(null);
+  }
 
   const front = deck.length > 0 && deckIdx < deck.length ? deck[deckIdx] : undefined;
   const behind = deck.length > 1 ? [
@@ -443,9 +469,33 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
             }}>{b.label}</button>
           ))}
         </div>
-        <div style={{ textAlign: 'center', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 18 }}>
+        <div style={{ textAlign: 'center', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 10 }}>
           swipe · ↑ save · → hype
         </div>
+
+        {pendingUndo ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 14px', borderRadius: 10, marginBottom: 10,
+            background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)',
+            animation: 'fadeIn .15s ease-out both',
+          }}>
+            <span style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2 }}>
+              {pendingUndo.action === 'hype' ? '♥' : pendingUndo.action === 'save' ? '↑' : '✕'}{' '}
+              <span style={{ color: T.ink, fontWeight: 700 }}>{pendingUndo.title.slice(0, 28)}</span>
+            </span>
+            <button
+              onClick={handleUndo}
+              style={{
+                padding: '5px 12px', borderRadius: 99, border: `1px solid ${T.amber}60`,
+                background: `${T.amber}15`, color: T.amber,
+                fontFamily: T.fm, fontSize: 11, fontWeight: 700, letterSpacing: '.06em', cursor: 'pointer',
+              }}
+            >UNDO</button>
+          </div>
+        ) : (
+          <div style={{ height: 10, marginBottom: 8 }} />
+        )}
 
         {/* Daily quest */}
         <WMCard style={{ marginBottom: 14 }}>

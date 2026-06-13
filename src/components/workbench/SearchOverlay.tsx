@@ -67,7 +67,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   return (
     <div
       role="dialog" aria-modal="true" aria-label="Search"
-      style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 80 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 10000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 'min(80px, 10vh)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(6px)' }} onClick={onClose} />
@@ -75,7 +75,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
         position: 'relative', width: '100%', maxWidth: 560,
         background: 'var(--bg-2)', border: '1px solid var(--line-2)',
         borderRadius: 16, boxShadow: '0 16px 48px rgba(0,0,0,.5)', animation: 'fadeIn .2s ease-out both',
-        overflow: 'hidden',
+        overflow: 'hidden', maxHeight: 'calc(100dvh - 100px)', display: 'flex', flexDirection: 'column',
       }}>
         {/* Input */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderBottom: results.length > 0 || loading ? '1px solid var(--line)' : 'none' }}>
@@ -95,6 +95,8 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
           <kbd style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', border: '1px solid var(--line-2)', borderRadius: 4, padding: '2px 6px' }}>esc</kbd>
         </div>
 
+        {/* Scrollable results area */}
+        <div style={{ overflowY: 'auto', flex: 1 }}>
         {/* Results */}
         {loading && <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)' }}>Searching…</div>}
         {!loading && results.length > 0 && (
@@ -149,6 +151,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
             Try: <strong style={{ color: 'var(--ink-2)' }}>artist name</strong>, track title, venue, show…
           </div>
         )}
+        </div>{/* end scrollable */}
       </div>
     </div>
   );

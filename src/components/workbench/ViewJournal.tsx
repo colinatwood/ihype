@@ -58,7 +58,7 @@ export default function ViewJournal({ data }: { data: WorkbenchData }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
-      <div style={{ padding: '28px 36px', maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ padding: '20px 16px', maxWidth: 800, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
             <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', margin: 0 }}>Journal</h2>
