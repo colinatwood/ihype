@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
       ticketsSoldCount: true, ticketCapacity: true,
       headlinerProfileId: true,
       headlinerProfile: { select: { name: true } },
+      venueProfile: { select: { city: true } },
     },
   }).catch(() => []);
 
@@ -34,10 +35,21 @@ export async function GET(request: NextRequest) {
     const pct = show.ticketsSoldCount / show.ticketCapacity;
     if (pct < 0.8) continue;
 
-    // Find fans who hyped the headliner
+    const showCity = show.venueProfile?.city ?? null;
+
+    // Find fans who hyped the headliner, with optional city targeting
     const fans = show.headlinerProfileId
       ? await db.profileHypeEvent.findMany({
-          where: { profileId: show.headlinerProfileId },
+          where: {
+            profileId: show.headlinerProfileId,
+            ...(showCity ? {
+              user: {
+                pushSubscriptions: {
+                  some: { OR: [{ pushCity: null }, { pushCity: showCity }] }
+                }
+              }
+            } : {})
+          },
           select: { userId: true },
           distinct: ['userId'],
           take: 500,

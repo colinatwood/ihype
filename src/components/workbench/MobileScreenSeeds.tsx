@@ -92,7 +92,8 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
   const [savingGenres, setSavingGenres] = useState(false);
 
   // Deck state
-  const [deck, setDeck] = useState(data.tracks);
+  type SeedDeckTrack = typeof data.tracks[number] & { nowPlaying?: string | null; journalContent?: string | null };
+  const [deck, setDeck] = useState<SeedDeckTrack[]>(data.tracks);
   const [deckIdx, setDeckIdx] = useState(0);
   const [actionedIds, setActionedIds] = useState<Set<string>>(new Set());
   const [sessionStats, setSessionStats] = useState({ saved: 0, skipped: 0, hyped: 0 });
@@ -471,6 +472,8 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
                 <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, zIndex: 3, color: '#fff' }}>
                   <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 22, letterSpacing: '-.02em', lineHeight: 1.1, textShadow: '0 2px 10px rgba(0,0,0,.5)' }}>{front.title}</div>
                   <div style={{ fontFamily: T.fm, fontSize: 11, color: 'rgba(255,255,255,.75)', letterSpacing: '.1em', marginTop: 3, textTransform: 'uppercase' }}>{front.artistName} · {front.album}</div>
+                  {front.nowPlaying && <div style={{ fontFamily: T.fb, fontStyle: 'italic', fontSize: 10, color: 'rgba(255,255,255,.5)', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Listening to: {front.nowPlaying.slice(0, 60)}</div>}
+                  {front.journalContent && <div style={{ fontFamily: T.fb, fontSize: 10, color: 'rgba(255,255,255,.4)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{front.journalContent.slice(0, 60)}</div>}
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontFamily: T.fm, fontSize: 11, letterSpacing: '.06em', color: 'rgba(255,255,255,.6)' }}>
                     <span>♥ {front.hypeCount} hype</span>
                     <span>{deck.length - deckIdx} left</span>

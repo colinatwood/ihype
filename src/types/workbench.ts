@@ -25,6 +25,7 @@ export type WbShow = {
   capacity: number;
   price: number;
   status: 'TONIGHT' | 'THIS WEEK' | 'UPCOMING' | 'NEAR SOLD' | 'ENDED';
+  setlistProgress?: { total: number; confirmed: number } | null;
 };
 
 export type WbStat = {

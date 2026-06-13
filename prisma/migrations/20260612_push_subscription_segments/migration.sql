@@ -1,0 +1,2 @@
+ALTER TABLE "PushSubscription" ADD COLUMN IF NOT EXISTS "pushGenre" TEXT;
+ALTER TABLE "PushSubscription" ADD COLUMN IF NOT EXISTS "pushCity" TEXT;

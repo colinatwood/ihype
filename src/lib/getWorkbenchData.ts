@@ -232,19 +232,19 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             select: {
               id: true, title: true, startsAt: true, hypeCount: true,
               ticketsSoldCount: true, ticketCapacity: true, ticketPriceCents: true,
-              venueProfileId: true,
+              venueProfileId: true, setlistProgress: true,
               headlinerProfile: { select: { name: true } },
             },
           }).catch(() => [] as {
             id: string; title: string; startsAt: Date; hypeCount: number;
             ticketsSoldCount: number; ticketCapacity: number | null; ticketPriceCents: number;
-            venueProfileId: string | null;
+            venueProfileId: string | null; setlistProgress: unknown;
             headlinerProfile: { name: string } | null;
           }[])
         : Promise.resolve([] as {
             id: string; title: string; startsAt: Date; hypeCount: number;
             ticketsSoldCount: number; ticketCapacity: number | null; ticketPriceCents: number;
-            venueProfileId: string | null;
+            venueProfileId: string | null; setlistProgress: unknown;
             headlinerProfile: { name: string } | null;
           }[]),
       // Upcoming headliner shows (artist/DJ perspective)
@@ -256,19 +256,19 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             select: {
               id: true, title: true, startsAt: true, hypeCount: true,
               ticketsSoldCount: true, ticketCapacity: true, ticketPriceCents: true,
-              headlinerProfileId: true,
+              headlinerProfileId: true, setlistProgress: true,
               venueProfile: { select: { name: true } },
             },
           }).catch(() => [] as {
             id: string; title: string; startsAt: Date; hypeCount: number;
             ticketsSoldCount: number; ticketCapacity: number | null; ticketPriceCents: number;
-            headlinerProfileId: string | null;
+            headlinerProfileId: string | null; setlistProgress: unknown;
             venueProfile: { name: string } | null;
           }[])
         : Promise.resolve([] as {
             id: string; title: string; startsAt: Date; hypeCount: number;
             ticketsSoldCount: number; ticketCapacity: number | null; ticketPriceCents: number;
-            headlinerProfileId: string | null;
+            headlinerProfileId: string | null; setlistProgress: unknown;
             venueProfile: { name: string } | null;
           }[]),
       // Pending payouts for all profiles
@@ -422,6 +422,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             capacity: cap,
             price: Math.round(s.ticketPriceCents / 100),
             status,
+            setlistProgress: (() => { const sp = s.setlistProgress as { tracks?: { confirmed?: boolean }[] } | null; if (!sp?.tracks?.length) return null; return { total: sp.tracks.length, confirmed: sp.tracks.filter(t => t.confirmed).length }; })(),
           };
         }),
         ...pHosted.map((s) => {
@@ -444,6 +445,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             capacity: cap,
             price: Math.round(s.ticketPriceCents / 100),
             status,
+            setlistProgress: (() => { const sp = s.setlistProgress as { tracks?: { confirmed?: boolean }[] } | null; if (!sp?.tracks?.length) return null; return { total: sp.tracks.length, confirmed: sp.tracks.filter(t => t.confirmed).length }; })(),
           };
         }),
       ];

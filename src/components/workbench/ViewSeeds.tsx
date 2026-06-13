@@ -22,6 +22,8 @@ type SeedTrack = {
   city?: string;
   profileSlug?: string;
   reason?: string;
+  nowPlaying?: string | null;
+  journalContent?: string | null;
 };
 
 /** Deterministic waveform from a string ID so each card looks distinct */
@@ -788,6 +790,8 @@ export function ViewSeeds({
                       {frontTrack.durationSec && <span style={{ opacity: .5 }}>·</span>}
                       {frontTrack.durationSec && <span style={{ opacity: .6, fontFamily: 'var(--f-m)', fontSize: 12 }}>{Math.floor(frontTrack.durationSec / 60)}:{String(frontTrack.durationSec % 60).padStart(2, '0')}</span>}
                     </div>
+                    {frontTrack.nowPlaying && <div style={{ fontFamily: 'var(--f-b)', fontStyle: 'italic', fontSize: 11, color: 'rgba(255,255,255,.55)', marginTop: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Listening to: {frontTrack.nowPlaying.slice(0, 60)}</div>}
+                    {frontTrack.journalContent && <div style={{ fontFamily: 'var(--f-b)', fontSize: 11, color: 'rgba(255,255,255,.45)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{frontTrack.journalContent.slice(0, 60)}</div>}
                   </div>
 
                   {/* Footer */}
