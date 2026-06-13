@@ -851,7 +851,7 @@ function WMBottomTabs({ tab, onTab, notifCount = 0 }: { tab: MobileTab; onTab: (
           <button key={it.id} aria-label={it.label} onClick={() => { navigator.vibrate?.(8); onTab(it.id); }} style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
             background: 'none', border: 'none', color: c,
-            fontFamily: T.fm, fontSize: 9, fontWeight: 600, letterSpacing: '.08em',
+            fontFamily: T.fm, fontSize: 10, fontWeight: 600, letterSpacing: '.08em',
             padding: '0 12px', cursor: 'pointer', textTransform: 'uppercase',
             minHeight: 56, minWidth: 44, position: 'relative',
           }}>
@@ -1987,6 +1987,13 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const [nudgeDismissed, setNudgeDismissed] = useState(true);
   useEffect(() => { setNudgeDismissed(!!localStorage.getItem('profileNudgeDismissed')); }, []);
   const [refreshing, setRefreshing] = useState(false);
+  const [toasts, setToasts] = useState<{ id: number; msg: string; color: string }[]>([]);
+  const toastIdRef = useRef(0);
+  const showToast = useCallback((msg: string, color = T.teal) => {
+    const id = ++toastIdRef.current;
+    setToasts(prev => [...prev, { id, msg, color }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 2500);
+  }, []);
   const pullStartY = useRef(0);
   const pullDeltaRef = useRef(0);
   const [pullDelta, setPullDelta] = useState(0);
@@ -2051,13 +2058,19 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const TABS_ORDER: MobileTab[] = ['listen', 'seeds', 'shows', 'you', 'more'];
   const tabSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const tabSwipeLocked = useRef<'h' | 'v' | null>(null);
+  const scrollPositions = useRef<Partial<Record<MobileTab, number>>>({});
+  const mainScrollRef = useRef<HTMLDivElement>(null);
 
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
     setRefreshing(true);
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
-    await new Promise(r => setTimeout(r, 900));
-    setRefreshing(false);
+    try {
+      const res = await fetch('/api/workbench');
+      if (res.ok) { const fresh = await res.json() as WorkbenchData; if (fresh) setLiveData(fresh); }
+    } catch { /* ignore */ } finally {
+      setRefreshing(false);
+    }
   }, [refreshing]);
 
   function handleMainTouchStart(e: React.TouchEvent) {
@@ -2104,11 +2117,17 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     tabSwipeLocked.current = null;
   }
 
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      if (mainScrollRef.current) mainScrollRef.current.scrollTop = scrollPositions.current[tab] ?? 0;
+    });
+  }, [tab]);
+
   const screenEl = (() => {
     switch (tab) {
       case 'listen': return <ScreenListen data={liveData} onPlay={setCurrentTrackIdx} onExpand={() => setExpanded(true)} currentIdx={currentTrackIdx} />;
       case 'seeds':  return <ScreenSeeds data={liveData} />;
-      case 'shows':  return <ScreenShowsNew data={liveData} />;
+      case 'shows':  return <ScreenShowsNew data={liveData} onToast={showToast} />;
       case 'you':    return <ScreenYouNew data={liveData} onManage={() => setManageMode(true)} onJournal={() => setJournalMode(true)} onDiscover={() => setDiscoverMode(true)} />;
       case 'more':   return <MobileScreenMore data={liveData} onStudio={() => setStudioMode(true)} onTour={() => setTourMode(true)} onPage={() => setPageMode(true)} onNotif={() => setNotifMode(true)} onSettings={() => setSettingsMode(true)} onJournal={() => setJournalMode(true)} onDiscover={() => setDiscoverMode(true)} onAdvertise={() => setAdvertiseMode(true)} />;
     }
@@ -2183,12 +2202,14 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
       {/* Main scrollable area */}
       <div
+        ref={mainScrollRef}
         role="main"
         className="wm-scroll"
         style={{ flex: 1, overflowY: tab === 'seeds' ? 'hidden' : 'auto', overflowX: 'hidden', position: 'relative', scrollbarWidth: 'none' }}
         onTouchStart={handleMainTouchStart}
         onTouchMove={handleMainTouchMove}
         onTouchEnd={handleMainTouchEnd}
+        onScroll={e => { scrollPositions.current[tab] = (e.currentTarget as HTMLDivElement).scrollTop; }}
       >
         {tab !== 'seeds' && (
           <div style={{
@@ -2253,6 +2274,25 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
           onDismiss={() => { localStorage.setItem('ihype-welcome-seen', '1'); setShowWelcome(false); }}
           onNavigate={(v) => { if (v === 'seeds') setTab('seeds'); }}
         />
+      )}
+
+      {/* Toast notifications */}
+      {toasts.length > 0 && (
+        <div style={{ position: 'absolute', left: 16, right: 16, bottom: 140, zIndex: 200, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {toasts.map(t => (
+            <div key={t.id} style={{
+              padding: '10px 14px', borderRadius: 10,
+              background: T.bg3, border: `1px solid ${t.color}40`,
+              fontFamily: T.fb, fontSize: 13, color: T.ink,
+              boxShadow: '0 8px 24px rgba(0,0,0,.5)',
+              animation: 'fadeIn .15s ease-out both',
+              display: 'flex', alignItems: 'center', gap: 8,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.color, flexShrink: 0 }} />
+              {t.msg}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
