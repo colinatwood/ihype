@@ -13,7 +13,6 @@ import { ScreenYouNew, ManageConsole } from '@/components/workbench/MobileScreen
 import ViewJournal from '@/components/workbench/ViewJournal';
 import ViewDiscover from '@/components/workbench/ViewDiscover';
 import { MobileScreenStudio } from '@/components/workbench/MobileScreenStudio';
-import { MobileScreenCollab } from '@/components/workbench/MobileScreenCollab';
 import { ViewTour } from '@/components/workbench/ViewTour';
 import { ViewNotifications } from '@/components/workbench/ViewNotifications';
 import { ViewSettings } from '@/components/workbench/ViewSettings';
@@ -764,19 +763,20 @@ function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
 }
 
 // ─── More screen ─────────────────────────────────────────────
-interface MoreProps { data: WorkbenchData; onStudio: () => void; onTour: () => void; onCollab: () => void; onPage: () => void; onNotif: () => void; onSettings: () => void; onJournal: () => void; onDiscover: () => void; }
-function MobileScreenMore({ data, onStudio, onTour, onCollab, onPage, onNotif, onSettings, onJournal, onDiscover }: MoreProps) {
+interface MoreProps { data: WorkbenchData; onStudio: () => void; onTour: () => void; onPage: () => void; onNotif: () => void; onSettings: () => void; onJournal: () => void; onDiscover: () => void; }
+function MobileScreenMore({ data, onStudio, onTour, onPage, onNotif, onSettings, onJournal, onDiscover }: MoreProps) {
   const role = (data.profileType ?? '').toUpperCase();
   const isCreator = role === 'ARTIST' || role === 'DJ';
   const isVenue = role === 'VENUE';
+  const canJournal = isCreator || isVenue;
   type Item = { label: string; sub: string; color: string; on: () => void; icon: React.ReactNode };
   const items: Item[] = [
     ...(isCreator ? [{ label: 'Studio', sub: 'Tracks, releases & tools', color: T.purple, on: onStudio, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="2" y="5" width="16" height="10" rx="2"/><path d="M6 10h1.5M10 8v4M13.5 9v2" strokeLinecap="round"/></svg> }] : []),
-    ...(isVenue ? [{ label: 'Page Studio', sub: 'Edit your venue page', color: T.teal, on: onPage, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M2 7h16M7 18V7"/></svg> }] : []),
-    ...(isCreator ? [{ label: 'Page Studio', sub: 'Edit your artist page', color: T.teal, on: onPage, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M2 7h16M7 18V7"/></svg> }] : []),
+    ...(isVenue ? [{ label: 'Page Creator', sub: 'Edit your venue page', color: T.teal, on: onPage, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M2 7h16M7 18V7"/></svg> }] : []),
+    ...(isCreator ? [{ label: 'Page Creator', sub: 'Edit your artist page', color: T.teal, on: onPage, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M2 7h16M7 18V7"/></svg> }] : []),
     { label: 'Tour', sub: 'Booking & routing', color: T.amber, on: onTour, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M3 10h14M10 3l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg> },
-    { label: 'Collabs', sub: 'Find collaborators', color: T.pink, on: onCollab, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><circle cx="7" cy="8" r="2.5"/><circle cx="13" cy="8" r="2.5"/><path d="M2 17c0-2.8 2.2-4 5-4M11 13c2.8 0 7 1.2 7 4" strokeLinecap="round"/></svg> },
-    { label: 'Journal', sub: 'Posts & updates', color: T.accent, on: onJournal, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M7 7h6M7 11h4" strokeLinecap="round"/></svg> },
+    ...(canJournal ? [{ label: 'Journal', sub: 'Posts & updates', color: T.accent, on: onJournal, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M7 7h6M7 11h4" strokeLinecap="round"/></svg> }] : []),
+    { label: 'Advertise', sub: 'Promote your music', color: T.pink, on: () => { window.location.href = '/advertise'; }, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M3 14V6l10-3v14L3 14z" strokeLinejoin="round"/><path d="M13 7l4 1v4l-4 1"/><circle cx="6.5" cy="16.5" r="1.5"/></svg> },
     { label: 'Discover', sub: 'Artists & venues', color: T.teal, on: onDiscover, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><circle cx="10" cy="10" r="7"/><path d="M13 7l-2 3-3 1.5 2-3L13 7z" fill="currentColor" stroke="none"/></svg> },
     { label: 'Notifications', sub: 'Alerts & activity', color: T.blue, on: onNotif, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M5 8a5 5 0 0 1 10 0v3.5l1.5 2.5h-13L5 11.5V8Z"/><path d="M8.5 16.5a1.5 1.5 0 0 0 3 0" strokeLinecap="round"/></svg> },
     { label: 'Settings', sub: 'Account & preferences', color: T.ink2, on: onSettings, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4" strokeLinecap="round"/></svg> },
@@ -1974,7 +1974,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const [discoverMode, setDiscoverMode] = useState(false);
   const [studioMode, setStudioMode] = useState(false);
   const [tourMode, setTourMode] = useState(false);
-  const [collabMode, setCollabMode] = useState(false);
+
   const [pageMode, setPageMode] = useState(false);
   const [notifMode, setNotifMode] = useState(false);
   const [settingsMode, setSettingsMode] = useState(false);
@@ -2109,7 +2109,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
       case 'seeds':  return <ScreenSeeds data={liveData} />;
       case 'shows':  return <ScreenShowsNew data={liveData} />;
       case 'you':    return <ScreenYouNew data={liveData} onManage={() => setManageMode(true)} onJournal={() => setJournalMode(true)} onDiscover={() => setDiscoverMode(true)} />;
-      case 'more':   return <MobileScreenMore data={liveData} onStudio={() => setStudioMode(true)} onTour={() => setTourMode(true)} onCollab={() => setCollabMode(true)} onPage={() => setPageMode(true)} onNotif={() => setNotifMode(true)} onSettings={() => setSettingsMode(true)} onJournal={() => setJournalMode(true)} onDiscover={() => setDiscoverMode(true)} />;
+      case 'more':   return <MobileScreenMore data={liveData} onStudio={() => setStudioMode(true)} onTour={() => setTourMode(true)} onPage={() => setPageMode(true)} onNotif={() => setNotifMode(true)} onSettings={() => setSettingsMode(true)} onJournal={() => setJournalMode(true)} onDiscover={() => setDiscoverMode(true)} />;
     }
   })();
 
@@ -2156,8 +2156,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const overlayModes: { active: boolean; close: () => void; title: string; color: string; children: React.ReactNode }[] = [
     { active: studioMode,   close: () => setStudioMode(false),   title: 'Studio',        color: T.purple, children: <MobileScreenStudio data={liveData} /> },
     { active: tourMode,     close: () => setTourMode(false),     title: 'Tour',          color: T.amber,  children: <ViewTour data={liveData} /> },
-    { active: collabMode,   close: () => setCollabMode(false),   title: 'Collabs',       color: T.pink,   children: <MobileScreenCollab data={liveData} /> },
-    { active: pageMode,     close: () => setPageMode(false),     title: 'Page Studio',   color: T.teal,   children: <ViewPageStudio data={liveData} /> },
+    { active: pageMode,     close: () => setPageMode(false),     title: 'Page Creator',  color: T.teal,   children: <ViewPageStudio data={liveData} /> },
     { active: notifMode,    close: () => setNotifMode(false),    title: 'Notifications', color: T.blue,   children: <ViewNotifications /> },
     { active: settingsMode, close: () => setSettingsMode(false), title: 'Settings',      color: T.ink2,   children: <ViewSettings prefs={prefs} setPref={setPref} data={liveData} onBack={() => setSettingsMode(false)} /> },
   ];

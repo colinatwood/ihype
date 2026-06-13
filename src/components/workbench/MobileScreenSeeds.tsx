@@ -4,84 +4,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { WorkbenchData } from '@/types/workbench';
 import { T, WMPill, WMChip, WMViewHead, WMCard, WMTrendingStrip } from './MobilePrimitives';
 
-// ─── Collab Board Section ─────────────────────────────────────
-function CollabBoardSection() {
-  const [posts, setPosts] = React.useState<{ id: string; type: string; description: string; profile: { name: string; slug: string } }[]>([]);
-  const [loaded, setLoaded] = React.useState(false);
-  const [newPost, setNewPost] = React.useState(false);
-  const [postType, setPostType] = React.useState('');
-  const [postDesc, setPostDesc] = React.useState('');
-  const [posting, setPosting] = React.useState(false);
-  const [posted, setPosted] = React.useState(false);
-
-  React.useEffect(() => {
-    fetch('/api/collab')
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.posts) setPosts(d.posts.slice(0, 5)); })
-      .catch(() => {})
-      .finally(() => setLoaded(true));
-  }, []);
-
-  const handlePost = async () => {
-    if (!postType || !postDesc.trim()) return;
-    setPosting(true);
-    try {
-      const res = await fetch('/api/collab', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: postType, description: postDesc }),
-      });
-      if (res.ok) {
-        setPosted(true);
-        setNewPost(false);
-        setPostType('');
-        setPostDesc('');
-        setTimeout(() => setPosted(false), 3000);
-      }
-    } catch { /* ignore */ } finally { setPosting(false); }
-  };
-
-  return (
-    <div style={{ padding: '14px 18px 0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
-        <h2 style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14, color: T.ink, margin: 0 }}>Collab board</h2>
-        <button onClick={() => setNewPost(!newPost)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.teal, fontFamily: T.fm, fontSize: 12, letterSpacing: '.1em', padding: 0 }}>+ Post</button>
-      </div>
-      {posted && <div style={{ color: T.teal, fontFamily: T.fm, fontSize: 13, marginBottom: 8 }}>Posted!</div>}
-      {newPost && (
-        <div style={{ background: T.bg2, border: `1px solid ${T.line2}`, borderRadius: 10, padding: 12, marginBottom: 10 }}>
-          <input
-            type="text" value={postType} onChange={e => setPostType(e.target.value.slice(0, 40))}
-            placeholder="Type (e.g. vocalist, producer, venue…)"
-            style={{ width: '100%', background: T.bg3, border: `1px solid ${T.line}`, borderRadius: 7, color: T.ink, fontFamily: T.fb, fontSize: 13, padding: '8px 10px', marginBottom: 8, boxSizing: 'border-box', outline: 'none' }}
-          />
-          <textarea
-            value={postDesc} onChange={e => setPostDesc(e.target.value.slice(0, 500))}
-            placeholder="Describe what you're looking for…"
-            rows={3}
-            style={{ width: '100%', background: T.bg3, border: `1px solid ${T.line}`, borderRadius: 7, color: T.ink, fontFamily: T.fb, fontSize: 13, padding: '8px 10px', marginBottom: 8, boxSizing: 'border-box', outline: 'none', resize: 'none' }}
-          />
-          <button
-            onClick={handlePost} disabled={posting || !postType || !postDesc.trim()}
-            style={{ width: '100%', padding: '9px 0', borderRadius: 8, border: 'none', background: (postType && postDesc.trim()) ? T.accent : T.bg4, color: (postType && postDesc.trim()) ? T.bg : T.ink3, fontFamily: T.fd, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
-          >{posting ? 'Posting…' : 'Post'}</button>
-        </div>
-      )}
-      {!loaded && <div className="wm-skeleton" style={{ height: 48, borderRadius: 6 }} />}
-      {loaded && posts.length === 0 && <div style={{ fontFamily: T.fb, fontSize: 13, color: T.ink3, padding: '8px 0' }}>No collab posts yet — be the first!</div>}
-      {posts.map((p, i) => (
-        <div key={p.id} style={{ padding: '10px 0', borderBottom: i < posts.length - 1 ? `1px dashed ${T.line}` : 'none' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div style={{ fontFamily: T.fb, fontWeight: 600, fontSize: 13, color: T.ink }}>{p.profile.name}</div>
-            <WMPill>{p.type}</WMPill>
-          </div>
-          <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink2, marginTop: 4, lineHeight: 1.4 }}>{p.description.slice(0, 120)}{p.description.length > 120 ? '…' : ''}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ─── Screen: Seeds ───────────────────────────────────────────
 export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData; onHypersSheet?: (showId: string) => void }) {
   const waveform = [30, 55, 80, 42, 90, 70, 48, 88, 62, 35, 78, 55, 92, 40, 68, 82, 48, 30, 62, 88];
@@ -563,8 +485,6 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
           </div>
         </WMCard>
 
-        {/* Collab board */}
-        <CollabBoardSection />
         <div style={{ height: 48 }} />
       </div>
     </>
