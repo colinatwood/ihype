@@ -157,6 +157,22 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Refresh hype counts for upcoming cards every 45 s
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      if (!deck.length) return;
+      const ids = deck.slice(deckIdx, deckIdx + 5).map((s: { id: string }) => s.id);
+      try {
+        const res = await fetch(`/api/media/hype-counts?ids=${ids.join(',')}`);
+        if (!res.ok) return;
+        const { counts } = await res.json() as { counts: Record<string, number> };
+        setDeck((prev: SeedDeckTrack[]) => prev.map(s => counts[s.id] !== undefined ? { ...s, hypeCount: counts[s.id] } : s));
+      } catch {}
+    }, 45_000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deckIdx]);
+
   const handleAction = useCallback((action: 'save' | 'skip' | 'hype', fromDrag = false, dragDx = 0, dragDy = 0) => {
     const front = deck[deckIdx % Math.max(deck.length, 1)];
     if (!front || actionedIds.has(front.id)) return;

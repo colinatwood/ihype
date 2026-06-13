@@ -185,6 +185,22 @@ export function ViewSeeds({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Refresh hype counts for upcoming cards every 45 s
+  useEffect(() => {
+    const timer = setInterval(async () => {
+      if (!deck.length) return;
+      const ids = deck.slice(deckIdx, deckIdx + 5).map(s => s.id);
+      try {
+        const res = await fetch(`/api/media/hype-counts?ids=${ids.join(',')}`);
+        if (!res.ok) return;
+        const { counts } = await res.json() as { counts: Record<string, number> };
+        setDeck(prev => prev.map(s => counts[s.id] !== undefined ? { ...s, hypeCount: counts[s.id] } : s));
+      } catch {}
+    }, 45_000);
+    return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deckIdx]);
+
   // ── Battle mode ───────────────────────────────────────────────
   type BattleTrack = { id: string; title: string; artistName: string; hypeCount: number; color: string };
   const [battleOpen, setBattleOpen] = useState(false);

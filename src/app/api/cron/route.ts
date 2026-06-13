@@ -266,6 +266,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ok: true, deleted: result.count });
     }
 
+    case 'push-cleanup': {
+      const { db } = await import('@/lib/db');
+      const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+      const result = await db.pushSubscription.deleteMany({
+        where: { createdAt: { lt: cutoff } },
+      });
+      await pingCronAlive('push-cleanup');
+      return NextResponse.json({ ok: true, deleted: result.count });
+    }
+
     case 'audit-log-rotate': {
       const { db } = await import('@/lib/db');
       const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);

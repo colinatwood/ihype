@@ -40,6 +40,11 @@ const authMiddleware = auth((request) => {
   const res = NextResponse.next();
   // Expose pathname to server components (used by admin layout for device-register exemption)
   res.headers.set('x-pathname', pathname);
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.headers.set('Content-Security-Policy', "frame-ancestors 'none'");
   return res;
 });
 
