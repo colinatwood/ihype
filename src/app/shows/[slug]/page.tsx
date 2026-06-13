@@ -250,6 +250,13 @@ export default async function ShowDetailPage({
           {show.title}
         </h1>
         <p className="subtitle">{show.description}</p>
+        {(() => {
+          const sp = show.setlistProgress as { tracks?: { confirmed?: boolean }[] } | null;
+          if (!sp?.tracks?.length) return null;
+          const total = sp.tracks.length;
+          const confirmed = sp.tracks.filter(t => t.confirmed).length;
+          return <p style={{ fontSize: '0.85rem', color: 'var(--muted, #888)', marginTop: 4 }}>Setlist: {confirmed} of {total} songs confirmed</p>;
+        })()}
         <p className="meta">
           {formatShowTime(show.startsAt)}
           {show.venueProfile ? ` | ${show.venueProfile.name}` : ''}

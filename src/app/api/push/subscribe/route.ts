@@ -8,7 +8,7 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
 
-  let sub: { endpoint: string; keys: { auth: string; p256dh: string } };
+  let sub: { endpoint: string; keys: { auth: string; p256dh: string }; pushGenre?: string; pushCity?: string };
   try {
     sub = await request.json();
   } catch {
@@ -21,6 +21,8 @@ export async function POST(request: Request) {
   if (sub.endpoint.length > 2048 || sub.keys.auth.length > 256 || sub.keys.p256dh.length > 256) {
     return NextResponse.json({ error: 'Subscription fields too long.' }, { status: 400 });
   }
+  const pushGenre = typeof sub.pushGenre === 'string' ? sub.pushGenre.slice(0, 64) : undefined;
+  const pushCity  = typeof sub.pushCity  === 'string' ? sub.pushCity.slice(0, 100) : undefined;
 
   const existing = await db.pushSubscription.count({ where: { userId: session.user.id } });
   if (existing >= MAX_SUBSCRIPTIONS_PER_USER) {
@@ -39,12 +41,16 @@ export async function POST(request: Request) {
       userId: session.user.id,
       endpoint: sub.endpoint,
       auth: sub.keys.auth,
-      p256dh: sub.keys.p256dh
+      p256dh: sub.keys.p256dh,
+      ...(pushGenre !== undefined ? { pushGenre } : {}),
+      ...(pushCity  !== undefined ? { pushCity  } : {}),
     },
     update: {
       userId: session.user.id,
       auth: sub.keys.auth,
-      p256dh: sub.keys.p256dh
+      p256dh: sub.keys.p256dh,
+      ...(pushGenre !== undefined ? { pushGenre } : {}),
+      ...(pushCity  !== undefined ? { pushCity  } : {}),
     }
   });
 

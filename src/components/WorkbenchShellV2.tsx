@@ -73,6 +73,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const [prefs, setPrefs] = useState<typeof DEFAULT_PREFS>(DEFAULT_PREFS);
   const [mounted, setMounted] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [nudgeDismissed, setNudgeDismissed] = useState(true);
 
   // Tracks for player
   const tracks = liveData.tracks.length > 0 ? liveData.tracks : [];
@@ -89,6 +90,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     setMounted(true);
     const seen = localStorage.getItem('ihype-welcome-seen');
     if (!seen) setShowWelcome(true);
+    setNudgeDismissed(!!localStorage.getItem('profileNudgeDismissed'));
   }, []);
 
   // Client-side revalidation — fixes persistent degraded/cached-view banner
@@ -475,6 +477,14 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
             <div className="wb-bg-orb" style={{ width: 380, height: 380, bottom: '10%', left: '35%', background: 'radial-gradient(circle, rgba(255,62,154,.07), transparent 70%)', animationDelay: '-16s' }} />
             <div className="wb-bg-grid" />
           </div>
+          {!nudgeDismissed && (liveData.profileCompletion?.percent ?? 100) < 100 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 18px', background: 'rgba(255,184,74,.12)', borderBottom: '1px solid rgba(255,184,74,.25)', position: 'relative', zIndex: 2, flexShrink: 0 }}>
+              <button onClick={() => navigateTo('settings')} style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'rgba(255,184,74,.9)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '.06em', minHeight: 'unset' }}>
+                Complete your profile ({liveData.profileCompletion?.percent ?? 0}%) →
+              </button>
+              <button onClick={() => { localStorage.setItem('profileNudgeDismissed', '1'); setNudgeDismissed(true); }} style={{ fontFamily: 'var(--f-m)', fontSize: 14, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', lineHeight: 1, minHeight: 'unset' }} aria-label="Dismiss">×</button>
+            </div>
+          )}
           <div key={view} className="wb-view-anim" style={{ position: isTour || isPageStudio ? 'absolute' : 'relative', zIndex: 1, ...(isTour || isPageStudio ? { inset: 0 } : {}) }}>
             <React.Suspense fallback={
               <div style={{

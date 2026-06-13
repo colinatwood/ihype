@@ -1983,6 +1983,8 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   useEffect(() => { setPrefs(loadPrefs()); }, []);
   const [showWelcome, setShowWelcome] = useState(false);
   useEffect(() => { if (!localStorage.getItem('ihype-welcome-seen')) setShowWelcome(true); }, []);
+  const [nudgeDismissed, setNudgeDismissed] = useState(true);
+  useEffect(() => { setNudgeDismissed(!!localStorage.getItem('profileNudgeDismissed')); }, []);
   const [refreshing, setRefreshing] = useState(false);
   const pullStartY = useRef(0);
   const pullDeltaRef = useRef(0);
@@ -2197,6 +2199,14 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
             {refreshing ? (
               <><span className="wm-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, display: 'inline-block' }} />REFRESHING</>
             ) : pullDelta > 40 ? '↓ RELEASE' : pullDelta > 10 ? '↓ PULL TO REFRESH' : null}
+          </div>
+        )}
+        {!nudgeDismissed && tab !== 'seeds' && (liveData.profileCompletion?.percent ?? 100) < 100 && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: 'rgba(255,184,74,.12)', borderBottom: `1px solid rgba(255,184,74,.25)` }}>
+            <button onClick={() => setSettingsMode(true)} style={{ fontFamily: T.fm, fontSize: 11, color: 'rgba(255,184,74,.9)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '.06em', minHeight: 'unset' }}>
+              Complete your profile ({liveData.profileCompletion?.percent ?? 0}%) →
+            </button>
+            <button onClick={() => { localStorage.setItem('profileNudgeDismissed', '1'); setNudgeDismissed(true); }} style={{ fontFamily: T.fm, fontSize: 16, color: T.ink3, background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', lineHeight: 1, minHeight: 'unset' }} aria-label="Dismiss">×</button>
           </div>
         )}
         <ViewErrorBoundary viewName={tab}>{screenEl}</ViewErrorBoundary>
