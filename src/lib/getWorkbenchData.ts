@@ -422,7 +422,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             capacity: cap,
             price: Math.round(s.ticketPriceCents / 100),
             status,
-            setlistProgress: parseSetlistProgress(s.setlistProgress),
+            setlistProgress: (() => { const sp = s.setlistProgress as { tracks?: { confirmed?: boolean }[] } | null; if (!sp?.tracks?.length) return null; return { total: sp.tracks.length, confirmed: sp.tracks.filter(t => t.confirmed).length }; })(),
           };
         }),
         ...pHosted.map((s) => {
@@ -445,7 +445,7 @@ export async function getWorkbenchData(userId: string): Promise<WorkbenchData> {
             capacity: cap,
             price: Math.round(s.ticketPriceCents / 100),
             status,
-            setlistProgress: parseSetlistProgress(s.setlistProgress),
+            setlistProgress: (() => { const sp = s.setlistProgress as { tracks?: { confirmed?: boolean }[] } | null; if (!sp?.tracks?.length) return null; return { total: sp.tracks.length, confirmed: sp.tracks.filter(t => t.confirmed).length }; })(),
           };
         }),
       ];
