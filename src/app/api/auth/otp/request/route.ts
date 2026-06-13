@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     // Invite-only gate
-    if (process.env.INVITE_ONLY === 'true') {
+    if (process.env.FEATURE_REQUIRE_INVITE_CODE === 'true') {
       const code = body.inviteCode;
       if (!code) return NextResponse.json({ error: 'An invite code is required.' }, { status: 403 });
       const invite = await db.inviteCode.findUnique({ where: { code } });

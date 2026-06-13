@@ -1,8 +1,8 @@
 export async function register() {
-  if (process.env.SENTRY_DSN) {
+  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     const Sentry = await import('@sentry/nextjs');
     Sentry.init({
-      dsn: process.env.SENTRY_DSN,
+      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       environment: process.env.NODE_ENV,
       integrations(defaults) {
         // ContextLines (readline) and LocalVariables (child_process) are Node.js-only.

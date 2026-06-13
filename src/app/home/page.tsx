@@ -32,13 +32,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function getWorkbenchData(): Promise<WorkbenchData> {
-  try {
-    const session = await auth();
-    if (!session?.user?.id) return MOCK_DATA;
-    return await fetchWorkbenchData(session.user.id);
-  } catch {
-    return MOCK_DATA;
-  }
+  const session = await auth();
+  if (!session?.user?.id) return MOCK_DATA;
+  return await fetchWorkbenchData(session.user.id);
 }
 
 export default async function HomePage() {
