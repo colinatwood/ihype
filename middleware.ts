@@ -37,7 +37,10 @@ const authMiddleware = auth((request) => {
     return NextResponse.redirect(new URL(WORKBENCH_PATH, request.url));
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  // Expose pathname to server components (used by admin layout for device-register exemption)
+  res.headers.set('x-pathname', pathname);
+  return res;
 });
 
 // Redirect www to apex BEFORE NextAuth sees the request — NextAuth rejects hosts
