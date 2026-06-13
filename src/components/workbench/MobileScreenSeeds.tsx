@@ -21,6 +21,10 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
   const [sessionStats, setSessionStats] = useState({ saved: 0, skipped: 0, hyped: 0 });
   const [pendingUndo, setPendingUndo] = useState<{ id: string; action: 'save' | 'skip' | 'hype'; title: string } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [deckError, setDeckError] = useState(false);
+  const [longPressCard, setLongPressCard] = useState<SeedDeckTrack | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressedRef = useRef(false);
   const [loadingDeck, setLoadingDeck] = useState(true);
   const [dailyPick, setDailyPick] = useState<string | null>(null);
   useEffect(() => {
@@ -46,10 +50,11 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
 
   const refreshDeck = useCallback(() => {
     setLoadingDeck(true);
+    setDeckError(false);
     fetch('/api/discover/seeds')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d?.seeds?.length) { setDeck(d.seeds); setDeckIdx(0); } })
-      .catch(() => {})
+      .catch(() => { setDeckError(true); })
       .finally(() => setLoadingDeck(false));
   }, []);
 
@@ -177,6 +182,12 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
     setIsDragging(false);
     setDragX(0);
     setDragY(0);
+    longPressedRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressedRef.current = true;
+      navigator.vibrate?.([10, 40, 10]);
+      setLongPressCard(front ?? null);
+    }, 500);
   }
 
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
@@ -188,6 +199,7 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
     if (!isDragging && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
       setIsDragging(true);
       setIsPressed(false);
+      if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
     }
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(() => {
@@ -197,6 +209,7 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
   }
 
   function handlePointerUp() {
+    if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     const dx = dragXRef.current;
     const dy = dragYRef.current;
@@ -204,7 +217,7 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
       if (dx > 100)       handleAction('hype', true, dx, dy);
       else if (dx < -100) handleAction('skip', true, dx, dy);
       else if (dy < -100) handleAction('save', true, dx, dy);
-    } else if (!flyOff && front && Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+    } else if (!longPressedRef.current && !flyOff && front && Math.abs(dx) < 8 && Math.abs(dy) < 8) {
       // Double-tap to hype
       const now = Date.now();
       if (now - lastTapTimeRef.current < 350) {
@@ -307,6 +320,15 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
           {/* Skeleton loading state */}
           {loadingDeck && (
             <div className="wm-skeleton" style={{ position: 'absolute', inset: 0, borderRadius: 18 }} />
+          )}
+          {/* Error state */}
+          {!loadingDeck && deckError && (
+            <div style={{ position: 'absolute', inset: 0, borderRadius: 18, background: T.bg2, border: `1px solid rgba(255,80,41,.25)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '0 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: 32 }}>⚠️</div>
+              <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 15, color: T.ink }}>Couldn&apos;t load seeds</div>
+              <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.06em', maxWidth: 200 }}>Check your connection and try again.</div>
+              <button onClick={refreshDeck} style={{ marginTop: 4, padding: '7px 20px', borderRadius: 99, background: T.accent, color: '#fff', border: 'none', fontFamily: T.fd, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Try again</button>
+            </div>
           )}
           {/* All-reviewed state */}
           {!loadingDeck && deck.length > 0 && !front && (
@@ -537,6 +559,29 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
 
         <div style={{ height: 48 }} />
       </div>
+
+      {/* Long-press quick action sheet */}
+      {longPressCard && (
+        <>
+          <div onClick={() => setLongPressCard(null)} style={{ position: 'fixed', inset: 0, zIndex: 49, background: 'rgba(0,0,0,.6)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', padding: '20px 18px 40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: T.line2 }} />
+            </div>
+            <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 16, color: T.ink, marginBottom: 4 }}>{longPressCard.title}</div>
+            <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, marginBottom: 18 }}>{longPressCard.artistName}</div>
+            {([
+              { label: '♥  Hype', action: () => { handleAction('hype'); setLongPressCard(null); }, color: T.pink },
+              { label: '↑  Save', action: () => { handleAction('save'); setLongPressCard(null); }, color: T.teal },
+              { label: '✕  Skip', action: () => { handleAction('skip'); setLongPressCard(null); }, color: T.ink3 },
+              { label: '↗  Share', action: () => { navigator.share?.({ title: longPressCard.title, text: `${longPressCard.title} by ${longPressCard.artistName}` }).catch(() => {}); setLongPressCard(null); }, color: T.blue },
+            ] as { label: string; action: () => void; color: string }[]).map(item => (
+              <button key={item.label} onClick={item.action} style={{ width: '100%', padding: '14px 0', marginBottom: 8, borderRadius: 12, border: 'none', background: T.bg4, color: item.color, fontFamily: T.fd, fontWeight: 700, fontSize: 15, cursor: 'pointer', textAlign: 'center' }}>{item.label}</button>
+            ))}
+            <button onClick={() => setLongPressCard(null)} style={{ width: '100%', padding: '14px 0', borderRadius: 12, border: `1px solid ${T.line2}`, background: 'transparent', color: T.ink3, fontFamily: T.fm, fontSize: 13, cursor: 'pointer' }}>Dismiss</button>
+          </div>
+        </>
+      )}
     </>
   );
 }

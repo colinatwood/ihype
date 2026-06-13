@@ -14,7 +14,22 @@ function AlbumArt({ c = T.accent, size = 48 }: { c?: string; size?: number }) {
 export function ScreenShowsNew({ data, onToast }: { data: WorkbenchData; onToast?: (msg: string) => void }) {
   const [showView, setShowView] = React.useState<'list' | 'detail' | 'ticket'>('list');
   const [selected, setSelected] = React.useState<WbShow | null>(null);
+  const [longPressShow, setLongPressShow] = React.useState<WbShow | null>(null);
+  const longPressTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressedRef = React.useRef(false);
   const shows = data.shows;
+
+  function handleShowPointerDown(show: WbShow) {
+    longPressedRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressedRef.current = true;
+      navigator.vibrate?.([10, 40, 10]);
+      setLongPressShow(show);
+    }, 500);
+  }
+  function cancelLongPress() {
+    if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressTimerRef.current = null; }
+  }
 
   if (showView === 'detail' && selected) {
     return <ShowDetailNew show={selected} onBack={() => setShowView('list')} onBuy={() => setShowView('ticket')} onToast={onToast} />;
@@ -56,6 +71,7 @@ export function ScreenShowsNew({ data, onToast }: { data: WorkbenchData; onToast
         {shows.length === 0 && (
           <div style={{ textAlign: 'center', padding: '40px 18px', color: T.ink3, fontFamily: T.fb, fontSize: 14 }}>
             No shows right now — check back soon
+            <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink4, marginTop: 8, letterSpacing: '.1em' }}>Pull down to refresh</div>
           </div>
         )}
 
@@ -70,7 +86,12 @@ export function ScreenShowsNew({ data, onToast }: { data: WorkbenchData; onToast
                 const pct = show.capacity > 0 ? Math.round(show.sold / show.capacity * 100) : 0;
                 const cardAccent = show.status === 'TONIGHT' ? T.accent : show.status === 'NEAR SOLD' ? T.pink : T.teal;
                 return (
-                  <div key={show.id} onClick={() => { setSelected(show); setShowView('detail'); }}
+                  <div key={show.id}
+                    onClick={() => { if (longPressedRef.current) { longPressedRef.current = false; return; } setSelected(show); setShowView('detail'); }}
+                    onPointerDown={() => handleShowPointerDown(show)}
+                    onPointerMove={cancelLongPress}
+                    onPointerUp={cancelLongPress}
+                    onPointerLeave={cancelLongPress}
                     style={{ background: T.bg2, border: `1px solid ${show.status === 'NEAR SOLD' ? 'rgba(255,62,154,.25)' : T.line}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer' }}>
                     <div style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 11 }}>
                       <AlbumArt c={cardAccent} size={48} />
@@ -97,6 +118,28 @@ export function ScreenShowsNew({ data, onToast }: { data: WorkbenchData; onToast
           </div>
         ))}
       </div>
+
+      {/* Long-press quick action sheet */}
+      {longPressShow && (
+        <>
+          <div onClick={() => setLongPressShow(null)} style={{ position: 'fixed', inset: 0, zIndex: 49, background: 'rgba(0,0,0,.6)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', padding: '20px 18px 40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 12 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: T.line2 }} />
+            </div>
+            <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 16, color: T.ink, marginBottom: 4 }}>{longPressShow.name}</div>
+            <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, marginBottom: 18 }}>{longPressShow.venue} · {longPressShow.date}</div>
+            {([
+              { label: 'RSVP', color: T.teal, action: async () => { await fetch(`/api/shows/${longPressShow.id}/rsvp`, { method: 'POST' }).catch(() => {}); onToast?.(`✓ RSVP'd to ${longPressShow.name.slice(0, 30)}`); setLongPressShow(null); } },
+              { label: '↗ Share', color: T.blue, action: async () => { navigator.share?.({ title: longPressShow.name, url: `/shows/${longPressShow.id}` }).catch(() => {}); setLongPressShow(null); } },
+              { label: 'Get ticket', color: T.accent, action: () => { setSelected(longPressShow); setShowView('ticket'); setLongPressShow(null); } },
+            ] as { label: string; color: string; action: () => void }[]).map(item => (
+              <button key={item.label} onClick={() => void item.action()} style={{ width: '100%', padding: '14px 0', marginBottom: 8, borderRadius: 12, border: 'none', background: T.bg4, color: item.color, fontFamily: T.fd, fontWeight: 700, fontSize: 15, cursor: 'pointer', textAlign: 'center' }}>{item.label}</button>
+            ))}
+            <button onClick={() => setLongPressShow(null)} style={{ width: '100%', padding: '14px 0', borderRadius: 12, border: `1px solid ${T.line2}`, background: 'transparent', color: T.ink3, fontFamily: T.fm, fontSize: 13, cursor: 'pointer' }}>Dismiss</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

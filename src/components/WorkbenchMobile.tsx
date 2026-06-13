@@ -841,7 +841,8 @@ function WMBottomTabs({ tab, onTab, notifCount = 0 }: { tab: MobileTab; onTab: (
     <nav role="navigation" aria-label="Main navigation" style={{
       display: 'flex', background: 'rgba(10,8,5,.88)',
       backdropFilter: 'blur(22px)', WebkitBackdropFilter: 'blur(22px)',
-      borderTop: `1px solid ${T.line}`, padding: '10px 0 8px',
+      borderTop: `1px solid ${T.line}`, padding: '10px 0 0',
+      paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
       gap: 0, flexShrink: 0,
     }}>
       {items.map(it => {
@@ -858,7 +859,9 @@ function WMBottomTabs({ tab, onTab, notifCount = 0 }: { tab: MobileTab; onTab: (
             <span style={{ width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
               {it.icon(25, c, on && it.id === 'seeds')}
               {it.id === 'more' && notifCount > 0 && (
-                <span style={{ position: 'absolute', top: 0, right: 0, width: 7, height: 7, borderRadius: '50%', background: T.accent, border: `1.5px solid rgba(10,8,5,.88)` }} />
+                <span style={{ position: 'absolute', top: -2, right: -4, minWidth: 16, height: 16, borderRadius: 99, background: T.accent, border: `1.5px solid rgba(10,8,5,.88)`, fontFamily: T.fm, fontSize: 9, fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px' }}>
+                  {notifCount > 99 ? '99+' : notifCount}
+                </span>
               )}
             </span>
             {it.label}
@@ -2060,6 +2063,23 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const tabSwipeLocked = useRef<'h' | 'v' | null>(null);
   const scrollPositions = useRef<Partial<Record<MobileTab, number>>>({});
   const mainScrollRef = useRef<HTMLDivElement>(null);
+  const edgeSwipeRef = useRef<{ x: number; y: number } | null>(null);
+
+  function handleOverlayTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    edgeSwipeRef.current = t.clientX < 28 ? { x: t.clientX, y: t.clientY } : null;
+  }
+
+  function makeOverlayTouchEnd(onClose: () => void) {
+    return (e: React.TouchEvent) => {
+      if (!edgeSwipeRef.current) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - edgeSwipeRef.current.x;
+      const dy = Math.abs(t.clientY - edgeSwipeRef.current.y);
+      edgeSwipeRef.current = null;
+      if (dx > 80 && dy < 60) { navigator.vibrate?.(8); onClose(); }
+    };
+  }
 
   const handleRefresh = useCallback(async () => {
     if (refreshing) return;
@@ -2068,10 +2088,10 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     try {
       const res = await fetch('/api/workbench');
       if (res.ok) { const fresh = await res.json() as WorkbenchData; if (fresh) setLiveData(fresh); }
-    } catch { /* ignore */ } finally {
+    } catch { showToast('Failed to refresh', T.accent); } finally {
       setRefreshing(false);
     }
-  }, [refreshing]);
+  }, [refreshing, showToast]);
 
   function handleMainTouchStart(e: React.TouchEvent) {
     const t = e.touches[0];
@@ -2145,7 +2165,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   if (journalMode) {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(() => setJournalMode(false))}>
         <style>{eqCss}</style>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px 10px', borderBottom: `1px solid ${T.line}` }}>
           <button onClick={() => setJournalMode(false)} style={{ background: 'none', border: 'none', color: T.accent, fontFamily: T.fm, fontSize: 13, cursor: 'pointer', padding: '4px 0' }}>← Back</button>
@@ -2160,7 +2180,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   if (discoverMode) {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(() => setDiscoverMode(false))}>
         <style>{eqCss}</style>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px 10px', borderBottom: `1px solid ${T.line}` }}>
           <button onClick={() => setDiscoverMode(false)} style={{ background: 'none', border: 'none', color: T.teal, fontFamily: T.fm, fontSize: 13, cursor: 'pointer', padding: '4px 0' }}>← Back</button>
@@ -2183,7 +2203,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   ];
   for (const m of overlayModes) {
     if (m.active) return (
-      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(m.close)}>
         <style>{eqCss}</style>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px 10px', borderBottom: `1px solid ${T.line}`, flexShrink: 0 }}>
           <button onClick={m.close} style={{ background: 'none', border: 'none', color: m.color, fontFamily: T.fm, fontSize: 13, cursor: 'pointer', padding: '4px 0' }}>← Back</button>
