@@ -543,6 +543,26 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
   const [autoSaveState, setAutoSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
+  const [geoLocating, setGeoLocating] = useState(false);
+  const [geoErr, setGeoErr] = useState('');
+
+  async function detectCity() {
+    if (!navigator.geolocation) { setGeoErr('Not supported'); return; }
+    setGeoLocating(true); setGeoErr('');
+    try {
+      const pos = await new Promise<GeolocationPosition>((res, rej) =>
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })
+      );
+      const { latitude: lat, longitude: lon } = pos.coords;
+      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`);
+      const d = await r.json() as { address?: { city?: string; town?: string; municipality?: string; county?: string } };
+      const city = d.address?.city ?? d.address?.town ?? d.address?.municipality ?? d.address?.county ?? '';
+      if (city) patch('city', city); else setGeoErr('City not found');
+    } catch (e) {
+      const ge = e as GeolocationPositionError;
+      setGeoErr(ge.code === 1 ? 'Location denied' : 'Location unavailable');
+    } finally { setGeoLocating(false); }
+  }
 
   useEffect(() => setDraft(editor), [editor]);
 
@@ -728,6 +748,14 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)' }}>
             <Toggle on={draft.fanShareEnabled} onChange={(value) => patch('fanShareEnabled', value)} small /> Make this custom page visible publicly
           </label>
+          <div>
+            <span style={{ display: 'block', fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.12em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 6 }}>City</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input value={draft.city ?? ''} onChange={e => patch('city', e.target.value)} placeholder="Your city" style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line-2)', background: 'var(--bg-3)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13 }} />
+              <button type="button" onClick={() => void detectCity()} disabled={geoLocating} style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid var(--line-2)', background: 'none', color: geoLocating ? 'var(--ink-3)' : 'var(--accent)', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, cursor: geoLocating ? 'default' : 'pointer', whiteSpace: 'nowrap' }}>{geoLocating ? '…' : '⌖ Detect'}</button>
+            </div>
+            {geoErr && <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: '#ff5029', marginTop: 5 }}>{geoErr}</div>}
+          </div>
         </EditorPanel>
 
         <EditorPanel title="Background, graphics + media" eyebrow="Visual system">
@@ -793,7 +821,13 @@ export function ViewSettings({ prefs, setPref, data, onBack }: {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <Field label="Address" value={draft.addressLine1} onChange={(value) => patch('addressLine1', value)} />
               <Field label="Hours" value={draft.hoursText} onChange={(value) => patch('hoursText', value)} placeholder="Tue–Sun · 5PM–1AM" />
-              <Field label="City" value={draft.city} onChange={(value) => patch('city', value)} />
+              <div>
+                <span style={{ display: 'block', fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.12em', color: 'var(--ink-3)', textTransform: 'uppercase', marginBottom: 6 }}>City</span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input value={draft.city ?? ''} onChange={e => patch('city', e.target.value)} placeholder="Venue city" style={{ flex: 1, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line-2)', background: 'var(--bg-3)', color: 'var(--ink)', fontFamily: 'var(--f-b)', fontSize: 13 }} />
+                  <button type="button" onClick={() => void detectCity()} disabled={geoLocating} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line-2)', background: 'none', color: geoLocating ? 'var(--ink-3)' : 'var(--accent)', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, cursor: geoLocating ? 'default' : 'pointer' }}>{geoLocating ? '…' : '⌖'}</button>
+                </div>
+              </div>
               <Field label="State / region" value={draft.stateRegion} onChange={(value) => patch('stateRegion', value)} />
               <TextArea label="Parking details" value={draft.parkingDetails} onChange={(value) => patch('parkingDetails', value)} />
               <TextArea label="Stay recommendations" value={draft.stayRecommendations} onChange={(value) => patch('stayRecommendations', value)} />

@@ -33,6 +33,7 @@ export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
   const [q, setQ] = useState('');
   const [charts, setCharts] = useState<{ national: ChartTrack[]; local: ChartTrack[]; forYou: ChartTrack[] } | null>(null);
   const [chartTab, setChartTab] = useState<'local' | 'national' | 'forYou'>('local');
+  const [autoMix, setAutoMix] = useState(false);
   useEffect(() => {
     fetch(`/api/charts?city=${encodeURIComponent(data.city ?? '')}`)
       .then(r => r.ok ? r.json() : null)
@@ -209,7 +210,7 @@ export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
         <div style={{ marginTop: 28 }}>
           <div style={{ padding: '0 22px 10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 18, letterSpacing: '-.01em' }}>Stations</div>
-            <div style={{ fontFamily: T.fm, fontSize: 9.5, color: T.pink, letterSpacing: '.1em' }}>AUTO-MIX</div>
+            <button onClick={() => setAutoMix(v => !v)} style={{ fontFamily: T.fm, fontSize: 9.5, color: autoMix ? T.bg : T.pink, letterSpacing: '.1em', background: autoMix ? T.pink : 'transparent', border: `1px solid ${T.pink}`, borderRadius: 99, padding: '3px 9px', cursor: 'pointer' }}>AUTO-MIX</button>
           </div>
           <div style={{ display: 'flex', gap: 11, overflowX: 'auto', padding: '0 22px 4px', scrollbarWidth: 'none' }}>
             {([
@@ -217,7 +218,7 @@ export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
               { n: 'Local Scene', sub: data.city ?? 'Nearby artists', c: T.teal   },
               { n: 'Rising Now',  sub: '7-day chart risers',      c: T.pink   },
             ] as const).map((s, si) => (
-              <div key={s.n} onClick={() => { onPlay(si % Math.max(1, queue.length)); onExpand(); }} style={{ width: 148, flexShrink: 0, cursor: 'pointer' }}>
+              <div key={s.n} onClick={() => { const idx = autoMix ? Math.floor(Math.random() * Math.max(1, queue.length)) : si % Math.max(1, queue.length); onPlay(idx); onExpand(); }} style={{ width: 148, flexShrink: 0, cursor: 'pointer' }}>
                 <div style={{ width: 148, height: 148, borderRadius: 14, position: 'relative', overflow: 'hidden', background: `linear-gradient(135deg, ${s.c}, ${s.c}55 60%, ${T.bg3})` }}>
                   <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 28% 24%, rgba(255,255,255,.22), transparent 60%)' }} />
                   <div style={{ position: 'absolute', top: 9, left: 9 }}>

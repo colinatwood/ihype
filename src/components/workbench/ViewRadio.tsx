@@ -109,7 +109,7 @@ export const ViewRadio = memo(function ViewRadio({ data, onPickTrack }: {
             ● ON AIR · {shows.length} CHANNELS · {shows.reduce((a, s) => a + s.listeners, 0).toLocaleString()} LISTENING NOW
           </div>
           <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 42, letterSpacing: '-.03em', lineHeight: 1, margin: 0, color: 'var(--ink)' }}>Radio</h1>
-          <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>Curated shows from promoters, DJs, and artists. No ads, no algorithm — just real people picking music.</p>
+          <p style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-2)', marginTop: 10, maxWidth: 560, lineHeight: 1.5 }}>Curated shows from DJs and artists. No ads, no algorithm — just real people picking music.</p>
         </div>
         {showForm ? (
           <div style={{ padding: '14px 16px', border: '1px solid var(--line-2)', borderRadius: 12, background: 'var(--bg-2)', minWidth: 300 }}>

@@ -8,7 +8,6 @@ import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { NavDrawer } from '@/components/NavDrawer';
 import { SearchBar } from '@/components/SearchBar';
-import { BugReportButton } from '@/components/BugReportButton';
 import { OfflineBanner } from '@/components/OfflineBanner';
 import { MiniPlayer } from '@/components/MiniPlayer';
 
@@ -64,7 +63,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
           </div>
           <MiniPlayer />
-          <BugReportButton />
           <PwaInstallPrompt />
           <ServiceWorkerRegister />
 
