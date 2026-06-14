@@ -689,13 +689,6 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
             <span style={{ fontFamily: T.fb, fontSize: 15, color: T.ink }}>{item.label}</span>
           </a>
         ))}
-        <button onClick={() => { close(); onFeedback?.(); }} style={{
-          display: 'flex', alignItems: 'center', gap: 14, padding: '13px 20px',
-          background: 'transparent', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left',
-        }}>
-          <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>🐛</span>
-          <span style={{ fontFamily: T.fb, fontSize: 15, color: T.ink }}>Report a bug</span>
-        </button>
       </div>
 
       {/* Divider */}
@@ -786,7 +779,7 @@ function MobileScreenMore({ data, onStudio, onTour, onPage, onNotif, onSettings,
     { label: 'Page Creator', sub: isVenue ? 'Edit your venue page' : isCreator ? 'Edit your artist page' : 'Build your fan page', color: T.teal, on: onPage, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="2" y="2" width="16" height="16" rx="2"/><path d="M2 7h16M7 18V7"/></svg> },
     { label: 'Tour', sub: 'Booking & routing', color: T.amber, on: onTour, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M3 10h14M10 3l7 7-7 7" strokeLinecap="round" strokeLinejoin="round"/></svg> },
     ...(canJournal ? [{ label: 'Journal', sub: 'Posts & updates', color: T.accent, on: onJournal, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M7 7h6M7 11h4" strokeLinecap="round"/></svg> }] : []),
-    { label: 'Advertise', sub: 'Promote your music', color: T.pink, on: onAdvertise, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M3 14V6l10-3v14L3 14z" strokeLinejoin="round"/><path d="M13 7l4 1v4l-4 1"/><circle cx="6.5" cy="16.5" r="1.5"/></svg> },
+    { label: 'Advertise', sub: 'Promote your brand', color: T.pink, on: onAdvertise, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M3 14V6l10-3v14L3 14z" strokeLinejoin="round"/><path d="M13 7l4 1v4l-4 1"/><circle cx="6.5" cy="16.5" r="1.5"/></svg> },
     { label: 'Discover', sub: 'Artists & venues', color: T.teal, on: onDiscover, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><circle cx="10" cy="10" r="7"/><path d="M13 7l-2 3-3 1.5 2-3L13 7z" fill="currentColor" stroke="none"/></svg> },
     { label: 'Notifications', sub: 'Alerts & activity', color: T.blue, on: onNotif, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><path d="M5 8a5 5 0 0 1 10 0v3.5l1.5 2.5h-13L5 11.5V8Z"/><path d="M8.5 16.5a1.5 1.5 0 0 0 3 0" strokeLinecap="round"/></svg> },
     { label: 'Settings', sub: 'Account & preferences', color: T.ink2, on: onSettings, icon: <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={22} height={22}><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4" strokeLinecap="round"/></svg> },
