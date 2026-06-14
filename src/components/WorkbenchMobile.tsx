@@ -466,6 +466,9 @@ const eqCss = `
 .wm-scroll::-webkit-scrollbar{display:none}
 @keyframes wm-badge-pop{0%{transform:scale(.3);opacity:0}60%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}
 @keyframes wm-tab-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes wm-stat-pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+.wm-stat-pop{animation:wm-stat-pop .25s cubic-bezier(.4,0,.2,1) both}
+@keyframes wm-overlay-in{from{opacity:.85;transform:translateY(5%)}to{opacity:1;transform:translateY(0)}}
 .wm-skeleton{background:linear-gradient(90deg,#1a1612 25%,#221c16 50%,#1a1612 75%);background-size:200% 100%;animation:wm-shimmer 1.4s infinite}
 button:active,[role=button]:active{transform:scale(.95);transition:transform .06s}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
@@ -2004,6 +2007,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     window.addEventListener('offline', off);
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
+  const prevOnlineRef = useRef(true);
   const [refreshing, setRefreshing] = useState(false);
   const lastRefreshRef = useRef<number>(Date.now());
   const [lastRefreshAge, setLastRefreshAge] = useState('just now');
@@ -2123,6 +2127,11 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     }
   }, [refreshing, showToast]);
 
+  useEffect(() => {
+    if (isOnline && !prevOnlineRef.current) { void handleRefresh(); }
+    prevOnlineRef.current = isOnline;
+  }, [isOnline, handleRefresh]);
+
   function handleMainTouchStart(e: React.TouchEvent) {
     const t = e.touches[0];
     pullStartY.current = t.clientY;
@@ -2197,7 +2206,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   if (journalMode) {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(() => setJournalMode(false))}>
+      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column', animation: 'wm-overlay-in .22s cubic-bezier(.4,0,.2,1)' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(() => setJournalMode(false))}>
         <style>{eqCss}</style>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px 10px', borderBottom: `1px solid ${T.line}` }}>
           <button onClick={() => setJournalMode(false)} style={{ background: 'none', border: 'none', color: T.accent, fontFamily: T.fm, fontSize: 13, cursor: 'pointer', padding: '4px 0' }}>← Back</button>
@@ -2212,7 +2221,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   if (discoverMode) {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(() => setDiscoverMode(false))}>
+      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column', animation: 'wm-overlay-in .22s cubic-bezier(.4,0,.2,1)' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(() => setDiscoverMode(false))}>
         <style>{eqCss}</style>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px 10px', borderBottom: `1px solid ${T.line}` }}>
           <button onClick={() => setDiscoverMode(false)} style={{ background: 'none', border: 'none', color: T.teal, fontFamily: T.fm, fontSize: 13, cursor: 'pointer', padding: '4px 0' }}>← Back</button>
@@ -2235,7 +2244,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   ];
   for (const m of overlayModes) {
     if (m.active) return (
-      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(m.close)}>
+      <div style={{ position: 'fixed', inset: 0, background: T.bg, color: T.ink, fontFamily: T.fb, overflow: 'hidden', display: 'flex', flexDirection: 'column', animation: 'wm-overlay-in .22s cubic-bezier(.4,0,.2,1)' }} onTouchStart={handleOverlayTouchStart} onTouchEnd={makeOverlayTouchEnd(m.close)}>
         <style>{eqCss}</style>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px 10px', borderBottom: `1px solid ${T.line}`, flexShrink: 0 }}>
           <button onClick={m.close} style={{ background: 'none', border: 'none', color: m.color, fontFamily: T.fm, fontSize: 13, cursor: 'pointer', padding: '4px 0' }}>← Back</button>
@@ -2343,7 +2352,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
       {/* Toast notifications */}
       {toasts.length > 0 && (
-        <div style={{ position: 'absolute', left: 16, right: 16, bottom: 140, zIndex: 200, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div role="status" aria-live="polite" style={{ position: 'absolute', left: 16, right: 16, bottom: 140, zIndex: 200, pointerEvents: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {toasts.map(t => (
             <div key={t.id} style={{
               padding: '10px 14px 6px', borderRadius: 10,
