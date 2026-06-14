@@ -41,6 +41,8 @@ export default function ViewJournal({ data, onToast }: { data: WorkbenchData; on
   const [pendingDelete, setPendingDelete] = useState<JournalEntry | null>(null);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => () => { if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current); }, []);
+
   const profileId = data.profileId;
 
   useEffect(() => {
