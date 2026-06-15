@@ -1035,11 +1035,40 @@ export default function ViewPageStudio({ data, defaultRole }: { data?: Workbench
     setShowTyping(true);
     scrollChat();
 
-    await new Promise(r => setTimeout(r, 1300));
+    let dirs: Theme[];
+    try {
+      const res = await fetch('/api/page-builder/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: roleRef.current,
+          name: contentRef.current.name,
+          genre: artistGenreRef.current,
+          vibe: vibeText,
+        }),
+      });
+      if (res.ok) {
+        const json = await res.json() as { directions: { name: string; mood: string; font: string; layout: string; tagline: string; bio: string; palette: { bg: string; surface: string; line: string; ink: string; ink2: string; accent: string; accent2: string } }[] };
+        dirs = json.directions.map((d) => ({
+          name: d.name,
+          mood: (['dark', 'light', 'warm'].includes(d.mood) ? d.mood : 'dark') as MoodKey,
+          font: (['editorial', 'grotesk', 'serif', 'mono'].includes(d.font) ? d.font : 'editorial') as FontKey,
+          layout: (['spotlight', 'zine', 'poster', 'gallery'].includes(d.layout) ? d.layout : 'spotlight') as LayoutKey,
+          palette: d.palette,
+          tagline: d.tagline ?? null,
+          bio: d.bio ?? null,
+          radius: 14,
+        }));
+      } else {
+        dirs = fallbackDirections(vibeText, roleRef.current);
+      }
+    } catch {
+      dirs = fallbackDirections(vibeText, roleRef.current);
+    }
+
     setShowTyping(false);
     setGenerating(false);
 
-    const dirs = fallbackDirections(vibeText, roleRef.current);
     directionsRef.current = dirs;
     setDirections(dirs);
     applyTheme(dirs[0]);

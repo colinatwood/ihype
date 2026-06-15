@@ -218,6 +218,8 @@ export type WorkbenchData = {
   stripeConnectOnboarded?: boolean;
   trending?: WbTrendingProfile[];
   pageEditor?: WbPageEditor;
+  /** Page editor data keyed by profile type (LISTENER, ARTIST, DJ, VENUE). */
+  pageEditorsByType?: Record<string, WbPageEditor>;
 };
 
 export const DEFAULT_PREFS = {

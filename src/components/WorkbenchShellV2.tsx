@@ -398,9 +398,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       case 'tickets':  return <ViewErrorBoundary viewName="Live Events"><ViewTickets data={liveData} /></ViewErrorBoundary>;
       case 'settings':     return <ViewErrorBoundary viewName="Settings"><ViewSettings prefs={prefs} setPref={setPref} data={liveData} onBack={() => navigateTo(prevView)} /></ViewErrorBoundary>;
       case 'tour':         return <ViewErrorBoundary viewName="Tour Planner"><ViewTour data={liveData} /></ViewErrorBoundary>;
-      case 'pagestudio':   return <ViewErrorBoundary viewName="Fan Page"><ViewPageStudio data={liveData} defaultRole="fan" /></ViewErrorBoundary>;
-      case 'artistpage':   return <ViewErrorBoundary viewName="Artist Page"><ViewArtistPage data={liveData} /></ViewErrorBoundary>;
-      case 'venuepage':       return <ViewErrorBoundary viewName="Venue Page"><ViewVenuePage data={liveData} /></ViewErrorBoundary>;
+      case 'pagestudio':   return <ViewErrorBoundary viewName="Fan Page"><ViewPageStudio data={{ ...liveData, pageEditor: liveData.pageEditorsByType?.['LISTENER'] ?? liveData.pageEditor }} defaultRole="fan" /></ViewErrorBoundary>;
+      case 'artistpage':   return <ViewErrorBoundary viewName="Artist Page"><ViewArtistPage data={{ ...liveData, pageEditor: liveData.pageEditorsByType?.['ARTIST'] ?? liveData.pageEditorsByType?.['DJ'] ?? liveData.pageEditor }} /></ViewErrorBoundary>;
+      case 'venuepage':       return <ViewErrorBoundary viewName="Venue Page"><ViewVenuePage data={{ ...liveData, pageEditor: liveData.pageEditorsByType?.['VENUE'] ?? liveData.pageEditor }} /></ViewErrorBoundary>;
       case 'journal': {
         const role = (liveData.profileType ?? '').toUpperCase();
         const canJournal = role === 'ARTIST' || role === 'DJ' || role === 'VENUE';
