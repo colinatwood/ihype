@@ -5,6 +5,7 @@ import type { WorkbenchData } from '@/components/WorkbenchShellV2';
 import type { WbTicket, WbTrendingProfile } from '@/types/workbench';
 import { IcHeart, IcCheck } from './icons';
 import { Panel, TrackCard } from './primitives';
+import { SplitBar } from '@/components/SplitBar';
 
 const STUB_ACCENT_PALETTE = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#4af0b0'];
 
@@ -231,6 +232,31 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
           <span style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: '#ffb84a' }}>Some data couldn't load — you're seeing a cached view. Refresh to retry.</span>
         </div>
       )}
+
+      {/* Hype wallet card */}
+      <div style={{ background: 'color-mix(in srgb, var(--accent) 8%, var(--bg))', border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)', borderRadius: 16, padding: '1.25rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--accent)" aria-hidden="true"><path d="M13.5 0.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>
+          <span style={{ fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>
+            You have {data.stats?.hypesRemaining ?? data.stats?.hypesGiven ?? 0} hypes this week
+          </span>
+        </div>
+        <p style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)', margin: '0 0 12px 0', lineHeight: 1.5 }}>
+          Hype is scarce on purpose — it&apos;s a real signal, not a like. Spend it on artists you believe in.
+        </p>
+        {/* Progress bar */}
+        <div style={{ background: 'var(--bg-2)', borderRadius: 999, height: 4, marginBottom: 12 }}>
+          <div style={{ background: 'var(--accent)', height: 4, borderRadius: 999, width: `${Math.min(100, ((data.stats?.hypesGiven ?? 0) / Math.max(1, (data.stats?.hypesGiven ?? 0) + (data.stats?.hypesRemaining ?? 5))) * 100)}%` }} />
+        </div>
+        <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {['Early ticket access', 'Referral earnings (10% promoter cut)', 'Fan presale windows'].map((perk) => (
+            <li key={perk} style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--f-b)', fontSize: 12, color: 'var(--ink-2)' }}>
+              <span style={{ color: 'var(--accent)', fontSize: 10 }}>✦</span>
+              {perk}
+            </li>
+          ))}
+        </ul>
+      </div>
 
       {/* Hero — 3-col grid */}
       <div className="me-hero-grid" style={{
@@ -553,7 +579,10 @@ export function ViewMyPage({ data, onPickTrack, currentIdx }: {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14, padding: '14px 16px' }}>
             {data.tickets.map((tk, i) => (
-              <TicketStub key={tk.id} ticket={tk} accentColor={STUB_ACCENT_PALETTE[i % STUB_ACCENT_PALETTE.length]} />
+              <div key={tk.id}>
+                <TicketStub ticket={tk} accentColor={STUB_ACCENT_PALETTE[i % STUB_ACCENT_PALETTE.length]} />
+                <SplitBar total={tk.price} compact={true} style={{ marginTop: 8 }} />
+              </div>
             ))}
           </div>
         )}

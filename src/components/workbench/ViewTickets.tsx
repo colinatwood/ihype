@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { WorkbenchData } from '@/types/workbench';
 import { IcDot, IcCheck, IcArrow, IcQR } from './icons';
 import { StatCard } from './primitives';
+import { SplitBar } from '@/components/SplitBar';
 
 // Neighborhood fake coordinate mappings for Chicago SVG (viewBox 0 0 600 400)
 const NEIGHBORHOOD_COORDS: Record<string, { x: number; y: number; label: string }> = {
@@ -428,11 +429,7 @@ export const ViewTickets = memo(function ViewTickets({ data }: { data: Workbench
                         </svg>
                       </button>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, marginTop: 2, borderTop: '1px solid var(--line)', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.04em' }}>
-                      <span>${(s.price * 0.45).toFixed(2)} → artist</span>
-                      <span>${(s.price * 0.45).toFixed(2)} → venue</span>
-                      <span>${(s.price * 0.10).toFixed(2)} → referrer</span>
-                    </div>
+                    <SplitBar total={s.price} compact={true} style={{ marginTop: 8 }} />
                   </div>
                 </div>
               );
