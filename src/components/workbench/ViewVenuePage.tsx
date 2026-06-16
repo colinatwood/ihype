@@ -747,7 +747,7 @@ function VenueToolsPanel() {
             </label>
             <textarea style={{ ...fieldStyle, minHeight: 60, resize: 'vertical' as const, marginBottom: 12 }} placeholder="Any notes for the artist (load-in window, parking, etc.)…" value={offer.notes} onChange={e => setOffer(o => ({ ...o, notes: e.target.value }))} />
             <button type="button" onClick={generateOffer} disabled={generating}
-              style={{ padding: '9px 20px', borderRadius: 9, border: 'none', cursor: generating ? 'wait' : 'pointer', background: 'rgba(185,131,255,.15)', border: '1px solid rgba(185,131,255,.35)', color: '#b983ff', fontFamily: 'var(--f-m,monospace)', fontSize: 12, fontWeight: 700, letterSpacing: '.04em' } as React.CSSProperties}>
+              style={{ padding: '9px 20px', borderRadius: 9, border: '1px solid rgba(185,131,255,.35)', cursor: generating ? 'wait' : 'pointer', background: 'rgba(185,131,255,.15)', color: '#b983ff', fontFamily: 'var(--f-m,monospace)', fontSize: 12, fontWeight: 700, letterSpacing: '.04em' } as React.CSSProperties}>
               {generating ? '✦ Thinking…' : '✦ AI — draft offer summary'}
             </button>
             {aiOffer && (
