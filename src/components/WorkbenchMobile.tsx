@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { WorkbenchData, WbTrack, WbShow } from './WorkbenchShellV2';
 import { ViewHalflightFMMobile } from '@/components/workbench/ViewHalflightFM';
-import { ViewMatchmaker } from '@/components/workbench/ViewMatchmaker';
 import { SearchOverlay } from '@/components/workbench/SearchOverlay';
 import { ViewErrorBoundary } from '@/components/workbench/ErrorBoundary';
 import { ViewArtistPage } from '@/components/workbench/ViewArtistPage';
