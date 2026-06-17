@@ -476,13 +476,6 @@ function CountUp({ target, suffix = '' }: { target: number; suffix?: string }) {
 
 /* ── Main page ───────────────────────────────────────────── */
 export function AdvertisePage() {
-  const [liveCount, setLiveCount] = useState(3418);
-
-  useEffect(() => {
-    const t = setInterval(() => setLiveCount(3300 + Math.floor(Math.random() * 260)), 4000);
-    return () => clearInterval(t);
-  }, []);
-
   const eyebrow = (text: string, accent = true): React.CSSProperties => ({
     fontFamily: 'var(--f-m,monospace)', fontSize: 10, letterSpacing: '.2em', color: accent ? '#ff5029' : '#5a5048',
     textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 9,
@@ -494,10 +487,6 @@ export function AdvertisePage() {
         @keyframes adv-pulse { 0%{ box-shadow:0 0 0 0 currentColor } 70%{ box-shadow:0 0 0 6px transparent } 100%{ box-shadow:0 0 0 0 transparent } }
         @keyframes adv-rowIn { from{ opacity:0; transform:translateY(-10px) } to{ opacity:1; transform:none } }
         @keyframes adv-scan { 0%{ opacity:1; top:0 } 100%{ opacity:1; top:100% } }
-        .adv-nav-link { color:#9e9080; font-family:var(--f-m,JetBrains Mono,monospace); font-size:11px; letter-spacing:.1em; text-transform:uppercase; text-decoration:none; padding:6px 0; position:relative; transition:color .15s }
-        .adv-nav-link:hover { color:#f0ebe5 }
-        .adv-nav-link.on { color:#f0ebe5 }
-        .adv-nav-link.on::after { content:''; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:#ff5029 }
         .adv-btn-solid { background:#ff5029; color:#0a0805; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:var(--f-m,monospace); font-weight:600; font-size:11.5px; letter-spacing:.06em; padding:13px 22px; border-radius:9px; cursor:pointer; transition:filter .15s; text-decoration:none; border:none; white-space:nowrap }
         .adv-btn-solid:hover { filter:brightness(1.08) }
         .adv-btn-ghost { border:1px solid rgba(255,255,255,.14); color:#f0ebe5; display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:var(--f-m,monospace); font-weight:600; font-size:11.5px; letter-spacing:.06em; padding:13px 22px; border-radius:9px; cursor:pointer; transition:background .15s, border-color .15s; text-decoration:none; white-space:nowrap; background:none }
@@ -509,28 +498,8 @@ export function AdvertisePage() {
         }
       `}</style>
 
-      {/* Nav */}
-      <nav style={{ position: 'sticky', top: 0, zIndex: 60, background: 'rgba(10,8,5,.82)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ width: '100%', maxWidth: 1180, margin: '0 auto', padding: '0 40px', height: 62, display: 'flex', alignItems: 'center', gap: 28 }}>
-          <Wordmark />
-          <div style={{ display: 'flex', gap: 24, marginLeft: 8 }}>
-            {['Discover', 'Charts', 'Seeds', 'For Artists'].map(l => (
-              <a key={l} href="#" className="adv-nav-link">{l}</a>
-            ))}
-            <a href="#top" className="adv-nav-link on">Advertise</a>
-          </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: '#5a5048', letterSpacing: '.08em', display: 'flex', alignItems: 'center', gap: 7 }}>
-              <span style={{ display: 'inline-block', width: '.55em', height: '.55em', borderRadius: '50%', background: '#ff5029' }} />
-              {liveCount.toLocaleString()} listening right now
-            </span>
-            <a href="#build" className="adv-btn-ghost adv-btn-sm">Buy coverage</a>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero */}
-      <header id="top" style={{ position: 'relative', padding: '70px 0 84px', overflow: 'hidden' }}>
+      <header id="top" style={{ position: 'relative', padding: '40px 0 84px', overflow: 'hidden' }}>
         <div style={{ content: '', position: 'absolute', top: '-30%', left: '50%', transform: 'translateX(-50%)', width: 1100, height: 680, background: 'radial-gradient(ellipse at center, rgba(255,80,41,.10), transparent 62%)', pointerEvents: 'none' }} />
         <div className="adv-hero-grid" style={{ width: '100%', maxWidth: 1180, margin: '0 auto', padding: '0 40px', display: 'grid', gridTemplateColumns: '1.18fr .92fr', gap: 54, alignItems: 'center', position: 'relative' }}>
           <div>
@@ -683,25 +652,25 @@ export function AdvertisePage() {
       </section>
 
       {/* Transparency */}
-      <section id="trust" style={{ position: 'relative', padding: '88px 0', background: '#f6f0e6', color: '#1a1612' }}>
+      <section id="trust" style={{ position: 'relative', padding: '88px 0', borderTop: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ width: '100%', maxWidth: 1180, margin: '0 auto', padding: '0 40px' }}>
           <div style={{ maxWidth: 680, marginBottom: 8 }}>
-            <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, letterSpacing: '.2em', color: '#6b6056', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 9 }}>
-              <span style={{ width: 22, height: 1, background: '#6b6056', opacity: .6 }} />The co-op promise
+            <span style={{ ...eyebrow(''), display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+              <span style={{ width: 22, height: 1, background: '#ff5029', opacity: .6 }} />The co-op promise
             </span>
-            <h2 style={{ fontFamily: 'var(--f-d,Syne,sans-serif)', fontWeight: 800, fontSize: 38, letterSpacing: '-.03em', lineHeight: 1.02, margin: '14px 0 0', color: '#1a1612' }}>
+            <h2 style={{ fontFamily: 'var(--f-d,Syne,sans-serif)', fontWeight: 800, fontSize: 38, letterSpacing: '-.03em', lineHeight: 1.02, margin: '14px 0 0' }}>
               Ad money feeds the <em style={{ fontFamily: 'Instrument Serif,serif', fontStyle: 'italic', fontWeight: 400, color: '#ff5029' }}>artists</em>, not a feed.
             </h2>
           </div>
           <div className="adv-trans" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 40, alignItems: 'center', marginTop: 8 }}>
-            <p style={{ fontFamily: 'Instrument Serif,serif', fontStyle: 'italic', fontSize: 26, lineHeight: 1.35, color: '#1a1612', maxWidth: '22ch' }}>
+            <p style={{ fontFamily: 'Instrument Serif,serif', fontStyle: 'italic', fontSize: 26, lineHeight: 1.35, color: '#9e9080', maxWidth: '22ch' }}>
               iHYPE is run by one director and a lot of automation — so almost every dollar of ad spend <b style={{ fontFamily: 'DM Sans,sans-serif', fontStyle: 'normal', fontWeight: 600, color: '#ff5029' }}>goes back into the music</b>, not overhead.
             </p>
-            <div style={{ borderTop: '1px solid rgba(0,0,0,.12)' }}>
-              {[{ lb: 'To artists & payouts', w: '72%', color: '#ff5029', pct: '72%' }, { lb: 'Platform & hosting', w: '18%', color: '#1a1612', pct: '18%' }, { lb: 'Moderation & AI screen', w: '10%', color: '#6b6056', pct: '10%' }].map(r => (
-                <div key={r.lb} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 0', borderBottom: '1px solid rgba(0,0,0,.1)' }}>
-                  <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: '#6b6056', width: 150 }}>{r.lb}</span>
-                  <span style={{ flex: 1, height: 9, borderRadius: 99, background: 'rgba(0,0,0,.07)', overflow: 'hidden' }}>
+            <div style={{ borderTop: '1px solid rgba(255,255,255,.07)' }}>
+              {[{ lb: 'To artists & payouts', w: '72%', color: '#ff5029', pct: '72%' }, { lb: 'Platform & hosting', w: '18%', color: '#f0ebe5', pct: '18%' }, { lb: 'Moderation & AI screen', w: '10%', color: '#9e9080', pct: '10%' }].map(r => (
+                <div key={r.lb} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 0', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+                  <span style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: '#5a5048', width: 150 }}>{r.lb}</span>
+                  <span style={{ flex: 1, height: 9, borderRadius: 99, background: 'rgba(255,255,255,.07)', overflow: 'hidden' }}>
                     <i style={{ display: 'block', height: '100%', width: r.w, background: r.color, borderRadius: 99 }} />
                   </span>
                   <span style={{ fontFamily: 'var(--f-d,Syne,sans-serif)', fontWeight: 800, fontSize: 19, letterSpacing: '-.02em', width: 54, textAlign: 'right', color: r.color }}>{r.pct}</span>
