@@ -1,9 +1,30 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { WorkbenchData } from '@/types/workbench';
 import { T } from './MobilePrimitives';
 import { logoutAction } from '@/app/logout/actions';
+
+type PageRole = 'ARTIST' | 'VENUE' | 'DJ' | 'LISTENER';
+
+const PAGE_LABELS: Record<PageRole, string> = {
+  ARTIST: 'Artist Page',
+  VENUE: 'Venue Page',
+  DJ: 'DJ Page',
+  LISTENER: 'Fan Profile',
+};
+
+const PAGE_ORDER: PageRole[] = ['ARTIST', 'VENUE', 'DJ', 'LISTENER'];
+
+function derivePages(data: WorkbenchData): PageRole[] {
+  const types = data.activeProfileTypes ?? [];
+  const ordered = PAGE_ORDER.filter(r => types.includes(r));
+  if (ordered.length === 0 && data.profileType) {
+    const t = (data.profileType as string).toUpperCase() as PageRole;
+    if (PAGE_LABELS[t]) return [t];
+  }
+  return ordered.length > 0 ? ordered : ['LISTENER'];
+}
 
 interface Props {
   data: WorkbenchData;
@@ -14,6 +35,8 @@ interface Props {
   onJournal: () => void;
   onNotif: () => void;
   onSettings: () => void;
+  onTour: () => void;
+  onEvents: () => void;
 }
 
 function ToolRow({ label, sub, icon, onClick, last = false }: {
@@ -47,22 +70,43 @@ function ToolRow({ label, sub, icon, onClick, last = false }: {
   );
 }
 
-export function MobileScreenPages({ data, onPage, onCockpit, onStudio, onManage, onJournal, onNotif, onSettings }: Props) {
+function ActionChip({ label, accent, onClick }: { label: string; accent?: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '9px 16px', borderRadius: 99, cursor: 'pointer', border: 'none',
+        background: accent ? `${accent}22` : 'rgba(255,255,255,.06)',
+        fontFamily: T.fm, fontSize: 11, fontWeight: 700, letterSpacing: '.08em',
+        color: accent ?? T.ink2,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+export function MobileScreenPages({
+  data, onPage, onCockpit, onStudio, onManage, onJournal, onNotif, onSettings, onTour, onEvents,
+}: Props) {
   const [shareStatus, setShareStatus] = useState<'idle' | 'done'>('idle');
-  const role = (data.profileType ?? '').toUpperCase();
+  const [selectedPage, setSelectedPage] = useState<PageRole | null>(null);
+
+  const pages = derivePages(data);
+  const activePage = selectedPage ?? pages[0] ?? 'LISTENER';
+
+  const role = activePage;
   const isArtist = role === 'ARTIST';
   const isDJ = role === 'DJ';
   const isVenue = role === 'VENUE';
-  const isFan = role === 'LISTENER';
   const isCreator = isArtist || isDJ;
-  const hasPowerPage = isArtist || isDJ || isVenue;
-  const canTools = isCreator || isVenue;
-  const showShareLink = (isDJ || isFan) && !!data.profileHexId;
+  const isCreatorOrVenue = isCreator || isVenue;
+  const isFan = role === 'LISTENER';
+  const showShareLink = isFan && !!data.profileHexId;
 
-  const pageTypeLabel = isArtist ? 'Artist Page' : isDJ ? 'DJ Page' : isVenue ? 'Venue Page' : 'Fan Page';
-  const hasPage = data.hasPublishedPage ?? hasPowerPage;
-
-  async function handleShareInvite() {
+  const handleShareInvite = useCallback(async () => {
+    if (!data.profileHexId) return;
     const url = new URL(`/invite/${data.profileHexId}`, window.location.origin).toString();
     try {
       if (navigator.share) {
@@ -75,88 +119,120 @@ export function MobileScreenPages({ data, onPage, onCockpit, onStudio, onManage,
       setShareStatus('done');
       window.setTimeout(() => setShareStatus('idle'), 1800);
     } catch { /* ignored */ }
-  }
+  }, [data.profileHexId]);
 
   return (
     <div style={{ overflowY: 'auto', paddingBottom: 80 }}>
       {/* Header */}
-      <div style={{ padding: '20px 20px 16px' }}>
-        <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 8 }}>
-          Your presence
+      <div style={{ padding: '20px 20px 12px' }}>
+        <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, letterSpacing: '.18em', textTransform: 'uppercase', marginBottom: 6 }}>
+          Your Presence
         </div>
         <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 28, letterSpacing: '-.03em', color: T.ink, lineHeight: 1 }}>
           Pages
         </div>
       </div>
 
-      {/* Page section — merged creator + cockpit */}
-      <div style={{ margin: '0 16px 24px' }}>
-        {hasPage ? (
-          <div style={{ borderRadius: 18, background: T.bg2, border: `1px solid ${T.line2}`, overflow: 'hidden' }}>
-            <div style={{ padding: '18px 18px 16px', background: 'linear-gradient(135deg, rgba(185,131,255,.1), rgba(255,80,41,.06))' }}>
-              <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 5 }}>
-                {pageTypeLabel}
-              </div>
-              <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 20, color: T.ink, lineHeight: 1 }}>
-                {data.userName ?? 'Your Page'}
-              </div>
+      {/* Page tabs (subheader) */}
+      {pages.length > 0 && (
+        <div style={{ display: 'flex', gap: 6, padding: '0 16px 14px', overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {pages.map(p => (
+            <button
+              key={p}
+              onClick={() => setSelectedPage(p)}
+              style={{
+                padding: '7px 15px', borderRadius: 99, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                fontFamily: T.fb, fontWeight: 700, fontSize: 12,
+                border: p === activePage ? '1px solid rgba(185,131,255,.4)' : `1px solid ${T.line2}`,
+                background: p === activePage ? 'rgba(185,131,255,.14)' : T.bg2,
+                color: p === activePage ? T.ink : T.ink2,
+              }}
+            >
+              {PAGE_LABELS[p]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Page card */}
+      <div style={{ margin: '0 16px 20px' }}>
+        <div style={{ borderRadius: 18, background: T.bg2, border: `1px solid ${T.line2}`, overflow: 'hidden' }}>
+          <div style={{ padding: '18px 18px 16px', background: 'linear-gradient(135deg, rgba(185,131,255,.1), rgba(255,80,41,.06))' }}>
+            <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 5 }}>
+              {PAGE_LABELS[activePage]}
             </div>
-            <div style={{ display: 'flex', borderTop: `1px solid ${T.line}` }}>
-              {data.profilePath && (
-                <a
-                  href={data.profilePath}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    flex: 1, padding: '14px 0', background: 'none', border: 'none',
-                    borderRight: `1px solid ${T.line}`, cursor: 'pointer', textAlign: 'center',
-                    fontFamily: T.fm, fontSize: 11, fontWeight: 700, color: '#ff5029', letterSpacing: '.1em',
-                    textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  VIEW ↗
-                </a>
-              )}
-              <button onClick={onPage} style={{
-                flex: 1, padding: '14px 0', background: 'none', border: 'none',
-                borderRight: `1px solid ${T.line}`, cursor: 'pointer',
-                fontFamily: T.fm, fontSize: 11, fontWeight: 700, color: T.ink2, letterSpacing: '.1em',
-              }}>
-                EDIT
-              </button>
-              <button onClick={onCockpit} style={{
-                flex: 1, padding: '14px 0', background: 'none', border: 'none', cursor: 'pointer',
-                fontFamily: T.fm, fontSize: 11, fontWeight: 700, color: T.purple, letterSpacing: '.1em',
-              }}>
-                ✦ AI EDIT
-              </button>
+            <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 20, color: T.ink, lineHeight: 1 }}>
+              {data.userName ?? 'Your Page'}
             </div>
+            {/* Stats */}
+            {((data.hypeCount7d ?? 0) > 0 || (data.followerCount ?? 0) > 0) && (
+              <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
+                {(data.hypeCount7d ?? 0) > 0 && (
+                  <div>
+                    <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, color: T.ink, lineHeight: 1 }}>{(data.hypeCount7d ?? 0).toLocaleString()}</div>
+                    <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 2 }}>Hype (7d)</div>
+                  </div>
+                )}
+                {(data.followerCount ?? 0) > 0 && (
+                  <div>
+                    <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, color: T.ink, lineHeight: 1 }}>{(data.followerCount ?? 0).toLocaleString()}</div>
+                    <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 2 }}>Followers</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        ) : (
-          <button
-            onClick={onPage}
-            style={{
-              width: '100%', padding: '28px 20px', borderRadius: 18, cursor: 'pointer', textAlign: 'left',
-              background: 'linear-gradient(135deg, rgba(185,131,255,.07), rgba(255,80,41,.05))',
-              border: `1.5px dashed ${T.line2}`,
-            }}
-          >
-            <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, color: T.ink, marginBottom: 6, lineHeight: 1.1 }}>
-              Create your {pageTypeLabel}
-            </div>
-            <div style={{ fontFamily: T.fb, fontSize: 13, color: T.ink2, marginBottom: 18, lineHeight: 1.4 }}>
-              Start with AI — takes 2 minutes.
-            </div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', borderRadius: 99, background: T.accent, color: '#fff', fontFamily: T.fm, fontSize: 11, fontWeight: 700, letterSpacing: '.08em' }}>
-              Get started →
-            </div>
-          </button>
-        )}
+          {/* Quick actions */}
+          <div style={{ display: 'flex', borderTop: `1px solid ${T.line}` }}>
+            {data.profilePath && (
+              <a
+                href={data.profilePath}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flex: 1, padding: '13px 0', background: 'none', border: 'none',
+                  borderRight: `1px solid ${T.line}`, cursor: 'pointer', textAlign: 'center',
+                  fontFamily: T.fm, fontSize: 11, fontWeight: 700, color: '#ff5029', letterSpacing: '.1em',
+                  textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                VIEW ↗
+              </a>
+            )}
+            <button onClick={onPage} style={{
+              flex: 1, padding: '13px 0', background: 'none', border: 'none',
+              borderRight: `1px solid ${T.line}`, cursor: 'pointer',
+              fontFamily: T.fm, fontSize: 11, fontWeight: 700, color: T.ink2, letterSpacing: '.1em',
+            }}>
+              EDIT
+            </button>
+            <button onClick={onCockpit} style={{
+              flex: 1, padding: '13px 0', background: 'none', border: 'none', cursor: 'pointer',
+              fontFamily: T.fm, fontSize: 11, fontWeight: 700, color: T.purple, letterSpacing: '.1em',
+            }}>
+              ✦ AI
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Share My Link — fan & DJ referral invite */}
+      {/* Page action chips */}
+      {isCreatorOrVenue && (
+        <div style={{ padding: '0 16px 20px' }}>
+          <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 10 }}>
+            Page Tools
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {isCreatorOrVenue && <ActionChip label="Tour Builder" accent={T.teal} onClick={onTour} />}
+            {isCreatorOrVenue && <ActionChip label="Show Creator" accent="#ff5029" onClick={onEvents} />}
+            {isCreatorOrVenue && <ActionChip label="Ad Recs" accent="#ffd700" onClick={() => { /* future */ }} />}
+          </div>
+        </div>
+      )}
+
+      {/* Share link for fans */}
       {showShareLink && (
-        <div style={{ margin: '-8px 16px 24px' }}>
+        <div style={{ margin: '-4px 16px 20px' }}>
           <button
             onClick={() => { void handleShareInvite(); }}
             style={{
@@ -188,10 +264,10 @@ export function MobileScreenPages({ data, onPage, onCockpit, onStudio, onManage,
       )}
 
       {/* Role tools */}
-      {canTools && (
+      {isCreatorOrVenue && (
         <div style={{ margin: '0 16px 20px' }}>
           <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 2 }}>
-            Tools
+            Creator Tools
           </div>
           <div style={{ borderRadius: 14, overflow: 'hidden', border: `1px solid ${T.line}`, background: T.bg2 }}>
             {isCreator && (

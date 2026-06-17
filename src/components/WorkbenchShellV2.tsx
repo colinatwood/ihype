@@ -402,7 +402,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         </ViewErrorBoundary>;
       case 'pages':
         return <ViewErrorBoundary viewName="Pages">
-          <ViewPagesHub data={liveData} prefs={prefs} setPref={setPref} onBack={() => navigateTo(prevView)} />
+          <ViewPagesHub data={liveData} prefs={prefs} setPref={setPref} onBack={() => navigateTo(prevView)} onNavigateTo={navigateTo} />
         </ViewErrorBoundary>;
 
       // ── Legacy sub-views (reachable via deep-links / overlays) ──
