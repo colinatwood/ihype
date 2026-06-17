@@ -5,7 +5,7 @@ import type { WorkbenchData } from '@/types/workbench';
 
 function SubTabs({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
   return (
-    <div style={{ display: 'flex', gap: 6, padding: '0 32px', marginBottom: 28, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
       {options.map(o => (
         <button
           key={o}
@@ -32,7 +32,7 @@ function UpcomingPanel({ data }: { data: WorkbenchData }) {
   const TINTS = ['#ff5029', '#22e5d4', '#b983ff', '#ffb84a', '#ff3e9a', '#5b8cff'];
 
   return (
-    <div style={{ padding: '0 32px 32px' }}>
+    <div style={{ padding: '16px 22px 28px' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.4fr) minmax(280px,1fr)', gap: 20, alignItems: 'start' }}>
         {/* Map placeholder */}
         <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', border: '1px solid var(--line-2)', minHeight: 400, background: 'radial-gradient(120% 120% at 30% 20%, #14110d, #0a0805)' }}>
@@ -113,7 +113,7 @@ function FavoritesPanel() {
   const [cities, setCities] = useState(SAVED_CITIES);
 
   return (
-    <div style={{ padding: '0 32px 32px' }}>
+    <div style={{ padding: '16px 22px 28px' }}>
       {/* Saved venues */}
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', letterSpacing: '.14em', textTransform: 'uppercase', marginBottom: 14 }}>
@@ -198,7 +198,7 @@ function ForYouPanel({ data }: { data: WorkbenchData }) {
   const reasons = ['Because you hyped similar artists', 'Trending in your city', 'Matches your genre taste', 'Artist you follow'];
 
   return (
-    <div style={{ padding: '0 32px 32px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 12 }}>
+    <div style={{ padding: '16px 22px 28px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(330px, 1fr))', gap: 12 }}>
       {recommended.map((s, i) => {
         const tint = TINTS[i % TINTS.length];
         return (
@@ -246,7 +246,7 @@ function ForYouPanel({ data }: { data: WorkbenchData }) {
 function ShowsPanel({ data, onOpenRadio }: { data: WorkbenchData; onOpenRadio?: () => void }) {
   const shows = data.radioShows;
   return (
-    <div style={{ padding: '0 32px 32px' }}>
+    <div style={{ padding: '16px 22px 28px' }}>
       {/* Clarification banner */}
       <div style={{
         display: 'flex', gap: 12, alignItems: 'flex-start', padding: '12px 16px',
@@ -336,11 +336,11 @@ export function ViewEventsHub({ data, onOpenRadio }: { data: WorkbenchData; onOp
 
   return (
     <div>
-      <div style={{ padding: '32px 32px 20px' }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>{kicker}</div>
-        <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 'clamp(2rem,4vw,3rem)', letterSpacing: '-.04em', margin: '0 0 20px', lineHeight: 1 }}>{title}</h1>
+      <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 700, marginBottom: 6 }}>{kicker}</div>
+        <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.025em', margin: '0 0 16px', lineHeight: 1 }}>{title}</h1>
+        <SubTabs value={sub} options={SUB_TABS} onChange={setSub} />
       </div>
-      <SubTabs value={sub} options={SUB_TABS} onChange={setSub} />
       {sub === 'Upcoming'  && <UpcomingPanel data={data} />}
       {sub === 'Favorites' && <FavoritesPanel />}
       {sub === 'For you'   && <ForYouPanel data={data} />}

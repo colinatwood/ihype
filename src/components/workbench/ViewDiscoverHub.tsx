@@ -21,9 +21,9 @@ export function ViewDiscoverHub({
 
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '32px 32px 20px', flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>Rising near you</div>
-        <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 'clamp(2rem,4vw,3rem)', letterSpacing: '-.04em', margin: 0, lineHeight: 1 }}>Plant a hype. Grow a scene.</h1>
+      <div style={{ padding: '18px 22px 14px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 700, marginBottom: 6 }}>Rising near you</div>
+        <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.025em', margin: 0, lineHeight: 1 }}>Plant a hype. Grow a scene.</h1>
       </div>
 
       <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

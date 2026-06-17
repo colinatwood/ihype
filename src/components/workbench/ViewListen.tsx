@@ -62,7 +62,7 @@ function SearchPanel({ data, onPickTrack, currentIdx }: { data: WorkbenchData; o
   const GENRES = ['Hip-Hop', 'R&B', 'Electronic', 'Indie Rock', 'Jazz', 'Pop', 'Soul', 'Latin', 'Afrobeats', 'Folk', 'Metal', 'Classical'];
 
   return (
-    <div style={{ padding: '20px 32px 28px' }}>
+    <div style={{ padding: '12px 22px 20px' }}>
       <div style={{ position: 'relative', maxWidth: 620, marginBottom: 28 }}>
         <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--ink-3)', pointerEvents: 'none' }}>
           <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
@@ -150,7 +150,7 @@ function PlaylistsPanel({ data, onPickTrack }: { data: WorkbenchData; onPickTrac
     { name: 'Late Night', count: 31, color: '#5b8cff' },
   ];
   return (
-    <div style={{ padding: '20px 32px 28px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+    <div style={{ padding: '12px 22px 20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
       {playlists.map((pl, i) => (
         <div key={pl.name} onClick={() => onPickTrack(i % Math.max(1, data.tracks.length))} style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}>
           <div style={{ aspectRatio: '1', background: `linear-gradient(135deg, ${pl.color}, ${pl.color}55)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -175,7 +175,7 @@ const RANK_COLORS = ['var(--accent)', '#ffb84a', '#22e5d4'];
 function ChartsPanel({ data, onPickTrack }: { data: WorkbenchData; onPickTrack: (i: number) => void }) {
   const sorted = [...data.tracks].sort((a, b) => b.hypeCount - a.hypeCount).slice(0, 10);
   return (
-    <div style={{ padding: '20px 32px 28px' }}>
+    <div style={{ padding: '12px 22px 20px' }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {sorted.map((t, i) => {
           const rank = i + 1;
@@ -243,47 +243,27 @@ function AccordionItem({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{
-      borderRadius: 14,
-      border: `1px solid ${isOpen ? 'var(--line-2)' : 'var(--line)'}`,
-      background: isOpen ? 'var(--bg-3)' : 'var(--bg-2)',
-      overflow: 'hidden',
-      transition: 'background .14s, border-color .14s',
-    }}>
-      {/* Header */}
+    <div>
       <button
         onClick={onToggle}
         style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 14,
-          padding: '14px 20px', cursor: 'pointer', background: 'none', border: 'none',
-          textAlign: 'left',
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '14px 22px', background: 'none', border: 'none',
+          borderTop: '1px solid rgba(255,255,255,.06)',
+          textAlign: 'left', cursor: 'pointer',
         }}
       >
-        {/* Icon container */}
-        <div style={{
-          width: 38, height: 38, borderRadius: 10, flexShrink: 0,
-          display: 'grid', placeItems: 'center',
-          background: isOpen ? 'rgba(255,80,41,.14)' : 'rgba(255,255,255,.04)',
-          color: isOpen ? 'var(--accent)' : 'var(--ink-3)',
-          transition: 'background .14s, color .14s',
-        }}>
-          {section.icon}
+        <div>
+          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, color: 'var(--ink)', lineHeight: 1 }}>{section.title}</div>
+          <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', marginTop: 3, letterSpacing: '.04em' }}>{section.sub}</div>
         </div>
-        {/* Text */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: '1.1rem', color: 'var(--ink)', lineHeight: 1 }}>{section.title}</div>
-          <div style={{ fontFamily: 'var(--f-m)', fontSize: '0.72rem', color: 'var(--ink-3)', marginTop: 3 }}>{section.sub}</div>
-        </div>
-        {/* Chevron */}
         <svg
-          width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2" strokeLinecap="round"
+          width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth="2.2" strokeLinecap="round"
           style={{ flexShrink: 0, transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform .2s' }}
         >
           <path d="m9 18 6-6-6-6"/>
         </svg>
       </button>
-
-      {/* Content — animates via max-height trick */}
       {isOpen && (
         <div style={{ animation: 'accordionFadeIn .18s ease' }}>
           {children}
@@ -301,13 +281,13 @@ export function ViewListen({ data, onPickTrack, currentIdx }: { data: WorkbenchD
   return (
     <div>
       {/* Static header */}
-      <div style={{ padding: '32px 32px 24px' }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>Listen</div>
-        <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 'clamp(2rem,4vw,3rem)', letterSpacing: '-.04em', margin: '0 0 0', lineHeight: 1 }}>Everything you play.</h1>
+      <div style={{ padding: '18px 22px 14px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 700, marginBottom: 6 }}>Listen</div>
+        <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.025em', margin: '0 0 0', lineHeight: 1 }}>Everything you play.</h1>
       </div>
 
       {/* Accordion */}
-      <div style={{ padding: '0 32px 40px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: '0 0 40px', display: 'flex', flexDirection: 'column' }}>
         {SECTIONS.map(section => (
           <AccordionItem
             key={section.id}

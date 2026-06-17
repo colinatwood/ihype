@@ -16,7 +16,7 @@ const ViewPageStudio = dynamic(() => import('./ViewPageStudio'), {
 
 function SubTabs({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
   return (
-    <div style={{ display: 'flex', gap: 6, padding: '0 32px', marginBottom: 28 }}>
+    <div style={{ display: 'flex', gap: 6, padding: '12px 22px 0', marginBottom: 0 }}>
       {options.map(o => (
         <button
           key={o}
@@ -75,9 +75,9 @@ export function ViewPagesHub({
 
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <div style={{ padding: '32px 32px 20px', flexShrink: 0 }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 8 }}>{kicker}</div>
-        <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 'clamp(2rem,4vw,3rem)', letterSpacing: '-.04em', margin: '0 0 20px', lineHeight: 1 }}>{title}</h1>
+      <div style={{ padding: '18px 22px 14px', flexShrink: 0, borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, letterSpacing: '.2em', textTransform: 'uppercase', color: 'var(--ink-3)', fontWeight: 700, marginBottom: 6 }}>{kicker}</div>
+        <h1 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.025em', margin: '0 0 16px', lineHeight: 1 }}>{title}</h1>
       </div>
       <div style={{ flexShrink: 0 }}>
         <SubTabs value={sub} options={tabs} onChange={setSub} />
