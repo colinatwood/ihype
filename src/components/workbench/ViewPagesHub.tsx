@@ -232,7 +232,7 @@ function PageDashboard({
           </div>
           {/* Stats row */}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {(data.hypeCount ?? 0) > 0 && <StatPill value={(data.hypeCount ?? 0).toLocaleString()} label="Hype" />}
+            {(data.hypeCount7d ?? 0) > 0 && <StatPill value={(data.hypeCount7d ?? 0).toLocaleString()} label="Hype (7d)" />}
             {(data.followerCount ?? 0) > 0 && <StatPill value={(data.followerCount ?? 0).toLocaleString()} label="Followers" />}
           </div>
         </div>

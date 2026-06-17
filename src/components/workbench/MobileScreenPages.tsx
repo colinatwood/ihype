@@ -165,12 +165,12 @@ export function MobileScreenPages({
               {data.userName ?? 'Your Page'}
             </div>
             {/* Stats */}
-            {((data.hypeCount ?? 0) > 0 || (data.followerCount ?? 0) > 0) && (
+            {((data.hypeCount7d ?? 0) > 0 || (data.followerCount ?? 0) > 0) && (
               <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
-                {(data.hypeCount ?? 0) > 0 && (
+                {(data.hypeCount7d ?? 0) > 0 && (
                   <div>
-                    <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, color: T.ink, lineHeight: 1 }}>{(data.hypeCount ?? 0).toLocaleString()}</div>
-                    <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 2 }}>Hype</div>
+                    <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, color: T.ink, lineHeight: 1 }}>{(data.hypeCount7d ?? 0).toLocaleString()}</div>
+                    <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.12em', textTransform: 'uppercase', marginTop: 2 }}>Hype (7d)</div>
                   </div>
                 )}
                 {(data.followerCount ?? 0) > 0 && (
