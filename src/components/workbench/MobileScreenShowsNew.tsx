@@ -15,13 +15,6 @@ const SAVED_VENUES = [
   { id: 'sv5', name: 'Schubas Tavern',     city: 'Chicago, IL',     tint: '#ff3e9a' },
 ];
 
-const RADIO_SHOWS = [
-  { id: 'rs1', name: 'The Halflight Hour',   host: 'Maya Reyes',   schedule: 'Fridays 9pm',    listeners: 1240, color: '#ff5029' },
-  { id: 'rs2', name: 'Basement Frequencies', host: 'Colin Atwood', schedule: 'Tuesdays 11pm',  listeners: 880,  color: '#22e5d4' },
-  { id: 'rs3', name: 'Curated by Vela',      host: 'Vela',         schedule: 'Sundays 8pm',    listeners: 2100, color: '#b983ff' },
-  { id: 'rs4', name: 'Local Dispatch',       host: 'DJ Trace',     schedule: 'Saturdays 10pm', listeners: 650,  color: '#ffb84a' },
-  { id: 'rs5', name: 'Indigo Sessions',      host: 'Mara Solano',  schedule: 'Wednesdays 7pm', listeners: 430,  color: '#ff3e9a' },
-];
 
 const FY_REASONS = ['Because you hyped similar artists', 'Trending in your city', 'Matches your genre taste', 'Artist you follow'];
 const FY_TINTS = [T.teal, T.purple, T.amber, T.pink];
@@ -106,7 +99,8 @@ function ForYouTab({ data }: { data: WorkbenchData }) {
   );
 }
 
-function ShowsTab() {
+function ShowsTab({ data, onOpenRadio }: { data: WorkbenchData; onOpenRadio?: () => void }) {
+  const shows = data.radioShows;
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '0 18px 130px' }}>
       <div style={{ marginBottom: 14, padding: '11px 13px', borderRadius: 11, background: `${T.amber}0d`, border: `1px solid ${T.amber}33`, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
@@ -118,7 +112,15 @@ function ShowsTab() {
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {RADIO_SHOWS.map(s => (
+        {shows.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '32px 0', fontFamily: T.fb, fontSize: 13, color: T.ink3 }}>
+            No shows on air right now.{' '}
+            <button onClick={onOpenRadio} style={{ background: 'none', border: 'none', color: T.teal, cursor: 'pointer', fontFamily: T.fb, fontSize: 13, padding: 0, textDecoration: 'underline' }}>
+              Open Halflight FM ↗
+            </button>
+          </div>
+        )}
+        {shows.map(s => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12, background: `linear-gradient(90deg,${s.color}0e,${T.bg2})`, border: `1px solid ${s.color}28` }}>
             <div style={{ width: 40, height: 40, borderRadius: 9, flexShrink: 0, background: `linear-gradient(135deg,${s.color}cc,${s.color}44)`, display: 'grid', placeItems: 'center' }}>
               <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round">
@@ -127,10 +129,10 @@ function ShowsTab() {
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
-              <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, marginTop: 2 }}>{s.host} · {s.schedule}</div>
+              <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, marginTop: 2 }}>{s.host} · {s.time}</div>
             </div>
             <div style={{ fontFamily: T.fm, fontSize: 10, color: s.color, flexShrink: 0, textAlign: 'right', marginRight: 6, lineHeight: 1.4 }}>{s.listeners.toLocaleString()}<br/>listening</div>
-            <button style={{ padding: '6px 12px', borderRadius: 8, flexShrink: 0, fontFamily: T.fd, fontWeight: 700, fontSize: 12, cursor: 'pointer', border: `1px solid ${s.color}55`, background: `${s.color}14`, color: s.color }}>Tune in</button>
+            <button onClick={onOpenRadio} style={{ padding: '6px 12px', borderRadius: 8, flexShrink: 0, fontFamily: T.fd, fontWeight: 700, fontSize: 12, cursor: 'pointer', border: `1px solid ${s.color}55`, background: `${s.color}14`, color: s.color }}>Tune in</button>
           </div>
         ))}
       </div>
@@ -148,7 +150,7 @@ function AlbumArt({ c = T.accent, size = 48 }: { c?: string; size?: number }) {
 }
 
 // ─── Main screen ──────────────────────────────────────────────
-export function ScreenShowsNew({ data, onToast }: { data: WorkbenchData; onToast?: (msg: string) => void }) {
+export function ScreenShowsNew({ data, onToast, onOpenRadio }: { data: WorkbenchData; onToast?: (msg: string) => void; onOpenRadio?: () => void }) {
   const [tab, setTab] = React.useState<EventTab>('Upcoming');
   const [showView, setShowView] = React.useState<'list' | 'detail' | 'ticket'>('list');
   const [selected, setSelected] = React.useState<WbShow | null>(null);
@@ -277,7 +279,7 @@ export function ScreenShowsNew({ data, onToast }: { data: WorkbenchData; onToast
 
       {tab === 'Favorites' && <FavoritesTab />}
       {tab === 'For you' && <ForYouTab data={data} />}
-      {tab === 'Shows' && <ShowsTab />}
+      {tab === 'Shows' && <ShowsTab data={data} onOpenRadio={onOpenRadio} />}
 
       {/* Long-press quick action sheet (Upcoming only) */}
       {tab === 'Upcoming' && longPressShow && (

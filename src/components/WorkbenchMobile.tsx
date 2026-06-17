@@ -1122,7 +1122,7 @@ function AdCampaignsSection() {
 }
 
 // ─── Screen: Radio ───────────────────────────────────────────
-function ScreenRadio({ data, onSetlistSheet, onHypersSheet, onSeedsTab }: { data: WorkbenchData; onSetlistSheet?: (showId: string) => void; onHypersSheet?: (showId: string) => void; onSeedsTab?: () => void }) {
+function ScreenRadio({ data, onSetlistSheet, onHypersSheet, onSeedsTab, onNewShow, onSchedule }: { data: WorkbenchData; onSetlistSheet?: (showId: string) => void; onHypersSheet?: (showId: string) => void; onSeedsTab?: () => void; onNewShow?: () => void; onSchedule?: () => void }) {
   const shows = data.radioShows;
   const live = shows.find(s => s.live);
   const rest = shows.filter(s => !s.live);
@@ -1133,7 +1133,7 @@ function ScreenRadio({ data, onSetlistSheet, onHypersSheet, onSeedsTab }: { data
         eyebrow={`LIVE NOW · ${shows.filter(s => s.live).length || 1} SHOWS ON AIR`}
         title="Radio"
         sub="Live and prerecorded shows from DJs and artists — every spin pays the source."
-        actions={<><WMChip>⌲ Schedule</WMChip><WMChip>+ New show</WMChip></>}
+        actions={<><WMChip onClick={onSchedule}>⌲ Schedule</WMChip><WMChip onClick={onNewShow}>+ New show</WMChip></>}
       />
       {data.city && <WMTrendingStrip city={data.city} />}
 
@@ -1297,20 +1297,11 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
       }))
     : [];
   const timelineColors = [T.accent, T.pink, T.purple, T.teal, T.blue, T.amber];
-  const timeline = trackList.length > 0
-    ? trackList.map((tr, i) => ({
-        c: timelineColors[i % timelineColors.length],
-        f: Math.round(100 / trackList.length),
-        t: tr.title,
-      }))
-    : [
-        { c: T.accent, f: 14, t: 'Intro' },
-        { c: T.pink,   f: 18, t: 'Sundown' },
-        { c: T.purple, f: 22, t: 'Westline' },
-        { c: T.teal,   f: 8,  t: 'Talk' },
-        { c: T.blue,   f: 20, t: 'Underpass' },
-        { c: T.amber,  f: 18, t: 'Halflight' },
-      ];
+  const timeline = trackList.map((tr, i) => ({
+    c: timelineColors[i % timelineColors.length],
+    f: Math.round(100 / trackList.length),
+    t: tr.title,
+  }));
 
   return (
     <>
@@ -1342,11 +1333,15 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
 
           {/* Timeline */}
           <div style={{ background: T.bg3, borderRadius: 9, padding: 12, marginTop: 12, border: `1px solid ${T.line}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em', marginBottom: 8 }}>
-              <span>00:00</span><span>15:00</span><span>30:00</span><span>47:00</span>
-            </div>
-            <div style={{ position: 'relative', height: 46, background: T.bg4, borderRadius: 5, display: 'flex', gap: 2, padding: 3, overflow: 'hidden' }}>
-              {timeline.map((c, i) => (
+            {timeline.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em', marginBottom: 8 }}>
+                <span>00:00</span><span>15:00</span><span>30:00</span><span>47:00</span>
+              </div>
+            )}
+            <div style={{ position: 'relative', height: 46, background: T.bg4, borderRadius: 5, display: 'flex', gap: 2, padding: 3, overflow: 'hidden', alignItems: 'center', justifyContent: timeline.length === 0 ? 'center' : undefined }}>
+              {timeline.length === 0 ? (
+                <span style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.04em' }}>Add tracks to build your timeline</span>
+              ) : timeline.map((c, i) => (
                 <div key={i} style={{
                   flex: `0 0 ${c.f}%`, height: '100%', background: c.c, borderRadius: 3,
                   display: 'flex', alignItems: 'center', padding: '0 6px',
@@ -1357,10 +1352,12 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
                   <span style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 2px,transparent 2px 4px)' }} />
                 </div>
               ))}
-              {/* playhead */}
-              <div style={{ position: 'absolute', top: -3, bottom: -3, left: '32%', width: 2, background: T.accent, boxShadow: `0 0 8px ${T.accent}`, zIndex: 3 }}>
-                <div style={{ position: 'absolute', top: -4, left: -4, width: 10, height: 10, borderRadius: '50%', background: T.accent }} />
-              </div>
+              {/* playhead — only when there are tracks */}
+              {timeline.length > 0 && (
+                <div style={{ position: 'absolute', top: -3, bottom: -3, left: '32%', width: 2, background: T.accent, boxShadow: `0 0 8px ${T.accent}`, zIndex: 3 }}>
+                  <div style={{ position: 'absolute', top: -4, left: -4, width: 10, height: 10, borderRadius: '50%', background: T.accent }} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -2053,9 +2050,9 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   const screenEl = (() => {
     switch (tab) {
-      case 'listen':   return <ScreenListen data={liveData} onPlay={setCurrentTrackIdx} onExpand={() => setExpanded(true)} currentIdx={currentTrackIdx} />;
+      case 'listen':   return <ScreenListen data={liveData} onPlay={setCurrentTrackIdx} onExpand={() => setExpanded(true)} currentIdx={currentTrackIdx} onOpenFM={() => setHalflightMode(true)} />;
       case 'discover': return <ScreenSeeds data={liveData} />;
-      case 'events':   return <ScreenShowsNew data={liveData} onToast={showToast} />;
+      case 'events':   return <ScreenShowsNew data={liveData} onToast={showToast} onOpenRadio={() => setHalflightMode(true)} />;
       case 'pages':    return <MobileScreenPages data={liveData} onPage={() => setPageMode(true)} onCockpit={() => setCockpitMode(true)} onStudio={() => setStudioMode(true)} onManage={() => setManageMode(true)} onJournal={() => setJournalMode(true)} onNotif={() => setNotifMode(true)} onSettings={() => setSettingsMode(true)} />;
     }
   })();
@@ -2086,7 +2083,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   }
 
   const overlayModes: { active: boolean; close: () => void; title: string; color: string; children: React.ReactNode; scroll?: boolean }[] = [
-    { active: halflightMode, close: () => setHalflightMode(false), title: 'Halflight FM',  color: T.teal,   children: <ViewHalflightFMMobile data={liveData} />, scroll: true },
+    { active: halflightMode, close: () => setHalflightMode(false), title: 'Halflight FM',  color: T.teal,   children: <ViewHalflightFMMobile data={liveData} onNewShow={() => { setHalflightMode(false); setStudioMode(true); }} onSchedule={() => { setHalflightMode(false); setStudioMode(true); }} />, scroll: true },
     { active: matchmakerMode, close: () => setMatchmakerMode(false), title: 'Booking Matchmaker', color: '#b983ff', children: <ViewMatchmaker />, scroll: true },
     { active: studioMode,    close: () => setStudioMode(false),    title: 'Studio',        color: T.purple, children: <MobileScreenStudio data={liveData} /> },
     { active: pageMode,      close: () => setPageMode(false),      title: 'Page Creator',  color: T.teal,   children: <ViewPageStudio data={liveData} />, scroll: true },

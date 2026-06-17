@@ -257,7 +257,7 @@ export function ViewHalflightFM({ data }: { data: WorkbenchData }) {
 }
 
 // ── Mobile compact view ───────────────────────────────────────────────────────
-export function ViewHalflightFMMobile({ data }: { data: WorkbenchData }) {
+export function ViewHalflightFMMobile({ data, onNewShow, onSchedule }: { data: WorkbenchData; onNewShow?: () => void; onSchedule?: () => void }) {
   void data;
   const [station, setStation] = useState<Station>(STATIONS[0]);
   const [playing, setPlaying] = useState(false);
@@ -323,6 +323,27 @@ export function ViewHalflightFMMobile({ data }: { data: WorkbenchData }) {
         <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, letterSpacing: '.18em', color: '#22e5d4', textTransform: 'uppercase', fontWeight: 700, marginBottom: 8 }}>0% PLATFORM FEE · ALWAYS</div>
         <div style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>45% to artists · 45% to the curator · 10% to referrers. iHYPE takes nothing.</div>
       </div>
+
+      {(onNewShow || onSchedule) && (
+        <div style={{ marginTop: 16, display: 'flex', gap: 10 }}>
+          {onSchedule && (
+            <button onClick={onSchedule} style={{
+              flex: 1, padding: '11px 0', borderRadius: 10,
+              fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, letterSpacing: '.08em',
+              border: '1px solid var(--line-2)', background: 'var(--bg-2)', color: 'var(--ink-2)',
+              cursor: 'pointer',
+            }}>⌲ Schedule</button>
+          )}
+          {onNewShow && (
+            <button onClick={onNewShow} style={{
+              flex: 1, padding: '11px 0', borderRadius: 10,
+              fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, letterSpacing: '.08em',
+              border: '1px solid #22e5d444', background: 'rgba(34,229,212,.08)', color: '#22e5d4',
+              cursor: 'pointer',
+            }}>+ New show</button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

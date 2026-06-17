@@ -11,7 +11,7 @@ const STATIONS = [
   { freq: 107.9, label: 'PROMOTERS', name: 'Curated Radio',       color: '#ff3e9a', nowTrack: 'Cobalt Hour',      nowArtist: 'Vela' },
 ] as const;
 
-function HalflightCard() {
+function HalflightCard({ onOpenFM }: { onOpenFM?: () => void }) {
   const [stationIdx, setStationIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const s = STATIONS[stationIdx];
@@ -23,9 +23,16 @@ function HalflightCard() {
           <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 16, color: T.ink, letterSpacing: '-.01em' }}>{s.nowTrack}</div>
           <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, marginTop: 1 }}>{s.nowArtist}</div>
         </div>
-        <button onClick={() => setPlaying(p => !p)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: T.fm, fontSize: 12, fontWeight: 700, background: playing ? 'rgba(255,255,255,.1)' : s.color, color: playing ? T.ink : '#fff', flexShrink: 0 }}>
-          {playing ? '⏸' : '▶'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
+          <button onClick={() => setPlaying(p => !p)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: T.fm, fontSize: 12, fontWeight: 700, background: playing ? 'rgba(255,255,255,.1)' : s.color, color: playing ? T.ink : '#fff' }}>
+            {playing ? '⏸' : '▶'}
+          </button>
+          {onOpenFM && (
+            <button onClick={onOpenFM} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${s.color}44`, cursor: 'pointer', fontFamily: T.fm, fontSize: 12, fontWeight: 700, background: 'transparent', color: s.color }}>
+              All ↗
+            </button>
+          )}
+        </div>
       </div>
       <div style={{ display: 'flex', gap: 6, padding: '0 16px 14px', overflowX: 'auto' }}>
         {STATIONS.map((st, i) => (
@@ -86,11 +93,12 @@ function SectionHeader({ title, sub, open, onToggle }: { title: string; sub: str
   );
 }
 
-export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
+export function ScreenListen({ data, onPlay, onExpand, currentIdx, onOpenFM }: {
   data: WorkbenchData;
   onPlay: (i: number) => void;
   onExpand: () => void;
   currentIdx: number;
+  onOpenFM?: () => void;
 }) {
   const [q, setQ] = useState('');
   const [charts, setCharts] = useState<{ national: ChartTrack[]; local: ChartTrack[]; forYou: ChartTrack[] } | null>(null);
@@ -245,7 +253,7 @@ export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
         />
         {openSections.radio && (
           <div style={{ paddingBottom: 4 }}>
-            <HalflightCard />
+            <HalflightCard onOpenFM={onOpenFM} />
 
             {/* Algorithmic radio stations */}
             <div style={{ padding: '0 22px 10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 10 }}>
