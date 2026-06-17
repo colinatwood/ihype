@@ -17,6 +17,7 @@ import { ViewSettings } from '@/components/workbench/ViewSettings';
 import ViewPageStudio from '@/components/workbench/ViewPageStudio';
 import { ViewMatchmaker } from '@/components/workbench/ViewMatchmaker';
 import { ViewCockpitMobile } from '@/components/workbench/ViewCockpit';
+import { ViewTour } from '@/components/workbench/ViewTour';
 import { AdvertisePage } from '@/components/AdvertisePage';
 import { WelcomeDialog } from '@/components/workbench/Overlays';
 import { DEFAULT_PREFS, loadPrefs } from '@/components/workbench/types';
@@ -1160,6 +1161,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const [halflightMode, setHalflightMode] = useState(false);
   const [matchmakerMode, setMatchmakerMode] = useState(false);
   const [cockpitMode, setCockpitMode] = useState(false);
+  const [tourMode, setTourMode] = useState(false);
 
   const [pageMode, setPageMode] = useState(false);
   const [advertiseMode, setAdvertiseMode] = useState(false);
@@ -1367,7 +1369,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
       case 'listen':   return <ScreenListen data={liveData} onPlay={setCurrentTrackIdx} onExpand={() => setExpanded(true)} currentIdx={currentTrackIdx} onOpenFM={() => setHalflightMode(true)} />;
       case 'discover': return <ScreenSeeds data={liveData} />;
       case 'events':   return <ScreenShowsNew data={liveData} onToast={showToast} onOpenRadio={() => setHalflightMode(true)} />;
-      case 'pages':    return <MobileScreenPages data={liveData} onPage={() => setPageMode(true)} onCockpit={() => setCockpitMode(true)} onStudio={() => setStudioMode(true)} onManage={() => setManageMode(true)} onJournal={() => setJournalMode(true)} onNotif={() => setNotifMode(true)} onSettings={() => setSettingsMode(true)} />;
+      case 'pages':    return <MobileScreenPages data={liveData} onPage={() => setPageMode(true)} onCockpit={() => setCockpitMode(true)} onStudio={() => setStudioMode(true)} onManage={() => setManageMode(true)} onJournal={() => setJournalMode(true)} onNotif={() => setNotifMode(true)} onSettings={() => setSettingsMode(true)} onTour={() => setTourMode(true)} onEvents={() => setTab('events')} />;
     }
   })();
 
@@ -1405,6 +1407,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     { active: notifMode,       close: () => setNotifMode(false),       title: 'Notifications',      color: T.blue,   children: <ViewNotifications /> },
     { active: settingsMode,    close: () => setSettingsMode(false),    title: 'Settings',           color: T.ink2,   children: <ViewSettings prefs={prefs} setPref={setPref} data={liveData} onBack={() => setSettingsMode(false)} />, scroll: true },
     { active: cockpitMode,     close: () => setCockpitMode(false),     title: 'Page Cockpit',       color: T.purple, children: <ViewCockpitMobile data={liveData} /> },
+    { active: tourMode,        close: () => setTourMode(false),        title: 'Tour Builder',       color: T.teal,   children: <ViewTour data={liveData} />, scroll: true },
   ];
   for (const m of overlayModes) {
     if (m.active) return (
