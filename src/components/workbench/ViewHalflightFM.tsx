@@ -258,10 +258,19 @@ export function ViewHalflightFM({ data }: { data: WorkbenchData }) {
 
 // ── Mobile compact view ───────────────────────────────────────────────────────
 export function ViewHalflightFMMobile({ data, onNewShow, onSchedule }: { data: WorkbenchData; onNewShow?: () => void; onSchedule?: () => void }) {
-  void data;
   const [station, setStation] = useState<Station>(STATIONS[0]);
   const [playing, setPlaying] = useState(false);
   const [hyped, setHyped] = useState(0);
+  const [liveListeners, setLiveListeners] = useState(() => data.radioShows.reduce((s, r) => s + r.listeners, 0));
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      fetch('/api/radio/listeners').then(r => r.ok ? r.json() : null).then(d => { if (d?.total) setLiveListeners(d.total); }).catch(() => {});
+    }, 30_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const liveShow = data.radioShows.find(r => r.live);
 
   async function handleHype() {
     setHyped(h => h + 1);
@@ -278,14 +287,14 @@ export function ViewHalflightFMMobile({ data, onNewShow, onSchedule }: { data: W
         @keyframes vuBar4 { 0% { height: 50%; } 100% { height: 100%; } }
       `}</style>
 
-      <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.18em', color: station.color, marginBottom: 8, textTransform: 'uppercase' }}>● HALFLIGHT FM · ON AIR</div>
+      <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, letterSpacing: '.18em', color: station.color, marginBottom: 8, textTransform: 'uppercase' }}>● HALFLIGHT FM · ON AIR · {liveListeners.toLocaleString()} LISTENING</div>
       <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 28, letterSpacing: '-.025em', margin: '0 0 16px', color: 'var(--ink)' }}>Halflight FM</h2>
 
       {/* Now playing card */}
       <div style={{ background: `linear-gradient(135deg, ${station.color}20, var(--bg-2))`, border: '1px solid var(--line)', borderRadius: 12, padding: '16px', marginBottom: 16 }}>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: station.color, letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 6 }}>NOW PLAYING</div>
-        <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 20, color: 'var(--ink)' }}>{station.nowTrack}</div>
-        <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)', marginTop: 2 }}>{station.nowArtist}</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: station.color, letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 6 }}>NOW PLAYING{liveShow ? ` · ${liveShow.name}` : ''}</div>
+        <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 20, color: 'var(--ink)' }}>{liveShow ? liveShow.host : station.nowTrack}</div>
+        <div style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)', marginTop: 2 }}>{liveShow ? `${liveShow.listeners.toLocaleString()} listening now` : station.nowArtist}</div>
         <div style={{ display: 'flex', gap: 8, marginTop: 14, alignItems: 'center' }}>
           <button onClick={() => setPlaying(p => !p)} style={{ padding: '9px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, background: playing ? 'rgba(255,255,255,.1)' : station.color, color: '#fff' }}>
             {playing ? '⏸ Pause' : '▶ Listen'}

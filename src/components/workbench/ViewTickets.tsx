@@ -302,6 +302,12 @@ function VenueLeaderboard({ shows }: { shows: WorkbenchData['shows'] }) {
 function RsvpButton({ showId }: { showId: string }) {
   const [going, setGoing] = useState(false);
   const [loading, setLoading] = useState(false);
+  React.useEffect(() => {
+    fetch(`/api/shows/${showId}/rsvp`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setGoing(d.going); })
+      .catch(() => {});
+  }, [showId]);
   return (
     <button
       disabled={loading}

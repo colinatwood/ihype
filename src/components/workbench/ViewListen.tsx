@@ -140,7 +140,7 @@ function SearchPanel({ data, onPickTrack, currentIdx }: { data: WorkbenchData; o
 
 // ─── Playlists Panel ──────────────────────────────────────────
 
-function PlaylistsPanel({ data }: { data: WorkbenchData }) {
+function PlaylistsPanel({ data, onPickTrack }: { data: WorkbenchData; onPickTrack: (i: number) => void }) {
   const playlists = [
     { name: 'Writing Room', count: 42, color: '#b983ff' },
     { name: 'Tour Van', count: 88, color: '#22e5d4' },
@@ -151,8 +151,8 @@ function PlaylistsPanel({ data }: { data: WorkbenchData }) {
   ];
   return (
     <div style={{ padding: '20px 32px 28px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
-      {playlists.map(pl => (
-        <div key={pl.name} style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}>
+      {playlists.map((pl, i) => (
+        <div key={pl.name} onClick={() => onPickTrack(i % Math.max(1, data.tracks.length))} style={{ background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}>
           <div style={{ aspectRatio: '1', background: `linear-gradient(135deg, ${pl.color}, ${pl.color}55)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" strokeWidth="1.6" strokeLinecap="round">
               <circle cx="8" cy="18" r="3"/><circle cx="18" cy="16" r="3"/><path d="M11 18V6l10-2v12"/>
@@ -316,7 +316,7 @@ export function ViewListen({ data, onPickTrack, currentIdx }: { data: WorkbenchD
             onToggle={() => setOpenSection(section.id)}
           >
             {section.id === 'Search' && <SearchPanel data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} />}
-            {section.id === 'Playlists' && <PlaylistsPanel data={data} />}
+            {section.id === 'Playlists' && <PlaylistsPanel data={data} onPickTrack={onPickTrack} />}
             {section.id === 'Radio' && (
               <div style={{ padding: '0 0 8px' }}>
                 <ViewRadio data={data} onPickTrack={onPickTrack} />

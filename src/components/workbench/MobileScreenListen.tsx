@@ -567,7 +567,7 @@ export function HypeOverlay({ track, onDone }: { track: WbTrack; onDone: () => v
         <span style={{ fontFamily: T.fd, fontStyle: 'normal', fontWeight: 800, color: T.accent }}>{track.title}.</span>
       </h1>
       <p style={{ position: 'relative', fontFamily: T.fb, fontSize: 13, color: T.ink2, marginTop: 14, maxWidth: 280, lineHeight: 1.5 }}>
-        1 of <strong style={{ color: T.ink }}>389</strong> real fans behind {track.artistName} this week. It just moved up the chart.
+        1 of <strong style={{ color: T.ink }}>{(track.hypeCount + 1).toLocaleString()}</strong> real fans behind {track.artistName} this week. It just moved up the chart.
       </p>
       <div style={{ position: 'relative', display: 'flex', gap: 10, marginTop: 26 }}>
         <button onClick={onDone} style={{ padding: '12px 18px', background: T.bg2, color: T.ink, border: `1px solid ${T.line2}`, borderRadius: 99, fontFamily: T.fd, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Keep listening</button>
