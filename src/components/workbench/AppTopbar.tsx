@@ -62,14 +62,14 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
   return (
     <header style={{
       height: 'var(--top-h)', borderBottom: '1px solid var(--line)',
-      display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center',
-      gap: 24, padding: '0 22px',
+      display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', alignItems: 'center',
+      gap: 14, padding: '0 18px',
       background: 'rgba(16,13,9,0.9)', backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
       position: 'relative', zIndex: 10,
     }}>
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', userSelect: 'none' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', userSelect: 'none', paddingRight: 6 }}>
         <div style={{
           width: 34, height: 34, borderRadius: 9, flexShrink: 0,
           background: 'linear-gradient(135deg, var(--accent), #ff3e9a)',
@@ -89,7 +89,7 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
       </div>
 
       {/* Tabs — 4 primary hubs */}
-      <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
+      <nav role="navigation" aria-label="Main navigation" style={{ display: 'flex', alignItems: 'center', gap: 2, borderLeft: '1px solid var(--line)', paddingLeft: 14 }}>
         {TABS.map(tab => {
           const active = view === tab.k;
           return (
@@ -122,7 +122,31 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
         })}
       </nav>
 
-      {/* Right: listening + user */}
+      {/* Search — fills 1fr center column */}
+      {onSearch ? (
+        <button
+          aria-label={`Search (${kbShortcut})`}
+          onClick={onSearch}
+          title={`Search (${kbShortcut})`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '0 16px', height: 38, width: '100%',
+            borderRadius: 10, border: '1px solid var(--line-2)', background: 'var(--bg-3)',
+            color: 'var(--ink-3)', cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 14,
+            transition: 'border-color .15s, background .15s',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,.18)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-2)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line-2)'; (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-3)'; }}
+        >
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, opacity: .6 }}><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <span style={{ flex: 1, textAlign: 'left', color: 'var(--ink-3)' }}>Search artists, venues, events…</span>
+          <kbd style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-4)', border: '1px solid var(--line-2)', borderRadius: 5, padding: '2px 6px', flexShrink: 0 }}>{kbShortcut}</kbd>
+        </button>
+      ) : (
+        <div />
+      )}
+
+      {/* Right: advertise + listening + user */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <a href="/advertise" style={{
           display: 'flex', alignItems: 'center', gap: 6, padding: '6px 13px',
@@ -136,24 +160,7 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
           <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           Advertise
         </a>
-        {onSearch && (
-          <button
-            aria-label={`Search (${kbShortcut})`}
-            onClick={onSearch}
-            title={`Search (${kbShortcut})`}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '5px 16px',
-              borderRadius: 8, border: '1px solid var(--line-2)', background: 'var(--bg-3)',
-              color: 'var(--ink-3)', cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 13,
-              minWidth: 160,
-            }}
-          >
-            <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            Search
-            <kbd style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-4)', border: '1px solid var(--line-2)', borderRadius: 4, padding: '1px 5px', marginLeft: 'auto' }}>{kbShortcut}</kbd>
-          </button>
-        )}
-        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', paddingRight: 14, borderRight: '1px solid var(--line)', marginRight: 6 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', paddingRight: 10, borderRight: '1px solid var(--line)', marginRight: 2 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#22e5d4', boxShadow: '0 0 8px #22e5d4', animation: 'pulse 1.8s infinite', display: 'inline-block' }} />
           {listeningNow.toLocaleString()} listening
         </span>
