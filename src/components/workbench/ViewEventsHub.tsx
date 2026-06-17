@@ -243,15 +243,8 @@ function ForYouPanel({ data }: { data: WorkbenchData }) {
 
 // ─── Shows Panel ──────────────────────────────────────────────
 
-const RADIO_SHOWS = [
-  { id: 'rs1', name: 'The Halflight Hour',   host: 'Maya Reyes',    schedule: 'Fridays 9pm',    listeners: 1240, color: '#ff5029' },
-  { id: 'rs2', name: 'Basement Frequencies', host: 'Colin Atwood',  schedule: 'Tuesdays 11pm',  listeners: 880,  color: '#22e5d4' },
-  { id: 'rs3', name: 'Curated by Vela',      host: 'Vela',          schedule: 'Sundays 8pm',    listeners: 2100, color: '#b983ff' },
-  { id: 'rs4', name: 'Local Dispatch',       host: 'DJ Trace',      schedule: 'Saturdays 10pm', listeners: 650,  color: '#ffb84a' },
-  { id: 'rs5', name: 'Indigo Sessions',      host: 'Mara Solano',   schedule: 'Wednesdays 7pm', listeners: 430,  color: '#ff3e9a' },
-];
-
-function ShowsPanel() {
+function ShowsPanel({ data, onOpenRadio }: { data: WorkbenchData; onOpenRadio?: () => void }) {
+  const shows = data.radioShows;
   return (
     <div style={{ padding: '0 32px 32px' }}>
       {/* Clarification banner */}
@@ -270,7 +263,15 @@ function ShowsPanel() {
 
       {/* Shows list */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {RADIO_SHOWS.map(show => (
+        {shows.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '32px 0', fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-3)' }}>
+            No shows on air right now.{' '}
+            <button onClick={onOpenRadio} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontFamily: 'var(--f-b)', fontSize: 14, padding: 0, textDecoration: 'underline' }}>
+              Open Halflight FM ↗
+            </button>
+          </div>
+        )}
+        {shows.map(show => (
           <div key={show.id} style={{
             display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px',
             borderRadius: 14,
@@ -291,7 +292,7 @@ function ShowsPanel() {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{show.name}</div>
               <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
-                {show.host} · {show.schedule}
+                {show.host} · {show.time}
               </div>
             </div>
             {/* Listeners */}
@@ -299,13 +300,16 @@ function ShowsPanel() {
               {show.listeners.toLocaleString()} listening
             </div>
             {/* CTA */}
-            <button style={{
-              padding: '7px 14px', borderRadius: 8, cursor: 'pointer', flexShrink: 0,
-              fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13,
-              border: `1px solid ${show.color}55`,
-              background: `${show.color}14`,
-              color: show.color,
-            }}>
+            <button
+              onClick={onOpenRadio}
+              style={{
+                padding: '7px 14px', borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+                fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 13,
+                border: `1px solid ${show.color}55`,
+                background: `${show.color}14`,
+                color: show.color,
+              }}
+            >
               Tune in
             </button>
           </div>
@@ -326,7 +330,7 @@ const HEADERS: Record<string, [string, string]> = {
   Shows:     ['Radio broadcasts',    'Shows on air, not on stage.'],
 };
 
-export function ViewEventsHub({ data }: { data: WorkbenchData }) {
+export function ViewEventsHub({ data, onOpenRadio }: { data: WorkbenchData; onOpenRadio?: () => void }) {
   const [sub, setSub] = useState('Upcoming');
   const [kicker, title] = HEADERS[sub];
 
@@ -340,7 +344,7 @@ export function ViewEventsHub({ data }: { data: WorkbenchData }) {
       {sub === 'Upcoming'  && <UpcomingPanel data={data} />}
       {sub === 'Favorites' && <FavoritesPanel />}
       {sub === 'For you'   && <ForYouPanel data={data} />}
-      {sub === 'Shows'     && <ShowsPanel />}
+      {sub === 'Shows'     && <ShowsPanel data={data} onOpenRadio={onOpenRadio} />}
     </div>
   );
 }

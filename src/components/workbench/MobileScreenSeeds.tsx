@@ -8,10 +8,12 @@ import { T, WMPill, WMChip, WMViewHead, WMCard, WMTrendingStrip } from './Mobile
 export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData; onHypersSheet?: (showId: string) => void }) {
   const waveform = [30, 55, 80, 42, 90, 70, 48, 88, 62, 35, 78, 55, 92, 40, 68, 82, 48, 30, 62, 88];
 
-  // Genre picker state (cold start)
+  // Genre picker state (cold start + filter sheet)
   const GENRE_OPTIONS = ['Hip-Hop', 'Electronic', 'Indie', 'R&B', 'Jazz', 'Rock', 'Pop', 'Classical', 'Country', 'Metal', 'Folk', 'Soul'];
   const [pickedGenres, setPickedGenres] = useState<string[]>([]);
   const [savingGenres, setSavingGenres] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filterGenres, setFilterGenres] = useState<string[]>([]);
 
   // Deck state
   type SeedDeckTrack = typeof data.tracks[number] & { nowPlaying?: string | null; journalContent?: string | null };
@@ -249,7 +251,7 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
         title="Seeds"
         italic="— decide in 15s."
         sub="Hand-cut hooks from new uploads. Save it, hype it, skip it."
-        actions={<><WMChip>⚙ Filters</WMChip><WMChip>Local · Chicago ▾</WMChip></>}
+        actions={<><WMChip onClick={() => setFiltersOpen(true)}>⚙ Filters{filterGenres.length > 0 ? ` · ${filterGenres.length}` : ''}</WMChip><WMChip>{`Local · ${data.city || 'Your City'} ▾`}</WMChip></>}
       />
       {data.city && <WMTrendingStrip city={data.city} />}
 
@@ -598,6 +600,44 @@ export function MobileScreenSeeds({ data, onHypersSheet }: { data: WorkbenchData
               <button key={item.label} onClick={item.action} style={{ width: '100%', padding: '14px 0', marginBottom: 8, borderRadius: 12, border: 'none', background: T.bg4, color: item.color, fontFamily: T.fd, fontWeight: 700, fontSize: 15, cursor: 'pointer', textAlign: 'center' }}>{item.label}</button>
             ))}
             <button onClick={() => setLongPressCard(null)} style={{ width: '100%', padding: '14px 0', borderRadius: 12, border: `1px solid ${T.line2}`, background: 'transparent', color: T.ink3, fontFamily: T.fm, fontSize: 13, cursor: 'pointer' }}>Dismiss</button>
+          </div>
+        </>
+      )}
+
+      {/* Filter sheet */}
+      {filtersOpen && (
+        <>
+          <div onClick={() => setFiltersOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49, background: 'rgba(0,0,0,.6)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', padding: '20px 18px 40px' }}>
+            <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, marginBottom: 4 }}>Filter by genre</div>
+            <div style={{ fontFamily: T.fm, fontSize: 13, color: T.ink3, marginBottom: 16 }}>Tap genres to narrow what Seeds you see this session.</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+              {GENRE_OPTIONS.map(g => {
+                const on = filterGenres.includes(g);
+                return (
+                  <button
+                    key={g}
+                    onClick={() => setFilterGenres(prev => on ? prev.filter(x => x !== g) : [...prev, g])}
+                    style={{
+                      padding: '7px 15px', borderRadius: 99, fontFamily: T.fm, fontSize: 13, fontWeight: 700, cursor: 'pointer',
+                      border: on ? `1px solid ${T.accent}` : `1px solid ${T.line2}`,
+                      background: on ? `${T.accent}22` : T.bg2,
+                      color: on ? T.accent : T.ink2,
+                    }}
+                  >{g}</button>
+                );
+              })}
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => { setFilterGenres([]); setFiltersOpen(false); }}
+                style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: `1px solid ${T.line2}`, background: 'transparent', color: T.ink3, fontFamily: T.fm, fontSize: 14, cursor: 'pointer' }}
+              >Clear</button>
+              <button
+                onClick={() => { setFiltersOpen(false); if (filterGenres.length > 0) refreshDeck(); }}
+                style={{ flex: 2, padding: '12px 0', borderRadius: 10, border: 'none', background: T.accent, color: '#fff', fontFamily: T.fd, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+              >Apply{filterGenres.length > 0 ? ` (${filterGenres.length})` : ''}</button>
+            </div>
           </div>
         </>
       )}

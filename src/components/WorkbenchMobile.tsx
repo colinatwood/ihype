@@ -20,30 +20,7 @@ import { ViewCockpitMobile } from '@/components/workbench/ViewCockpit';
 import { AdvertisePage } from '@/components/AdvertisePage';
 import { WelcomeDialog } from '@/components/workbench/Overlays';
 import { DEFAULT_PREFS, loadPrefs } from '@/components/workbench/types';
-
-// ─── Design tokens (match Workbench Mobile design) ───────────
-const T = {
-  bg:     '#0a0805',
-  bg2:    '#100d09',
-  bg3:    '#1a1612',
-  bg4:    '#221c16',
-  ink:    '#f0ebe5',
-  ink2:   '#9e9080',
-  ink3:   '#5a5048',
-  ink4:   '#3a342e',
-  line:   'rgba(255,255,255,.06)',
-  line2:  'rgba(255,255,255,.14)',
-  accent: '#ff5029',
-  pink:   '#ff3e9a',
-  teal:   '#22e5d4',
-  purple: '#b983ff',
-  amber:  '#ffb84a',
-  blue:   '#7fb3ff',
-  fd: '"Syne",sans-serif',
-  fb: '"DM Sans",sans-serif',
-  fm: '"JetBrains Mono",monospace',
-  fs: '"Instrument Serif",serif',
-};
+import { T, WMPill, WMChip, WMViewHead, WMCard, WMSkeleton } from '@/components/workbench/MobilePrimitives';
 
 type MobileTab = 'listen' | 'discover' | 'events' | 'pages';
 
@@ -57,69 +34,6 @@ const WMIcon = {
   search: <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg>,
   bell:   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M4 7a4 4 0 1 1 8 0v3l1.5 2h-11L4 10V7z"/><path d="M6.5 13.5a1.5 1.5 0 0 0 3 0"/></svg>,
 };
-
-// ─── Pill ─────────────────────────────────────────────────────
-function WMPill({ children, tone = 'soft', style }: { children: React.ReactNode; tone?: string; style?: React.CSSProperties }) {
-  const tones: Record<string, { bg: string; fg: string; bd: string }> = {
-    soft:  { bg: T.bg3,                        fg: T.ink2,   bd: T.line2 },
-    live:  { bg: 'rgba(255,80,41,.12)',         fg: T.accent, bd: 'rgba(255,80,41,.3)' },
-    teal:  { bg: 'rgba(34,229,212,.1)',         fg: T.teal,   bd: 'rgba(34,229,212,.3)' },
-    pink:  { bg: 'rgba(255,62,154,.1)',         fg: T.pink,   bd: 'rgba(255,62,154,.3)' },
-    amber: { bg: 'rgba(255,184,74,.1)',         fg: T.amber,  bd: 'rgba(255,184,74,.3)' },
-  };
-  const t = tones[tone] ?? tones.soft;
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 5,
-      padding: '3px 7px', borderRadius: 99,
-      fontFamily: T.fm, fontSize: 12, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase',
-      background: t.bg, color: t.fg, border: `1px solid ${t.bd}`, ...style,
-    }}>{children}</span>
-  );
-}
-
-// ─── Chip button ─────────────────────────────────────────────
-function WMChip({ children, accent = false, style, onClick }: { children: React.ReactNode; accent?: boolean; style?: React.CSSProperties; onClick?: () => void }) {
-  return (
-    <button onClick={onClick} style={{
-      padding: '7px 11px', borderRadius: 7, fontFamily: T.fm, fontSize: 12, fontWeight: 600,
-      letterSpacing: '.08em', textTransform: 'uppercase', cursor: 'pointer',
-      background: accent ? T.ink : 'transparent', color: accent ? T.bg : T.ink2,
-      border: accent ? `1px solid ${T.ink}` : `1px solid ${T.line2}`,
-      display: 'inline-flex', alignItems: 'center', gap: 6, ...style,
-    }}>{children}</button>
-  );
-}
-
-// ─── View header ──────────────────────────────────────────────
-function WMViewHead({ eyebrow, title, italic, sub, actions }: {
-  eyebrow: string; title: string; italic?: string; sub?: string; actions?: React.ReactNode;
-}) {
-  return (
-    <div style={{ padding: '18px 18px 14px', borderBottom: `1px solid ${T.line}`, marginBottom: 16 }}>
-      <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.2em', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>{eyebrow}</div>
-      <h1 style={{ fontFamily: T.fd, fontWeight: 800, letterSpacing: '-.025em', lineHeight: 1, fontSize: 28, margin: 0 }}>
-        {title}{italic && <em style={{ fontFamily: T.fs, fontStyle: 'italic', fontWeight: 400, color: T.ink2 }}> {italic}</em>}
-      </h1>
-      {sub && <p style={{ fontFamily: T.fs, fontStyle: 'italic', fontSize: 14, color: T.ink2, marginTop: 6, lineHeight: 1.35 }}>{sub}</p>}
-      {actions && <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>{actions}</div>}
-    </div>
-  );
-}
-
-// ─── Card ─────────────────────────────────────────────────────
-function WMCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div style={{ background: T.bg2, border: `1px solid ${T.line}`, borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 10, ...style }}>
-      {children}
-    </div>
-  );
-}
-
-// ─── Skeleton block ───────────────────────────────────────────
-function WMSkeleton({ w = '100%', h = 14, r = 6, style }: { w?: string | number; h?: number; r?: number; style?: React.CSSProperties }) {
-  return <div className="wm-skeleton" style={{ width: w, height: h, borderRadius: r, ...style }} />;
-}
 
 // ─── Track bottom sheet ───────────────────────────────────────
 function WMTrackSheet({ track, open, onClose }: { track: { title: string; artistName: string; album: string; color: string; hypeCount: number } | null; open: boolean; onClose: () => void }) {
@@ -1208,7 +1122,7 @@ function AdCampaignsSection() {
 }
 
 // ─── Screen: Radio ───────────────────────────────────────────
-function ScreenRadio({ data, onSetlistSheet, onHypersSheet, onSeedsTab }: { data: WorkbenchData; onSetlistSheet?: (showId: string) => void; onHypersSheet?: (showId: string) => void; onSeedsTab?: () => void }) {
+function ScreenRadio({ data, onSetlistSheet, onHypersSheet, onSeedsTab, onNewShow, onSchedule }: { data: WorkbenchData; onSetlistSheet?: (showId: string) => void; onHypersSheet?: (showId: string) => void; onSeedsTab?: () => void; onNewShow?: () => void; onSchedule?: () => void }) {
   const shows = data.radioShows;
   const live = shows.find(s => s.live);
   const rest = shows.filter(s => !s.live);
@@ -1219,7 +1133,7 @@ function ScreenRadio({ data, onSetlistSheet, onHypersSheet, onSeedsTab }: { data
         eyebrow={`LIVE NOW · ${shows.filter(s => s.live).length || 1} SHOWS ON AIR`}
         title="Radio"
         sub="Live and prerecorded shows from DJs and artists — every spin pays the source."
-        actions={<><WMChip>⌲ Schedule</WMChip><WMChip>+ New show</WMChip></>}
+        actions={<><WMChip onClick={onSchedule}>⌲ Schedule</WMChip><WMChip onClick={onNewShow}>+ New show</WMChip></>}
       />
       {data.city && <WMTrendingStrip city={data.city} />}
 
@@ -1383,20 +1297,11 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
       }))
     : [];
   const timelineColors = [T.accent, T.pink, T.purple, T.teal, T.blue, T.amber];
-  const timeline = trackList.length > 0
-    ? trackList.map((tr, i) => ({
-        c: timelineColors[i % timelineColors.length],
-        f: Math.round(100 / trackList.length),
-        t: tr.title,
-      }))
-    : [
-        { c: T.accent, f: 14, t: 'Intro' },
-        { c: T.pink,   f: 18, t: 'Sundown' },
-        { c: T.purple, f: 22, t: 'Westline' },
-        { c: T.teal,   f: 8,  t: 'Talk' },
-        { c: T.blue,   f: 20, t: 'Underpass' },
-        { c: T.amber,  f: 18, t: 'Halflight' },
-      ];
+  const timeline = trackList.map((tr, i) => ({
+    c: timelineColors[i % timelineColors.length],
+    f: Math.round(100 / trackList.length),
+    t: tr.title,
+  }));
 
   return (
     <>
@@ -1428,11 +1333,15 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
 
           {/* Timeline */}
           <div style={{ background: T.bg3, borderRadius: 9, padding: 12, marginTop: 12, border: `1px solid ${T.line}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em', marginBottom: 8 }}>
-              <span>00:00</span><span>15:00</span><span>30:00</span><span>47:00</span>
-            </div>
-            <div style={{ position: 'relative', height: 46, background: T.bg4, borderRadius: 5, display: 'flex', gap: 2, padding: 3, overflow: 'hidden' }}>
-              {timeline.map((c, i) => (
+            {timeline.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em', marginBottom: 8 }}>
+                <span>00:00</span><span>15:00</span><span>30:00</span><span>47:00</span>
+              </div>
+            )}
+            <div style={{ position: 'relative', height: 46, background: T.bg4, borderRadius: 5, display: 'flex', gap: 2, padding: 3, overflow: 'hidden', alignItems: 'center', justifyContent: timeline.length === 0 ? 'center' : undefined }}>
+              {timeline.length === 0 ? (
+                <span style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.04em' }}>Add tracks to build your timeline</span>
+              ) : timeline.map((c, i) => (
                 <div key={i} style={{
                   flex: `0 0 ${c.f}%`, height: '100%', background: c.c, borderRadius: 3,
                   display: 'flex', alignItems: 'center', padding: '0 6px',
@@ -1443,10 +1352,12 @@ function ScreenStudio({ data }: { data: WorkbenchData }) {
                   <span style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 2px,transparent 2px 4px)' }} />
                 </div>
               ))}
-              {/* playhead */}
-              <div style={{ position: 'absolute', top: -3, bottom: -3, left: '32%', width: 2, background: T.accent, boxShadow: `0 0 8px ${T.accent}`, zIndex: 3 }}>
-                <div style={{ position: 'absolute', top: -4, left: -4, width: 10, height: 10, borderRadius: '50%', background: T.accent }} />
-              </div>
+              {/* playhead — only when there are tracks */}
+              {timeline.length > 0 && (
+                <div style={{ position: 'absolute', top: -3, bottom: -3, left: '32%', width: 2, background: T.accent, boxShadow: `0 0 8px ${T.accent}`, zIndex: 3 }}>
+                  <div style={{ position: 'absolute', top: -4, left: -4, width: 10, height: 10, borderRadius: '50%', background: T.accent }} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -2139,9 +2050,9 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   const screenEl = (() => {
     switch (tab) {
-      case 'listen':   return <ScreenListen data={liveData} onPlay={setCurrentTrackIdx} onExpand={() => setExpanded(true)} currentIdx={currentTrackIdx} />;
+      case 'listen':   return <ScreenListen data={liveData} onPlay={setCurrentTrackIdx} onExpand={() => setExpanded(true)} currentIdx={currentTrackIdx} onOpenFM={() => setHalflightMode(true)} />;
       case 'discover': return <ScreenSeeds data={liveData} />;
-      case 'events':   return <ScreenShowsNew data={liveData} onToast={showToast} />;
+      case 'events':   return <ScreenShowsNew data={liveData} onToast={showToast} onOpenRadio={() => setHalflightMode(true)} />;
       case 'pages':    return <MobileScreenPages data={liveData} onPage={() => setPageMode(true)} onCockpit={() => setCockpitMode(true)} onStudio={() => setStudioMode(true)} onManage={() => setManageMode(true)} onJournal={() => setJournalMode(true)} onNotif={() => setNotifMode(true)} onSettings={() => setSettingsMode(true)} />;
     }
   })();
@@ -2172,7 +2083,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   }
 
   const overlayModes: { active: boolean; close: () => void; title: string; color: string; children: React.ReactNode; scroll?: boolean }[] = [
-    { active: halflightMode, close: () => setHalflightMode(false), title: 'Halflight FM',  color: T.teal,   children: <ViewHalflightFMMobile data={liveData} />, scroll: true },
+    { active: halflightMode, close: () => setHalflightMode(false), title: 'Halflight FM',  color: T.teal,   children: <ViewHalflightFMMobile data={liveData} onNewShow={() => { setHalflightMode(false); setStudioMode(true); }} onSchedule={() => { setHalflightMode(false); setStudioMode(true); }} />, scroll: true },
     { active: matchmakerMode, close: () => setMatchmakerMode(false), title: 'Booking Matchmaker', color: '#b983ff', children: <ViewMatchmaker />, scroll: true },
     { active: studioMode,    close: () => setStudioMode(false),    title: 'Studio',        color: T.purple, children: <MobileScreenStudio data={liveData} /> },
     { active: pageMode,      close: () => setPageMode(false),      title: 'Page Creator',  color: T.teal,   children: <ViewPageStudio data={liveData} />, scroll: true },
@@ -2263,6 +2174,8 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
             onToggle={() => setPlaying(p => !p)}
             onCollapse={() => setExpanded(false)}
             onHype={() => { setHypeTrack(track); setExpanded(false); }}
+            onPrev={liveData.tracks.length > 1 ? () => setCurrentTrackIdx(i => (i - 1 + liveData.tracks.length) % liveData.tracks.length) : undefined}
+            onNext={liveData.tracks.length > 1 ? () => setCurrentTrackIdx(i => (i + 1) % liveData.tracks.length) : undefined}
             progress={progress}
           />
         </div>

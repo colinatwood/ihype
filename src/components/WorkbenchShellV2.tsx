@@ -398,7 +398,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         </ViewErrorBoundary>;
       case 'events':
         return <ViewErrorBoundary viewName="Events">
-          <ViewEventsHub data={liveData} />
+          <ViewEventsHub data={liveData} onOpenRadio={() => navigateTo('halflight')} />
         </ViewErrorBoundary>;
       case 'pages':
         return <ViewErrorBoundary viewName="Pages">

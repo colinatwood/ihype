@@ -11,7 +11,7 @@ const STATIONS = [
   { freq: 107.9, label: 'PROMOTERS', name: 'Curated Radio',       color: '#ff3e9a', nowTrack: 'Cobalt Hour',      nowArtist: 'Vela' },
 ] as const;
 
-function HalflightCard() {
+function HalflightCard({ onOpenFM }: { onOpenFM?: () => void }) {
   const [stationIdx, setStationIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const s = STATIONS[stationIdx];
@@ -23,9 +23,16 @@ function HalflightCard() {
           <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 16, color: T.ink, letterSpacing: '-.01em' }}>{s.nowTrack}</div>
           <div style={{ fontFamily: T.fm, fontSize: 11, color: T.ink3, marginTop: 1 }}>{s.nowArtist}</div>
         </div>
-        <button onClick={() => setPlaying(p => !p)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: T.fm, fontSize: 12, fontWeight: 700, background: playing ? 'rgba(255,255,255,.1)' : s.color, color: playing ? T.ink : '#fff', flexShrink: 0 }}>
-          {playing ? '⏸' : '▶'}
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
+          <button onClick={() => setPlaying(p => !p)} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: T.fm, fontSize: 12, fontWeight: 700, background: playing ? 'rgba(255,255,255,.1)' : s.color, color: playing ? T.ink : '#fff' }}>
+            {playing ? '⏸' : '▶'}
+          </button>
+          {onOpenFM && (
+            <button onClick={onOpenFM} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${s.color}44`, cursor: 'pointer', fontFamily: T.fm, fontSize: 12, fontWeight: 700, background: 'transparent', color: s.color }}>
+              All ↗
+            </button>
+          )}
+        </div>
       </div>
       <div style={{ display: 'flex', gap: 6, padding: '0 16px 14px', overflowX: 'auto' }}>
         {STATIONS.map((st, i) => (
@@ -86,11 +93,12 @@ function SectionHeader({ title, sub, open, onToggle }: { title: string; sub: str
   );
 }
 
-export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
+export function ScreenListen({ data, onPlay, onExpand, currentIdx, onOpenFM }: {
   data: WorkbenchData;
   onPlay: (i: number) => void;
   onExpand: () => void;
   currentIdx: number;
+  onOpenFM?: () => void;
 }) {
   const [q, setQ] = useState('');
   const [charts, setCharts] = useState<{ national: ChartTrack[]; local: ChartTrack[]; forYou: ChartTrack[] } | null>(null);
@@ -245,7 +253,7 @@ export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
         />
         {openSections.radio && (
           <div style={{ paddingBottom: 4 }}>
-            <HalflightCard />
+            <HalflightCard onOpenFM={onOpenFM} />
 
             {/* Algorithmic radio stations */}
             <div style={{ padding: '0 22px 10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 10 }}>
@@ -377,15 +385,18 @@ export function ScreenListen({ data, onPlay, onExpand, currentIdx }: {
 }
 
 // ─── Full Player overlay with pull-up-to-hype ─────────────────
-export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progress }: {
+export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, onPrev, onNext, progress }: {
   track: WbTrack;
   playing: boolean;
   onToggle: () => void;
   onCollapse: () => void;
   onHype: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
   progress: number;
 }) {
   const [pull, setPull] = React.useState(0);
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const drag = React.useRef<{ y: number } | null>(null);
 
   const startDrag = (y: number) => { drag.current = { y }; };
@@ -418,7 +429,7 @@ export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progr
           <div style={{ fontFamily: T.fm, fontSize: 9, color: T.ink3, letterSpacing: '.16em', textTransform: 'uppercase' }}>Now Playing</div>
           <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 12.5, marginTop: 2 }}>Tonight&#39;s Queue</div>
         </div>
-        <div style={{ width: 34, height: 34, borderRadius: 99, background: 'rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, color: T.ink, cursor: 'pointer' }}>⋯</div>
+        <button onClick={() => setMenuOpen(true)} style={{ width: 34, height: 34, borderRadius: 99, background: 'rgba(255,255,255,.1)', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, color: T.ink, cursor: 'pointer' }}>⋯</button>
       </div>
 
       {/* art */}
@@ -449,7 +460,7 @@ export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progr
 
       {/* transport */}
       <div style={{ padding: '14px 30px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink2, padding: 0 }}>
+        <button onClick={onPrev} disabled={!onPrev} style={{ background: 'none', border: 'none', cursor: onPrev ? 'pointer' : 'default', color: onPrev ? T.ink2 : T.ink4, padding: 0 }}>
           <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M11 19V5l-9 7 9 7zm2-14v14l9-7-9-7z"/></svg>
         </button>
         <button onClick={onToggle} style={{ width: 68, height: 68, borderRadius: 99, background: T.ink, color: T.bg, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,.4)' }}>
@@ -457,7 +468,7 @@ export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progr
             ? <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
             : <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8L6 20z"/></svg>}
         </button>
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink2, padding: 0 }}>
+        <button onClick={onNext} disabled={!onNext} style={{ background: 'none', border: 'none', cursor: onNext ? 'pointer' : 'default', color: onNext ? T.ink2 : T.ink4, padding: 0 }}>
           <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M13 5v14l9-7-9-7zm-11 0v14l9-7-9-7z"/></svg>
         </button>
       </div>
@@ -491,6 +502,39 @@ export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progr
           </div>
         </div>
       </div>
+
+      {/* Track options sheet */}
+      {menuOpen && (
+        <div
+          style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 10 }}
+          onClick={() => setMenuOpen(false)}
+        >
+          <div style={{ background: T.bg2, borderRadius: '18px 18px 0 0', padding: '12px 0 40px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(255,255,255,.18)', margin: '0 auto 20px' }} />
+            <div style={{ padding: '0 6px 10px', fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.14em', textAlign: 'center', textTransform: 'uppercase' }}>{track.title}</div>
+            {([
+              { icon: '＋', label: 'Add to playlist', action: () => setMenuOpen(false) },
+              { icon: '↗', label: `Share "${track.title}"`, action: () => {
+                setMenuOpen(false);
+                if (navigator.share) {
+                  navigator.share({ title: track.title, text: `${track.title} by ${track.artistName}` }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(`${track.title} by ${track.artistName}`).catch(() => {});
+                }
+              }},
+              { icon: '→', label: `View ${track.artistName}`, action: () => {
+                setMenuOpen(false);
+                if (track.artistSlug) window.location.href = `/artists/${track.artistSlug}`;
+              }},
+            ] as { icon: string; label: string; action: () => void }[]).map(opt => (
+              <button key={opt.label} onClick={opt.action} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 16, padding: '15px 24px', background: 'none', border: 'none', color: T.ink, cursor: 'pointer', textAlign: 'left', fontFamily: T.fb, fontSize: 15 }}>
+                <span style={{ width: 26, fontFamily: T.fd, fontWeight: 700, color: T.ink3, textAlign: 'center', fontSize: 16 }}>{opt.icon}</span>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
