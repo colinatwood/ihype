@@ -17,6 +17,13 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
   const [fanMailContent, setFanMailContent] = React.useState('');
   const [fanMailState, setFanMailState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [scheduleDate, setScheduleDate] = React.useState('');
+  const [draftSaved, setDraftSaved] = React.useState(false);
+  const [localToast, setLocalToast] = React.useState<string | null>(null);
+
+  function showToast(msg: string) {
+    setLocalToast(msg);
+    setTimeout(() => setLocalToast(null), 2200);
+  }
 
   const handleCopyEmbed = () => {
     const profileHexId = data.profileHexId ?? '';
@@ -61,22 +68,21 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
     } catch { setDisputeState('error'); }
   };
 
-  const clips = [
-    { n: '01', t: 'Intro — Welcome back',         m: 'Maya · spoken',               type: 'VOICE', d: '0:42' },
-    { n: '02', t: 'Sundown',                      m: 'Maya Reyes · Halflight EP',   type: 'TRACK', d: '3:24' },
-    { n: '03', t: 'Westline',                     m: 'Cobalt Hour · 15% co-host',   type: 'TRACK', d: '4:11' },
-    { n: '04', t: 'Talk break — writing the bridge', m: 'Maya · 2:18',              type: 'VOICE', d: '2:18' },
-    { n: '05', t: 'Underpass',                    m: 'Saint Hex · Night Architect', type: 'TRACK', d: '4:36' },
-    { n: '06', t: 'Halflight',                    m: 'Maya Reyes · debut spin',     type: 'TRACK', d: '3:51' },
-  ];
-  const timeline = [
-    { c: T.accent, f: 14, t: 'Intro' },
-    { c: T.pink,   f: 18, t: 'Sundown' },
-    { c: T.purple, f: 22, t: 'Westline' },
-    { c: T.teal,   f: 8,  t: 'Talk' },
-    { c: T.blue,   f: 20, t: 'Underpass' },
-    { c: T.amber,  f: 18, t: 'Halflight' },
-  ];
+  const trackList = data.tracks;
+  const clips = trackList.map((tr, i) => ({
+    n: String(i + 1).padStart(2, '0'),
+    t: tr.title,
+    m: `${tr.artistName}${tr.album ? ` · ${tr.album}` : ''}`,
+    type: 'TRACK' as const,
+    d: tr.duration,
+  }));
+  const totalSec = trackList.reduce((s, tr) => s + (tr.durationSec ?? 0), 0);
+  const timelineColors = [T.accent, T.pink, T.purple, T.teal, T.blue, T.amber];
+  const timeline = trackList.map((tr, i) => ({
+    c: timelineColors[i % timelineColors.length],
+    f: totalSec > 0 ? Math.max(4, Math.round((tr.durationSec ?? 0) / totalSec * 100)) : Math.round(100 / trackList.length),
+    t: tr.title,
+  }));
 
   return (
     <>
@@ -85,8 +91,8 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
         title="Studio"
         sub="Drag tracks into the timeline. Splits auto-calc: 45/45/10."
         actions={<>
-          <WMChip>↥ Import</WMChip>
-          <WMChip accent>⬤ Publish</WMChip>
+          <WMChip onClick={() => showToast('Import from library coming soon')}>↥ Import</WMChip>
+          <WMChip accent onClick={() => showToast('Publish flow coming soon — schedule a date below first')}>⬤ Publish</WMChip>
           <WMChip onClick={handleCopyEmbed}>{embedCopied ? '✓ Copied!' : '⊞ Embed'}</WMChip>
           <WMChip onClick={() => setFanMailOpen(true)}>✉ Fan mail</WMChip>
           <PageActions
@@ -114,11 +120,16 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
 
           {/* Timeline */}
           <div style={{ background: T.bg3, borderRadius: 9, padding: 12, marginTop: 12, border: `1px solid ${T.line}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em', marginBottom: 8 }}>
-              <span>00:00</span><span>15:00</span><span>30:00</span><span>47:00</span>
-            </div>
-            <div style={{ position: 'relative', height: 46, background: T.bg4, borderRadius: 5, display: 'flex', gap: 2, padding: 3, overflow: 'hidden' }}>
-              {timeline.map((c, i) => (
+            {timeline.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.08em', marginBottom: 8 }}>
+                <span>00:00</span>
+                <span>{Math.floor(totalSec / 60)}:{String(totalSec % 60).padStart(2, '0')}</span>
+              </div>
+            )}
+            <div style={{ position: 'relative', height: 46, background: T.bg4, borderRadius: 5, display: 'flex', gap: 2, padding: 3, overflow: 'hidden', alignItems: 'center', justifyContent: timeline.length === 0 ? 'center' : undefined }}>
+              {timeline.length === 0 ? (
+                <span style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.04em' }}>Add tracks to build your timeline</span>
+              ) : timeline.map((c, i) => (
                 <div key={i} style={{
                   flex: `0 0 ${c.f}%`, height: '100%', background: c.c, borderRadius: 3,
                   display: 'flex', alignItems: 'center', padding: '0 6px',
@@ -129,16 +140,23 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
                   <span style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 2px,transparent 2px 4px)' }} />
                 </div>
               ))}
-              {/* playhead */}
-              <div style={{ position: 'absolute', top: -3, bottom: -3, left: '32%', width: 2, background: T.accent, boxShadow: `0 0 8px ${T.accent}`, zIndex: 3 }}>
-                <div style={{ position: 'absolute', top: -4, left: -4, width: 10, height: 10, borderRadius: '50%', background: T.accent }} />
-              </div>
+              {timeline.length > 0 && (
+                <div style={{ position: 'absolute', top: -3, bottom: -3, left: '32%', width: 2, background: T.accent, boxShadow: `0 0 8px ${T.accent}`, zIndex: 3 }}>
+                  <div style={{ position: 'absolute', top: -4, left: -4, width: 10, height: 10, borderRadius: '50%', background: T.accent }} />
+                </div>
+              )}
             </div>
           </div>
 
           {/* Clip list */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 12 }}>
-            {clips.map((c, i) => (
+            {clips.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px 16px', background: T.bg3, borderRadius: 10, border: `1px dashed ${T.line2}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 26 }}>🎵</div>
+                <div style={{ fontFamily: T.fd, fontWeight: 700, fontSize: 14, color: T.ink }}>No tracks in your library</div>
+                <div style={{ fontFamily: T.fb, fontSize: 12, color: T.ink3 }}>Upload a track to get started</div>
+              </div>
+            ) : clips.map((c, i) => (
               <div key={i} style={{
                 display: 'grid', gridTemplateColumns: '20px 1fr auto', gap: 10, alignItems: 'center',
                 padding: '7px 10px', borderRadius: 6, background: T.bg3, border: `1px solid ${T.line}`,
@@ -157,9 +175,9 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
           </div>
 
           <div style={{ display: 'flex', gap: 6, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.line}`, flexWrap: 'wrap' }}>
-            <WMChip>+ Track</WMChip>
-            <WMChip>⏵ Voice</WMChip>
-            <WMChip style={{ marginLeft: 'auto' }} accent>Save draft</WMChip>
+            <WMChip onClick={() => showToast('Import from library coming soon')}>+ Track</WMChip>
+            <WMChip onClick={() => showToast('Voice recorder coming soon')}>⏵ Voice</WMChip>
+            <WMChip style={{ marginLeft: 'auto' }} accent onClick={() => { setDraftSaved(true); showToast('Draft saved'); setTimeout(() => setDraftSaved(false), 3000); }}>{draftSaved ? '✓ Saved' : 'Save draft'}</WMChip>
           </div>
           {/* Schedule release */}
           <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -267,6 +285,16 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
             )}
           </div>
         </>
+      )}
+
+      {/* Local toast */}
+      {localToast && (
+        <div style={{ position: 'fixed', left: 16, right: 16, bottom: 32, zIndex: 200, pointerEvents: 'none' }}>
+          <div style={{ padding: '11px 16px', borderRadius: 10, background: T.bg3, border: `1px solid ${T.teal}40`, fontFamily: T.fb, fontSize: 13, color: T.ink, boxShadow: '0 8px 24px rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.teal, flexShrink: 0 }} />
+            {localToast}
+          </div>
+        </div>
       )}
 
       {/* Dispute payout sheet */}

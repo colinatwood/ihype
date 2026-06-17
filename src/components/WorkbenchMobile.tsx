@@ -2174,6 +2174,8 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
             onToggle={() => setPlaying(p => !p)}
             onCollapse={() => setExpanded(false)}
             onHype={() => { setHypeTrack(track); setExpanded(false); }}
+            onPrev={liveData.tracks.length > 1 ? () => setCurrentTrackIdx(i => (i - 1 + liveData.tracks.length) % liveData.tracks.length) : undefined}
+            onNext={liveData.tracks.length > 1 ? () => setCurrentTrackIdx(i => (i + 1) % liveData.tracks.length) : undefined}
             progress={progress}
           />
         </div>

@@ -385,12 +385,14 @@ export function ScreenListen({ data, onPlay, onExpand, currentIdx, onOpenFM }: {
 }
 
 // ─── Full Player overlay with pull-up-to-hype ─────────────────
-export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progress }: {
+export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, onPrev, onNext, progress }: {
   track: WbTrack;
   playing: boolean;
   onToggle: () => void;
   onCollapse: () => void;
   onHype: () => void;
+  onPrev?: () => void;
+  onNext?: () => void;
   progress: number;
 }) {
   const [pull, setPull] = React.useState(0);
@@ -457,7 +459,7 @@ export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progr
 
       {/* transport */}
       <div style={{ padding: '14px 30px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink2, padding: 0 }}>
+        <button onClick={onPrev} disabled={!onPrev} style={{ background: 'none', border: 'none', cursor: onPrev ? 'pointer' : 'default', color: onPrev ? T.ink2 : T.ink4, padding: 0 }}>
           <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M11 19V5l-9 7 9 7zm2-14v14l9-7-9-7z"/></svg>
         </button>
         <button onClick={onToggle} style={{ width: 68, height: 68, borderRadius: 99, background: T.ink, color: T.bg, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,.4)' }}>
@@ -465,7 +467,7 @@ export function FullPlayer({ track, playing, onToggle, onCollapse, onHype, progr
             ? <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
             : <svg width={26} height={26} viewBox="0 0 24 24" fill="currentColor"><path d="M6 4l14 8L6 20z"/></svg>}
         </button>
-        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink2, padding: 0 }}>
+        <button onClick={onNext} disabled={!onNext} style={{ background: 'none', border: 'none', cursor: onNext ? 'pointer' : 'default', color: onNext ? T.ink2 : T.ink4, padding: 0 }}>
           <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor"><path d="M13 5v14l9-7-9-7zm-11 0v14l9-7-9-7z"/></svg>
         </button>
       </div>
