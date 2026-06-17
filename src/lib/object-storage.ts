@@ -13,7 +13,7 @@ export type StoredObject = {
 
 const enc = new TextEncoder();
 
-async function hmac(key: ArrayBuffer, data: string): Promise<ArrayBuffer> {
+async function hmac(key: BufferSource, data: string): Promise<ArrayBuffer> {
   const k = await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return crypto.subtle.sign('HMAC', k, enc.encode(data));
 }
@@ -90,7 +90,7 @@ async function r2Request(
   const endpoint    = new URL(`https://${accountId}.r2.cloudflarestorage.com/${bucket}/${key}`);
 
   const EMPTY_SHA256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-  const payloadHash  = body ? toHex(await crypto.subtle.digest('SHA-256', body)) : EMPTY_SHA256;
+  const payloadHash  = body ? toHex(await crypto.subtle.digest('SHA-256', new Uint8Array(body))) : EMPTY_SHA256;
 
   const reqHeaders: Record<string, string> = {};
   if (contentType) reqHeaders['content-type'] = contentType;

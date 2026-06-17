@@ -19,19 +19,19 @@ const STATIC: MetadataRoute.Sitemap = [
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [artists, venues, shows] = await Promise.all([
     db.profile.findMany({
-      where: { type: 'ARTIST', slug: { not: null } },
+      where: { type: 'ARTIST', NOT: { slug: null } },
       select: { slug: true, updatedAt: true },
       orderBy: { hypeCount: 'desc' },
       take: 5000,
     }),
     db.profile.findMany({
-      where: { type: 'VENUE', slug: { not: null } },
+      where: { type: 'VENUE', NOT: { slug: null } },
       select: { slug: true, updatedAt: true },
       orderBy: { hypeCount: 'desc' },
       take: 2000,
     }),
     db.show.findMany({
-      where: { slug: { not: null }, status: { not: 'CANCELED' } },
+      where: { NOT: { slug: null }, status: { not: 'CANCELED' } },
       select: { slug: true, updatedAt: true },
       orderBy: { startsAt: 'desc' },
       take: 5000,
