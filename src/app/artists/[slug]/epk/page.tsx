@@ -29,6 +29,8 @@ export default async function EpkPage({ params }: { params: Promise<{ slug: stri
       contactInfo: true,
       links: true,
       avatarImage: true,
+      galleryImage: true,
+      aboutContent: true,
       type: true,
     },
   });
@@ -36,6 +38,7 @@ export default async function EpkPage({ params }: { params: Promise<{ slug: stri
   if (!profile || (profile.type !== 'ARTIST' && profile.type !== 'DJ')) return notFound();
 
   const avatarUrl = getSafeImageUrl(profile.avatarImage);
+  const galleryUrl = getSafeImageUrl(profile.galleryImage);
   const location = [profile.city, profile.stateRegion, profile.country].filter(Boolean).join(', ');
 
   return (
@@ -67,12 +70,47 @@ export default async function EpkPage({ params }: { params: Promise<{ slug: stri
         </div>
       </div>
 
+      {galleryUrl && (
+        <section style={{ marginTop: 32 }}>
+          <h2 style={{ fontSize: 18, borderBottom: '1px solid #ddd', paddingBottom: 6 }}>Press Photo</h2>
+          <img
+            alt={`${profile.name} press photo`}
+            src={galleryUrl}
+            loading="lazy"
+            style={{ maxWidth: '100%', maxHeight: 400, objectFit: 'cover', borderRadius: 4 }}
+          />
+        </section>
+      )}
+
       {profile.bio && (
         <section style={{ marginTop: 32 }}>
           <h2 style={{ fontSize: 18, borderBottom: '1px solid #ddd', paddingBottom: 6 }}>Bio</h2>
           <p style={{ lineHeight: 1.7, whiteSpace: 'pre-line' }}>{profile.bio}</p>
         </section>
       )}
+
+      {profile.aboutContent && (() => {
+        let techRider: string | null = null;
+        try {
+          const parsed = JSON.parse(profile.aboutContent!);
+          if (parsed && typeof parsed === 'object') {
+            const entries = Object.entries(parsed)
+              .filter(([, v]) => v && v !== 'false')
+              .map(([k]) => k.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()))
+              .join(', ');
+            if (entries) techRider = entries;
+          }
+        } catch {
+          techRider = profile.aboutContent!;
+        }
+        if (!techRider) return null;
+        return (
+          <section style={{ marginTop: 32 }}>
+            <h2 style={{ fontSize: 18, borderBottom: '1px solid #ddd', paddingBottom: 6 }}>Technical Rider</h2>
+            <p style={{ lineHeight: 1.7, whiteSpace: 'pre-line' }}>{techRider}</p>
+          </section>
+        );
+      })()}
 
       {(profile.contactInfo || profile.links) && (
         <section style={{ marginTop: 32 }}>

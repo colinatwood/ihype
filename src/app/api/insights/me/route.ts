@@ -46,5 +46,20 @@ export async function GET() {
 
   const finishRate = total > 0 ? Math.round((finished / total) * 100) : 0;
 
-  return NextResponse.json({ listens30d: total, finishRate, topTracks });
+  // Fetch all listens for daily grouping
+  const allListens = await db.mediaListen.findMany({
+    where: { mediaId: { in: mediaIds }, createdAt: { gte: thirtyDaysAgo } },
+    select: { createdAt: true },
+  });
+
+  // Build 30-day array (index 0 = 30 days ago, index 29 = today)
+  const dailyCounts = new Array(30).fill(0);
+  const now = Date.now();
+  for (const l of allListens) {
+    const daysAgo = Math.floor((now - l.createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    const idx = 29 - daysAgo;
+    if (idx >= 0 && idx < 30) dailyCounts[idx]++;
+  }
+
+  return NextResponse.json({ listens30d: total, finishRate, topTracks, dailyListens: dailyCounts });
 }
