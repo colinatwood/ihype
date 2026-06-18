@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { WorkbenchData } from '@/types/workbench';
 
 type TourMode = 'artist' | 'venue';
@@ -70,6 +70,29 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
   const [selectedArtist, setSelectedArtist] = useState<ArtistResult | null>(null);
 
   const [tourAdded, setTourAdded] = useState<Set<string>>(new Set());
+  const [showSubmitCity, setShowSubmitCity] = useState<string | null>(null);
+  const [showTitle, setShowTitle] = useState('');
+  const [showDate, setShowDate] = useState('');
+  const [showSubmitting, setShowSubmitting] = useState(false);
+  const [showSubmitted, setShowSubmitted] = useState<Set<string>>(new Set());
+
+  const submitShow = useCallback(async (city: string) => {
+    if (!showTitle.trim()) return;
+    setShowSubmitting(true);
+    try {
+      const body: Record<string, string> = { title: showTitle.trim() };
+      if (showDate) body.startsAt = new Date(showDate).toISOString();
+      const r = await fetch('/api/shows', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) {
+        setShowSubmitted(prev => new Set([...prev, city]));
+        setShowSubmitCity(null);
+        setShowTitle('');
+        setShowDate('');
+      }
+    } finally {
+      setShowSubmitting(false);
+    }
+  }, [showTitle, showDate]);
 
   function handleFindStops() {
     setStopsLoading(true);
@@ -392,6 +415,41 @@ export function ViewTour({ data }: { data: WorkbenchData }) {
                       >
                         {tourAdded.has(stop.city) ? '✓ Added to tour' : 'Add to tour'}
                       </button>
+
+                      {/* Create Event */}
+                      {showSubmitted.has(stop.city) ? (
+                        <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: 'rgba(34,229,212,.08)', border: '1px solid rgba(34,229,212,.25)', fontFamily: 'var(--f-m)', fontSize: 12, color: '#22e5d4', textAlign: 'center' }}>
+                          ✓ Event submitted
+                        </div>
+                      ) : showSubmitCity === stop.city ? (
+                        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8, padding: '14px', borderRadius: 10, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)' }}>
+                          <input
+                            value={showTitle}
+                            onChange={e => setShowTitle(e.target.value)}
+                            placeholder={`Event title — ${stop.city}`}
+                            style={{ background: 'var(--bg-2)', border: '1px solid var(--line-2)', borderRadius: 8, padding: '8px 12px', fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink)', outline: 'none' }}
+                          />
+                          <input
+                            type="date"
+                            value={showDate}
+                            onChange={e => setShowDate(e.target.value)}
+                            style={{ background: 'var(--bg-2)', border: '1px solid var(--line-2)', borderRadius: 8, padding: '8px 12px', fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink)', outline: 'none' }}
+                          />
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => { setShowSubmitCity(null); setShowTitle(''); setShowDate(''); }} style={{ flex: 1, padding: '9px 0', borderRadius: 8, border: '1px solid var(--line-2)', background: 'none', cursor: 'pointer', fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)' }}>Cancel</button>
+                            <button onClick={() => { void submitShow(stop.city); }} disabled={showSubmitting || !showTitle.trim()} style={{ flex: 2, padding: '9px 0', borderRadius: 8, border: 'none', background: showTitle.trim() ? 'rgba(185,131,255,.85)' : 'var(--bg-3)', cursor: showTitle.trim() ? 'pointer' : 'not-allowed', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, color: showTitle.trim() ? '#fff' : 'var(--ink-3)', opacity: showSubmitting ? 0.6 : 1 }}>
+                              {showSubmitting ? 'Submitting…' : 'Submit Event →'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setShowSubmitCity(stop.city); setShowTitle(`Event in ${stop.city}`); }}
+                          style={{ marginTop: 10, width: '100%', padding: '10px 0', borderRadius: 10, cursor: 'pointer', background: 'none', border: '1px solid rgba(185,131,255,.3)', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.06em', color: 'rgba(185,131,255,.9)', minHeight: 44 }}
+                        >
+                          + Create Event
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
