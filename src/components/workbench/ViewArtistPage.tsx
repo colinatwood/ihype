@@ -216,6 +216,19 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
     setPageVars(newVars);
     setTyping(false);
     setGenerating(false);
+
+    // Persist theme to profile so it shows on the public page
+    if (data.pageEditor?.profileId) {
+      fetch('/api/profile-editor', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          profileId: data.pageEditor.profileId,
+          themeAccentTone: newVars['--p-accent'],
+          themeBackdropTone: newVars['--p-bg'],
+        }),
+      }).catch(() => {});
+    }
     const chip = res.applied.length
       ? '<div style="margin-top:8px;padding:6px 10px;border-radius:6px;background:rgba(34,229,212,.08);border:1px solid rgba(34,229,212,.18);font-size:11px;color:#22e5d4;font-weight:700">✓ ' + res.applied.join(' · ') + '</div>'
       : '';
@@ -494,7 +507,12 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
 
         {/* Mode: Press Kit */}
         {mode === 'presskit' && (
-          <PressKitPanel artistName={artistName} artistSlug={data.pageEditor?.slug ?? 'maya'} />
+          <PressKitPanel
+            artistName={artistName}
+            artistSlug={data.pageEditor?.slug ?? 'maya'}
+            profileId={data.pageEditor?.profileId}
+            initialBio={data.pageEditor?.bio}
+          />
         )}
       </div>
 
@@ -674,8 +692,9 @@ function SimilarArtistsSection({ artistSlug }: { artistSlug: string }) {
 }
 
 /* ── Press Kit Panel ─────────────────────────────────────── */
-function PressKitPanel({ artistName, artistSlug }: { artistName: string; artistSlug: string }) {
-  const [bio, setBio] = useState(`${artistName} makes late-night songs for long drives. Based in Chicago, IL, their sound blends hazy guitar work with confessional lyrics that land somewhere between indie folk and alternative pop. Their debut EP, recorded live in a basement on Western Ave, has accumulated over 2,000 streams and counting.`);
+function PressKitPanel({ artistName, artistSlug, profileId, initialBio }: { artistName: string; artistSlug: string; profileId?: string; initialBio?: string }) {
+  const defaultBio = `${artistName} makes late-night songs for long drives. Based in Chicago, IL, their sound blends hazy guitar work with confessional lyrics that land somewhere between indie folk and alternative pop. Their debut EP, recorded live in a basement on Western Ave, has accumulated over 2,000 streams and counting.`;
+  const [bio, setBio] = useState(initialBio || defaultBio);
   const [riderChecks, setRiderChecks] = useState<Record<string, boolean>>({
     'PA system (min 1,000W)': true,
     'Stage monitors (x2)': true,
@@ -685,6 +704,8 @@ function PressKitPanel({ artistName, artistSlug }: { artistName: string; artistS
     'Merch table': true,
   });
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   function toggleRider(key: string) {
     setRiderChecks(c => ({ ...c, [key]: !c[key] }));
@@ -695,6 +716,24 @@ function PressKitPanel({ artistName, artistSlug }: { artistName: string; artistS
     navigator.clipboard.writeText(url).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function savePressKit() {
+    if (!profileId) return;
+    setSaving(true);
+    try {
+      const riderJson = JSON.stringify(
+        Object.entries(riderChecks).filter(([, v]) => v).map(([k]) => k)
+      );
+      await fetch('/api/profile-editor', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, bio, aboutContent: riderJson }),
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch { /* ignore */ }
+    finally { setSaving(false); }
   }
 
   return (
@@ -733,6 +772,23 @@ function PressKitPanel({ artistName, artistSlug }: { artistName: string; artistS
               minHeight: 100,
             }}
           />
+          {profileId && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 10 }}>
+              <button
+                onClick={savePressKit}
+                disabled={saving}
+                style={{
+                  padding: '7px 18px', borderRadius: 8, border: 'none', cursor: saving ? 'default' : 'pointer',
+                  background: saved ? 'rgba(95,211,138,.15)' : '#ff5029',
+                  color: saved ? '#5fd38a' : '#fff',
+                  fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700,
+                  opacity: saving ? 0.6 : 1, transition: 'all .15s',
+                }}
+              >
+                {saved ? '✓ Saved' : saving ? 'Saving…' : 'Save Bio'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Key stats grid */}
