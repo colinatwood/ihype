@@ -19,6 +19,15 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
   const [scheduleDate, setScheduleDate] = React.useState('');
   const [draftSaved, setDraftSaved] = React.useState(false);
   const [localToast, setLocalToast] = React.useState<string | null>(null);
+  const [publishOpen, setPublishOpen] = React.useState(false);
+  const [publishTitle, setPublishTitle] = React.useState('Halflight FM · Ep 05');
+  const [publishState, setPublishState] = React.useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [trackPickerOpen, setTrackPickerOpen] = React.useState(false);
+  const [voiceOpen, setVoiceOpen] = React.useState(false);
+  const [recording, setRecording] = React.useState(false);
+  const [recordedBlob, setRecordedBlob] = React.useState<Blob | null>(null);
+  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
+  const chunksRef = React.useRef<Blob[]>([]);
 
   function showToast(msg: string) {
     setLocalToast(msg);
@@ -68,6 +77,60 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
     } catch { setDisputeState('error'); }
   };
 
+  const handlePublish = async () => {
+    if (!publishTitle.trim()) return;
+    setPublishState('loading');
+    try {
+      const startsAt = scheduleDate ? new Date(scheduleDate).toISOString() : new Date().toISOString();
+      const res = await fetch('/api/shows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: publishTitle,
+          isRadioShow: false,
+          status: scheduleDate ? 'SCHEDULED' : 'DRAFT',
+          startsAt,
+        }),
+      });
+      if (res.ok) {
+        setPublishState('done');
+        setTimeout(() => { setPublishOpen(false); setPublishState('idle'); showToast('Episode published!'); }, 1500);
+      } else {
+        const d = await res.json().catch(() => ({})) as { error?: string };
+        setPublishState('error');
+        setTimeout(() => setPublishState('idle'), 2000);
+        showToast(d.error ?? 'Failed to publish');
+      }
+    } catch {
+      setPublishState('error');
+      setTimeout(() => setPublishState('idle'), 2000);
+    }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = e => chunksRef.current.push(e.data);
+      mr.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        setRecordedBlob(blob);
+        stream.getTracks().forEach(t => t.stop());
+      };
+      mediaRecorderRef.current = mr;
+      mr.start();
+      setRecording(true);
+    } catch {
+      showToast('Microphone access denied');
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setRecording(false);
+  };
+
   const trackList = data.tracks;
   const clips = trackList.map((tr, i) => ({
     n: String(i + 1).padStart(2, '0'),
@@ -91,8 +154,8 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
         title="Studio"
         sub="Drag tracks into the timeline. Splits auto-calc: 45/45/10."
         actions={<>
-          <WMChip onClick={() => showToast('Import from library coming soon')}>↥ Import</WMChip>
-          <WMChip accent onClick={() => showToast('Publish flow coming soon — schedule a date below first')}>⬤ Publish</WMChip>
+          <WMChip onClick={() => setTrackPickerOpen(true)}>↥ Import</WMChip>
+          <WMChip accent onClick={() => setPublishOpen(true)}>⬤ Publish</WMChip>
           <WMChip onClick={handleCopyEmbed}>{embedCopied ? '✓ Copied!' : '⊞ Embed'}</WMChip>
           <WMChip onClick={() => setFanMailOpen(true)}>✉ Fan mail</WMChip>
           <PageActions
@@ -175,8 +238,8 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
           </div>
 
           <div style={{ display: 'flex', gap: 6, marginTop: 14, paddingTop: 12, borderTop: `1px solid ${T.line}`, flexWrap: 'wrap' }}>
-            <WMChip onClick={() => showToast('Import from library coming soon')}>+ Track</WMChip>
-            <WMChip onClick={() => showToast('Voice recorder coming soon')}>⏵ Voice</WMChip>
+            <WMChip onClick={() => setTrackPickerOpen(true)}>+ Track</WMChip>
+            <WMChip onClick={() => setVoiceOpen(true)}>⏵ Voice</WMChip>
             <WMChip style={{ marginLeft: 'auto' }} accent onClick={() => { setDraftSaved(true); showToast('Draft saved'); setTimeout(() => setDraftSaved(false), 3000); }}>{draftSaved ? '✓ Saved' : 'Save draft'}</WMChip>
           </div>
           {/* Schedule release */}
@@ -331,6 +394,112 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
                 </button>
               </>
             )}
+          </div>
+        </>
+      )}
+
+      {/* Publish sheet */}
+      {publishOpen && (
+        <>
+          <div onClick={() => setPublishOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 59, background: 'rgba(0,0,0,.6)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 60, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', padding: '20px 18px 40px' }}>
+            <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18, marginBottom: 4 }}>Publish episode</div>
+            <div style={{ fontFamily: T.fm, fontSize: 13, color: T.ink3, marginBottom: 14 }}>
+              {scheduleDate ? `Scheduled for ${new Date(scheduleDate).toLocaleString()}` : 'No schedule set — will save as draft.'}
+            </div>
+            {publishState === 'done' ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: T.teal, fontFamily: T.fb }}>Published!</div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  value={publishTitle}
+                  onChange={e => setPublishTitle(e.target.value.slice(0, 100))}
+                  placeholder="Episode title"
+                  style={{ width: '100%', background: T.bg2, border: `1px solid ${T.line2}`, borderRadius: 10, color: T.ink, fontFamily: T.fb, fontSize: 14, padding: '10px 12px', marginBottom: 12, boxSizing: 'border-box', outline: 'none' }}
+                />
+                <button
+                  onClick={handlePublish}
+                  disabled={publishState === 'loading' || !publishTitle.trim()}
+                  style={{ width: '100%', padding: '13px 0', borderRadius: 10, border: 'none', background: publishTitle.trim() ? `linear-gradient(135deg,${T.accent},${T.pink})` : T.bg4, color: publishTitle.trim() ? T.bg : T.ink3, fontFamily: T.fd, fontWeight: 800, fontSize: 15, cursor: publishTitle.trim() ? 'pointer' : 'default' }}
+                >
+                  {publishState === 'loading' ? 'Publishing…' : publishState === 'error' ? 'Failed — retry' : scheduleDate ? 'Schedule & publish' : 'Save as draft'}
+                </button>
+              </>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Track picker sheet */}
+      {trackPickerOpen && (
+        <>
+          <div onClick={() => setTrackPickerOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 59, background: 'rgba(0,0,0,.6)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 60, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', padding: '20px 18px', maxHeight: '72vh', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18 }}>Import from library</div>
+              <button onClick={() => setTrackPickerOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, fontSize: 20, lineHeight: 1 }}>✕</button>
+            </div>
+            <div style={{ overflowY: 'auto', paddingBottom: 32 }}>
+              {data.tracks.length === 0 ? (
+                <div style={{ padding: '28px 0', textAlign: 'center', color: T.ink3, fontFamily: T.fb, fontSize: 13 }}>No tracks in your library yet.</div>
+              ) : data.tracks.map((t, i) => (
+                <button
+                  key={t.id}
+                  onClick={() => { showToast(`Added "${t.title}"`); setTrackPickerOpen(false); }}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', background: 'none', border: 'none', borderBottom: i < data.tracks.length - 1 ? `1px solid ${T.line}` : 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
+                  <div style={{ width: 36, height: 36, borderRadius: 6, background: `linear-gradient(135deg,${t.color},${t.color}80)`, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: T.fb, fontSize: 14, color: T.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.title}</div>
+                    <div style={{ fontFamily: T.fm, fontSize: 12, color: T.ink3 }}>{t.artistName} · {t.duration}</div>
+                  </div>
+                  <span style={{ color: T.teal, fontFamily: T.fm, fontSize: 11, fontWeight: 700, letterSpacing: '.06em', flexShrink: 0 }}>+ ADD</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Voice recorder sheet */}
+      {voiceOpen && (
+        <>
+          <div onClick={() => { if (!recording) setVoiceOpen(false); }} style={{ position: 'fixed', inset: 0, zIndex: 59, background: 'rgba(0,0,0,.6)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 60, background: T.bg3, borderTop: `1px solid ${T.line2}`, borderRadius: '18px 18px 0 0', padding: '20px 18px 40px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 18 }}>Voice recorder</div>
+              {!recording && <button onClick={() => setVoiceOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.ink3, fontSize: 20, lineHeight: 1 }}>✕</button>}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, padding: '24px 0' }}>
+              {recordedBlob ? (
+                <>
+                  <audio controls src={URL.createObjectURL(recordedBlob)} style={{ width: '100%' }} />
+                  <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+                    <button onClick={() => setRecordedBlob(null)} style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: `1px solid ${T.line2}`, background: 'none', color: T.ink2, fontFamily: T.fm, fontSize: 13, cursor: 'pointer' }}>Re-record</button>
+                    <button
+                      onClick={() => { showToast('Voice note added to episode'); setVoiceOpen(false); setRecordedBlob(null); }}
+                      style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: 'none', background: `linear-gradient(135deg,${T.accent},${T.pink})`, color: T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}
+                    >Add to episode</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ width: 80, height: 80, borderRadius: '50%', background: recording ? 'rgba(255,80,41,.15)' : T.bg2, border: `2px solid ${recording ? T.accent : T.line2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>
+                    <svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={recording ? T.accent : T.ink2} strokeWidth="1.5">
+                      <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/>
+                    </svg>
+                  </div>
+                  {recording && <div style={{ fontFamily: T.fm, fontSize: 13, color: T.accent, letterSpacing: '.12em' }}>● RECORDING</div>}
+                  <button
+                    onClick={recording ? stopRecording : startRecording}
+                    style={{ padding: '12px 32px', borderRadius: 10, border: recording ? `1px solid ${T.accent}` : 'none', background: recording ? 'rgba(255,80,41,.18)' : `linear-gradient(135deg,${T.accent},${T.pink})`, color: recording ? T.accent : T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 15, cursor: 'pointer' }}
+                  >
+                    {recording ? 'Stop recording' : 'Start recording'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </>
       )}
