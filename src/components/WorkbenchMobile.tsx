@@ -1165,6 +1165,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   const [pageMode, setPageMode] = useState(false);
   const [advertiseMode, setAdvertiseMode] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [notifMode, setNotifMode] = useState(false);
   const [settingsMode, setSettingsMode] = useState(false);
   const [prefs, setPrefs] = useState<typeof DEFAULT_PREFS>(DEFAULT_PREFS);
@@ -1427,6 +1428,27 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
       <style>{eqCss}</style>
       <style>{`@keyframes hypePop { from { transform: scale(.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }`}</style>
       <audio ref={audioRef} preload="metadata" style={{ display: 'none' }} />
+
+      {/* Search overlay */}
+      <SearchOverlay open={mobileSearchOpen} onClose={() => setMobileSearchOpen(false)} activeProfileTypes={liveData.activeProfileTypes} />
+
+      {/* Persistent search trigger */}
+      <div style={{ flexShrink: 0, padding: '10px 16px 6px', background: T.bg, borderBottom: `1px solid ${T.line}` }}>
+        <button
+          onClick={() => setMobileSearchOpen(true)}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+            padding: '9px 14px', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+            background: T.bg2, border: `1px solid ${T.line2}`,
+            fontFamily: T.fb, fontSize: 14, color: T.ink3,
+          }}
+        >
+          <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={T.ink3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Search artists, shows, tracks…
+        </button>
+      </div>
 
       {/* Main scrollable area */}
       <div

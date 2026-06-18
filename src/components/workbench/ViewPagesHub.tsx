@@ -16,7 +16,7 @@ const ViewPageStudio = dynamic(() => import('./ViewPageStudio'), {
 });
 
 type PageRole = 'ARTIST' | 'VENUE' | 'DJ' | 'LISTENER';
-type PageView = 'home' | 'editor' | 'preview';
+type PageView = 'home' | 'editor' | 'preview' | 'ads';
 
 const PAGE_LABELS: Record<PageRole, string> = {
   ARTIST: 'Artist Page',
@@ -139,6 +139,103 @@ function StatPill({ value, label }: { value: string | number; label: string }) {
   );
 }
 
+// ── Ad Recommendations panel ─────────────────────────────────────
+
+type AdRec = { headline: string; body: string; channel: string; cta: string };
+
+const CHANNEL_COLORS: Record<string, string> = {
+  Instagram: '#e040fb', TikTok: '#22e5d4', Spotify: '#1db954', 'Local Flyers': '#ffb84a',
+};
+
+function AdRecsPanel({ onBack }: { onBack: () => void }) {
+  const [recs, setRecs] = useState<AdRec[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(false);
+
+  React.useEffect(() => {
+    fetch('/api/page-builder/ad-recs')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((d: { recs: AdRec[] }) => { setRecs(d.recs); setLoading(false); })
+      .catch(() => { setErr(true); setLoading(false); });
+  }, []);
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '16px 22px 32px' }}>
+      <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--f-b)', fontSize: 12, color: 'var(--ink-3)', padding: '4px 0', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 20 }}>
+        ← Back to dashboard
+      </button>
+      <div style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 22, color: 'var(--ink)', marginBottom: 6 }}>Ad Recommendations</div>
+      <div style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)', marginBottom: 24, lineHeight: 1.5 }}>AI-generated campaign ideas tailored to your profile.</div>
+      {loading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[0,1,2,3].map(i => <div key={i} style={{ height: 90, borderRadius: 14, background: 'var(--bg-2)', animation: 'shimmer 1.4s infinite', backgroundSize: '200% 100%', backgroundImage: 'linear-gradient(90deg, var(--bg-2) 25%, var(--bg-3) 50%, var(--bg-2) 75%)' }} />)}
+        </div>
+      )}
+      {err && <div style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)' }}>Could not load recommendations. Try again later.</div>}
+      {recs && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {recs.map((r, i) => {
+            const col = CHANNEL_COLORS[r.channel] ?? 'rgba(185,131,255,1)';
+            return (
+              <div key={i} style={{ borderRadius: 14, border: '1px solid rgba(255,255,255,.07)', background: 'rgba(255,255,255,.02)', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 16, color: 'var(--ink)', lineHeight: 1.2 }}>{r.headline}</div>
+                  <span style={{ padding: '3px 10px', borderRadius: 99, background: `${col}1a`, fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.1em', color: col, whiteSpace: 'nowrap', flexShrink: 0 }}>{r.channel}</span>
+                </div>
+                <div style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>{r.body}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: 11, fontWeight: 700, color: col, letterSpacing: '.06em' }}>{r.cta}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Hype activity feed ────────────────────────────────────────────
+
+type Hyper = { id: string; name: string; image: string | null; at: string };
+
+function ActivityFeed() {
+  const [hypers, setHypers] = useState<Hyper[] | null>(null);
+
+  React.useEffect(() => {
+    fetch('/api/profile/activity')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then((d: { hypers: Hyper[] }) => setHypers(d.hypers))
+      .catch(() => setHypers([]));
+  }, []);
+
+  if (!hypers || hypers.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 12 }}>
+        Recent Hypers
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {hypers.slice(0, 6).map(h => (
+          <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,rgba(185,131,255,.4),rgba(255,80,41,.3))', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              {h.image
+                ? <img src={h.image} alt={h.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                : <span style={{ fontFamily: 'var(--f-d)', fontSize: 11, fontWeight: 800, color: 'var(--ink)' }}>{h.name.slice(0,1).toUpperCase()}</span>
+              }
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink)', lineHeight: 1 }}>{h.name}</div>
+            </div>
+            <div style={{ fontFamily: 'var(--f-m)', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '.06em' }}>
+              {(() => { const s = Math.floor((Date.now() - new Date(h.at).getTime()) / 1000); return s < 3600 ? `${Math.floor(s/60)}m` : s < 86400 ? `${Math.floor(s/3600)}h` : `${Math.floor(s/86400)}d`; })()}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Page dashboard ───────────────────────────────────────────────
 
 function PageDashboard({
@@ -173,6 +270,14 @@ function PageDashboard({
       window.setTimeout(() => setShareStatus('idle'), 1800);
     } catch { /* ignored */ }
   }, [data.profileHexId]);
+
+  if (pageView === 'ads') {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <AdRecsPanel onBack={() => setPageView('home')} />
+      </div>
+    );
+  }
 
   if (pageView === 'editor') {
     return (
@@ -300,7 +405,7 @@ function PageDashboard({
           )}
           {isCreator && (
             <ActionCard
-              label="Show Creator"
+              label="Event Creator"
               sub="Submit & manage events"
               accent="#ff5029"
               onClick={() => onNavigate?.('events')}
@@ -312,7 +417,7 @@ function PageDashboard({
               label="Ad Recommendations"
               sub="Boost your presence"
               accent="#ffd700"
-              onClick={() => { /* future */ }}
+              onClick={() => setPageView('ads')}
               icon={<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={18} height={18}><path d="M3 14V8a1 1 0 0 1 1-1h3l3-4 3 4h3a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" strokeLinecap="round" strokeLinejoin="round"/><path d="M10 11v2M10 8h.01" strokeLinecap="round"/></svg>}
             />
           )}
@@ -333,6 +438,7 @@ function PageDashboard({
           />
         </div>
       </div>
+      {isCreator && <ActivityFeed />}
     </div>
   );
 }

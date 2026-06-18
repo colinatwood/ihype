@@ -224,7 +224,7 @@ export function MobileScreenPages({
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {isCreatorOrVenue && <ActionChip label="Tour Builder" accent={T.teal} onClick={onTour} />}
-            {isCreatorOrVenue && <ActionChip label="Show Creator" accent="#ff5029" onClick={onEvents} />}
+            {isCreatorOrVenue && <ActionChip label="Event Creator" accent="#ff5029" onClick={onEvents} />}
             {isCreatorOrVenue && <ActionChip label="Ad Recs" accent="#ffd700" onClick={() => { /* future */ }} />}
           </div>
         </div>
