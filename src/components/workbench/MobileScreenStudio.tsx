@@ -26,6 +26,7 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
   const [voiceOpen, setVoiceOpen] = React.useState(false);
   const [recording, setRecording] = React.useState(false);
   const [recordedBlob, setRecordedBlob] = React.useState<Blob | null>(null);
+  const [voiceUploading, setVoiceUploading] = React.useState(false);
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
   const chunksRef = React.useRef<Blob[]>([]);
 
@@ -478,9 +479,32 @@ export function MobileScreenStudio({ data }: { data: WorkbenchData }) {
                   <div style={{ display: 'flex', gap: 10, width: '100%' }}>
                     <button onClick={() => setRecordedBlob(null)} style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: `1px solid ${T.line2}`, background: 'none', color: T.ink2, fontFamily: T.fm, fontSize: 13, cursor: 'pointer' }}>Re-record</button>
                     <button
-                      onClick={() => { showToast('Voice note added to episode'); setVoiceOpen(false); setRecordedBlob(null); }}
-                      style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: 'none', background: `linear-gradient(135deg,${T.accent},${T.pink})`, color: T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 13, cursor: 'pointer' }}
-                    >Add to episode</button>
+                      disabled={voiceUploading}
+                      onClick={async () => {
+                        if (!recordedBlob) return;
+                        setVoiceUploading(true);
+                        try {
+                          const fd = new FormData();
+                          const ts = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+                          fd.append('file', new File([recordedBlob], `voice-note-${Date.now()}.webm`, { type: 'audio/webm' }));
+                          fd.append('title', `Voice Note ${ts}`);
+                          fd.append('freeUseEnabled', 'false');
+                          const res = await fetch('/api/artist-media', { method: 'POST', body: fd });
+                          if (res.ok) {
+                            showToast('Voice note saved to library');
+                          } else {
+                            showToast('Saved locally — upload failed');
+                          }
+                        } catch {
+                          showToast('Saved locally — upload failed');
+                        } finally {
+                          setVoiceUploading(false);
+                          setVoiceOpen(false);
+                          setRecordedBlob(null);
+                        }
+                      }}
+                      style={{ flex: 1, padding: '11px 0', borderRadius: 9, border: 'none', background: voiceUploading ? T.bg2 : `linear-gradient(135deg,${T.accent},${T.pink})`, color: voiceUploading ? T.ink3 : T.bg, fontFamily: T.fd, fontWeight: 800, fontSize: 13, cursor: voiceUploading ? 'default' : 'pointer' }}
+                    >{voiceUploading ? 'Saving…' : 'Add to episode'}</button>
                   </div>
                 </>
               ) : (

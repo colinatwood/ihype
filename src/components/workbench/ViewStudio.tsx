@@ -81,25 +81,29 @@ function cityToHeatmapCity(
   };
 }
 
-// Static venue pings — venue demand radar is not yet in the DB
-const STATIC_VENUE_PINGS: HypeHeatmapVenuePing[] = [];
-
 function HypeHeatmapLive() {
   const [cities, setCities] = useState<HypeHeatmapCity[]>([]);
+  const [venuePings, setVenuePings] = useState<HypeHeatmapVenuePing[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/hype/heatmap')
-      .then((r) => r.json())
-      .then((data: { cities: Array<{ city: string; count: number; rank: number }> }) => {
-        const maxCount = data.cities[0]?.count ?? 1;
+    Promise.all([
+      fetch('/api/hype/heatmap').then((r) => r.json()),
+      fetch('/api/hype/venue-pings').then((r) => r.json()),
+    ])
+      .then(([heatmapData, pingsData]: [
+        { cities: Array<{ city: string; count: number; rank: number }> },
+        { pings: HypeHeatmapVenuePing[] }
+      ]) => {
+        const maxCount = heatmapData.cities[0]?.count ?? 1;
         let fallbackIndex = 0;
-        const mapped = data.cities.map((c) => {
+        const mapped = heatmapData.cities.map((c) => {
           const item = cityToHeatmapCity(c.city, c.count, c.rank, maxCount, fallbackIndex);
           if (!CITY_COORDS[c.city]) fallbackIndex++;
           return item;
         });
         setCities(mapped);
+        setVenuePings(pingsData.pings ?? []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -131,7 +135,7 @@ function HypeHeatmapLive() {
   return (
     <HypeHeatmap
       cities={cities}
-      venuePings={STATIC_VENUE_PINGS}
+      venuePings={venuePings}
     />
   );
 }
