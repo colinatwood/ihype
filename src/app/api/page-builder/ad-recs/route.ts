@@ -8,7 +8,7 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: 'Login required' }, { status: 401 });
 
   const profile = await db.profile.findFirst({
-    where: { userId: session.user.id },
+    where: { ownerId: session.user.id },
     select: { type: true, name: true, genres: true, city: true, hypeCount: true, bio: true },
   });
   if (!profile) return NextResponse.json({ error: 'Profile not found' }, { status: 404 });

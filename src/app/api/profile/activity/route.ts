@@ -7,7 +7,7 @@ export async function GET() {
   if (!session?.user?.id) return NextResponse.json({ error: 'Login required' }, { status: 401 });
 
   const profile = await db.profile.findFirst({
-    where: { userId: session.user.id },
+    where: { ownerId: session.user.id },
     select: { id: true },
   });
   if (!profile) return NextResponse.json({ hypers: [] });
