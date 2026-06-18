@@ -925,6 +925,7 @@ export default function ViewPageStudio({ data, defaultRole }: { data?: Workbench
       contentRef.current = makeContent(initRole);
       contentRef.current.name = pe.name;
       if (pe.bio) contentRef.current.bio = pe.bio;
+      if (pe.city) bookingRef.current.market = pe.city;
       if (pe.headline) contentRef.current.tagline = pe.headline;
       if (pe.songs?.length) {
         tracksRef.current = pe.songs.slice(0, 8).map((s: { hexId: string; title: string }) => ({ id: s.hexId, name: s.title, dur: '' }));

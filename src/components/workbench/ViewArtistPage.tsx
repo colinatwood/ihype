@@ -54,7 +54,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
   const selectedTrack = data.tracks?.find(t => t.id === selectedTrackId) ?? data.tracks?.[0] ?? null;
 
   // Insights — live data
-  const [insightsData, setInsightsData] = useState<{ listens30d: number; finishRate: number; topTracks: Array<{title: string; listens: number}> } | null>(null);
+  const [insightsData, setInsightsData] = useState<{ listens30d: number; finishRate: number; topTracks: Array<{title: string; listens: number}>; dailyListens?: number[] } | null>(null);
   const [insightsFetched, setInsightsFetched] = useState(false);
 
   useEffect(() => {
@@ -74,6 +74,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
           listens30d: d.listens30d ?? 0,
           finishRate: d.finishRate ?? 0,
           topTracks: d.topTracks ?? [],
+          dailyListens: (d as { dailyListens?: number[] }).dailyListens,
         });
       })
       .catch(() => {});
@@ -199,7 +200,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
               </div>
 
               <ChartSection title="Listens & Engagement" subtitle="Daily streams over the past 30 days">
-                <ListensChart />
+                <ListensChart pts={insightsData?.dailyListens} />
               </ChartSection>
 
               <ChartSection title="HYPE Sources" subtitle="Where your hype is coming from">
@@ -719,8 +720,8 @@ function ChartSection({ title, subtitle, children }: { title: string; subtitle: 
   );
 }
 
-function ListensChart() {
-  const pts = [40, 55, 48, 72, 68, 90, 85, 110, 95, 120, 105, 130, 115, 140, 125, 155, 140, 170, 145, 180, 160, 190, 175, 200, 185, 210, 195, 220, 205, 230];
+function ListensChart({ pts: livePts }: { pts?: number[] }) {
+  const pts = (livePts && livePts.length > 0) ? livePts : [40, 55, 48, 72, 68, 90, 85, 110, 95, 120, 105, 130, 115, 140, 125, 155, 140, 170, 145, 180, 160, 190, 175, 200, 185, 210, 195, 220, 205, 230];
   const max = Math.max(...pts);
   const h = 80; const w = 600;
   const d = pts.map((v, i) => `${i === 0 ? 'M' : 'L'}${(i / (pts.length - 1)) * w},${h - (v / max) * h}`).join(' ');

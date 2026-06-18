@@ -100,6 +100,9 @@ export function MobileScreenPages({
   const [adRecsOpen, setAdRecsOpen] = useState(false);
   const [adRecs, setAdRecs] = useState<AdRec[] | null>(null);
   const [adRecsLoading, setAdRecsLoading] = useState(false);
+  const [pkBio, setPkBio] = useState(data.pageEditor?.bio ?? '');
+  const [pkSaving, setPkSaving] = useState(false);
+  const [pkSaved, setPkSaved] = useState(false);
 
   const openAdRecs = useCallback(() => {
     setAdRecsOpen(true);
@@ -139,6 +142,21 @@ export function MobileScreenPages({
       window.setTimeout(() => setShareStatus('idle'), 1800);
     } catch { /* ignored */ }
   }, [data.profileHexId]);
+
+  const savePressKit = useCallback(async () => {
+    if (!data.profileId || pkSaving) return;
+    setPkSaving(true);
+    try {
+      const r = await fetch('/api/profile-editor', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: data.profileId, bio: pkBio }),
+      });
+      if (r.ok) { setPkSaved(true); setTimeout(() => setPkSaved(false), 2500); }
+    } finally {
+      setPkSaving(false);
+    }
+  }, [data.profileId, pkBio, pkSaving]);
 
   return (
     <>
@@ -311,6 +329,56 @@ export function MobileScreenPages({
               onClick={onJournal}
               icon={<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" width={18} height={18}><rect x="3" y="2" width="14" height="16" rx="2"/><path d="M7 7h6M7 11h4" strokeLinecap="round"/></svg>}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Press Kit */}
+      {isCreator && (
+        <div style={{ margin: '0 16px 20px' }}>
+          <div style={{ fontFamily: T.fm, fontSize: 10, color: T.ink3, letterSpacing: '.16em', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 2 }}>
+            Press Kit
+          </div>
+          <div style={{ borderRadius: 14, border: `1px solid ${T.line}`, background: T.bg2, padding: '14px 16px' }}>
+            <div style={{ fontFamily: T.fb, fontSize: 12, color: T.ink2, marginBottom: 6 }}>Bio</div>
+            <textarea
+              value={pkBio}
+              onChange={e => setPkBio(e.target.value)}
+              style={{
+                width: '100%', minHeight: 80, padding: '8px 10px',
+                background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)',
+                borderRadius: 8, color: T.ink, fontFamily: T.fb, fontSize: 13,
+                resize: 'vertical', boxSizing: 'border-box',
+              }}
+            />
+            <button
+              onClick={() => { void savePressKit(); }}
+              disabled={pkSaving}
+              style={{
+                marginTop: 10, padding: '8px 18px', borderRadius: 99,
+                background: pkSaved ? 'rgba(34,229,212,.15)' : 'rgba(255,80,41,.15)',
+                border: 'none', cursor: 'pointer', fontFamily: T.fm, fontWeight: 700,
+                fontSize: 11, letterSpacing: '.1em',
+                color: pkSaved ? '#22e5d4' : '#ff5029',
+              }}
+            >
+              {pkSaved ? 'Saved!' : pkSaving ? 'Saving…' : 'Save'}
+            </button>
+            {data.profilePath && (
+              <div style={{ marginTop: 12 }}>
+                <a
+                  href={`${data.profilePath}/epk`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontFamily: T.fm, fontSize: 11, fontWeight: 700, letterSpacing: '.08em',
+                    color: T.ink2, textDecoration: 'none',
+                  }}
+                >
+                  View EPK ↗
+                </a>
+              </div>
+            )}
           </div>
         </div>
       )}
