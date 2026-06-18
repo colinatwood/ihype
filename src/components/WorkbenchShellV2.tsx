@@ -10,6 +10,9 @@ import type { WorkbenchData, StarterPackItem } from '@/types/workbench';
 
 import { DEFAULT_PREFS, loadPrefs, shiftAccent } from './workbench/types';
 import type { View } from './workbench/types';
+import { GamificationProvider } from './workbench/GamificationContext';
+import { XPPopups, ComboDisplay, LevelUpOverlay, XPFooter, DailyQuestBar, GmLevelPill } from './workbench/GamificationOverlays';
+import { ViewLeaderboard } from './workbench/ViewLeaderboard';
 import { AppTopbar } from './workbench/AppTopbar';
 import { PlayerDock } from './workbench/PlayerDock';
 import { QueueRail } from './workbench/QueueRail';
@@ -424,13 +427,17 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       case 'halflight':       return <ViewErrorBoundary viewName="Halflight FM"><ViewHalflightFM data={liveData} /></ViewErrorBoundary>;
       case 'matchmaker':      return <ViewErrorBoundary viewName="Booking Matchmaker"><ViewMatchmaker /></ViewErrorBoundary>;
       case 'cockpit':         return <ViewErrorBoundary viewName="Page Cockpit"><ViewCockpit data={liveData} /></ViewErrorBoundary>;
+      case 'leaderboard':     return <ViewErrorBoundary viewName="Leaderboard"><ViewLeaderboard /></ViewErrorBoundary>;
       default:                return <ViewErrorBoundary viewName="Listen"><ViewListen data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx} /></ViewErrorBoundary>;
     }
   })();
 
+  const showXPFooter = ['discover', 'seeds', 'listen', 'events'].includes(view);
+
   if (!mounted) return null;
 
   return (
+    <GamificationProvider>
     <>
       <style>{`
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -487,6 +494,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
           background: 'var(--bg)', minHeight: 0, minWidth: 0,
           fontSize: `calc(14px * var(--density, 1))`,
           position: 'relative',
+          display: 'flex', flexDirection: 'column',
         }}>
           {/* Ambient orb canvas — matches iHYPE Prototype.html design */}
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
@@ -495,6 +503,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
             <div className="wb-bg-orb" style={{ width: 380, height: 380, bottom: '10%', left: '35%', background: 'radial-gradient(circle, rgba(255,62,154,.07), transparent 70%)', animationDelay: '-16s' }} />
             <div className="wb-bg-grid" />
           </div>
+          {showXPFooter && <DailyQuestBar />}
           {!nudgeDismissed && (liveData.profileCompletion?.percent ?? 100) < 100 && (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 18px', background: 'rgba(255,184,74,.12)', borderBottom: '1px solid rgba(255,184,74,.25)', position: 'relative', zIndex: 2, flexShrink: 0 }}>
               <button onClick={() => navigateTo('pages')} style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'rgba(255,184,74,.9)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '.06em', minHeight: 'unset' }}>
@@ -516,6 +525,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
               {viewEl}
             </React.Suspense>
           </div>
+          <XPFooter visible={showXPFooter} />
         </main>
 
         {/* Queue rail */}
@@ -550,6 +560,10 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
           onComplete={() => { setShowGenreQuiz(false); localStorage.setItem('ihype_genre_quiz_dismissed', '1'); }}
         />
       )}
+      <XPPopups />
+      <ComboDisplay />
+      <LevelUpOverlay />
     </>
+    </GamificationProvider>
   );
 }
