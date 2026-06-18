@@ -1163,6 +1163,7 @@ export default function ViewPageStudio({ data, defaultRole }: { data?: Workbench
     }
 
     addMsg({ id: makeId(), type: 'ai', html: `Done — updated: <b>${esc(ins)}</b>` });
+    persistDraft();
     setInputPlaceholder('"make it darker", "purple accent", "serif font"…');
     setInputEnabled(true);
     scrollChat();
@@ -1435,7 +1436,7 @@ ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a 
               <button
                 key={d.name + i}
                 className={'ps2-dcard' + (active ? ' on' : '')}
-                onClick={() => { applyTheme(directions[i]); toast(`Applied: ${d.name}`); }}
+                onClick={() => { applyTheme(directions[i]); persistDraft(); toast(`Applied: ${d.name}`); }}
               >
                 <div className="ps2-dp" style={{ background: p.bg }}>
                   <div className="ps2-dp-bar" style={{ background: p.accent }} />

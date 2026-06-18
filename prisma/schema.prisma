@@ -235,6 +235,7 @@ model Profile {
   collabResponses               CollabResponse[]
   promoCodes                    PromoCode[]
   fanMailLastSentAt             DateTime?
+  newsletterSubscriptions       NewsletterSubscription[]
 
   @@index([name])
   @@index([city, type])
@@ -1229,4 +1230,15 @@ model ABTest {
   description String?
   enabled     Boolean  @default(false)
   createdAt   DateTime @default(now())
+}
+
+model NewsletterSubscription {
+  id        String   @id @default(cuid())
+  email     String
+  profileId String
+  createdAt DateTime @default(now())
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([email, profileId])
+  @@index([profileId])
 }
