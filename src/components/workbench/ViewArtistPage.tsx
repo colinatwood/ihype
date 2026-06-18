@@ -8,108 +8,6 @@ import { getProfilePathForType } from '@/lib/profile-paths';
 
 /* ── types ───────────────────────────────────────────────── */
 type CkMode = 'page' | 'insights' | 'tour' | 'release' | 'library' | 'presskit';
-type Device = 'desktop' | 'mobile';
-
-interface Msg { side: 'me' | 'ai'; html: string; applied?: string[]; }
-interface PageVars {
-  '--p-bg': string; '--p-surface': string; '--p-ink': string; '--p-ink2': string;
-  '--p-accent': string; '--p-accent2': string; '--p-line': string;
-  '--p-display': string; '--p-radius': string; '--p-hero-url': string;
-}
-
-const DEFAULT_VARS: PageVars = {
-  '--p-bg': '#0e0b09', '--p-surface': '#181310', '--p-ink': '#f4efe9',
-  '--p-ink2': '#9c9082', '--p-accent': '#ff5029', '--p-accent2': '#ff3e9a',
-  '--p-line': 'rgba(255,255,255,.07)', '--p-display': '"Syne",sans-serif', '--p-radius': '12px',
-  '--p-hero-url': '',
-};
-
-const GENRE_PATTERNS: [RegExp, string][] = [
-  [/\bpunk|hardcore|thrash|grunge\b/, 'punk'],
-  [/\bjazz|blues|soul|bebop\b/, 'jazz'],
-  [/\bhip.?hop|rap|trap|drill\b/, 'hip-hop'],
-  [/\belectronic|techno|house|rave|edm|synth\b/, 'electronic'],
-  [/\bfolk|country|americana|bluegrass\b/, 'folk'],
-  [/\bindierock|indie.rock\b/, 'indie'],
-  [/\bmetal|doom|sludge|death.metal\b/, 'metal'],
-  [/\bclassical|orchestra|chamber\b/, 'classical'],
-  [/\brnb|r&b|neo.soul\b/, 'rnb'],
-];
-
-/* ── AI command interpreter ──────────────────────────────── */
-function applyCommand(text: string, vars: PageVars): { reply: string; applied: string[]; newVars: PageVars; detectedGenre: string } {
-  const t = text.toLowerCase();
-  const v = { ...vars };
-  const applied: string[] = [];
-  const set = (k: keyof PageVars, val: string) => { v[k] = val; };
-
-  if (/\b(dark|darker|midnight|moody|night)\b/.test(t)) {
-    set('--p-bg', '#070605'); set('--p-surface', '#121009');
-    set('--p-ink', '#f4efe9'); set('--p-ink2', '#9c9082');
-    applied.push('Mood → midnight');
-  }
-  if (/\b(light|bright|paper|cream|airy)\b/.test(t)) {
-    set('--p-bg', '#f6f0e6'); set('--p-surface', '#ede5d6');
-    set('--p-ink', '#1a1612'); set('--p-ink2', '#6b6056');
-    set('--p-line', 'rgba(0,0,0,.1)');
-    applied.push('Mood → paper');
-  }
-  if (/\bwarm/.test(t)) { set('--p-bg', '#120c08'); set('--p-surface', '#1d140d'); applied.push('Tone → warmer'); }
-  if (/\bcool|cold|blue tone/.test(t)) { set('--p-bg', '#080a0d'); set('--p-surface', '#101620'); applied.push('Tone → cooler'); }
-
-  const genreThemes: Record<string, Partial<PageVars>> = {
-    punk:       { '--p-bg': '#0c0805', '--p-surface': '#1a110a', '--p-accent': '#ff5029', '--p-accent2': '#ffb84a', '--p-radius': '3px' },
-    jazz:       { '--p-bg': '#080710', '--p-surface': '#120f1e', '--p-accent': '#b983ff', '--p-accent2': '#ff3e9a', '--p-display': '"Instrument Serif",serif' },
-    'hip-hop':  { '--p-bg': '#060606', '--p-surface': '#101010', '--p-accent': '#ffb84a', '--p-accent2': '#ff5029', '--p-radius': '6px' },
-    electronic: { '--p-bg': '#07060f', '--p-surface': '#120f24', '--p-accent': '#22e5d4', '--p-accent2': '#ff3e9a', '--p-radius': '4px' },
-    folk:       { '--p-bg': '#f4ece0', '--p-surface': '#fbf6ee', '--p-ink': '#211a12', '--p-ink2': '#6f5f4a', '--p-accent': '#c2451f', '--p-line': 'rgba(0,0,0,.1)', '--p-display': '"Instrument Serif",serif' },
-    metal:      { '--p-bg': '#050505', '--p-surface': '#0e0e0e', '--p-accent': '#e8e8ea', '--p-accent2': '#ff5029', '--p-radius': '2px' },
-    classical:  { '--p-bg': '#f9f5ef', '--p-surface': '#ffffff', '--p-ink': '#1a1612', '--p-ink2': '#6b6056', '--p-accent': '#8b4513', '--p-line': 'rgba(0,0,0,.08)', '--p-display': '"Instrument Serif",serif' },
-    rnb:        { '--p-bg': '#0a0812', '--p-surface': '#151020', '--p-accent': '#ff3e9a', '--p-accent2': '#b983ff' },
-    indie:      { '--p-bg': '#0e0b0a', '--p-surface': '#181410', '--p-accent': '#5b8dff', '--p-accent2': '#22e5d4' },
-  };
-  let detectedGenre = '';
-  for (const [re, g] of GENRE_PATTERNS) {
-    if (re.test(t)) {
-      detectedGenre = g;
-      const gt = genreThemes[g];
-      if (gt) { Object.entries(gt).forEach(([k, val]) => { v[k as keyof PageVars] = val; }); applied.push(`Scene → ${g}`); }
-      break;
-    }
-  }
-
-  const colors: Record<string, string> = {
-    purple: '#b983ff', teal: '#22e5d4', pink: '#ff3e9a', blue: '#7fb3ff',
-    amber: '#ffb84a', gold: '#ffb84a', green: '#5fd38a', orange: '#ff5029', red: '#ff5029', lime: '#a6e22e',
-  };
-  for (const c in colors) {
-    if (new RegExp('\\b' + c + '\\b').test(t)) {
-      set('--p-accent', colors[c]); applied.push('Accent → ' + c); break;
-    }
-  }
-  if (/\bpop|punch|vivid|bold colou?r|loud/.test(t)) {
-    set('--p-accent', '#ff5029'); set('--p-accent2', '#ff3e9a');
-    applied.push('Accent → high-energy');
-  }
-
-  if (/\bserif|elegant|classic|editorial|refined/.test(t)) {
-    set('--p-display', '"Instrument Serif",serif'); applied.push('Headline → serif');
-  }
-  if (/\bsans|modern|clean type|grotesk/.test(t)) {
-    set('--p-display', '"Syne",sans-serif'); applied.push('Headline → Syne');
-  }
-  if (/\bround|soft corner|pill/.test(t)) { set('--p-radius', '22px'); applied.push('Corners → rounded'); }
-  if (/\bsharp|square|hard edge/.test(t)) { set('--p-radius', '3px'); applied.push('Corners → sharp'); }
-
-  let reply: string;
-  if (applied.length) {
-    reply = 'Done — ' + (applied.length > 1 ? applied.length + ' changes are live.' : "that's live on your page.");
-  } else {
-    set('--p-accent', '#ff5029');
-    reply = 'I tightened the accent. Try "make it punk", "jazz mood", "purple accent", "elegant serif", or "rounder corners".';
-  }
-  return { reply, applied, newVars: v, detectedGenre };
-}
 
 /* ── sub-components ──────────────────────────────────────── */
 function RailBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
@@ -147,20 +45,17 @@ const INPUT_STYLE: React.CSSProperties = {
 /* ── main component ──────────────────────────────────────── */
 export function ViewArtistPage({ data }: { data: WorkbenchData }) {
   const [mode, setMode] = useState<CkMode>('page');
-  const [device, setDevice] = useState<Device>('desktop');
-  const [editOn, setEditOn] = useState(true);
-  const [pageVars, setPageVars] = useState<PageVars>(DEFAULT_VARS);
-  const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [typing, setTyping] = useState(false);
-  const [input, setInput] = useState('');
-  const [generating, setGenerating] = useState(false);
-  const [showShows, setShowShows] = useState(false);
-  const [showMerch, setShowMerch] = useState(false);
-  const [showBooking, setShowBooking] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [shareLinkCopied, setShareLinkCopied] = useState(false);
-  const threadRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
+
+  // Release Planner — track selection
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(
+    data.tracks && data.tracks.length > 0 ? data.tracks[0].id : null
+  );
+  const selectedTrack = data.tracks?.find(t => t.id === selectedTrackId) ?? data.tracks?.[0] ?? null;
+
+  // Insights — live data
+  const [insightsData, setInsightsData] = useState<{ listens30d: number; finishRate: number; topTracks: Array<{title: string; listens: number}> } | null>(null);
+  const [insightsFetched, setInsightsFetched] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
@@ -170,70 +65,19 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
   }, []);
 
   useEffect(() => {
-    if (threadRef.current) threadRef.current.scrollTop = threadRef.current.scrollHeight;
-  }, [msgs, typing]);
-
-  const send = useCallback(async (text: string) => {
-    text = text.trim();
-    if (!text) return;
-    setMsgs(m => [...m, { side: 'me', html: esc(text) }]);
-    setInput('');
-    setTyping(true);
-    setGenerating(true);
-
-    const res = applyCommand(text, pageVars);
-    if (/\btour|shows?|dates|gig|concert/.test(text.toLowerCase())) {
-      setShowShows(true);
-      if (!res.applied.includes('Added · Tour dates')) res.applied.push('Added · Tour dates');
-    }
-    if (/\bmerch|shop|store|tee|vinyl/.test(text.toLowerCase())) {
-      setShowMerch(true);
-      if (!res.applied.includes('Added · Merch shelf')) res.applied.push('Added · Merch shelf');
-    }
-    if (/\badd booking|book me|contact/.test(text.toLowerCase())) {
-      setShowBooking(true);
-      if (!res.applied.includes('Added · Booking form')) res.applied.push('Added · Booking form');
-    }
-
-    let heroUrl = '';
-    const uploadedHero = data.pageEditor?.heroImage;
-    if (uploadedHero) {
-      heroUrl = uploadedHero;
-      if (!res.applied.some(a => a.startsWith('Hero'))) res.applied.push('Hero → your photo');
-    } else if (res.detectedGenre) {
-      try {
-        const r = await fetch(`/api/page-hero?genre=${encodeURIComponent(res.detectedGenre)}`);
-        if (r.ok) {
-          const d = await r.json() as { url?: string };
-          if (d.url) { heroUrl = d.url; res.applied.push('Hero → ' + res.detectedGenre + ' photo'); }
-        }
-      } catch { /* ignore */ }
-    }
-
-    const newVars: PageVars = { ...res.newVars, '--p-hero-url': heroUrl ? `url('${heroUrl}')` : '' };
-
-    await new Promise(r => setTimeout(r, heroUrl ? 400 : 1100));
-    setPageVars(newVars);
-    setTyping(false);
-    setGenerating(false);
-
-    // Persist theme to profile so it shows on the public page
-    if (data.pageEditor?.profileId) {
-      fetch('/api/profile-editor', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profileId: data.pageEditor.profileId,
-          themeAccentTone: newVars['--p-accent'],
-          themeBackdropTone: newVars['--p-bg'],
-        }),
-      }).catch(() => {});
-    }
-    const chip = res.applied.length
-      ? '<div style="margin-top:8px;padding:6px 10px;border-radius:6px;background:rgba(34,229,212,.08);border:1px solid rgba(34,229,212,.18);font-size:11px;color:#22e5d4;font-weight:700">✓ ' + res.applied.join(' · ') + '</div>'
-      : '';
-    setMsgs(m => [...m, { side: 'ai', html: esc(res.reply) + chip, applied: res.applied }]);
-  }, [pageVars, data]);
+    if (mode !== 'insights' || insightsFetched) return;
+    setInsightsFetched(true);
+    fetch('/api/insights/me')
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { listens30d?: number; finishRate?: number; topTracks?: Array<{title: string; listens: number}> } | null) => {
+        if (d) setInsightsData({
+          listens30d: d.listens30d ?? 0,
+          finishRate: d.finishRate ?? 0,
+          topTracks: d.topTracks ?? [],
+        });
+      })
+      .catch(() => {});
+  }, [mode, insightsFetched]);
 
   const profilePath = data.pageEditor?.slug
     ? getProfilePathForType(data.pageEditor.type, data.pageEditor.slug)
@@ -301,7 +145,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 fontFamily: 'var(--f-b,sans-serif)', fontSize: 12, color: 'rgba(244,239,233,.45)',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
-                onClick={() => { setMode('page'); if (s === 'Shows') setShowShows(true); if (s === 'Merch') setShowMerch(true); }}
+                onClick={() => setMode('page')}
               >
                 <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,80,41,.5)', display: 'inline-block' }} />
                 {s}
@@ -348,10 +192,10 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
               <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 24 }}>Last 30 days · updated hourly</div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
-                <KpiCard label="Listens" value="2,284" delta="+14%" sub="past 30 days" color="#ff5029" />
-                <KpiCard label="Finish rate" value="71%" delta="+3pts" sub="avg vs 58% norm" color="#b983ff" />
-                <KpiCard label="Save rate" value="26%" delta="+5pts" sub="saves / streams" color="#22e5d4" />
-                <KpiCard label="Est. payout" value="$2,460" delta="+$340" sub="this month" color="#ffb84a" />
+                <KpiCard label="Listens" value={insightsData ? insightsData.listens30d.toLocaleString() : '–'} delta="" sub="past 30 days" color="#ff5029" />
+                <KpiCard label="Finish rate" value={insightsData ? `${insightsData.finishRate}%` : '–'} delta="" sub="completions / plays" color="#b983ff" />
+                <KpiCard label="Save rate" value="–" delta="" sub="coming soon" color="#22e5d4" />
+                <KpiCard label="Est. payout" value="–" delta="" sub="coming soon" color="#ffb84a" />
               </div>
 
               <ChartSection title="Listens & Engagement" subtitle="Daily streams over the past 30 days">
@@ -379,7 +223,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
               </ChartSection>
 
               <ChartSection title="Top Tracks" subtitle="Ranked by streams">
-                <TopTracks />
+                <TopTracks tracks={insightsData?.topTracks} />
               </ChartSection>
 
               <ChartSection title="Discovery Funnel" subtitle="Seed view → attended">
@@ -423,8 +267,31 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
         {mode === 'release' && (
           <div style={{ position: 'absolute', inset: 0, overflowY: 'auto' }}>
             <div style={{ padding: '28px 32px', maxWidth: 1000, margin: '0 auto' }}>
-              <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 6 }}>Release Planner</h2>
-              <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)', marginBottom: 24 }}>&quot;Westbound&quot; · Single · Dropping Jun 14</div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h2 style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>Release Planner</h2>
+                  <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 12, color: 'rgba(244,239,233,.4)' }}>
+                    {selectedTrack ? `${selectedTrack.title} · ${selectedTrack.album}` : 'Select a track to plan your release'}
+                  </div>
+                </div>
+                {data.tracks && data.tracks.length > 0 && (
+                  <select
+                    value={selectedTrackId ?? ''}
+                    onChange={e => setSelectedTrackId(e.target.value || null)}
+                    style={{
+                      padding: '8px 12px', borderRadius: 8,
+                      background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.15)',
+                      color: 'var(--ink,#f4efe9)', fontFamily: 'var(--f-m,monospace)', fontSize: 12,
+                      outline: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    <option value="">— pick a track —</option>
+                    {data.tracks.map(t => (
+                      <option key={t.id} value={t.id}>{t.title}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 28 }}>
                 <RelStat label="Pre-saves" value="284" icon="♡" color="#ff3e9a" />
@@ -460,7 +327,7 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
                 <span style={{ fontSize: 16 }}>✦</span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 14, fontWeight: 700, color: '#b983ff', marginBottom: 4 }}>Write your announcement copy</div>
-                  <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.6)', lineHeight: 1.5, marginBottom: 12 }}>Drop your one-liner about Westbound and I&apos;ll write press blurbs, social captions, and a playlist pitch for you.</div>
+                  <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'rgba(244,239,233,.6)', lineHeight: 1.5, marginBottom: 12 }}>Drop your one-liner about {selectedTrack?.title ?? 'this track'} and I&apos;ll write press blurbs, social captions, and a playlist pitch for you.</div>
                   <textarea
                     placeholder="What's the vibe? What's the story behind this single?"
                     rows={2}
@@ -515,76 +382,6 @@ export function ViewArtistPage({ data }: { data: WorkbenchData }) {
           />
         )}
       </div>
-
-      {/* Share card modal */}
-      {shareOpen && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            background: 'rgba(0,0,0,.75)', backdropFilter: 'blur(8px)',
-          }}
-          onClick={() => setShareOpen(false)}
-        >
-          <div onClick={e => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-            {/* Share card */}
-            <div style={{
-              width: 340, borderRadius: 20, overflow: 'hidden',
-              background: 'linear-gradient(135deg,#ff5029 0%,#ff3e9a 50%,#b983ff 100%)',
-              padding: '2px',
-            }}>
-              <div style={{
-                borderRadius: 18, background: '#0e0b09',
-                padding: '32px 28px', textAlign: 'center',
-              }}>
-                <div style={{
-                  width: 64, height: 64, borderRadius: 16, margin: '0 auto 16px',
-                  background: 'linear-gradient(135deg,#ff5029,#ff3e9a)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--f-d,sans-serif)', fontSize: 22, fontWeight: 800, color: '#fff',
-                }}>{initials}</div>
-                <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 24, fontWeight: 800, color: '#f4efe9', marginBottom: 4 }}>{artistName}</div>
-                <div style={{ fontFamily: 'system-ui', fontSize: 13, color: 'rgba(244,239,233,.55)', marginBottom: 20 }}>Artist · Chicago, IL · Alt-Indie</div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
-                  {[['2,284', 'Streams'], ['12', 'Shows'], ['410+', 'Fans']].map(([v, l]) => (
-                    <div key={l} style={{ background: 'rgba(255,255,255,.06)', borderRadius: 10, padding: '10px 8px' }}>
-                      <div style={{ fontFamily: 'var(--f-d,sans-serif)', fontSize: 18, fontWeight: 800, color: '#ff5029' }}>{v}</div>
-                      <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9, color: 'rgba(244,239,233,.4)', textTransform: 'uppercase', letterSpacing: '.08em', marginTop: 2 }}>{l}</div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.3)', letterSpacing: '.06em' }}>{artistSlug} · iHYPE</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={() => setShareOpen(false)}
-                style={{
-                  padding: '9px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,.15)',
-                  background: 'transparent', color: 'rgba(244,239,233,.6)',
-                  fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                Close
-              </button>
-              <button
-                onClick={() => {
-                  const url = new URL(profilePath || '/', window.location.origin).toString();
-                  navigator.clipboard?.writeText(url).catch(() => {});
-                  setShareLinkCopied(true);
-                  setTimeout(() => setShareLinkCopied(false), 2000);
-                }}
-                style={{
-                  padding: '9px 20px', borderRadius: 8, border: 'none',
-                  background: '#ff5029', color: '#fff',
-                  fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                {shareLinkCopied ? 'Copied!' : 'Copy link'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── bottom tab bar (mobile) ── */}
       {isMobile && (
@@ -896,175 +693,6 @@ function PressKitPanel({ artistName, artistSlug, profileId, initialBio }: { arti
   );
 }
 
-/* ── Public Page Preview ─────────────────────────────────── */
-function PublicPage({ artistName, initials, vars, editOn, showShows, showMerch, showBooking }: {
-  artistName: string; initials: string; vars: PageVars; editOn: boolean;
-  showShows: boolean; showMerch: boolean; showBooking: boolean;
-}) {
-  const s = vars;
-  const hasHero = !!s['--p-hero-url'];
-  const [playingIdx, setPlayingIdx] = useState<number | null>(null);
-  const [bookingForm, setBookingForm] = useState({ name: '', email: '', date: '', message: '' });
-
-  function togglePlay(idx: number) {
-    setPlayingIdx(p => (p === idx ? null : idx));
-  }
-
-  return (
-    <div style={{ background: s['--p-bg'], color: s['--p-ink'], minHeight: '100%', fontFamily: 'system-ui,sans-serif' }}>
-      {/* hero */}
-      <div style={{
-        padding: '48px 36px 32px', borderBottom: `1px solid ${s['--p-line']}`,
-        position: 'relative', overflow: 'hidden',
-        ...(hasHero ? { backgroundImage: s['--p-hero-url'], backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
-      }}>
-        {hasHero && <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg, rgba(0,0,0,.45) 0%, ${s['--p-bg']}ee 90%)`, zIndex: 0 }} />}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 20, marginBottom: 24 }}>
-          <div style={{
-            width: 72, height: 72, borderRadius: s['--p-radius'],
-            background: `linear-gradient(135deg,${s['--p-accent']},${s['--p-accent2']})`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: s['--p-display'], fontSize: 24, fontWeight: 800, color: '#fff', flexShrink: 0,
-          }}>{initials}</div>
-          <div>
-            <div style={{ fontFamily: s['--p-display'], fontSize: 32, fontWeight: 800, color: hasHero ? '#fff' : s['--p-ink'], lineHeight: 1.1 }}
-              contentEditable={editOn} suppressContentEditableWarning>{artistName}</div>
-            <div style={{ fontFamily: 'system-ui', fontSize: 14, color: hasHero ? 'rgba(255,255,255,.65)' : s['--p-ink2'], marginTop: 4 }}>Artist · Chicago, IL</div>
-          </div>
-        </div>
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ fontFamily: 'system-ui', fontSize: 15, color: hasHero ? 'rgba(255,255,255,.8)' : s['--p-ink2'], lineHeight: 1.6, maxWidth: 520 }}
-            contentEditable={editOn} suppressContentEditableWarning>
-            Late-night songs for long drives. New EP out now — the rest is being written in a basement on Western Ave.
-          </div>
-          <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
-            <button style={{ padding: '10px 22px', borderRadius: s['--p-radius'], border: 'none', background: s['--p-accent'], color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Follow</button>
-            <button style={{ padding: '10px 22px', borderRadius: s['--p-radius'], border: `1px solid ${s['--p-line']}`, background: 'transparent', color: hasHero ? 'rgba(255,255,255,.7)' : s['--p-ink2'], fontSize: 14, cursor: 'pointer' }}>Share</button>
-          </div>
-        </div>
-      </div>
-
-      {/* shows */}
-      {showShows && (
-        <div style={{ padding: '28px 36px', borderBottom: `1px solid ${s['--p-line']}` }}>
-          <div style={{ fontFamily: s['--p-display'], fontSize: 20, fontWeight: 800, color: s['--p-ink'], marginBottom: 16 }}>Tour Dates</div>
-          {[{ date: 'Jun 18', venue: 'Empty Bottle', city: 'Chicago, IL' }, { date: 'Jul 5', venue: 'Cactus Club', city: 'Milwaukee, WI' }, { date: 'Jul 20', venue: 'The Basement', city: 'Nashville, TN' }].map(show => (
-            <div key={show.date} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0', borderBottom: `1px solid ${s['--p-line']}` }}>
-              <div style={{ width: 44, fontFamily: 'system-ui', fontSize: 13, fontWeight: 700, color: s['--p-accent'] }}>{show.date}</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'system-ui', fontSize: 14, fontWeight: 600, color: s['--p-ink'] }}>{show.venue}</div>
-                <div style={{ fontFamily: 'system-ui', fontSize: 12, color: s['--p-ink2'] }}>{show.city}</div>
-              </div>
-              <button style={{ padding: '7px 16px', borderRadius: s['--p-radius'], border: `1px solid ${s['--p-accent']}`, background: 'transparent', color: s['--p-accent'], fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Tickets</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* merch */}
-      {showMerch && (
-        <div style={{ padding: '28px 36px', borderBottom: `1px solid ${s['--p-line']}` }}>
-          <div style={{ fontFamily: s['--p-display'], fontSize: 20, fontWeight: 800, color: s['--p-ink'], marginBottom: 16 }}>Merch</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-            {['Logo Tee – $32', 'Vinyl LP – $28', 'Cap – $24'].map(item => (
-              <div key={item} style={{ background: s['--p-surface'], borderRadius: s['--p-radius'], padding: 14 }}>
-                <div style={{ height: 80, background: `linear-gradient(135deg,${s['--p-accent']}22,${s['--p-accent2']}22)`, borderRadius: 8, marginBottom: 10 }} />
-                <div style={{ fontFamily: 'system-ui', fontSize: 13, fontWeight: 600, color: s['--p-ink'] }}>{item}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* tracks with inline player */}
-      <div style={{ padding: '28px 36px' }}>
-        <div style={{ fontFamily: s['--p-display'], fontSize: 20, fontWeight: 800, color: s['--p-ink'], marginBottom: 16 }}>Tracks</div>
-        {['Velvet Hours', 'Carmine', 'Westbound', 'North Shore'].map((track, i) => {
-          const isPlaying = playingIdx === i;
-          return (
-            <div key={track} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: `1px solid ${s['--p-line']}` }}>
-              {/* play/pause button */}
-              <button
-                onClick={() => togglePlay(i)}
-                style={{
-                  width: 28, height: 28, borderRadius: '50%', border: `1px solid ${isPlaying ? s['--p-accent'] : s['--p-line']}`,
-                  background: isPlaying ? `${s['--p-accent']}22` : 'transparent',
-                  color: isPlaying ? s['--p-accent'] : s['--p-ink2'],
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', flexShrink: 0, transition: 'all .15s',
-                }}
-              >
-                {isPlaying ? (
-                  /* pulsing waveform icon when playing */
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                    <rect x="1" y="3" width="2" height="6" rx="1">
-                      <animate attributeName="height" values="6;10;6;4;6" dur=".7s" repeatCount="indefinite" />
-                      <animate attributeName="y" values="3;1;3;4;3" dur=".7s" repeatCount="indefinite" />
-                    </rect>
-                    <rect x="5" y="1" width="2" height="10" rx="1">
-                      <animate attributeName="height" values="10;4;10;6;10" dur=".7s" repeatCount="indefinite" begin=".15s" />
-                      <animate attributeName="y" values="1;4;1;3;1" dur=".7s" repeatCount="indefinite" begin=".15s" />
-                    </rect>
-                    <rect x="9" y="2" width="2" height="8" rx="1">
-                      <animate attributeName="height" values="8;12;8;4;8" dur=".7s" repeatCount="indefinite" begin=".3s" />
-                      <animate attributeName="y" values="2;0;2;4;2" dur=".7s" repeatCount="indefinite" begin=".3s" />
-                    </rect>
-                  </svg>
-                ) : (
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-                    <path d="M2 1.5l7 3.5-7 3.5V1.5z" />
-                  </svg>
-                )}
-              </button>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: `linear-gradient(135deg,${s['--p-accent']}33,${s['--p-surface']})`, flexShrink: 0 }} />
-              <div style={{ flex: 1, fontFamily: 'system-ui', fontSize: 14, fontWeight: 600, color: s['--p-ink'] }} contentEditable={editOn} suppressContentEditableWarning>{track}</div>
-              <div style={{ fontFamily: 'system-ui', fontSize: 12, color: s['--p-ink2'] }}>{['3:42', '4:01', '3:58', '4:22'][i]}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* booking section */}
-      {showBooking && (
-        <div style={{ padding: '28px 36px', borderTop: `1px solid ${s['--p-line']}` }}>
-          <div style={{ fontFamily: s['--p-display'], fontSize: 20, fontWeight: 800, color: s['--p-ink'], marginBottom: 8 }}>Book for Your Event</div>
-          <div style={{ fontFamily: 'system-ui', fontSize: 14, color: s['--p-ink2'], marginBottom: 20 }}>Interested in booking {artistName}? Send an inquiry below.</div>
-          <div style={{ background: s['--p-surface'], borderRadius: s['--p-radius'], padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480 }}>
-            <input
-              placeholder="Your name"
-              value={bookingForm.name}
-              onChange={e => setBookingForm(f => ({ ...f, name: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink'], fontFamily: 'system-ui', fontSize: 13, outline: 'none' }}
-            />
-            <input
-              placeholder="Email address"
-              value={bookingForm.email}
-              onChange={e => setBookingForm(f => ({ ...f, email: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink'], fontFamily: 'system-ui', fontSize: 13, outline: 'none' }}
-            />
-            <input
-              placeholder="Date in mind (e.g. Jul 15)"
-              value={bookingForm.date}
-              onChange={e => setBookingForm(f => ({ ...f, date: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink'], fontFamily: 'system-ui', fontSize: 13, outline: 'none' }}
-            />
-            <textarea
-              placeholder="Your message…"
-              rows={3}
-              value={bookingForm.message}
-              onChange={e => setBookingForm(f => ({ ...f, message: e.target.value }))}
-              style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${s['--p-line']}`, background: 'transparent', color: s['--p-ink'], fontFamily: 'system-ui', fontSize: 13, outline: 'none', resize: 'none' }}
-            />
-            <button style={{ padding: '11px 22px', borderRadius: s['--p-radius'], border: 'none', background: s['--p-accent'], color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-              Send Inquiry
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ── Insights sub-components ─────────────────────────────── */
 function KpiCard({ label, value, delta, sub, color }: { label: string; value: string; delta: string; sub: string; color: string }) {
   return (
@@ -1192,13 +820,16 @@ function TicketRevenue() {
   );
 }
 
-function TopTracks() {
-  const tracks = [
+function TopTracks({ tracks: liveTracks }: { tracks?: Array<{title: string; listens: number}> }) {
+  const fallback = [
     { title: 'Velvet Hours', streams: 820, saves: 214 },
     { title: 'Carmine', streams: 610, saves: 178 },
     { title: 'Westbound', streams: 490, saves: 142 },
     { title: 'North Shore', streams: 364, saves: 98 },
   ];
+  const tracks = liveTracks && liveTracks.length > 0
+    ? liveTracks.map(t => ({ title: t.title, streams: t.listens, saves: 0 }))
+    : fallback;
   const max = tracks[0].streams;
   return (
     <div>
@@ -1210,7 +841,7 @@ function TopTracks() {
             <div style={{ height: '100%', width: (t.streams / max * 100) + '%', background: '#ff5029', borderRadius: 99 }} />
           </div>
           <div style={{ width: 44, fontFamily: 'var(--f-m,monospace)', fontSize: 11, fontWeight: 700, color: 'var(--ink,#f4efe9)', textAlign: 'right', flexShrink: 0 }}>{t.streams}</div>
-          <div style={{ width: 44, fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)', textAlign: 'right', flexShrink: 0 }}>♡ {t.saves}</div>
+          {t.saves > 0 && <div style={{ width: 44, fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)', textAlign: 'right', flexShrink: 0 }}>♡ {t.saves}</div>}
         </div>
       ))}
     </div>
@@ -1624,21 +1255,6 @@ function IconPressKit() {
       <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
-}
-
-function TypingDot({ delay, ..._ }: { delay: number; [k: string]: unknown }) {
-  return (
-    <div style={{
-      width: 6, height: 6, borderRadius: '50%', background: 'rgba(244,239,233,.4)',
-      animation: `bounce 1.2s ${delay}ms ease-in-out infinite`,
-    }}>
-      <style>{`@keyframes bounce { 0%,60%,100% { transform: translateY(0) } 30% { transform: translateY(-6px) } }`}</style>
-    </div>
-  );
-}
-
-function esc(s: string) {
-  return s.replace(/[&<>"]/g, (c: string) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] ?? c));
 }
 
 /* ── AdvertisingRecs ─────────────────────────────────────── */
