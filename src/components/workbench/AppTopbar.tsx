@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { View } from './types';
+import { GmLevelPill } from './GamificationOverlays';
 
 export const TAB_ICONS: Record<string, React.ReactNode> = {
   me: <svg width={14} height={14} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="6" r="2.5"/><path d="M3 14c0-2.8 2.2-5 5-5s5 2.2 5 5"/></svg>,
@@ -240,7 +241,7 @@ export function AppTopbar({ view, setView, listeningNow, initials, userName, act
             <div style={{ fontFamily: 'var(--f-b)', fontWeight: 600, fontSize: 12, color: 'var(--ink)', lineHeight: 1 }}>{userName}</div>
             <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', letterSpacing: '.08em', marginTop: 2 }}>{activeProfileTypes.slice(0, 2).join(' + ')}</div>
           </div>
-          <span style={{ padding: '3px 7px', borderRadius: 99, background: 'rgba(255,184,74,.12)', color: '#ffb84a', fontFamily: 'var(--f-m)', fontSize: 12, fontWeight: 700, letterSpacing: '.08em', border: '1px solid rgba(255,184,74,.28)' }}>LVL 14</span>
+          <GmLevelPill onClick={() => setView('leaderboard')} />
         </div>
       </div>
     </header>
