@@ -31,6 +31,14 @@ import { StreamingLinks } from '@/components/StreamingLinks';
 import { getBaseUrl } from '@/lib/utils';
 import { ProfileWidgetsDisplay } from '@/components/ProfileWidgets';
 import { parseWidgetConfig } from '@/lib/widgets';
+import { NewsletterSignup } from '@/components/NewsletterSignup';
+
+// True if this builder section should be visible (default on when builderSections is null)
+function secOn(sections: Array<{id: string; on: boolean}> | null, id: string): boolean {
+  if (!sections) return true;
+  const s = sections.find(x => x.id === id);
+  return s ? s.on : true;
+}
 
 const artistSections = ['about', 'media', 'merch'] as const;
 
@@ -357,7 +365,7 @@ export default async function ArtistPage({
             <ProfileLinkShelf linksJson={profile.links ?? null} />
             <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} initiallyHyped={!!userHype} entityLabel="artist" />
             <FollowButton profileId={profile.id} />
-            {profile.contactInfo ? (
+            {profile.contactInfo && secOn(publishedPage?.builderSections ?? null, 'booking') ? (
               <div className="cta-row" style={{ marginTop: 12 }}>
                 <a
                   className="button"
@@ -463,23 +471,31 @@ export default async function ArtistPage({
                 viewerLocation={viewerLocation}
               />
 
-              <div className="artist-tour-shows">
-                <h3>Upcoming shows</h3>
-                <div className="grid grid-2">
-                  {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming dates yet.</div>}
-                </div>
-              </div>
+              {secOn(publishedPage?.builderSections ?? null, 'shows') ? (
+                <>
+                  <div className="artist-tour-shows">
+                    <h3>Upcoming shows</h3>
+                    <div className="grid grid-2">
+                      {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming dates yet.</div>}
+                    </div>
+                  </div>
 
-              <div className="artist-tour-shows">
-                <h3>Previous shows</h3>
-                <div className="grid grid-2">
-                  {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous dates yet.</div>}
-                </div>
-              </div>
+                  <div className="artist-tour-shows">
+                    <h3>Previous shows</h3>
+                    <div className="grid grid-2">
+                      {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous dates yet.</div>}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              {secOn(publishedPage?.builderSections ?? null, 'newsletter') && publishedPage?.builderSections?.some(s => s.id === 'newsletter' && s.on) ? (
+                <NewsletterSignup profileId={profile.id} />
+              ) : null}
             </>
           ) : null}
 
-          {activeSection === 'media' ? (
+          {activeSection === 'media' && secOn(publishedPage?.builderSections ?? null, 'music') ? (
             <>
               <h2>Media</h2>
               {media.notes ? <div className="artist-copy">{media.notes}</div> : null}

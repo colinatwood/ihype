@@ -14,6 +14,14 @@ import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety
 import { canManageOwnedResource } from '@/lib/permissions';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
+import { NewsletterSignup } from '@/components/NewsletterSignup';
+
+// True if this builder section should be visible (default on when builderSections is null)
+function secOn(sections: Array<{id: string; on: boolean}> | null, id: string): boolean {
+  if (!sections) return true;
+  const s = sections.find(x => x.id === id);
+  return s ? s.on : true;
+}
 
 const promoterSections = ['about', 'shows', 'events'] as const;
 
@@ -276,10 +284,13 @@ export default async function PromoterPage({
             <>
               <h2>About</h2>
               <div className="artist-copy">{profile.aboutContent || published?.bio || profile.bio || 'This promoter has not filled out the About section yet.'}</div>
+              {secOn(published?.builderSections ?? null, 'newsletter') && published?.builderSections?.some(s => s.id === 'newsletter' && s.on) ? (
+                <NewsletterSignup profileId={profile.id} />
+              ) : null}
             </>
           ) : null}
 
-          {activeSection === 'shows' ? (
+          {activeSection === 'shows' && secOn(published?.builderSections ?? null, 'shows') ? (
             <>
               <h2>Shows</h2>
               <div className="artist-tour-shows">

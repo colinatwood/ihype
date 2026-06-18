@@ -20,6 +20,14 @@ import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@
 import { canManageOwnedResource } from '@/lib/permissions';
 import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { getBaseUrl } from '@/lib/utils';
+import { NewsletterSignup } from '@/components/NewsletterSignup';
+
+// True if this builder section should be visible (default on when builderSections is null)
+function secOn(sections: Array<{id: string; on: boolean}> | null, id: string): boolean {
+  if (!sections) return true;
+  const s = sections.find(x => x.id === id);
+  return s ? s.on : true;
+}
 
 const venueSections = ['about', 'upcoming', 'request'] as const;
 
@@ -295,17 +303,19 @@ export default async function VenuePage({
               {profile.genres.map((genre) => <span key={genre} className={published?.builderPalette ? 'builder-badge' : 'tag'}>{genre}</span>)}
             </div>
             <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} initiallyHyped={!!userHype} entityLabel="venue" />
-            <div className="cta-row" style={{ marginTop: 12 }}>
-              {profile.contactInfo && profile.contactInfo.includes('@') ? (
-                <a className="button" href={`mailto:${profile.contactInfo}?subject=${encodeURIComponent(`Booking inquiry for ${profile.name}`)}`}>
-                  Send booking inquiry
-                </a>
-              ) : (
-                <Link className="button" href={`/venues/${profile.slug}?section=request`}>
-                  Send booking inquiry
-                </Link>
-              )}
-            </div>
+            {secOn(published?.builderSections ?? null, 'booking') ? (
+              <div className="cta-row" style={{ marginTop: 12 }}>
+                {profile.contactInfo && profile.contactInfo.includes('@') ? (
+                  <a className="button" href={`mailto:${profile.contactInfo}?subject=${encodeURIComponent(`Booking inquiry for ${profile.name}`)}`}>
+                    Send booking inquiry
+                  </a>
+                ) : (
+                  <Link className="button" href={`/venues/${profile.slug}?section=request`}>
+                    Send booking inquiry
+                  </Link>
+                )}
+              </div>
+            ) : null}
             <div className="profile-public-actions">
               <Link className="button small secondary" href={`/venues/${profile.slug}?section=upcoming`}>See shows</Link>
               <Link className="button small secondary" href={`/venues/${profile.slug}?section=request`}>Request artist</Link>
@@ -386,10 +396,13 @@ export default async function VenuePage({
                 </div>
               ) : null}
               <div className="artist-copy">{profile.aboutContent || published?.bio || profile.bio || 'This venue has not filled out the About section yet.'}</div>
+              {secOn(published?.builderSections ?? null, 'newsletter') && published?.builderSections?.some(s => s.id === 'newsletter' && s.on) ? (
+                <NewsletterSignup profileId={profile.id} />
+              ) : null}
             </>
           ) : null}
 
-          {activeSection === 'upcoming' ? (
+          {activeSection === 'upcoming' && secOn(published?.builderSections ?? null, 'shows') ? (
             <>
               <h2>Upcoming Shows</h2>
               {profile.upcomingContent ? <div className="artist-copy">{profile.upcomingContent}</div> : null}
