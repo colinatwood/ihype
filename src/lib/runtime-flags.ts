@@ -157,7 +157,7 @@ export async function areDatabaseMediaUploadsEnabledRuntime() {
 }
 
 export function isInviteCodeRequired() {
-  return parseBooleanFlag(process.env.FEATURE_REQUIRE_INVITE_CODE, false);
+  return parseBooleanFlag(process.env.FEATURE_REQUIRE_INVITE_CODE, true);
 }
 
 export async function isInviteCodeRequiredRuntime() {
