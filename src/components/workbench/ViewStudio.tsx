@@ -157,7 +157,7 @@ function PassedTheAux({ data }: { data: WorkbenchData }) {
   const [copiedSlug, setCopiedSlug] = useState('');
 
   useEffect(() => {
-    fetch('/api/aux')
+    fetch('/api/queue')
       .then(r => r.json())
       .then(d => setPastQueues(d.queues ?? []))
       .catch(() => {});
@@ -176,7 +176,7 @@ function PassedTheAux({ data }: { data: WorkbenchData }) {
     if (!queueName.trim() || selected.size === 0) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/aux', {
+      const res = await fetch('/api/queue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: queueName.trim(), trackIds: Array.from(selected) }),
@@ -252,7 +252,7 @@ function PassedTheAux({ data }: { data: WorkbenchData }) {
                 disabled={creating || !queueName.trim() || selected.size === 0}
                 style={{ padding: '9px 20px', borderRadius: 7, border: 'none', cursor: (creating || !queueName.trim() || selected.size === 0) ? 'not-allowed' : 'pointer', background: 'linear-gradient(135deg, var(--accent), var(--pink, #ff3e9a))', color: '#fff', fontFamily: 'var(--f-m)', fontSize: 13, fontWeight: 700, letterSpacing: '.04em', whiteSpace: 'nowrap', opacity: (creating || !queueName.trim() || selected.size === 0) ? 0.5 : 1 }}
               >
-                {creating ? 'Creating…' : 'Create aux link'}
+                {creating ? 'Creating…' : 'Create queue link'}
               </button>
             </div>
 
@@ -275,11 +275,11 @@ function PassedTheAux({ data }: { data: WorkbenchData }) {
             <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-2)', letterSpacing: '.04em', marginBottom: 10 }}>PAST SETS</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {pastQueues.slice(0, 5).map(q => {
-                const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://ihype.org'}/aux/${q.slug}`;
+                const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://ihype.org'}/queue/${q.slug}`;
                 return (
                   <div key={q.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, border: '1px solid var(--line)', background: 'var(--bg)' }}>
                     <span style={{ flex: 1, fontFamily: 'var(--f-b)', fontSize: 13, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{q.name}</span>
-                    <a href={`/aux/${q.slug}`} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>View</a>
+                    <a href={`/queue/${q.slug}`} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--accent)', textDecoration: 'none' }}>View</a>
                     <button onClick={() => copyUrl(url, q.slug)} style={{ padding: '5px 12px', borderRadius: 5, border: 'none', background: 'var(--bg-2)', color: 'var(--ink-2)', fontFamily: 'var(--f-m)', fontSize: 12, cursor: 'pointer' }}>
                       {copiedSlug === q.slug ? 'Copied!' : 'Copy link'}
                     </button>

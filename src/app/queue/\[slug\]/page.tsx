@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { notFound } from 'next/navigation';
 
-export default async function AuxPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function QueuePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const queue = await db.auxQueue.findUnique({
     where: { slug },
@@ -12,7 +12,7 @@ export default async function AuxPage({ params }: { params: Promise<{ slug: stri
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#f0f0f0', fontFamily: 'system-ui, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px' }}>
       <div style={{ maxWidth: 560, width: '100%' }}>
-        <div style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: '.2em', color: '#ff5029', marginBottom: 16 }}>● IHYPE · PASSED THE AUX</div>
+        <div style={{ fontFamily: 'monospace', fontSize: 11, letterSpacing: '.2em', color: '#ff5029', marginBottom: 16 }}>● IHYPE · PASSED THE QUEUE</div>
         <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-.02em', margin: '0 0 8px' }}>{queue.name}</h1>
         <p style={{ color: '#888', fontSize: 14, margin: '0 0 32px' }}>{queue.items.length} tracks · shared via iHYPE</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
