@@ -1,0 +1,159 @@
+/* iHYPE Design System — Global CSS */
+
+/* ── Webfonts ── */
+@font-face { font-family:'Syne'; font-style:normal; font-weight:700; font-display:swap; src:url(https://fonts.gstatic.com/s/syne/v24/8vIH7w4qzmVxm2BL9A.woff2) format('woff2'); }
+@font-face { font-family:'Syne'; font-style:normal; font-weight:800; font-display:swap; src:url(https://fonts.gstatic.com/s/syne/v24/8vIH7w4qzmVxm2BL9A.woff2) format('woff2'); }
+@font-face { font-family:'DM Sans'; font-style:normal; font-weight:400; font-display:swap; src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2) format('woff2'); }
+@font-face { font-family:'DM Sans'; font-style:normal; font-weight:500; font-display:swap; src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2) format('woff2'); }
+@font-face { font-family:'DM Sans'; font-style:normal; font-weight:600; font-display:swap; src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2) format('woff2'); }
+@font-face { font-family:'DM Sans'; font-style:normal; font-weight:700; font-display:swap; src:url(https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2) format('woff2'); }
+@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:400; font-display:swap; src:url(https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2) format('woff2'); }
+@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:500; font-display:swap; src:url(https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2) format('woff2'); }
+@font-face { font-family:'JetBrains Mono'; font-style:normal; font-weight:600; font-display:swap; src:url(https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2) format('woff2'); }
+@font-face { font-family:'Instrument Serif'; font-style:normal; font-weight:400; font-display:swap; src:url(https://fonts.gstatic.com/s/instrumentserif/v5/jizBRFtNs2ka5fXjeivQ4LroWlx-6zUTjg.woff2) format('woff2'); }
+@font-face { font-family:'Instrument Serif'; font-style:italic; font-weight:400; font-display:swap; src:url(https://fonts.gstatic.com/s/instrumentserif/v5/jizHRFtNs2ka5fXjeivQ4LroWlx-6zAjjH7M.woff2) format('woff2'); }
+
+/* ── Design Tokens ── */
+:root {
+  /* Backgrounds */
+  --bg-base:    #0a0805;
+  --bg-surface: #100d09;
+  --bg-raised:  #1a1612;
+  --bg-overlay: #221c16;
+
+  /* Ink */
+  --ink-1: #f0ebe5;
+  --ink-2: #9e9080;
+  --ink-3: #5a5048;
+  --ink-4: #3a342e;
+
+  /* Lines */
+  --line:   rgba(255, 255, 255, 0.06);
+  --line-2: rgba(255, 255, 255, 0.14);
+
+  /* Accent */
+  --accent: #ff5029;
+
+  /* Role Colors */
+  --role-fan:    #b983ff;
+  --role-venue:  #22e5d4;
+  --role-dj:     #ff3e9a;
+
+  /* Utility */
+  --warn:  #ffb84a;
+  --blue:  #7fb3ff;
+
+  /* Semantic */
+  --color-success:     #22e5d4;
+  --color-success-bg:  rgba(34, 229, 212, 0.1);
+  --color-error:       #ff4545;
+  --color-error-bg:    rgba(255, 69, 69, 0.1);
+  --color-warning:     #ffb84a;
+  --color-warning-bg:  rgba(255, 184, 74, 0.1);
+  --color-info:        #7fb3ff;
+  --color-info-bg:     rgba(127, 179, 255, 0.1);
+
+  /* Typography */
+  --font-display: 'Syne', sans-serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+  --font-serif:   'Instrument Serif', serif;
+
+  /* Font Sizes */
+  --text-xs:   9px;
+  --text-sm:   11px;
+  --text-base: 14px;
+  --text-md:   16px;
+  --text-lg:   20px;
+  --text-xl:   28px;
+  --text-2xl:  38px;
+  --text-3xl:  54px;
+
+  /* Letter Spacing */
+  --tracking-tight:  -0.02em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.08em;
+  --tracking-wider:   0.14em;
+  --tracking-widest:  0.18em;
+
+  /* Spacing */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radii */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
+  --radius-3xl:  24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-card:   0 1px 3px rgba(0,0,0,.4);
+  --shadow-raised: 0 4px 16px rgba(0,0,0,.5);
+  --shadow-play:   0 8px 32px rgba(0,0,0,.6);
+  --shadow-album:  0 0 60px rgba(255,80,41,.15);
+  --shadow-glow:   0 0 0 6px rgba(240,235,229,.18);
+
+  /* Motion */
+  --ease-default:  cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out:      cubic-bezier(0.0, 0, 0.2, 1);
+  --ease-in:       cubic-bezier(0.4, 0, 1, 1);
+  --duration-fast:    120ms;
+  --duration-default: 200ms;
+  --duration-medium:  320ms;
+  --duration-slow:    480ms;
+}
+
+/* ── Base Reset ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-base);
+  color: var(--ink-1);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-x: none;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+
+/* Scrollbar hiding */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+
+/* ── Utility Classes ── */
+.font-display { font-family: var(--font-display); }
+.font-body    { font-family: var(--font-body); }
+.font-mono    { font-family: var(--font-mono); }
+.font-serif   { font-family: var(--font-serif); }
+
+/* ── Keyframes ── */
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+@keyframes shimmer { from { transform:translateX(-100%); } to { transform:translateX(200%); } }
+@keyframes meshMove { 0% { transform:translate(0,0) scale(1); } 100% { transform:translate(30px,20px) scale(1.15); } }
+@keyframes splashLoad { from { width:0; } to { width:100%; } }
+@keyframes pulse { 0%,100% { opacity:.4; transform:scaleY(.6); } 50% { opacity:1; transform:scaleY(1); } }
+@keyframes glowPulse { 0%,100% { box-shadow:0 0 0 0 rgba(255,80,41,0); } 50% { box-shadow:0 0 16px 4px rgba(255,80,41,.3); } }
+@keyframes burst { 0% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(3.5); } }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
