@@ -13,12 +13,16 @@ built across many sessions. They must NEVER be lost.
 
 ### Rule: When a .dc.html arrives, do a surgical UI update — not a rewrite
 
-When Claude Design sends a new or updated .dc.html:
+**Before editing any file**, state out loud:
+> "Update the UI layer in `[file]` to match the new design — preserve all backend wiring."
+
+Then follow this sequence:
 
 1. **Read the existing `.tsx` file first** — understand what backend logic is already there
-2. **Identify only what changed visually** — layout, copy, colors, new components
-3. **Edit only those parts** — use the Edit tool, not Write/overwrite
-4. **Preserve everything else** — API fetches, auth checks, state management, error handling, DB queries
+2. **State explicitly what will be preserved** — list auth gates, API calls, DB queries present
+3. **Identify only what changed visually** — layout, copy, colors, new components
+4. **Edit only those parts** — use the Edit tool, not Write/overwrite
+5. **Preserve everything else** — API fetches, auth checks, state management, error handling, DB queries
 
 If a page needs a full rewrite because the design is fundamentally different,
 explicitly list every piece of backend logic being preserved before touching anything.
