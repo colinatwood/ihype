@@ -172,13 +172,14 @@ export default function StudioPage() {
 
   const tabStyle = (t: Tab): React.CSSProperties => ({
     padding: '12px 0',
+    borderTop: 'none',
+    borderLeft: 'none',
+    borderRight: 'none',
     borderBottom: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}`,
     cursor: 'pointer',
     fontWeight: 500,
     color: tab === t ? 'var(--ink)' : 'rgba(240,235,229,0.7)',
     background: 'none',
-    border: 'none',
-    borderBottom: `2px solid ${tab === t ? 'var(--accent)' : 'transparent'}`,
     fontSize: 14,
     transition: 'all 150ms',
   });
