@@ -197,7 +197,7 @@ export function RadioStudio() {
     fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
   };
 
-  const tracksToLoad = setlist.length > 0 ? setlist : CRATE_TRACKS.slice(0, 3);
+  const tracksToLoad = setlist.length > 0 ? setlist : crate.slice(0, 3);
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 24px 100px' }}>
@@ -282,7 +282,7 @@ export function RadioStudio() {
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'rgba(240,235,229,0.45)', marginBottom: 10 }}>Crate · Free-use tracks only</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
-              {CRATE_TRACKS.map(t => (
+              {crate.map((t: Track) => (
                 <div key={t.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '9px 12px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, background: 'var(--bg)', fontSize: 12 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0, background: `linear-gradient(135deg,${t.color},#b983ff)` }} />
                   <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -353,7 +353,7 @@ export function RadioStudio() {
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'rgba(240,235,229,0.45)', marginBottom: 10 }}>Load to deck (click track → choose deck)</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
-            {tracksToLoad.map(t => (
+            {tracksToLoad.map((t: Track) => (
               <div key={t.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '9px 12px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, background: 'var(--bg)', fontSize: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0, background: `linear-gradient(135deg,${t.color},#b983ff)` }} />
                 <div style={{ flex: 1, overflow: 'hidden' }}>
