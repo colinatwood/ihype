@@ -43,6 +43,33 @@ export default function RadioPage() {
   });
 
   const [current, setCurrent] = useState<Show>(INITIAL_SHOWS[0]);
+
+  useEffect(() => {
+    fetch('/api/shows?radioShows=1')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        const savedIds = (() => {
+          try { return JSON.parse(localStorage.getItem('ihype_saved_shows') || '[]') as number[]; } catch { return []; }
+        })();
+        const mapped: Show[] = data.map((s: { id: string; title: string; status: string; startsAt: string | null; headlinerProfile?: { name: string } | null }, i: number) => ({
+          id: i + 1,
+          title: s.title,
+          dj: s.headlinerProfile?.name ?? 'iHYPE Radio',
+          genre: 'Electronic',
+          dur: 3600,
+          color: ['#ff5029', '#22e5d4', '#b983ff', '#ff3e9a'][i % 4],
+          status: s.status === 'LIVE' ? 'live' as const : s.status === 'SCHEDULED' ? 'upcoming' as const : 'saved' as const,
+          listeners: s.status === 'LIVE' ? Math.floor(Math.random() * 400 + 50) : undefined,
+          scheduledAt: s.status === 'SCHEDULED' && s.startsAt ? new Date(s.startsAt).toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }) : undefined,
+          savedAt: s.status === 'ENDED' ? new Date(s.startsAt ?? Date.now()).toLocaleDateString('en-US', { weekday: 'short', hour: 'numeric' }) : undefined,
+          userSaved: savedIds.includes(i + 1),
+        }));
+        setShows(mapped);
+        setCurrent(mapped[0]);
+      })
+      .catch(() => {});
+  }, []);
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [tab, setTab] = useState<Tab>('on-air');
