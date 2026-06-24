@@ -41,7 +41,7 @@ export default async function PagesPage() {
     select: {
       id: true, slug: true, name: true, type: true, city: true,
       stateRegion: true, hypeCount: true, verificationStatus: true,
-      _count: { select: { headlinedShows: true } },
+      _count: { select: { headlinerShows: true } },
     },
   });
 
@@ -114,7 +114,7 @@ export default async function PagesPage() {
                       {TYPE_LABEL[p.type] ?? p.type}
                     </span>
                     {p.city && `${p.city}${p.stateRegion ? `, ${p.stateRegion}` : ''} · `}
-                    {p._count.headlinedShows} show{p._count.headlinedShows !== 1 ? 's' : ''}
+                    {p._count.headlinerShows} show{p._count.headlinerShows !== 1 ? 's' : ''}
                     {p.hypeCount > 0 ? ` · 🔥 ${p.hypeCount.toLocaleString()} hypes` : ''}
                   </div>
                 </div>
