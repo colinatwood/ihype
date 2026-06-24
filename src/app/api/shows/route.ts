@@ -47,6 +47,7 @@ const schema = z.object({
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const mine = searchParams.get('mine') === '1' || searchParams.get('mine') === 'true';
+  const radioOnly = searchParams.get('radioShows') === '1' || searchParams.get('radioShows') === 'true';
 
   if (mine) {
     const session = await auth();
@@ -57,8 +58,19 @@ export async function GET(request: Request) {
     const profileSelect = { select: { id: true, name: true, slug: true, type: true, avatarImage: true, city: true, stateRegion: true } };
     const shows = await db.show.findMany({
       include: { venueProfile: profileSelect, headlinerProfile: profileSelect, promoterProfile: profileSelect },
-      where: { creatorId: session.user.id },
+      where: { creatorId: session.user.id, ...(radioOnly ? { isRadioShow: true } : {}) },
       orderBy: [{ createdAt: 'desc' }]
+    });
+    return NextResponse.json(shows);
+  }
+
+  if (radioOnly) {
+    const profileSelect = { select: { id: true, name: true, slug: true, type: true, avatarImage: true, city: true, stateRegion: true } };
+    const shows = await db.show.findMany({
+      include: { venueProfile: profileSelect, headlinerProfile: profileSelect, promoterProfile: profileSelect },
+      where: { isRadioShow: true, status: { in: ['SCHEDULED', 'LIVE', 'ENDED'] }, ...getDemoCreatorExclusion() },
+      orderBy: [{ startsAt: 'desc' }],
+      take: 50,
     });
     return NextResponse.json(shows);
   }

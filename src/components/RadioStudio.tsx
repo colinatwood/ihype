@@ -4,20 +4,24 @@ import { useState, useEffect, useRef } from 'react';
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-const CRATE_TRACKS = [
-  { id: 1, title: 'Neon City', artist: 'Alex Rivera', dur: 218, color: '#ff5029' },
-  { id: 2, title: 'Lost Frequency', artist: 'Alex Rivera', dur: 252, color: '#22e5d4' },
-  { id: 3, title: 'Summer Nights', artist: 'Luna Park', dur: 234, color: '#b983ff' },
-  { id: 4, title: 'Wavelength', artist: 'Alex Rivera', dur: 241, color: '#ff3e9a' },
-  { id: 5, title: 'Static Love', artist: 'The Scene', dur: 198, color: '#ff5029' },
-  { id: 6, title: 'Drift', artist: 'Drift Wave', dur: 267, color: '#22e5d4' },
+const ROLE_COLORS = ['#ff5029', '#22e5d4', '#b983ff', '#ff3e9a', '#ffb84a', '#7fb3ff'];
+function colorFor(str: string) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return ROLE_COLORS[h % ROLE_COLORS.length];
+}
+
+const FALLBACK_TRACKS = [
+  { id: 1, title: 'Neon City', artist: 'Alex Rivera', dur: 218, color: '#ff5029', hexId: '' },
+  { id: 2, title: 'Lost Frequency', artist: 'Alex Rivera', dur: 252, color: '#22e5d4', hexId: '' },
+  { id: 3, title: 'Summer Nights', artist: 'Luna Park', dur: 234, color: '#b983ff', hexId: '' },
 ];
 
 const GENRES = ['Deep House', 'Tech House', 'Indie', 'Electronic', 'Soul', 'Alt-Rock'];
 
 const WAVEFORM_BARS = [6, 14, 9, 18, 12, 20, 8, 16, 11, 19, 7, 15, 10, 17, 13, 20, 9, 16, 8, 14];
 
-type Track = typeof CRATE_TRACKS[0];
+interface Track { id: number; title: string; artist: string; dur: number; color: string; hexId: string; }
 type DeckState = { track: Track | null; playing: boolean; elapsed: number };
 
 function Waveform({ playing, progress }: { playing: boolean; progress: number }) {
@@ -129,12 +133,28 @@ export function RadioStudio() {
   const [toast, setToast] = useState<string | null>(null);
   const [genres, setGenres] = useState(['Deep House']);
   const [setlist, setSetlist] = useState<Track[]>([]);
-  const [deckA, setDeckA] = useState<DeckState>({ track: CRATE_TRACKS[0], playing: false, elapsed: 0 });
+  const [crate, setCrate] = useState<Track[]>(FALLBACK_TRACKS);
+  const [deckA, setDeckA] = useState<DeckState>({ track: FALLBACK_TRACKS[0], playing: false, elapsed: 0 });
   const [deckB, setDeckB] = useState<DeckState>({ track: null, playing: false, elapsed: 0 });
   const [recording, setRecording] = useState(false);
   const [onAir, setOnAir] = useState(false);
   const [voicing, setVoicing] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    fetch('/api/radio')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data?.tracks?.length) return;
+        const tracks: Track[] = data.tracks.map((t: { hexId: string; title: string; artistName: string; }, i: number) => ({
+          id: i + 1, title: t.title, artist: t.artistName,
+          dur: 240, color: colorFor(t.hexId), hexId: t.hexId,
+        }));
+        setCrate(tracks);
+        setDeckA(d => ({ ...d, track: tracks[0] }));
+      })
+      .catch(() => {});
+  }, []);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -177,7 +197,7 @@ export function RadioStudio() {
     fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
   };
 
-  const tracksToLoad = setlist.length > 0 ? setlist : CRATE_TRACKS.slice(0, 3);
+  const tracksToLoad = setlist.length > 0 ? setlist : crate.slice(0, 3);
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '24px 24px 100px' }}>
@@ -262,7 +282,7 @@ export function RadioStudio() {
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'rgba(240,235,229,0.45)', marginBottom: 10 }}>Crate · Free-use tracks only</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
-              {CRATE_TRACKS.map(t => (
+              {crate.map((t: Track) => (
                 <div key={t.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '9px 12px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, background: 'var(--bg)', fontSize: 12 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0, background: `linear-gradient(135deg,${t.color},#b983ff)` }} />
                   <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -333,7 +353,7 @@ export function RadioStudio() {
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: 'rgba(240,235,229,0.45)', marginBottom: 10 }}>Load to deck (click track → choose deck)</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
-            {tracksToLoad.map(t => (
+            {tracksToLoad.map((t: Track) => (
               <div key={t.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '9px 12px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6, background: 'var(--bg)', fontSize: 12 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 4, flexShrink: 0, background: `linear-gradient(135deg,${t.color},#b983ff)` }} />
                 <div style={{ flex: 1, overflow: 'hidden' }}>
