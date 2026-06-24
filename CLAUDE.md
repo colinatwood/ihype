@@ -1,141 +1,146 @@
-# iHYPE — Engineering reference for Claude Code
+# iHYPE — Claude Code Instructions
+# ──────────────────────────────────────────────────────────
+# DROP THIS FILE into the GitHub repo root as CLAUDE.md
+# Claude Code reads it on every turn — these rules are always active.
 
-## ⚠️ INFRASTRUCTURE: Cloudflare Workers, NOT Vercel
+## CRITICAL: UI source of truth
 
-**This app is deployed to Cloudflare Workers via OpenNext (`npm run cf:build` + `wrangler deploy`).**
+**Every page's UI already exists as a .dc.html file in Claude Design.**
+Claude Code must NOT invent, redesign, or guess any UI.
 
-- **Never reference Vercel** in code, comments, docs, or instructions. It is not used.
-- Hosting: Cloudflare Workers
-- Cron jobs: `wrangler.cron.toml` (not `vercel.json`)
-- Edge headers: `cf-ipcity`, `cf-ipcountry`, `cf-iplongitude`, `cf-iplatitude` (not `x-vercel-ip-*`)
-- Cache purge: Cloudflare Cache API with `CLOUDFLARE_ZONE_ID` secret
-- KV storage: Cloudflare Workers KV (not Vercel KV)
-- Deployment CI: `.github/workflows/deploy-production.yml` → `wrangler deploy`
+The workflow is:
+1. Open the .dc.html file listed for the page you're implementing
+2. Translate its HTML/CSS/React exactly into Next.js + Tailwind/CSS Modules
+3. Wire the API endpoints listed in DESIGN_SYNC.md
+4. Push — do not change layout, copy, colors, or components without a new .dc.html version
 
-## NextAuth v5 beta pinning
+If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Never guess.
 
-`next-auth` is pinned to **`5.0.0-beta.31`** (exact, no caret) and mirrored in
-`overrides` so transitive installs can't pull a different beta.
-`@auth/prisma-adapter` is pinned to **`2.11.2`** for the same reason — the
-adapter interface and the auth package must be bumped together.
+---
 
-### Why exact pinning matters for beta packages
+## Brand constants (never change these in code)
 
-npm's semver resolution of `^5.0.0-beta.31` matches `>=5.0.0-beta.31 <6.0.0`,
-which includes future betas and the eventual stable release. NextAuth v5 betas
-have shipped breaking changes to:
-- `callbacks.jwt` / `callbacks.session` argument shapes
-- `NextAuthConfig` cookie option names
-- `PrismaAdapter` model expectations
-- The `auth()` server-component helper return type
+- **Contact:** admin@ihype.org (only email)
+- **Site:** ihype.org (only domain)
+- **Founded:** Portland, ME · 2026
+- **Split:** 45% artist / 45% venue / 10% promoters / 0% iHYPE — locked in charter
+- **No video** — iHYPE does not host video, live streams, or recorded video. Audio only.
+- **Radio shows** — DJs can go live (audio-only) and shows auto-save for on-demand replay
+- **Colors:** accent `#ff5029` · venue `#22e5d4` · promoter `#b983ff` · fan `#b983ff`
+- **Fonts:** Syne (display/headlines) · DM Sans (body) · JetBrains Mono (labels/mono)
 
-An unexpected bump during `npm install` can break the login flow silently if the types still compile.
+---
 
-### Upgrade procedure
+## Page map — .dc.html → Next.js route
 
-1. Read the [NextAuth releases](https://github.com/nextauthjs/next-auth/releases)
-   for every beta between the current pin and the target version.
-2. Check the `@auth/prisma-adapter` changelog for the matching release.
-3. Update both version strings in `package.json` — the `dependencies` entry
-   **and** the `overrides` entry.
-4. Run `npm install` locally and verify `node_modules/next-auth/package.json`
-   shows the expected version.
-5. Test the OTP login flow end-to-end (challenge creation → OTP verify →
-   session cookie → `auth()` in a server component → `useSession` in a client
-   component).
-6. Verify `session.user.role` is still populated via the `jwt` / `session`
-   callbacks in `src/lib/auth.config.ts`.
-7. Deploy to a preview environment and confirm Prisma adapter migrations are
-   not needed for the `Account`, `Session`, or `VerificationToken` models.
+### Marketing / Public
+| .dc.html | Route | src/app path |
+|---|---|---|
+| Index.dc.html | / | src/app/page.tsx |
+| About.dc.html | /about | src/app/about/page.tsx |
+| Beta.dc.html | /beta | src/app/beta/page.tsx |
+| Charter.dc.html | /charter | src/app/charter/page.tsx |
+| Legal.dc.html | /legal | src/app/legal/page.tsx |
+| Privacy.dc.html | /privacy | src/app/privacy/page.tsx |
+| Terms.dc.html | /terms | src/app/terms/page.tsx |
+| Transparency.dc.html | /transparency | src/app/transparency/page.tsx |
 
-## Deployment guardrails
+### Auth & Onboarding
+| .dc.html | Route | src/app path |
+|---|---|---|
+| Auth.dc.html | /login | src/app/auth/login/page.tsx |
+| Join.dc.html | /register | src/app/auth/register/page.tsx |
+| Welcome.dc.html | /welcome | src/app/welcome/page.tsx |
+| Verification.dc.html | /verify | src/app/verify/page.tsx |
 
-### Before every commit that touches pages or routes
+### Fan product
+| .dc.html | Route | src/app path |
+|---|---|---|
+| FanHome.dc.html | /home | src/app/home/page.tsx |
+| Discover.dc.html | /discover | src/app/discover/page.tsx |
+| Search.dc.html | /search | src/app/search/page.tsx |
+| Notifications.dc.html | /me/notifications | src/app/notifications/page.tsx |
+| FanProfile.dc.html | /fans/[slug] | src/app/fans/[slug]/page.tsx |
+| Tickets.dc.html | /me/tickets | src/app/tickets/page.tsx |
+| Settings.dc.html | /me/settings | src/app/settings/page.tsx |
 
-1. **Run `npx next build` locally** — catches TypeScript errors, missing imports,
-   and invalid `next.config.mjs` options before deployment.
-2. **When deleting a page**, do all of the following in the same commit:
-   - Search `next.config.mjs` for the path in `source:` or `destination:` and
-     update/remove those entries.
-   - Search the whole `src/` tree for hardcoded `href` values pointing to that
-     path and update them.
-   - Remove it from `public/manifest.json` shortcuts if present.
-3. **Never point a redirect `destination:` at a path that has no page.**
-   `next build` does not validate redirect destinations; broken ones silently
-   404 in production.
+### Events
+| .dc.html | Route | src/app path |
+|---|---|---|
+| Show.dc.html | /shows/[slug] | src/app/shows/[slug]/page.tsx |
+| EventCreator.dc.html | /events/new | src/app/events/new/page.tsx |
+| Payout.dc.html | /payout/[eventId] | src/app/payout/[id]/page.tsx |
 
-### Merge conflict rule
+### Creator / Artist
+| .dc.html | Route | src/app path |
+|---|---|---|
+| Artist.dc.html | /artists/[slug] | src/app/artists/[slug]/page.tsx |
+| DJProfile.dc.html | /artists/[slug]?role=dj | src/app/artists/[slug]/page.tsx |
+| Studio.dc.html | /studio | src/app/studio/page.tsx |
+| Radio.dc.html | /studio/radio | src/app/studio/radio/page.tsx |
+| WebRadio.dc.html | /radio | src/app/radio/page.tsx |
+| Pages.dc.html | /pages | src/app/pages/page.tsx |
 
-When resolving a merge conflict in a large component file
-(`WorkbenchShell.tsx`, `workbench/page.tsx`, etc.) **never take one side
-wholesale**. Manually merge both sets of changes. If uncertain, list the
-commits that would be lost from each side and ask before proceeding.
+### Venue & Promoter
+| .dc.html | Route | src/app path |
+|---|---|---|
+| Venue.dc.html | /venues/[slug] | src/app/venues/[slug]/page.tsx |
+| PromoterHome.dc.html | /home?role=promoter | src/app/home/page.tsx |
 
-### `next.config.mjs` redirect hygiene
+### Admin
+| .dc.html | Route | src/app path |
+|---|---|---|
+| AdminDash.dc.html | /admin | src/app/admin/page.tsx |
 
-- A `source` that matches an existing `src/app/.../page.tsx` route causes a
-  build error (redirect conflicts with the page). Always remove the redirect
-  when the page is created.
-- Keep redirects pointing to deleted pages updated in the same PR that deletes
-  the page.
+### Error / utility
+| .dc.html | Route | src/app path |
+|---|---|---|
+| 404.dc.html | * (not found) | src/app/not-found.tsx |
+| Offline.dc.html | /offline | src/app/offline/page.tsx |
 
-## Workbench-only UI rule — DO NOT VIOLATE
+### Marketing assets (design-only, no Next.js route needed)
+- Deck.dc.html — stakeholder pitch deck
+- Email.dc.html — email templates
+- EmailSequence.dc.html — welcome drip storyboard
+- Social.dc.html — OG share card
+- SocialPosts.dc.html — feed + story posts
+- Screenshots.dc.html — App Store iPhone frames
+- AppStoreCopy.dc.html — App Store copy
+- PressKit.dc.html — brand press kit
+- NotifDesigns.dc.html — iOS lock screen notifications
+- LaunchChecklist.dc.html — pre-launch tracker
+- Sitemap.dc.html — internal navigation hub
 
-**`/home` with `WorkbenchShell` is the ONLY authenticated UI.** There is no other dashboard, no role-selection screen, no module picker.
+---
 
-- `/workbench` and `/dashboard` are legacy aliases only. Keep them redirected to `/home`; do not build new pages there.
-- `/home` must stay `Cache-Control: no-store` and network-only in the service worker because it is user-specific.
-- Every logged-in user (fan, artist, DJ, venue, admin) lands at `/home` and sees `WorkbenchShell`.
-- `WorkbenchShell` is `position: fixed; inset: 0` — it is the entire screen. Do NOT render any content outside it in `home/page.tsx`.
-- Do NOT create new standalone pages for authenticated features. Add a new `view` inside `WorkbenchShell` instead.
-- Do NOT recreate `/artists`, `/promoters`, `/venues`, `/fans`, `/discover`, `/playlists`, `/collab`, `/settings`, or `/radio` as full pages for authenticated users. The middleware already redirects logged-in users from these paths to `/home`.
-- The old role-based layout with separate user-type pages and module choices is permanently retired. Never restore it.
+## Sync workflow
 
-### Two workbench surfaces — features must mount in BOTH
+1. Check DESIGN_SYNC.md → [PENDING CHANGES] table for what needs implementing
+2. For each row: open the .dc.html → translate to .tsx → wire API → push
+3. Mark the row `✅ [commit SHA]` in DESIGN_SYNC.md when done
+4. Run `node scripts/export-tokens.js > src/app/design-tokens.css` if DS tokens changed
 
-`home/page.tsx` renders two separate UIs, CSS-toggled by viewport:
-`WorkbenchShellV2` (desktop) and `WorkbenchMobile` + the
-`src/components/workbench/MobileScreen*` files (phone). They do not share
-screen composition. **Any user-facing workbench feature must be mounted in
-both surfaces in the same PR** — a component added only to the desktop shell
-is invisible to every phone user, and vice versa. This has silently dropped
-features twice (setlist voting existed only in mobile; the daily discovery
-card shipped desktop-only). Before finishing a workbench feature, grep for
-its component name in both `WorkbenchShellV2.tsx` and the `MobileScreen*`
-files and verify it renders in each.
+## API client
 
-### Build script
+`lib/api.js` — use this as the API route reference. All endpoints are listed there.
+Never add a new API route without a corresponding design change in Claude Design.
 
-`npm run build` (and `cf:build`) does **not** run migrations. Migrations run in
-the **deploy workflow** (`.github/workflows/deploy-production.yml`), which calls
-`prisma migrate deploy` with a retry loop before the build step. The script
-`scripts/prisma-migrate-retry.mjs` is a standalone helper that can be invoked
-directly but is not wired into any npm build script. A migration failure blocks
-the deploy; the old grep-on-status approach (fail-open) must never be
-reintroduced.
+## Navigation
 
-## Database & migrations
+All pages share a single nav:
+- **Desktop:** fixed top bar — iHYPE logo left · Listen|Events|Pages center · Log In|Sign Up right
+- **Mobile:** fixed bottom bar — Listen · Events · Pages with icons
 
-- **Production database:** Supabase (Postgres 17, us-east-1). The old Neon
-  database is deprecated and pending decommission; do not reference or use it.
-- **GitHub Actions secrets:** `DATABASE_URL` and `DIRECT_URL` both hold the
-  Supabase **session pooler** string
-  (`aws-1-us-east-1.pooler.supabase.com:5432`, username `postgres.<ref>`)
-  because the Supabase direct host is IPv6-only and Actions runners lack IPv6.
-- **schema.prisma** reads `env("DIRECT_DATABASE_URL")` for the direct/migration
-  URL. The deploy workflow maps `secrets.DIRECT_URL` into that env var:
-  `DIRECT_DATABASE_URL: ${{ secrets.DIRECT_URL }}`.
-- **Baseline:** The DB was baselined on 2026-06-10. `_prisma_migrations` now
-  tracks all migrations. `prisma migrate deploy` is always safe to run.
-- **Runtime DB access (Workers):** `src/lib/db.ts` prefers the Cloudflare
-  Hyperdrive binding (`HYPERDRIVE`) and falls back to `DATABASE_URL` when
-  running outside Workers.
-- **Rate limiting:** `RateLimiterDO` Durable Object defined in `worker.js`
-  (binding `RATE_LIMITER_DO`); KV fallback for local dev.
-- **RLS:** Supabase Row Level Security is enabled deny-all on all public tables
-  as defense-in-depth. The app uses Prisma as table owner; PostgREST/Data API
-  is unused. New tables created outside Prisma migrations must have RLS enabled
-  explicitly.
-- **Search:** `pg_trgm` powers the trigram indexes used by `/api/search`.
-- **Email:** Non-transactional email must use `sendMarketingEmail`
-  (`src/lib/mailer.ts`) so unsubscribe footers and preferences are applied.
+Nav implementation: copy `lib/NavShell.js` + `lib/shell.css` from Claude Design.
+
+## DO / DO NOT
+
+| DO | DO NOT |
+|---|---|
+| Translate .dc.html faithfully to .tsx | Invent UI not shown in .dc.html |
+| Use `var(--*)` CSS tokens from design system | Hardcode colors or type sizes |
+| Wire real API to existing mock data shapes | Change data structure without design update |
+| Add `admin@ihype.org` for all contact | Use any other email address |
+| Keep split as 45/45/10 / 0% iHYPE | Change the revenue split in any copy |
+| Use audio-only for radio/live | Add video hosting or live video |
+| Reference `ihype.org` only | Use any other domain |
