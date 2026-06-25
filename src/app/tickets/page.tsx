@@ -162,7 +162,7 @@ export default async function MyTicketsPage() {
                     </div>
                   </div>
                 )}
-                {order.tickets.length > 0 && order.status !== 'PAID' && (
+                {order.tickets.length > 0 && order.status !== 'CAPTURED' && (
                   <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {order.tickets.map(t => (
                       <span key={t.id} style={{
