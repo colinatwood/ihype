@@ -4,17 +4,18 @@ import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }
+    const all = new URL(request.url).searchParams.get('all') === '1';
     const notifications = await db.notification.findMany({
-      where: { userId: session.user.id, read: false },
+      where: { userId: session.user.id, ...(all ? {} : { read: false }) },
       orderBy: { createdAt: 'desc' },
       take: 50,
-      select: { id: true, type: true, body: true, link: true, createdAt: true }
+      select: { id: true, type: true, body: true, link: true, read: true, createdAt: true }
     });
     return NextResponse.json({ notifications });
   } catch (err) {
@@ -23,7 +24,7 @@ export async function GET() {
   }
 }
 
-export async function POST(_request: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {

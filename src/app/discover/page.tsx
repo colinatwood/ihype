@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getDemoCreatorExclusion, getDemoOwnerExclusion } from '@/lib/runtime-flags';
+import { FollowButton } from '@/components/FollowButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -199,8 +200,8 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
             {topArtists.map(p => (
-              <Link key={p.id} href={profileRoute(p.type, p.slug)} style={{ textDecoration: 'none' }}>
-                <div className="ihype-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div key={p.id} className="ihype-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Link href={profileRoute(p.type, p.slug)} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
                   <div style={{
                     width: 44, height: 44, borderRadius: 22,
                     background: `linear-gradient(135deg, ${TYPE_COLOR[p.type] ?? '#ff5029'}, #b983ff)`,
@@ -223,8 +224,13 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
                       🔥 {p.hypeCount.toLocaleString()} hypes
                     </div>
                   )}
-                </div>
-              </Link>
+                </Link>
+                {session?.user && (
+                  <div onClick={e => e.stopPropagation()}>
+                    <FollowButton profileId={p.id} />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </section>
