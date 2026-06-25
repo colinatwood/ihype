@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ReactNode } from 'react';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
+import { HeaderUserMenu } from '@/components/HeaderUserMenu';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                 <HeaderAuthLinks />
+                <HeaderUserMenu />
               </div>
               <NavDrawer />
             </div>

@@ -13,16 +13,14 @@ export const metadata: Metadata = {
 
 const STATUS_LABEL: Record<string, string> = {
   RESERVED: 'Reserved',
-  PAID: 'Confirmed',
-  CANCELLED: 'Cancelled',
-  REFUNDED: 'Refunded',
+  CAPTURED: 'Confirmed',
+  VOID: 'Void',
 };
 
 const STATUS_COLOR: Record<string, string> = {
   RESERVED: '#ffb84a',
-  PAID: '#22e5d4',
-  CANCELLED: 'rgba(240,235,229,.3)',
-  REFUNDED: 'rgba(240,235,229,.3)',
+  CAPTURED: '#22e5d4',
+  VOID: 'rgba(240,235,229,.3)',
 };
 
 function fmtCents(cents: number) {
@@ -137,7 +135,34 @@ export default async function MyTicketsPage() {
                   </div>
                 </div>
 
-                {order.tickets.length > 0 && (
+                {order.tickets.length > 0 && order.status === 'CAPTURED' && (
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 16 }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(240,235,229,.35)', marginBottom: 12 }}>
+                      Your ticket{order.tickets.length > 1 ? 's' : ''} — show QR at the door
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                      {order.tickets.map(t => (
+                        <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`/api/tickets/${t.serializedId}/qr`}
+                            alt={`QR code for ticket ${t.serializedId}`}
+                            width={120}
+                            height={120}
+                            style={{ borderRadius: 8, background: '#f0ebe5' }}
+                          />
+                          <span style={{
+                            fontSize: 10, fontFamily: 'var(--font-mono)',
+                            color: 'rgba(240,235,229,.4)', letterSpacing: '.04em',
+                          }}>
+                            {t.serializedId}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {order.tickets.length > 0 && order.status !== 'CAPTURED' && (
                   <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {order.tickets.map(t => (
                       <span key={t.id} style={{
