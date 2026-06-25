@@ -17,7 +17,7 @@ export async function GET(
   const { serializedId } = await params;
 
   const ticket = await db.ticket.findFirst({
-    where: { serializedId, order: { buyerUserId: session.user.id } },
+    where: { serializedId, ticketOrder: { buyerUserId: session.user.id } },
     select: { serializedId: true },
   });
 
