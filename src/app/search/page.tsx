@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+import { FollowButton } from '@/components/FollowButton';
 
 type ResultType = 'artist' | 'venue' | 'promoter' | 'song' | 'show' | 'genre';
 
@@ -57,6 +59,7 @@ function resultHref(r: ResultItem): string | null {
 }
 
 export default function SearchPage() {
+  const { data: session } = useSession();
   const [query, setQuery] = useState('');
   const [data, setData] = useState<SearchResponse | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -154,10 +157,15 @@ export default function SearchPage() {
                       )}
                     </div>
                   );
-                  return href ? (
-                    <Link key={r.id} href={href} style={{ textDecoration: 'none' }}>{card}</Link>
-                  ) : (
-                    <div key={r.id}>{card}</div>
+                  return (
+                    <div key={r.id} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {href ? <Link href={href} style={{ textDecoration: 'none' }}>{card}</Link> : card}
+                      {session?.user && r.id && (
+                        <div onClick={e => e.stopPropagation()}>
+                          <FollowButton profileId={r.id} />
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>

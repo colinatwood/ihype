@@ -145,6 +145,7 @@ export default async function ArtistPage({
       where: { slug: s },
       include: {
         owner: { select: { email: true, username: true } },
+        _count: { select: { followers: true } },
         mediaUploads: {
           select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, sortOrder: true },
           orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
@@ -356,7 +357,7 @@ export default async function ArtistPage({
             <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
             {profile.contactInfo ? <p className="meta">Contact: {profile.contactInfo}</p> : null}
             <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
-            {!publishedPage?.builderPalette ? <p className="meta">Fan hype: {fanHypeCount}</p> : null}
+            {!publishedPage?.builderPalette ? <p className="meta">Fan hype: {fanHypeCount}{profile._count.followers > 0 ? ` · ${profile._count.followers.toLocaleString()} followers` : ''}</p> : null}
             <div className={publishedPage?.builderPalette ? 'builder-badge-block' : 'tag-row'}>
               {isBookMeReady ? <span className={publishedPage?.builderPalette ? 'builder-badge builder-badge-accent' : 'tag artist-ready-tag'}>Book me ready</span> : null}
               {profile.genres.map((genre) => <span key={genre} className={publishedPage?.builderPalette ? 'builder-badge' : 'tag'}>{genre}</span>)}

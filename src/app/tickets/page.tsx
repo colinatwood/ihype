@@ -101,6 +101,7 @@ export default async function MyTicketsPage() {
                     </Link>
                     <div style={{ fontSize: 12, color: 'rgba(240,235,229,.45)' }}>
                       {show.headlinerProfile?.name ?? 'iHYPE Radio'}
+                      {show.venueProfile?.name ? ` @ ${show.venueProfile.name}` : ''}
                       {show.venueProfile?.city ? ` · ${show.venueProfile.city}` : ''}
                     </div>
                   </div>
@@ -137,9 +138,19 @@ export default async function MyTicketsPage() {
 
                 {order.tickets.length > 0 && order.status === 'CAPTURED' && (
                   <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 16 }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(240,235,229,.35)', marginBottom: 12 }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(240,235,229,.35)', marginBottom: 4 }}>
                       Your ticket{order.tickets.length > 1 ? 's' : ''} — show QR at the door
                     </div>
+                    {(show.venueProfile?.name || show.startsAt) && (
+                      <div style={{ marginBottom: 12 }}>
+                        {show.venueProfile?.name && (
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#22e5d4', marginBottom: 2 }}>
+                            {show.venueProfile.name}{show.venueProfile.city ? ` · ${show.venueProfile.city}` : ''}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 12, color: 'rgba(240,235,229,.5)', fontFamily: 'var(--font-mono)' }}>{date}</div>
+                      </div>
+                    )}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                       {order.tickets.map(t => (
                         <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>

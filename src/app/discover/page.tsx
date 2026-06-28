@@ -26,11 +26,12 @@ const TYPE_LABEL: Record<string, string> = {
   FAN: 'Fan',
 };
 
-export default async function DiscoverPage({ searchParams }: { searchParams?: Promise<{ city?: string; genre?: string }> }) {
+export default async function DiscoverPage({ searchParams }: { searchParams?: Promise<{ city?: string; genre?: string; page?: string }> }) {
   const session = await auth().catch(() => null);
   const params = searchParams ? await searchParams : {};
   const cityFilter = params.city?.trim() || null;
   const genreFilter = params.genre?.trim() || null;
+  const page = Math.max(0, parseInt(params.page ?? '0', 10) || 0);
 
   // Collect distinct cities and genres for filter chips
   const [allCities, allGenres] = await Promise.all([
@@ -49,6 +50,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
         ...(genreFilter ? { genres: { has: genreFilter } } : {}),
       },
       orderBy: { hypeCount: 'desc' },
+      skip: page * 12,
       take: 12,
       select: { id: true, slug: true, name: true, type: true, city: true, stateRegion: true, hypeCount: true, avatarImage: true },
     }),
@@ -234,6 +236,17 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
             ))}
           </div>
         </section>
+      )}
+
+      {topArtists.length === 12 && (
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Link
+            href={buildUrl(cityFilter, genreFilter) + (buildUrl(cityFilter, genreFilter).includes('?') ? `&page=${page + 1}` : `?page=${page + 1}`)}
+            style={{ display: 'inline-block', padding: '10px 24px', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, fontSize: 13, fontFamily: 'var(--font-mono)', color: 'rgba(240,235,229,.7)', textDecoration: 'none', letterSpacing: '.04em' }}
+          >
+            Load more artists →
+          </Link>
+        </div>
       )}
 
       {/* Top venues */}
