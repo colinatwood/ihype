@@ -49,8 +49,13 @@ function matchTab(pathname: string): string {
   return '';
 }
 
+const AUTH_PATHS = ['/login', '/register', '/welcome', '/verify', '/beta'];
+
 export function MobileBottomNav() {
   const pathname = usePathname();
+
+  if (AUTH_PATHS.some(p => pathname.startsWith(p))) return null;
+
   const active = matchTab(pathname);
 
   return (
