@@ -208,9 +208,11 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
                     width: 44, height: 44, borderRadius: 22,
                     background: `linear-gradient(135deg, ${TYPE_COLOR[p.type] ?? '#ff5029'}, #b983ff)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 20, flexShrink: 0,
+                    fontSize: 20, flexShrink: 0, overflow: 'hidden',
                   }}>
-                    {p.type === 'VENUE' ? '🏛️' : '🎤'}
+                    {p.avatarImage
+                      ? <img src={p.avatarImage} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 22 }} />
+                      : (p.type === 'VENUE' ? '🏛️' : '🎤')}
                   </div>
                   <div>
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 14, marginBottom: 2, color: 'var(--ink)' }}>{p.name}</div>
