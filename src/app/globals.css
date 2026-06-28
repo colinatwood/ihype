@@ -6667,3 +6667,32 @@ a .ihype-card, a.ihype-card {
   border-radius: 4px;
   transition: outline-offset 100ms ease;
 }
+
+/* ── Hype button particle burst ────────────────────────────────────────── */
+@keyframes hype-particle {
+  0%   { transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0)   scale(1);   opacity: 1; }
+  60%  { opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-24px) scale(0); opacity: 0; }
+}
+
+/* ── SVG empty-state icons ──────────────────────────────────────────────── */
+.ihype-empty-state .icon svg {
+  width: 56px;
+  height: 56px;
+  color: var(--accent, #ff5029);
+  opacity: 0.7;
+}
+
+/* ── Mobile ticket QR expansion ─────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .ihype-ticket-qr {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 260px;
+    border-radius: 10px !important;
+  }
+  .ihype-ticket-qr-wrap {
+    width: 100%;
+    align-items: center;
+  }
+}

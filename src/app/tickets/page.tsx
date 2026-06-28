@@ -73,7 +73,7 @@ export default async function MyTicketsPage() {
 
       {orders.length === 0 ? (
         <div className="ihype-empty-state">
-          <div className="icon">🎟️</div>
+          <div className="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a1 1 0 0 0 0 2v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1a1 1 0 0 1 0-2V9Z"/><line x1="10" y1="7" x2="10" y2="17"/></svg></div>
           <h3>No tickets yet</h3>
           <p>Browse upcoming shows and grab your first ticket.</p>
           <Link href="/shows" className="ihype-btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
@@ -151,7 +151,7 @@ export default async function MyTicketsPage() {
                         <div style={{ fontSize: 12, color: 'rgba(240,235,229,.5)', fontFamily: 'var(--font-mono)' }}>{date}</div>
                       </div>
                     )}
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                    <div className="ihype-ticket-qr-wrap" style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                       {order.tickets.map(t => (
                         <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -160,6 +160,7 @@ export default async function MyTicketsPage() {
                             alt={`QR code for ticket ${t.serializedId}`}
                             width={120}
                             height={120}
+                            className="ihype-ticket-qr"
                             style={{ borderRadius: 8, background: '#f0ebe5' }}
                           />
                           <span style={{

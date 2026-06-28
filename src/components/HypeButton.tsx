@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { haptic } from '@/lib/haptics';
 
 type HypeButtonProps = {
@@ -18,6 +18,8 @@ export function HypeButton({ targetType, targetId, initialCount, initiallyHyped,
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [popping, setPopping] = useState(false);
+  const [bursting, setBursting] = useState(false);
+  const burstRef = useRef<HTMLSpanElement>(null);
   const noun = entityLabel ?? (targetType === 'show' ? 'show' : 'profile');
 
   useEffect(() => {
@@ -38,7 +40,9 @@ export function HypeButton({ targetType, targetId, initialCount, initiallyHyped,
     setCount((c) => wasHyped ? Math.max(0, c - 1) : c + 1);
     if (!wasHyped) {
       setPopping(true);
+      setBursting(true);
       setTimeout(() => setPopping(false), 400);
+      setTimeout(() => setBursting(false), 700);
     }
 
     let response: Response;
@@ -78,7 +82,7 @@ export function HypeButton({ targetType, targetId, initialCount, initiallyHyped,
   }
 
   return (
-    <div className="cta-row">
+    <div className="cta-row" style={{ position: 'relative' }}>
       <button
         className={`button${hyped ? ' secondary' : ''}${popping ? ' hype-pop' : ''}`}
         onClick={handleClick}
@@ -87,12 +91,34 @@ export function HypeButton({ targetType, targetId, initialCount, initiallyHyped,
         aria-pressed={hyped}
         aria-label={hyped ? `Remove hype from this ${noun}` : `Hype this ${noun}`}
         title={hyped ? `Remove hype from this ${noun}` : `Hype this ${noun}`}
+        style={{ position: 'relative', overflow: 'visible' }}
       >
         {pending
           ? 'Updating…'
           : hyped
             ? `✓ Hyped ${count.toLocaleString()}`
             : `Hype ${count.toLocaleString()}`}
+        {bursting && (
+          <span ref={burstRef} aria-hidden="true" style={{
+            position: 'absolute', inset: 0, borderRadius: 'inherit',
+            pointerEvents: 'none', zIndex: 10,
+          }}>
+            {[0, 1, 2, 3, 4, 5].map(i => (
+              <span key={i} style={{
+                position: 'absolute',
+                top: '50%', left: '50%',
+                width: 6, height: 6,
+                borderRadius: '50%',
+                background: '#ff5029',
+                transform: 'translate(-50%,-50%)',
+                animation: `hype-particle 0.6s ease-out forwards`,
+                animationDelay: `${i * 0.04}s`,
+                // Each particle shoots in a different direction via CSS custom property
+                ['--angle' as string]: `${i * 60}deg`,
+              }} />
+            ))}
+          </span>
+        )}
       </button>
       {message ? <span className="meta">{message}</span> : null}
     </div>
