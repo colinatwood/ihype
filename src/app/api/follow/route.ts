@@ -46,6 +46,17 @@ export async function POST(request: NextRequest) {
       } else {
         await tx.follow.create({ data: { followerId: session.user.id, followeeProfileId: profileId } });
         const count = await tx.follow.count({ where: { followeeProfileId: profileId } });
+        const ownedProfile = await tx.profile.findUnique({ where: { id: profileId }, select: { ownerId: true, name: true } });
+        if (ownedProfile?.ownerId && ownedProfile.ownerId !== session.user.id) {
+          await tx.notification.create({
+            data: {
+              userId: ownedProfile.ownerId,
+              type: 'new_follower',
+              body: `Someone followed ${ownedProfile.name}`,
+              link: null,
+            }
+          });
+        }
         return { following: true, count };
       }
     }));
