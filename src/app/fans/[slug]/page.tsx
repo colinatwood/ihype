@@ -186,6 +186,9 @@ export default async function ListenerPage({
           email: true,
           username: true
         }
+      },
+      _count: {
+        select: { followers: true }
       }
     }
   });
@@ -633,6 +636,7 @@ export default async function ListenerPage({
                   <div className="fan-page-stat-grid">
                     <div className="fan-page-stat-pill"><span>Fan level</span><strong>{fanLevel}</strong></div>
                     <div className="fan-page-stat-pill"><span>Hype points</span><strong>{hypePoints}</strong></div>
+                    <div className="fan-page-stat-pill"><span>Followers</span><strong>{profile._count.followers}</strong></div>
                     <div className="fan-page-stat-pill"><span>Songs</span><strong>{fullSongListenCount}</strong></div>
                     <div className="fan-page-stat-pill"><span>Shows</span><strong>{fullShowListenCount}</strong></div>
                     <div className="fan-page-stat-pill"><span>Past events</span><strong>{pastEventCount}</strong></div>

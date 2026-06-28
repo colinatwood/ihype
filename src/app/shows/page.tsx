@@ -21,9 +21,10 @@ export const dynamic = 'force-dynamic';
 export default async function ShowsIndexPage({
   searchParams
 }: {
-  searchParams?: Promise<{ near?: string }>;
+  searchParams?: Promise<{ near?: string; genre?: string }>;
 }) {
   const resolvedParams = searchParams ? await searchParams : {};
+  const genreFilter = resolvedParams.genre?.trim() || null;
   const [rawShows, viewerLocation, session] = await Promise.all([
     getShowsDirectoryData(),
     detectRequestLocation(),
@@ -49,12 +50,27 @@ export default async function ShowsIndexPage({
     ...show,
     startsAt: show.startsAt instanceof Date ? show.startsAt : new Date(show.startsAt)
   }));
-  const shows = nearMode && nearCity
+  const locationFiltered = nearMode && nearCity
     ? allShows.filter((s) => {
         const showCity = s.venueProfile?.city;
         return showCity ? showCity.toLowerCase() === nearCity.toLowerCase() : false;
       })
     : allShows;
+
+  const shows = genreFilter
+    ? locationFiltered.filter((s) => s.headlinerProfile?.genres?.some((g) => g.toLowerCase() === genreFilter.toLowerCase()))
+    : locationFiltered;
+
+  // Collect all genres for filter chips
+  const allGenres = [...new Set(allShows.flatMap((s) => s.headlinerProfile?.genres ?? []))].sort().slice(0, 16);
+
+  const buildShowsUrl = (genre: string | null, near: string | null) => {
+    const p = new URLSearchParams();
+    if (near) p.set('near', near);
+    if (genre) p.set('genre', genre);
+    const q = p.toString();
+    return `/shows${q ? `?${q}` : ''}`;
+  };
 
   const now = new Date();
   const upcomingShows = shows.filter((show) => show.status !== 'LIVE' && show.startsAt >= now);
@@ -96,20 +112,35 @@ export default async function ShowsIndexPage({
             <div className="cta-row" style={{ marginTop: '0.75rem' }} role="group" aria-label="Location filter">
               <Link
                 className={nearMode ? 'button small' : 'button small secondary'}
-                href={`/shows?near=1`}
+                href={buildShowsUrl(genreFilter, '1')}
                 aria-pressed={nearMode}
               >
                 📍 Near me ({nearCity})
               </Link>
               <Link
                 className={!nearMode ? 'button small' : 'button small secondary'}
-                href={`/shows?near=0`}
+                href={buildShowsUrl(genreFilter, '0')}
                 aria-pressed={!nearMode}
               >
                 All shows
               </Link>
             </div>
           ) : null}
+          {allGenres.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: '0.75rem' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(240,235,229,.3)', flexShrink: 0 }}>Genre</span>
+              {genreFilter && (
+                <Link href={buildShowsUrl(null, nearMode ? '1' : nearCity ? null : null)} style={{ textDecoration: 'none' }}>
+                  <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontFamily: 'var(--font-mono)', background: '#ff3e9a', color: '#fff', cursor: 'pointer' }}>{genreFilter} ×</span>
+                </Link>
+              )}
+              {allGenres.filter(g => g !== genreFilter).map(g => (
+                <Link key={g} href={buildShowsUrl(g, nearMode ? '1' : nearCity ? null : null)} style={{ textDecoration: 'none' }}>
+                  <span style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,.06)', color: 'rgba(240,235,229,.6)', cursor: 'pointer', border: '1px solid rgba(255,255,255,.08)' }}>{g}</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="directory-hero-stats">
