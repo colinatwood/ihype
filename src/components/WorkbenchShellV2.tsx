@@ -382,7 +382,6 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const isSeeds = view === 'seeds';
   const isTour = view === 'tour';
   const isPageStudio = view === 'pages' || view === 'pagestudio' || view === 'artistpage' || view === 'venuepage' || view === 'cockpit';
-  const isDiscover = view === 'discover';
   const showQueue = prefs.queueRail && tracks.length > 0 && !isSeeds;
   const colTemplate = showQueue ? 'minmax(0, 1fr) var(--queue-w)' : '1fr';
   const shellMaxWidth = showQueue ? 1300 : 1600;
@@ -390,7 +389,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
 
   const viewEl = (() => {
     switch (view) {
-      // ── 4 primary hub views ─────────────────────────────────
+      // ── 3 primary hub views ─────────────────────────────────
       case 'listen':
         return <ViewErrorBoundary viewName="Listen">
           <ViewListen data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx}
@@ -433,7 +432,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     }
   })();
 
-  const showXPFooter = ['discover', 'seeds', 'listen', 'events'].includes(view);
+  const showXPFooter = ['seeds', 'listen', 'events'].includes(view);
 
   if (!mounted) return null;
 
@@ -490,7 +489,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         {/* Main content */}
         <main ref={mainRef} role="main" style={{
           gridColumn: 1, gridRow: 2,
-          overflowY: isSeeds || isTour || isPageStudio || isDiscover ? 'hidden' : 'auto',
+          overflowY: isSeeds || isTour || isPageStudio ? 'hidden' : 'auto',
           overflowX: 'hidden',
           background: 'var(--bg)', minHeight: 0, minWidth: 0,
           fontSize: `calc(14px * var(--density, 1))`,
@@ -513,7 +512,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
               <button onClick={() => { localStorage.setItem('profileNudgeDismissed', '1'); setNudgeDismissed(true); }} style={{ fontFamily: 'var(--f-m)', fontSize: 14, color: 'var(--ink-3)', background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', lineHeight: 1, minHeight: 'unset' }} aria-label="Dismiss">×</button>
             </div>
           )}
-          <div key={view} className="wb-view-anim" style={{ position: isTour || isPageStudio || isDiscover ? 'absolute' : 'relative', zIndex: 1, ...(isTour || isPageStudio || isDiscover ? { inset: 0 } : {}) }}>
+          <div key={view} className="wb-view-anim" style={{ position: isTour || isPageStudio ? 'absolute' : 'relative', zIndex: 1, ...(isTour || isPageStudio ? { inset: 0 } : {}) }}>
             <React.Suspense fallback={
               <div style={{
                 position: 'absolute',

@@ -23,12 +23,11 @@ export const TAB_ICONS: Record<string, React.ReactNode> = {
   cockpit: <svg width={14} height={14} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="14" height="10" rx="1.5"/><path d="M4 8h2M8 6v4M12 7v2"/><circle cx="13" cy="12" r="1" fill="currentColor" stroke="none"/></svg>,
 };
 
-/** Primary 4-tab navigation per the iHYPE design system. */
+/** Primary 3-tab navigation per the iHYPE design system. */
 export const TABS: { k: View; label: string }[] = [
-  { k: 'listen',   label: 'Listen' },
-  { k: 'discover', label: 'Discover' },
-  { k: 'events',   label: 'Events' },
-  { k: 'pages',    label: 'Pages' },
+  { k: 'listen', label: 'Listen' },
+  { k: 'events', label: 'Events' },
+  { k: 'pages',  label: 'Pages' },
 ];
 
 export const ROLE_TABS: { k: View; label: string; role: string }[] = [
