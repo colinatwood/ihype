@@ -1,8 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { useState } from 'react';
-// CSSProperties used by labelStyle
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -16,6 +15,98 @@ const GENRE_OPTIONS = [
   'Electronic', 'Hip-Hop', 'Indie', 'Jazz', 'R&B', 'Rock',
   'Deep House', 'Tech House', 'Ambient', 'Experimental', 'Other',
 ];
+
+type ProfileHit = { id: string; name: string; slug: string; type: string };
+
+function ProfilePicker({
+  label,
+  types,
+  value,
+  onChange,
+}: {
+  label: string;
+  types: string[];
+  value: ProfileHit | null;
+  onChange: (p: ProfileHit | null) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<ProfileHit[]>([]);
+  const [open, setOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (query.length < 2) { setResults([]); return; }
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        if (!res.ok) return;
+        const data = await res.json() as { results?: Array<{ id: string; name: string; slug: string; type: string }> };
+        const filtered = (data.results ?? []).filter(p => types.includes(p.type.toUpperCase()))
+          .map(p => ({ id: p.id, name: p.name, slug: p.slug, type: p.type }));
+        setResults(filtered.slice(0, 6));
+        setOpen(true);
+      } catch { /* ignore */ }
+    }, 280);
+  }, [query, types]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  if (value) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(255,80,41,.07)', border: '1px solid rgba(255,80,41,.2)', borderRadius: 8 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{value.name}</div>
+          <div style={{ fontSize: 11, color: 'rgba(240,235,229,.4)', fontFamily: 'var(--font-mono)' }}>{value.type}</div>
+        </div>
+        <button onClick={() => onChange(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(240,235,229,.4)', fontSize: 18, lineHeight: 1, padding: '0 4px' }}>×</button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative' }}>
+      <input
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        onFocus={() => results.length > 0 && setOpen(true)}
+        placeholder={`Search ${label.toLowerCase()}…`}
+        className="ihype-input"
+      />
+      {open && results.length > 0 && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, marginTop: 4,
+          background: '#1a1510', border: '1px solid rgba(255,255,255,.1)', borderRadius: 8,
+          overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,.5)',
+        }}>
+          {results.map(p => (
+            <button
+              key={p.id}
+              onClick={() => { onChange(p); setQuery(''); setOpen(false); }}
+              style={{
+                display: 'block', width: '100%', padding: '10px 14px', background: 'none',
+                border: 'none', cursor: 'pointer', textAlign: 'left',
+                borderBottom: '1px solid rgba(255,255,255,.05)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.05)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            >
+              <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 600 }}>{p.name}</div>
+              <div style={{ fontSize: 11, color: 'rgba(240,235,229,.4)', fontFamily: 'var(--font-mono)' }}>{p.type}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // inputs use className="ihype-input" from globals.css
 const inputStyle: CSSProperties = {};
@@ -35,6 +126,10 @@ export default function EventsNewPage() {
   const [genre, setGenre] = useState('');
   const [datetime, setDatetime] = useState('');
   const [city, setCity] = useState('');
+
+  // Profile pickers
+  const [headliner, setHeadliner] = useState<ProfileHit | null>(null);
+  const [venueProfile, setVenueProfile] = useState<ProfileHit | null>(null);
 
   // Step 2 — ticketing
   const [isTicketed, setIsTicketed] = useState(true);
@@ -74,6 +169,8 @@ export default function EventsNewPage() {
           artistPayoutPercent: 45,
           promoterPayoutPercent: 10,
           tags: genre ? [genre.toLowerCase().replace(/\s+/g, '-')] : [],
+          headlinerProfileId: headliner?.id ?? undefined,
+          venueProfileId: venueProfile?.id ?? undefined,
         }),
       });
       const data = await res.json();
@@ -138,6 +235,14 @@ export default function EventsNewPage() {
               placeholder="e.g. Late Night Frequencies Vol. 3"
               className="ihype-input"
             />
+          </div>
+          <div>
+            <label style={labelStyle}>Headlining artist / DJ</label>
+            <ProfilePicker label="Headliner" types={['ARTIST', 'DJ']} value={headliner} onChange={setHeadliner} />
+          </div>
+          <div>
+            <label style={labelStyle}>Venue</label>
+            <ProfilePicker label="Venue" types={['VENUE']} value={venueProfile} onChange={setVenueProfile} />
           </div>
           <div>
             <label style={labelStyle}>Date &amp; time *</label>
@@ -257,6 +362,13 @@ export default function EventsNewPage() {
               {city ? ` · ${city}` : ''}
               {genre ? ` · ${genre}` : ''}
             </p>
+            {(headliner || venueProfile) && (
+              <p style={{ fontSize: 13, color: 'rgba(240,235,229,.5)', margin: '6px 0 0' }}>
+                {headliner ? `🎤 ${headliner.name}` : ''}
+                {headliner && venueProfile ? ' · ' : ''}
+                {venueProfile ? `📍 ${venueProfile.name}` : ''}
+              </p>
+            )}
           </div>
 
           <div style={{ padding: '16px 20px', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10, background: 'var(--bg-2, #100d09)' }}>
