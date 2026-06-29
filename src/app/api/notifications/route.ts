@@ -41,6 +41,22 @@ export async function POST(_req: NextRequest) {
   }
 }
 
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+    const { id } = await request.json() as { id?: string };
+    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+    await db.notification.updateMany({ where: { id, userId: session.user.id }, data: { read: true } });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error('[api/notifications] error', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
