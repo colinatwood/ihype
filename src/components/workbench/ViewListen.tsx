@@ -260,7 +260,7 @@ export function ViewListen({
       {/* Active panel */}
       <div key={tab} style={{ animation: 'listenTabIn .2s ease both' }}>
         {tab === 'search'    && <SearchPanel data={data} onPickTrack={onPickTrack} currentIdx={currentIdx} />}
-        {tab === 'seeds'     && <ViewSeeds data={data} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSave={onSave} />}
+        {tab === 'seeds'     && <div style={{ overflow: 'hidden' }}><ViewSeeds data={data} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSave={onSave} /></div>}
         {tab === 'radio'     && <div style={{ padding: '0 0 8px' }}><ViewRadio data={data} onPickTrack={onPickTrack} /></div>}
         {tab === 'charts'    && <ChartsPanel data={data} onPickTrack={onPickTrack} />}
         {tab === 'playlists' && <PlaylistsPanel data={data} onPickTrack={onPickTrack} />}

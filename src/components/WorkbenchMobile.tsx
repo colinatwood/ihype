@@ -26,7 +26,7 @@ import { GamificationProvider } from '@/components/workbench/GamificationContext
 import { XPPopups, ComboDisplay, LevelUpOverlay, XPFooter, DailyQuestBar, GmLevelPill } from '@/components/workbench/GamificationOverlays';
 import { ViewLeaderboard } from '@/components/workbench/ViewLeaderboard';
 
-type MobileTab = 'listen' | 'discover' | 'events' | 'pages';
+type MobileTab = 'listen' | 'events' | 'pages';
 
 // ─── Icons ────────────────────────────────────────────────────
 const WMIcon = {
@@ -348,11 +348,10 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
   const [searchVal, setSearchVal] = React.useState('');
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const titles: Record<MobileTab, string> = {
-    listen: 'listen', discover: 'discover', events: 'events', pages: 'pages',
+    listen: 'listen', events: 'events', pages: 'pages',
   };
   const navItems: { id: MobileTab; icon: string; label: string; badge?: string }[] = [
     { id: 'listen',   icon: '🎵', label: 'Listen' },
-    { id: 'discover', icon: '🌱', label: 'Discover' },
     { id: 'events',   icon: '🎟️', label: 'Events' },
     { id: 'pages',    icon: '👤', label: 'Pages' },
   ];
@@ -629,11 +628,6 @@ function WMBottomTabs({ tab, onTab, notifCount = 0 }: { tab: MobileTab; onTab: (
         <path d="M9 18V6l10-2v12" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
         <circle cx="6" cy="18" r="3" stroke={c} strokeWidth="1.7"/>
         <circle cx="16" cy="16" r="3" stroke={c} strokeWidth="1.7"/>
-      </svg>
-    )},
-    { id: 'discover', label: 'Discover', icon: (s, c) => (
-      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-        <path d="M12 20s-6.5-4.2-9-8.5C1.4 8.4 3 5.5 6.2 5.5c2 0 3.2 1.2 4.8 3 1.6-1.8 2.8-3 4.8-3 3.2 0 4.8 2.9 3.2 6C18.5 15.8 12 20 12 20z" stroke={c} strokeWidth="1.7" strokeLinejoin="round"/>
       </svg>
     )},
     { id: 'events', label: 'Events', icon: (s, c) => (
@@ -1276,7 +1270,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     return () => clearInterval(iv);
   }, [playing, track]);
 
-  const TABS_ORDER: MobileTab[] = ['listen', 'discover', 'events', 'pages'];
+  const TABS_ORDER: MobileTab[] = ['listen', 'events', 'pages'];
   const tabSwipeStart = useRef<{ x: number; y: number } | null>(null);
   const tabSwipeLocked = useRef<'h' | 'v' | null>(null);
   const scrollPositions = useRef<Partial<Record<MobileTab, number>>>({});
@@ -1326,7 +1320,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
 
   function handleMainTouchMove(e: React.TouchEvent) {
     const t = e.touches[0];
-    if (tab !== 'discover') {
+    {
       const el = e.currentTarget as HTMLElement;
       if (el.scrollTop === 0) {
         const dy = t.clientY - pullStartY.current;
@@ -1353,7 +1347,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
     setPullDelta(0);
     if (tabSwipeLocked.current === 'h' && tabSwipeStart.current) {
       const dx = e.changedTouches[0].clientX - tabSwipeStart.current.x;
-      if (Math.abs(dx) > 60 && tab !== 'discover') {
+      if (Math.abs(dx) > 60) {
         const idx = TABS_ORDER.indexOf(tab);
         if (dx < 0 && idx < TABS_ORDER.length - 1) { navigator.vibrate?.(6); setTab(TABS_ORDER[idx + 1]); }
         if (dx > 0 && idx > 0) { navigator.vibrate?.(6); setTab(TABS_ORDER[idx - 1]); }
@@ -1372,7 +1366,6 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const screenEl = (() => {
     switch (tab) {
       case 'listen':   return <ScreenListen data={liveData} onPlay={setCurrentTrackIdx} onExpand={() => setExpanded(true)} currentIdx={currentTrackIdx} onOpenFM={() => setHalflightMode(true)} />;
-      case 'discover': return <ScreenSeeds data={liveData} />;
       case 'events':   return <ScreenShowsNew data={liveData} onToast={showToast} onOpenRadio={() => setHalflightMode(true)} />;
       case 'pages':    return <MobileScreenPages data={liveData} onPage={() => setPageMode(true)} onCockpit={() => setCockpitMode(true)} onStudio={() => setStudioMode(true)} onManage={() => setManageMode(true)} onJournal={() => setJournalMode(true)} onNotif={() => setNotifMode(true)} onSettings={() => setSettingsMode(true)} onTour={() => setTourMode(true)} onEvents={() => setTab('events')} />;
     }
@@ -1464,31 +1457,29 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
         ref={mainScrollRef}
         role="main"
         className="wm-scroll"
-        style={{ flex: 1, overflowY: tab === 'discover' ? 'hidden' : 'auto', overflowX: 'hidden', position: 'relative', scrollbarWidth: 'none' }}
+        style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', position: 'relative', scrollbarWidth: 'none' }}
         onTouchStart={handleMainTouchStart}
         onTouchMove={handleMainTouchMove}
         onTouchEnd={handleMainTouchEnd}
         onScroll={e => { const st = (e.currentTarget as HTMLDivElement).scrollTop; scrollPositions.current[tab] = st; const show = st > 200; if (show !== showBackToTopRef.current) { showBackToTopRef.current = show; setShowBackToTop(show); } }}
       >
-        {tab !== 'discover' && (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            height: pullDelta > 0 ? pullDelta : refreshing ? 44 : 0,
-            overflow: 'hidden', transition: refreshing ? 'none' : 'height .2s',
-            fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.12em',
-          }}>
-            {refreshing ? (
-              <><span className="wm-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, display: 'inline-block' }} />REFRESHING</>
-            ) : pullDelta > 40 ? '↓ RELEASE' : pullDelta > 10 ? `↓ PULL · ${lastRefreshAge}` : null}
-          </div>
-        )}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          height: pullDelta > 0 ? pullDelta : refreshing ? 44 : 0,
+          overflow: 'hidden', transition: refreshing ? 'none' : 'height .2s',
+          fontFamily: T.fm, fontSize: 12, color: T.ink3, letterSpacing: '.12em',
+        }}>
+          {refreshing ? (
+            <><span className="wm-pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, display: 'inline-block' }} />REFRESHING</>
+          ) : pullDelta > 40 ? '↓ RELEASE' : pullDelta > 10 ? `↓ PULL · ${lastRefreshAge}` : null}
+        </div>
         {!isOnline && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: 'rgba(255,80,41,.1)', borderBottom: `1px solid rgba(255,80,41,.2)` }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, flexShrink: 0, display: 'inline-block' }} />
             <span style={{ fontFamily: T.fm, fontSize: 11, color: T.accent, letterSpacing: '.08em' }}>No connection — changes won&apos;t save</span>
           </div>
         )}
-        {!nudgeDismissed && tab !== 'discover' && (liveData.profileCompletion?.percent ?? 100) < 100 && (
+        {!nudgeDismissed && (liveData.profileCompletion?.percent ?? 100) < 100 && (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 14px', background: 'rgba(255,184,74,.12)', borderBottom: `1px solid rgba(255,184,74,.25)` }}>
             <button onClick={() => setSettingsMode(true)} style={{ fontFamily: T.fm, fontSize: 11, color: 'rgba(255,184,74,.9)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, letterSpacing: '.06em', minHeight: 'unset' }}>
               Complete your profile ({liveData.profileCompletion?.percent ?? 0}%) →
@@ -1496,12 +1487,12 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
             <button onClick={() => { localStorage.setItem('profileNudgeDismissed', '1'); setNudgeDismissed(true); }} style={{ fontFamily: T.fm, fontSize: 16, color: T.ink3, background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', lineHeight: 1, minHeight: 'unset' }} aria-label="Dismiss">×</button>
           </div>
         )}
-        {(tab === 'discover' || tab === 'listen') && <DailyQuestBar />}
+        {tab === 'listen' && <DailyQuestBar />}
         <div key={tab} style={{ animation: 'wm-tab-in .12s ease-out both' }}><ViewErrorBoundary viewName={tab}>{screenEl}</ViewErrorBoundary></div>
       </div>
 
       {/* XP Footer */}
-      {(tab === 'discover' || tab === 'listen' || tab === 'events') && <XPFooter visible />}
+      {(tab === 'listen' || tab === 'events') && <XPFooter visible />}
 
       {/* Mini player sits above tab bar */}
       {track && !expanded && (
@@ -1543,12 +1534,12 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
       {showWelcome && (
         <WelcomeDialog
           onDismiss={() => { localStorage.setItem('ihype-welcome-seen', '1'); setShowWelcome(false); }}
-          onNavigate={(v) => { if (v === 'seeds') setTab('discover'); }}
+          onNavigate={(v) => { if (v === 'seeds') setTab('listen'); }}
         />
       )}
 
       {/* Back to top */}
-      {showBackToTop && tab !== 'discover' && (
+      {showBackToTop && (
         <button onClick={() => mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} aria-label="Scroll to top" style={{ position: 'absolute', right: 16, bottom: 156, zIndex: 150, width: 38, height: 38, borderRadius: '50%', background: T.bg3, border: `1px solid ${T.line2}`, color: T.ink2, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,.45)', animation: 'fadeIn .15s ease-out both', padding: 0 }}>
           <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
         </button>

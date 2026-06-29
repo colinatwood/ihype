@@ -17,7 +17,6 @@ import { AppTopbar } from './workbench/AppTopbar';
 import { PlayerDock } from './workbench/PlayerDock';
 import { QueueRail } from './workbench/QueueRail';
 import { ViewMyPage } from './workbench/ViewMyPage';
-import { ViewSeeds } from './workbench/ViewSeeds';
 import { ViewStudio } from './workbench/ViewStudio';
 import { ViewTour } from './workbench/ViewTour';
 import { ViewNotifications } from './workbench/ViewNotifications';
@@ -31,7 +30,6 @@ import { SkeletonMeView } from './workbench/SkeletonMeView';
 import { ViewHalflightFM } from './workbench/ViewHalflightFM';
 import { ViewMatchmaker } from './workbench/ViewMatchmaker';
 import { ViewListen } from './workbench/ViewListen';
-import { ViewDiscoverHub } from './workbench/ViewDiscoverHub';
 import { ViewEventsHub } from './workbench/ViewEventsHub';
 import { ViewPagesHub } from './workbench/ViewPagesHub';
 
@@ -365,12 +363,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
       }
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
-      // Seeds keyboard shortcuts are handled inside ViewSeeds
-      if (view !== 'seeds') {
-        if (e.key === ' ')          { e.preventDefault(); setPlaying(p => !p); }
-        if (e.key === 'ArrowRight') { onNext(); }
-        if (e.key === 'ArrowLeft')  { onPrev(); }
-      }
+      if (e.key === ' ')          { e.preventDefault(); setPlaying(p => !p); }
+      if (e.key === 'ArrowRight') { onNext(); }
+      if (e.key === 'ArrowLeft')  { onPrev(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -379,10 +374,9 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   const track = tracks[currentIdx] ?? tracks[0];
   const showDock = prefs.stickyDock && track;
 
-  const isSeeds = view === 'seeds';
   const isTour = view === 'tour';
   const isPageStudio = view === 'pages' || view === 'pagestudio' || view === 'artistpage' || view === 'venuepage' || view === 'cockpit';
-  const showQueue = prefs.queueRail && tracks.length > 0 && !isSeeds;
+  const showQueue = prefs.queueRail && tracks.length > 0;
   const colTemplate = showQueue ? 'minmax(0, 1fr) var(--queue-w)' : '1fr';
   const shellMaxWidth = showQueue ? 1300 : 1600;
   const rowTemplate = showDock ? 'var(--top-h) 1fr var(--player-h)' : 'var(--top-h) 1fr';
@@ -394,10 +388,6 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         return <ViewErrorBoundary viewName="Listen">
           <ViewListen data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx}
             seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSave={onSeedSave} />
-        </ViewErrorBoundary>;
-      case 'discover':
-        return <ViewErrorBoundary viewName="Discover">
-          <ViewDiscoverHub data={liveData} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSeedSave={onSeedSave} onPickTrack={onPickTrack} />
         </ViewErrorBoundary>;
       case 'events':
         return <ViewErrorBoundary viewName="Events">
@@ -415,7 +405,6 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
             <DiscoverDailyCard />
             <ViewMyPage data={liveData} onPickTrack={onPickTrack} currentIdx={currentIdx} />
           </ViewErrorBoundary>;
-      case 'seeds':    return <ViewErrorBoundary viewName="Seeds"><ViewSeeds data={liveData} seedPlaying={seedPlaying} setSeedPlaying={setSeedPlaying} onSave={onSeedSave} /></ViewErrorBoundary>;
       case 'studio':   return <ViewErrorBoundary viewName="Studio"><ViewStudio data={liveData} /></ViewErrorBoundary>;
       case 'tour':         return <ViewErrorBoundary viewName="Tour Planner"><ViewTour data={liveData} /></ViewErrorBoundary>;
       case 'journal': {
@@ -432,7 +421,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
     }
   })();
 
-  const showXPFooter = ['seeds', 'listen', 'events'].includes(view);
+  const showXPFooter = ['listen', 'events'].includes(view);
 
   if (!mounted) return null;
 
@@ -489,7 +478,7 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
         {/* Main content */}
         <main ref={mainRef} role="main" style={{
           gridColumn: 1, gridRow: 2,
-          overflowY: isSeeds || isTour || isPageStudio ? 'hidden' : 'auto',
+          overflowY: isTour || isPageStudio ? 'hidden' : 'auto',
           overflowX: 'hidden',
           background: 'var(--bg)', minHeight: 0, minWidth: 0,
           fontSize: `calc(14px * var(--density, 1))`,
