@@ -162,30 +162,40 @@ export function SearchOverlay({ open, onClose, activeProfileTypes }: { open: boo
         <div style={{ overflowY: 'auto', flex: 1 }}>
         {/* Results */}
         {loading && <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-3)' }}>Searching…</div>}
-        {!loading && results.length > 0 && (
-          <div>
-            {results.map(r => (
-              <div key={r.id}
-                onClick={() => { if (r.href) window.location.href = r.href; onClose(); }}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', cursor: 'pointer', borderBottom: '1px solid var(--line)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,80,41,.05)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</div>
-                  <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{r.sub}</div>
+        {!loading && results.length > 0 && (() => {
+          const SECTIONS: { key: SearchResult['type']; label: string; color: string; bg: string; border: string }[] = [
+            { key: 'artist', label: 'Artists & DJs', color: '#b983ff', bg: 'rgba(185,131,255,.12)', border: 'rgba(185,131,255,.2)' },
+            { key: 'show',   label: 'Shows',         color: '#22e5d4', bg: 'rgba(34,229,212,.12)', border: 'rgba(34,229,212,.2)' },
+            { key: 'track',  label: 'Songs',         color: 'var(--accent)', bg: 'rgba(255,80,41,.15)', border: 'rgba(255,80,41,.25)' },
+            { key: 'genre',  label: 'Genres',        color: '#ffb84a', bg: 'rgba(255,184,74,.12)', border: 'rgba(255,184,74,.2)' },
+          ];
+          const grouped = SECTIONS.map(s => ({ ...s, items: results.filter(r => r.type === s.key) })).filter(s => s.items.length > 0);
+          return (
+            <div>
+              {grouped.map(section => (
+                <div key={section.key}>
+                  <div style={{ padding: '10px 18px 4px', fontFamily: 'var(--f-m)', fontSize: 10, color: section.color, letterSpacing: '.1em', textTransform: 'uppercase', fontWeight: 700, opacity: 0.85 }}>
+                    {section.label}
+                  </div>
+                  {section.items.map(r => (
+                    <div key={r.id}
+                      onClick={() => { if (r.href) window.location.href = r.href; onClose(); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', cursor: 'pointer', borderBottom: '1px solid var(--line)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,80,41,.05)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.label}</div>
+                        {r.sub && <div style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--ink-3)', marginTop: 2 }}>{r.sub}</div>}
+                      </div>
+                      <svg width={12} height={12} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ color: 'var(--ink-4)', flexShrink: 0 }}><path d="M6 3l5 5-5 5"/></svg>
+                    </div>
+                  ))}
                 </div>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', padding: '2px 7px', borderRadius: 99,
-                  fontFamily: 'var(--f-m)', fontSize: 10, fontWeight: 700, letterSpacing: '.08em', flexShrink: 0,
-                  background: r.type === 'track' ? 'rgba(255,80,41,.15)' : r.type === 'show' ? 'rgba(34,229,212,.12)' : r.type === 'genre' ? 'rgba(255,184,74,.12)' : 'rgba(185,131,255,.12)',
-                  color: r.type === 'track' ? 'var(--accent)' : r.type === 'show' ? '#22e5d4' : r.type === 'genre' ? '#ffb84a' : '#b983ff',
-                  border: `1px solid ${r.type === 'track' ? 'rgba(255,80,41,.25)' : r.type === 'show' ? 'rgba(34,229,212,.2)' : r.type === 'genre' ? 'rgba(255,184,74,.2)' : 'rgba(185,131,255,.2)'}`,
-                }}>{r.type}</span>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          );
+        })()}
         {!loading && query && results.length === 0 && (
           <div style={{ padding: '20px 18px' }}>
             <div style={{ fontFamily: 'var(--f-b)', fontSize: 14, color: 'var(--ink-3)', textAlign: 'center', marginBottom: 14 }}>

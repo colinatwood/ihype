@@ -434,7 +434,9 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
         <span style={{ display: 'block', width: 16, height: 1.5, background: T.ink, borderRadius: 2, opacity: menuOpen ? 0 : 1, transition: 'opacity .15s' }} />
         <span style={{ display: 'block', width: 16, height: 1.5, background: T.ink, borderRadius: 2, transition: 'transform .2s', transform: menuOpen ? 'translateY(-6.5px) rotate(-45deg)' : 'none' }} />
         {(notifCount ?? 0) > 0 && !menuOpen && (
-          <span style={{ position: 'absolute', top: 8, right: 8, width: 7, height: 7, borderRadius: '50%', background: T.accent, border: `1.5px solid ${T.bg2}` }} />
+          <span style={{ position: 'absolute', top: 6, right: 6, minWidth: 15, height: 15, borderRadius: 99, background: T.accent, border: `1.5px solid ${T.bg2}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: T.fm, fontSize: 9, fontWeight: 800, color: '#fff', padding: '0 3px', lineHeight: 1, animation: 'wm-badge-pop .3s cubic-bezier(.4,0,.2,1) both' }}>
+            {(notifCount ?? 0) > 9 ? '9+' : notifCount}
+          </span>
         )}
       </button>
     </header>
@@ -574,8 +576,8 @@ function WMTopBar({ tab, onTab, listeningNow, userName, initials, onSearch, noti
 }
 
 // ─── Mini Player ─────────────────────────────────────────────
-function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
-  track: WbTrack; playing: boolean; onToggle: () => void; progress: number; onAlbumTap?: () => void;
+function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap, onHype }: {
+  track: WbTrack; playing: boolean; onToggle: () => void; progress: number; onAlbumTap?: () => void; onHype?: () => void;
 }) {
   return (
     <div style={{
@@ -603,11 +605,11 @@ function WMMiniPlayer({ track, playing, onToggle, progress, onAlbumTap }: {
           <div style={{ position: 'absolute', inset: 0, width: `${progress * 100}%`, background: `linear-gradient(90deg,${T.accent},${T.pink})`, borderRadius: 99 }} />
         </div>
       </div>
-      <button aria-label="Hype this track" style={{
+      <button onClick={() => { if (onHype) { navigator.vibrate?.([15, 30, 15]); onHype(); } }} aria-label="Hype this track" style={{
         display: 'flex', alignItems: 'center', gap: 4, padding: '5px 9px',
         border: `1px solid rgba(255,62,154,.3)`, borderRadius: 99, color: T.pink,
-        fontFamily: T.fm, fontSize: 12, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: 'pointer',
-        minHeight: 44, minWidth: 44,
+        fontFamily: T.fm, fontSize: 12, fontWeight: 600, background: 'rgba(255,62,154,.05)', cursor: onHype ? 'pointer' : 'default',
+        minHeight: 44, minWidth: 44, transition: 'transform .1s',
       }}>♥ {track.hypeCount}</button>
       <button onClick={onToggle} aria-label={playing ? "Pause" : "Play"} style={{
         width: 44, height: 44, minWidth: 44, minHeight: 44, borderRadius: '50%', background: T.ink, color: T.bg,
@@ -1511,11 +1513,12 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
           onToggle={() => setPlaying(p => !p)}
           progress={progress}
           onAlbumTap={() => setExpanded(true)}
+          onHype={() => { setHypeTrack(track); }}
         />
       )}
 
       {/* Bottom tab bar */}
-      <WMBottomTabs tab={tab} onTab={(t) => { if (t === tab) mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); setTab(t); }} notifCount={liveData.notifications?.length ?? 0} />
+      <WMBottomTabs tab={tab} onTab={(t) => { if (t === tab) mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); setTab(t); }} notifCount={liveData.notifications?.filter(n => n.unread).length ?? 0} />
 
       {/* Full player overlay */}
       {expanded && track && (
