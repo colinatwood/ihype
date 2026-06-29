@@ -1518,7 +1518,7 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
       )}
 
       {/* Bottom tab bar */}
-      <WMBottomTabs tab={tab} onTab={(t) => { if (t === tab) mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); setTab(t); }} notifCount={liveData.notifications?.filter(n => !n.read).length ?? 0} />
+      <WMBottomTabs tab={tab} onTab={(t) => { if (t === tab) mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); setTab(t); }} notifCount={liveData.notifications?.filter(n => n.unread).length ?? 0} />
 
       {/* Full player overlay */}
       {expanded && track && (
