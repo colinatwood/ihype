@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import type { WorkbenchData, WbTrack, WbShow } from './WorkbenchShellV2';
 import { ViewHalflightFMMobile } from '@/components/workbench/ViewHalflightFM';
 import { SearchOverlay } from '@/components/workbench/SearchOverlay';
@@ -81,12 +82,12 @@ function WMShowHypersSheet({ showId, onClose }: { showId: string | null; onClose
             return (
               <div key={h.userId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < hypers.length - 1 ? `1px solid ${T.line}` : 'none' }}>
                 <div style={{
-                  width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+                  width: 38, height: 38, borderRadius: '50%', flexShrink: 0, position: 'relative',
                   background: h.avatarUrl ? 'transparent' : `linear-gradient(135deg,${T.accent},${T.pink})`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                 }}>
                   {h.avatarUrl
-                    ? <img src={h.avatarUrl} alt={initials} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ? <Image src={h.avatarUrl} alt={initials} fill sizes="38px" style={{ objectFit: 'cover' }} />
                     : <span style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 14, color: T.bg }}>{initials}</span>
                   }
                 </div>

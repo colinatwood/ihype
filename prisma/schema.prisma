@@ -462,6 +462,8 @@ model Show {
   dmcaStatus             String?
 
   @@index([startsAt, status])
+  @@index([status])
+  @@index([isRadioShow, status])
   @@index([creatorId])
   @@index([title(ops: raw("gin_trgm_ops"))], type: Gin, map: "Show_title_trgm_idx")
   @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "Show_description_trgm_idx")
@@ -790,6 +792,7 @@ model Seed {
   @@unique([userId, mediaId])
   @@index([userId])
   @@index([mediaId])
+  @@index([mediaId, action])
 }
 
 model ShowComment {

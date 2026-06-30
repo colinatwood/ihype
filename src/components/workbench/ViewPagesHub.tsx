@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import type { WorkbenchData } from '@/types/workbench';
 import { DEFAULT_PREFS } from './types';
@@ -217,9 +218,9 @@ function ActivityFeed() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {hypers.slice(0, 6).map(h => (
           <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: 'rgba(255,255,255,.02)', border: '1px solid rgba(255,255,255,.05)' }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,rgba(185,131,255,.4),rgba(255,80,41,.3))', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', flexShrink: 0, position: 'relative', background: 'linear-gradient(135deg,rgba(185,131,255,.4),rgba(255,80,41,.3))', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {h.image
-                ? <img src={h.image} alt={h.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ? <Image src={h.image} alt={h.name} fill sizes="28px" style={{ objectFit: 'cover' }} />
                 : <span style={{ fontFamily: 'var(--f-d)', fontSize: 11, fontWeight: 800, color: 'var(--ink)' }}>{h.name.slice(0,1).toUpperCase()}</span>
               }
             </div>

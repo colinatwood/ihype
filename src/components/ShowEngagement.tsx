@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 type Attendee = { name: string | null; avatar: string | null };
 
@@ -192,7 +193,7 @@ export function ShowEngagement({
               key={i}
               title={a.name ?? 'Fan'}
               style={{
-                width: 32, height: 32, borderRadius: '50%',
+                width: 32, height: 32, borderRadius: '50%', position: 'relative',
                 background: 'var(--accent, #ff3e9a)', border: '2px solid var(--bg, #0a0a14)',
                 marginLeft: i > 0 ? -10 : 0, overflow: 'hidden',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -200,7 +201,7 @@ export function ShowEngagement({
               }}
             >
               {a.avatar ? (
-                <img alt={a.name ?? 'Fan'} src={a.avatar} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <Image alt={a.name ?? 'Fan'} src={a.avatar} fill sizes="32px" style={{ objectFit: 'cover' }} />
               ) : (
                 (a.name?.[0] ?? '?').toUpperCase()
               )}

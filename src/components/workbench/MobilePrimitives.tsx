@@ -4,6 +4,7 @@
 // used by WorkbenchMobile and all MobileScreen* components.
 
 import React from 'react';
+import Image from 'next/image';
 import type { WorkbenchData } from '@/types/workbench';
 
 // ─── Design tokens ────────────────────────────────────────────
@@ -269,12 +270,12 @@ export function WMShowHypersSheet({ showId, onClose }: { showId: string | null; 
             return (
               <div key={h.userId} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: i < hypers.length - 1 ? `1px solid ${T.line}` : 'none' }}>
                 <div style={{
-                  width: 38, aspectRatio: '1 / 1', borderRadius: '50%', flexShrink: 0,
+                  width: 38, aspectRatio: '1 / 1', borderRadius: '50%', flexShrink: 0, position: 'relative',
                   background: h.avatarUrl ? 'transparent' : `linear-gradient(135deg,${T.accent},${T.pink})`,
                   display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                 }}>
                   {h.avatarUrl
-                    ? <img src={h.avatarUrl} alt={initials} loading="lazy" width={38} height={38} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    ? <Image src={h.avatarUrl} alt={initials} fill sizes="38px" style={{ objectFit: 'cover' }} />
                     : <span style={{ fontFamily: T.fd, fontWeight: 800, fontSize: 14, color: T.bg }}>{initials}</span>
                   }
                 </div>

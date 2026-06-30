@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode
 } from 'react';
+import Image from 'next/image';
 import { FanPlaylistManager } from '@/components/FanPlaylistManager';
 import { PlayerQueuePanel } from '@/components/PlayerQueuePanel';
 import { usePlayerKeyboard } from '@/lib/usePlayerKeyboard';
@@ -673,8 +674,8 @@ export function SitePlayerDock() {
 
       {/* ── Left: art + meta ─────────────────────────────────────────────── */}
       <div className="site-dock-l">
-        <div className="site-dock-art" style={{ background: currentTrack ? 'linear-gradient(135deg,#ff5029,#ff3e9a80)' : '#161310' }}>
-          {currentTrack?.artworkUrl && <img src={currentTrack.artworkUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 5 }} />}
+        <div className="site-dock-art" style={{ position: 'relative', background: currentTrack ? 'linear-gradient(135deg,#ff5029,#ff3e9a80)' : '#161310' }}>
+          {currentTrack?.artworkUrl && <Image src={currentTrack.artworkUrl} alt="" fill sizes="42px" style={{ objectFit: 'cover', borderRadius: 5 }} />}
         </div>
         <div className="site-dock-meta">
           <div className="site-dock-title">{currentTrack?.title ?? 'Nothing playing'}</div>

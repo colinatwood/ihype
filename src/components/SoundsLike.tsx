@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { getSoundsLike } from '@/lib/sounds-like';
 
@@ -16,12 +17,15 @@ export async function SoundsLike({ profileId, profileName }: { profileId: string
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 80 }}
           >
             {p.avatarImage ? (
-              <img
-                src={p.avatarImage}
-                alt={p.name}
-                loading="lazy"
-                style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover' }}
-              />
+              <div style={{ width: 56, height: 56, borderRadius: '50%', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                <Image
+                  src={p.avatarImage}
+                  alt={p.name}
+                  fill
+                  sizes="56px"
+                  style={{ objectFit: 'cover' }}
+                />
+              </div>
             ) : (
               <div
                 style={{
