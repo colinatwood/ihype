@@ -32,7 +32,10 @@ export async function GET(req: NextRequest) {
       trackCounts[id] = 0;
     }
 
-    return NextResponse.json({ tracks: trackCounts, shows: showCounts });
+    return NextResponse.json(
+      { tracks: trackCounts, shows: showCounts },
+      { headers: { 'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=30' } }
+    );
   } catch (err) {
     console.error('[api/hype/counts] error', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

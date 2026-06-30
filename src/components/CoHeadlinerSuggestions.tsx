@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -52,12 +53,15 @@ export function CoHeadlinerSuggestions({ profileId }: { profileId: string }) {
             }}
           >
             {match.avatarImage && (
-              <img
-                alt={match.name}
-                src={match.avatarImage}
-                loading="lazy"
-                style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
-              />
+              <div style={{ width: 32, height: 32, borderRadius: '50%', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                <Image
+                  alt={match.name}
+                  src={match.avatarImage}
+                  fill
+                  sizes="32px"
+                  style={{ objectFit: 'cover' }}
+                />
+              </div>
             )}
             <div style={{ flex: 1 }}>
               <Link

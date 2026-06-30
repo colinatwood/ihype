@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { parsePublishedPage } from '@/lib/page-builder';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export const revalidate = 60;
@@ -558,7 +559,9 @@ export default async function ListenerPage({
       <header className="artist-banner panel fan-page-banner" style={bannerStyle}>
         <div className="profile-banner-row">
           {avatarImage ? (
-            <img alt={`${profile.name} avatar`} className="profile-avatar profile-avatar-hero" src={avatarImage} />
+            <div className="profile-avatar profile-avatar-hero" style={{ position: 'relative', overflow: 'hidden' }}>
+              <Image alt={`${profile.name} avatar`} src={avatarImage} fill sizes="140px" style={{ objectFit: 'cover' }} />
+            </div>
           ) : (
             <div className="profile-avatar profile-avatar-hero profile-avatar-fallback">{getInitials(profile.name)}</div>
           )}
@@ -673,9 +676,9 @@ export default async function ListenerPage({
                         ).slice(0, 3);
                         return (
                           <Link className="fan-similar-row" href={`/fans/${fan.slug}`} key={fan.id}>
-                            <div className="fan-similar-avatar">
+                            <div className="fan-similar-avatar" style={{ position: 'relative' }}>
                               {fan.avatarImage
-                                ? <img src={fan.avatarImage} alt={fan.name} />
+                                ? <Image src={fan.avatarImage} alt={fan.name} fill sizes="36px" style={{ objectFit: 'cover' }} />
                                 : <span>{fan.name.slice(0, 1).toUpperCase()}</span>}
                             </div>
                             <div className="fan-similar-info">
