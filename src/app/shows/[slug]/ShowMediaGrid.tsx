@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { HypeButton } from '@/components/HypeButton';
 import { ShowSequencePlayer } from '@/components/ShowSequencePlayer';
 import { getShowVisibilitySignals } from '@/lib/integrity';
@@ -49,9 +50,9 @@ export function ShowMediaGrid({ show, productionPlan, userShowHype, visibility }
               title={show.title}
             />
           ) : (
-            <div className="show-art" style={{ minHeight: 320 }}>
+            <div className="show-art" style={{ minHeight: 320, position: 'relative', overflow: 'hidden' }}>
               {show.posterImage
-                ? <img alt={show.title} src={show.posterImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ? <Image alt={show.title} src={show.posterImage} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
                 : <span className="meta">No audio uploaded yet</span>}
             </div>
           )}

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 
 export const revalidate = 60;
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
@@ -567,11 +568,15 @@ export default async function ArtistPage({
                 <li key={index} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontWeight: 700, fontSize: 13, width: 24, color: rankColor }}>#{rank}</span>
                   {believer.user.image ? (
-                    <img
-                      src={believer.user.image}
-                      alt={displayName}
-                      style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                    />
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                      <Image
+                        src={believer.user.image}
+                        alt={displayName}
+                        fill
+                        sizes="28px"
+                        style={{ objectFit: 'cover' }}
+                      />
+                    </div>
                   ) : (
                     <div style={{
                       width: 28,

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { cache } from 'react';
 
 export const revalidate = 30;
+import Image from 'next/image';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { notFound } from 'next/navigation';
@@ -329,9 +330,9 @@ export default async function ShowDetailPage({
                 title={show.title}
               />
             ) : (
-              <div className="show-art" style={{ minHeight: 320 }}>
+              <div className="show-art" style={{ minHeight: 320, position: 'relative', overflow: 'hidden' }}>
                 {show.posterImage
-                  ? <img alt={show.title} src={show.posterImage} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ? <Image alt={show.title} src={show.posterImage} fill sizes="(max-width: 768px) 100vw, 50vw" style={{ objectFit: 'cover' }} priority />
                   : <span className="meta">No audio uploaded yet</span>}
               </div>
             )}

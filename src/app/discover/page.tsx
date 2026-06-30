@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -205,13 +206,13 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
               <div key={p.id} className="ihype-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Link href={profileRoute(p.type, p.slug)} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: 22,
+                    width: 44, height: 44, borderRadius: 22, position: 'relative',
                     background: `linear-gradient(135deg, ${TYPE_COLOR[p.type] ?? '#ff5029'}, #b983ff)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 20, flexShrink: 0, overflow: 'hidden',
                   }}>
                     {p.avatarImage
-                      ? <img src={p.avatarImage} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 22 }} />
+                      ? <Image src={p.avatarImage} alt={p.name} fill sizes="44px" style={{ objectFit: 'cover', borderRadius: 22 }} />
                       : (p.type === 'VENUE' ? '🏛️' : '🎤')}
                   </div>
                   <div>
