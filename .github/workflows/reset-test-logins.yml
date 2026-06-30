@@ -21,7 +21,7 @@ jobs:
       RESET_LOGIN_PASSWORD: ${{ secrets.TEMP_LOGIN_RESET_PASSWORD }}
       CONFIRM_RESET_TEST_LOGINS: ${{ github.event.inputs.confirm }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
