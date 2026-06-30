@@ -43,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - uses: expo/expo-github-action@v8
+      - uses: expo/expo-github-action@v9
         with:
           expo-version: latest
           eas-version: latest
