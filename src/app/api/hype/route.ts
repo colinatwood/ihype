@@ -8,6 +8,7 @@ import { sendGenericEmail } from '@/lib/mailer';
 import { checkAndAwardBadges } from '@/lib/badges';
 import { getBaseUrl } from '@/lib/utils';
 import { sendPushNotification } from '@/lib/push-notify';
+import { notifyUser } from '@/lib/notify';
 
 const HYPE_MILESTONES = [10, 50, 100, 500, 1000];
 const SHOW_HYPE_MILESTONES = [10, 25, 50, 100, 250, 500];
@@ -273,6 +274,25 @@ export async function POST(request: NextRequest) {
 
     await checkAndRecordMilestone(payload.targetId, updatedProfile.hypeCount);
     checkAndAwardBadges(session.user.id).catch(() => {});
+
+    // Early-believer re-engagement: the new hyper is the hypeCount-th believer
+    // (one hype per user). If they're in the first 25 (the believers-board early
+    // tier), tell them their rank and link them to the board to share it.
+    if (updatedProfile.hypeCount <= 25) {
+      const rank = updatedProfile.hypeCount;
+      db.profile.findUnique({ where: { id: payload.targetId }, select: { slug: true, name: true, type: true } })
+        .then((p: { slug: string; name: string; type: string } | null) => {
+          if (p && (p.type === 'ARTIST' || p.type === 'DJ')) {
+            notifyUser(session.user.id, {
+              type: 'EARLY_BELIEVER',
+              title: 'You called it early',
+              body: `You're early believer #${rank} in ${p.name}.`,
+              link: `/artists/${p.slug}/believers`,
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
+    }
 
     // Push notification to track owner (fire-and-forget, skip self-hype)
     db.profile.findUnique({ where: { id: payload.targetId }, select: { ownerId: true, name: true } })

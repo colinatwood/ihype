@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { consumeRateLimit, rateLimitKey } from '@/lib/rate-limit';
 import { sendIssuedTicketEmail } from '@/lib/mailer';
+import { notifyUser } from '@/lib/notify';
 import { isPaymentProcessingConfigured } from '@/lib/payments';
 import { detectLocationFromHeaders } from '@/lib/request-location';
 import {
@@ -419,6 +420,18 @@ export async function POST(
         totalChargeLabel: formatCurrencyFromCents(financials.totalChargeCents),
         tickets
       });
+    }
+
+    // Share & Earn re-engagement: tell the promoter their link drove a sale
+    // (notification only — payout settlement is handled elsewhere/deferred).
+    if (affiliatePromoterProfile) {
+      const qty = body.quantity;
+      notifyUser(affiliatePromoterProfile.ownerId, {
+        type: 'PROMOTER_SALE',
+        title: 'Your link sold a ticket',
+        body: `${qty === 1 ? 'A ticket' : `${qty} tickets`} to ${show.title} sold through your promo link.`,
+        link: '/me/promote',
+      }).catch(() => {});
     }
 
     return NextResponse.json(
