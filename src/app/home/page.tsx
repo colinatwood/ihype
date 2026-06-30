@@ -1,10 +1,21 @@
-import { WorkbenchShell } from '@/components/WorkbenchShellV2';
-import { WorkbenchMobile } from '@/components/WorkbenchMobile';
+import dynamicImport from 'next/dynamic';
 import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 import { MOCK_DATA } from '@/lib/workbench-mock';
 import type { WorkbenchData } from '@/components/WorkbenchShellV2';
 import type { Metadata } from 'next';
 import { getWorkbenchData as fetchWorkbenchData } from '@/lib/getWorkbenchData';
+
+// Loaded via next/dynamic (rather than a static import) so each shell is its
+// own chunk — only the one actually rendered per-request is referenced in
+// the RSC payload and downloaded by the client. The workbench shells are
+// large client components; statically importing both nearly doubled this
+// route's JS payload even though only one is ever shown.
+const WorkbenchShell = dynamicImport(() => import('@/components/WorkbenchShellV2').then((m) => m.WorkbenchShell));
+const WorkbenchMobile = dynamicImport(() => import('@/components/WorkbenchMobile').then((m) => m.WorkbenchMobile));
+
+// Mirrors the .wb-desktop / .wb-mobile breakpoint previously used in CSS.
+const MOBILE_USER_AGENT = /Android|iPhone|iPod|Mobile|Windows Phone/i;
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -38,26 +49,8 @@ async function getWorkbenchData(): Promise<WorkbenchData> {
 }
 
 export default async function HomePage() {
-  const wbData = await getWorkbenchData();
+  const [wbData, headerList] = await Promise.all([getWorkbenchData(), headers()]);
+  const isMobileUserAgent = MOBILE_USER_AGENT.test(headerList.get('user-agent') ?? '');
 
-  return (
-    <>
-      {/* Desktop/tablet: ≥640px */}
-      <div className="wb-desktop">
-        <WorkbenchShell data={wbData} />
-      </div>
-      {/* Mobile: <640px */}
-      <div className="wb-mobile">
-        <WorkbenchMobile data={wbData} />
-      </div>
-      <style>{`
-        .wb-desktop { display: block; }
-        .wb-mobile  { display: none;  }
-        @media (max-width: 639px) {
-          .wb-desktop { display: none;  }
-          .wb-mobile  { display: block; }
-        }
-      `}</style>
-    </>
-  );
+  return isMobileUserAgent ? <WorkbenchMobile data={wbData} /> : <WorkbenchShell data={wbData} />;
 }
