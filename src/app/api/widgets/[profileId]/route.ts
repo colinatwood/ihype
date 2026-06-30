@@ -22,7 +22,9 @@ export async function GET(
   }
 
   const config = parseWidgetConfig(profile.widgetConfig);
-  return NextResponse.json({ config });
+  return NextResponse.json({ config }, {
+    headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' }
+  });
 }
 
 export async function PATCH(

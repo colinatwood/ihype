@@ -72,7 +72,9 @@ export async function GET(request: Request) {
       orderBy: [{ startsAt: 'desc' }],
       take: 50,
     });
-    return NextResponse.json(shows);
+    return NextResponse.json(shows, {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' }
+    });
   }
 
   const profileSelect = { select: { id: true, name: true, slug: true, type: true, avatarImage: true, city: true, stateRegion: true } };
@@ -84,7 +86,9 @@ export async function GET(request: Request) {
     },
     take: 200
   });
-  return NextResponse.json(sortShowsForFeed(shows));
+  return NextResponse.json(sortShowsForFeed(shows), {
+    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' }
+  });
 }
 
 export async function POST(request: NextRequest) {
