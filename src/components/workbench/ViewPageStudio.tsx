@@ -230,7 +230,7 @@ function pressHTML(data: PressData): string {
 function releaseHTML(data: ReleaseData): string {
   const streams = Object.entries(data.streams).filter(([, v]) => v);
   const artHtml = data.artSrc
-    ? `<img src="${esc(data.artSrc)}" alt="" style="width:100%;height:100%;object-fit:cover">`
+    ? `<img src="${esc(data.artSrc)}" alt="${esc(data.title)}" style="width:100%;height:100%;object-fit:cover">`
     : `<span style="font-size:32px">💿</span>`;
   return `<section class="pg-sec pg-release-sec"><h2 class="pg-sec-t">Release</h2><div class="pg-rel-inner"><div class="pg-rel-art">${artHtml}</div><div class="pg-rel-info"><span class="pg-chip" style="display:inline-block;margin-bottom:10px">${esc(data.date || 'Out Now')}</span><div class="pg-rel-title">${esc(data.title || 'Untitled Release')}</div><div style="font-size:11px;color:var(--p-ink2);margin:4px 0 12px;font-family:var(--p-label)">${esc(data.type)}</div>${streams.length ? `<div class="pg-streams">${streams.map(([p, u]) => `<a class="pg-stream-btn" href="${esc(u)}" target="_blank">${esc(p)}</a>`).join('')}</div>` : ''}</div></div></section>`;
 }
@@ -278,12 +278,12 @@ function renderPreviewHTML(content: Content, theme: Theme, extras: PreviewExtras
   const ini = c.name.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
   const heroUrl = extras.heroPhotoUrl || '';
   const heroPart = heroUrl
-    ? `<img src="${heroUrl}" style="width:100%;height:100%;object-fit:cover;display:block" alt="">`
+    ? `<img src="${heroUrl}" style="width:100%;height:100%;object-fit:cover;display:block" alt="${esc(c.name)}">`
     : extras.heroBgCss
       ? `<div style="width:100%;height:100%;${extras.heroBgCss}"></div>`
       : `<div style="width:100%;height:100%;background:${theme.palette.surface}"></div>`;
   const avPart = extras.avatarUrl
-    ? `<img src="${extras.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="">`
+    ? `<img src="${extras.avatarUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="${esc(c.name)}">`
     : `<div class="pg-av-fb">${esc(ini)}</div>`;
 
   const activeSecs = extras.sections ? extras.sections.filter(s => s.on) : null;
@@ -1312,7 +1312,7 @@ export default function ViewPageStudio({ data, defaultRole }: { data?: Workbench
     const c = contentRef.current; const p = themeRef.current.palette;
     const ini = (c.name || '').split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase();
     const avHTML = avatarRef.current
-      ? `<img src="${avatarRef.current}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+      ? `<img src="${avatarRef.current}" alt="${esc(c.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
       : `<div style="width:100%;height:100%;background:linear-gradient(135deg,${p.accent},${p.accent2});border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:32px;color:#fff">${ini}</div>`;
     const trackList = c.sections.find(s => s.kind === 'tracks')?.items || [];
     const showList = c.sections.find(s => s.kind === 'shows')?.items || [];
@@ -1664,7 +1664,7 @@ ${links.length ? `<h2>Links</h2><div class="links">${links.map(([pl, u]) => `<a 
                   <div className="ps2-avz">
                     <input type="file" accept="image/*" onChange={(e: React.ChangeEvent<HTMLInputElement>) => { if (e.target.files?.[0]) setAvatar(e.target.files[0]); }} />
                     <div className="ps2-avz-prev">
-                      {avatarRef.current ? <img src={avatarRef.current} alt="" /> : '👤'}
+                      {avatarRef.current ? <img src={avatarRef.current} alt="Profile photo" /> : '👤'}
                     </div>
                     <div className="ps2-avz-text">
                       <h4>Profile photo</h4>

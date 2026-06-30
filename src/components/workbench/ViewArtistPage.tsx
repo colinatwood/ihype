@@ -1716,7 +1716,7 @@ function LibraryManager({ profileId }: { profileId: string }) {
         </div>
         {imagePreview && (
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-            <img src={imagePreview.url} alt="preview" style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,.1)', flexShrink: 0 }} />
+            <img src={imagePreview.url} alt={imagePreview.name} style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(255,255,255,.1)', flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--f-b,sans-serif)', fontSize: 13, color: 'var(--ink,#f4efe9)', marginBottom: 4 }}>{imagePreview.name}</div>
               <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 11, color: 'rgba(244,239,233,.4)', marginBottom: 10 }}>{imagePreview.width} × {imagePreview.height} px</div>
