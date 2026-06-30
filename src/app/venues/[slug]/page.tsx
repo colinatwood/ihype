@@ -16,6 +16,7 @@ import { VenueConnectionRequestActions } from '@/components/VenueConnectionReque
 import { VenueConnectionRequestForm } from '@/components/VenueConnectionRequestForm';
 import { VenueDirectionsButton } from '@/components/VenueDirectionsButton';
 import { ShareButton } from '@/components/ShareButton';
+import { SplitBar } from '@/components/SplitBar';
 import { getSafeBackgroundImageStyle, getSafeImageUrl, getSafeVideoUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
@@ -302,6 +303,20 @@ export default async function VenuePage({
             <div className={published?.builderPalette ? 'builder-badge-block' : 'tag-row'}>
               {profile.genres.map((genre) => <span key={genre} className={published?.builderPalette ? 'builder-badge' : 'tag'}>{genre}</span>)}
             </div>
+            <div className="venue-stats-row" style={{ display: 'flex', gap: 32, margin: '20px 0' }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--role-venue)' }}>{shows.length}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-2)' }}>Shows hosted</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--role-venue)' }}>{totalTicketsSold.toLocaleString()}</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-2)' }}>Tickets sold</div>
+              </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--role-venue)' }}>45%</div>
+                <div style={{ fontFamily: 'var(--f-m)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-2)' }}>Your cut, always</div>
+              </div>
+            </div>
             <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} initiallyHyped={!!userHype} entityLabel="venue" />
             {secOn(published?.builderSections ?? null, 'booking') ? (
               <div className="cta-row" style={{ marginTop: 12 }}>
@@ -396,6 +411,11 @@ export default async function VenuePage({
                 </div>
               ) : null}
               <div className="artist-copy">{profile.aboutContent || published?.bio || profile.bio || 'This venue has not filled out the About section yet.'}</div>
+              <div className="panel" style={{ border: '1px solid rgba(34,229,212,0.2)', background: 'rgba(34,229,212,0.05)', borderRadius: 10, padding: 24, margin: '24px 0' }}>
+                <div style={{ fontFamily: 'var(--f-d)', fontSize: '1rem', fontWeight: 800, marginBottom: 16 }}>How every ticket is split here</div>
+                <SplitBar height={14} compact />
+                <p style={{ fontSize: '0.75rem', color: 'var(--ink-2)', marginTop: 12 }}>$0 fees for ticket buyers. iHYPE takes nothing — locked in the charter.</p>
+              </div>
               {secOn(published?.builderSections ?? null, 'newsletter') && published?.builderSections?.some(s => s.id === 'newsletter' && s.on) ? (
                 <NewsletterSignup profileId={profile.id} />
               ) : null}

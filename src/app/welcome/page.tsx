@@ -16,12 +16,36 @@ const ROLE_DESTINATIONS: Record<string, { href: string; label: string }> = {
   PROMOTER: { href: '/home', label: 'Go to your dashboard' },
 };
 
+const ROLE_STEPS: Record<string, { title: string; desc: string }[]> = {
+  FAN: [
+    { title: 'Discover music', desc: 'Seeds shows you 30-sec previews. Swipe right to hype, left to skip.' },
+    { title: 'Buy tickets', desc: '$0 fees, always. Face value is the only price you pay.' },
+    { title: 'Share & earn', desc: 'Copy your referral link. Earn 10% of every ticket you drive.' },
+  ],
+  ARTIST: [
+    { title: 'Create your first show', desc: 'Studio → New Show. Set a price, publish, split is locked.' },
+    { title: 'Upload tracks to Seeds', desc: 'Your tracks become swipeable discovery cards for fans.' },
+    { title: 'Watch the demand radar', desc: 'See which cities are hyping your music before you book.' },
+  ],
+  VENUE: [
+    { title: 'Complete your page', desc: 'Add your venue details, capacity, and location.' },
+    { title: 'Book from the radar', desc: 'See which artists have demand in your city.' },
+    { title: 'Host a show', desc: 'Partner with an artist — 45% is yours, automatically.' },
+  ],
+  DJ: [
+    { title: 'Build your crate', desc: 'Browse free-use tracks. Only cleared music in your sets.' },
+    { title: 'Schedule a show', desc: 'Radio Studio → New Show. Go live or schedule ahead.' },
+    { title: 'Share your link', desc: 'Earn 10% of every ticket you drive to shows you promote.' },
+  ],
+};
+
 export default async function WelcomePage() {
   const session = await auth();
   if (!session?.user?.id) redirect('/register');
 
   const role = (session.user as { role?: string }).role ?? 'FAN';
   const dest = ROLE_DESTINATIONS[role] ?? ROLE_DESTINATIONS.FAN;
+  const steps = ROLE_STEPS[role] ?? ROLE_STEPS.FAN;
   const name = session.user.name ?? 'there';
 
   return (
@@ -77,6 +101,53 @@ export default async function WelcomePage() {
           <div style={{ flex: 10, background: 'var(--role-promoter, #ffb84a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)", fontWeight: 600, fontSize: '0.6rem', letterSpacing: '0.04em', color: '#0a0805' }}>
             10%
           </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28, textAlign: 'left' }}>
+          {steps.map((step, i) => (
+            <div
+              key={step.title}
+              style={{
+                display: 'flex',
+                gap: 14,
+                alignItems: 'flex-start',
+                padding: '16px 18px',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: 10,
+                background: 'var(--bg2, #100d09)',
+              }}
+            >
+              <div style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'rgba(255,80,41,0.15)',
+                color: 'var(--accent, #ff5029)',
+                fontFamily: "var(--font-mono, 'JetBrains Mono', monospace)",
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}>
+                {i + 1}
+              </div>
+              <div>
+                <h3 style={{
+                  fontFamily: "var(--font-display, 'Syne', sans-serif)",
+                  fontSize: '0.92rem',
+                  fontWeight: 800,
+                  marginBottom: 3,
+                }}>
+                  {step.title}
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--ink-2, #9e9080)', lineHeight: 1.5 }}>
+                  {step.desc}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
         <Link

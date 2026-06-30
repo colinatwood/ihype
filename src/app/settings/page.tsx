@@ -146,6 +146,30 @@ export default function SettingsPage() {
             <Toggle checked={prefs.weeklyDigest} onChange={v => setPrefs(p => ({ ...p, weeklyDigest: v }))} label="Weekly digest" description="A weekly summary of upcoming shows and activity" />
           </section>
 
+          {/* Security */}
+          <section style={{ padding: '20px 22px', border: '1px solid rgba(255,255,255,.07)', borderRadius: 12, background: 'var(--bg-2, #100d09)' }}>
+            <span style={sectionLabel}>Security</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0' }}>
+              <div>
+                <div style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>Password</div>
+                <div style={{ fontSize: 12, color: 'rgba(240,235,229,.4)', marginTop: 2 }}>Reset your password by email</div>
+              </div>
+              <Link href="/forgot" className="ihype-btn-ghost" style={{ fontSize: 13 }}>Change</Link>
+            </div>
+          </section>
+
+          {/* Danger zone */}
+          <section style={{ padding: '20px 22px', border: '1px solid rgba(239,68,68,.2)', borderRadius: 12, background: 'var(--bg-2, #100d09)' }}>
+            <span style={sectionLabel}>Danger zone</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0' }}>
+              <div>
+                <div style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>Delete account</div>
+                <div style={{ fontSize: 12, color: 'rgba(240,235,229,.4)', marginTop: 2 }}>Permanent. Email admin@ihype.org to request deletion.</div>
+              </div>
+              <a href="mailto:admin@ihype.org?subject=Account%20deletion%20request" className="ihype-btn-ghost" style={{ fontSize: 13, color: '#ef4444' }}>Request</a>
+            </div>
+          </section>
+
           {error && <p style={{ color: '#ff5029', fontSize: 13, margin: 0 }}>{error}</p>}
           {saved && <p style={{ color: '#22e5d4', fontSize: 13, margin: 0, fontFamily: 'var(--font-mono)' }}>✓ Saved</p>}
 

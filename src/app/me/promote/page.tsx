@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { getPromoterDashboard } from '@/lib/promoterDashboard';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import { PromoteShareButton } from '@/components/PromoteShareButton';
+import { getBaseUrl } from '@/lib/utils';
 import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,7 @@ export default async function PromotePage() {
   }
 
   const d = await getPromoterDashboard(session.user.id);
+  const baseUrl = getBaseUrl();
 
   return (
     <main className="promote-page">
@@ -46,6 +48,17 @@ export default async function PromotePage() {
         <Stat value={formatCurrencyFromCents(d.grossRevenueCents)} label="Gate driven" color="#ff5029" />
         <Stat value={formatCurrencyFromCents(d.earnedCents)} label="Earned (pending)" color="#ff3e9a" />
       </section>
+
+      {d.refHexId && (
+        <section className="promote-refbox">
+          <span className="promote-eyebrow">YOUR REFERRAL LINK</span>
+          <div className="promote-refurl">{`${baseUrl}/register?ref=${d.refHexId}`}</div>
+          <PromoteShareButton link={`${baseUrl}/register?ref=${d.refHexId}`} title="iHYPE" slug="referral" />
+          <p className="promote-foot" style={{ margin: '12px 0 0', textAlign: 'left' }}>
+            When someone buys a ticket through your link, you earn a proportional share of that show&apos;s 10% promoter pool.
+          </p>
+        </section>
+      )}
 
       <section className="promote-shows">
         <h2 className="promote-h2">Shows you can promote</h2>
@@ -93,6 +106,8 @@ const PROMOTE_CSS = `
 .promote-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.0; letter-spacing: -0.03em; color: #f0ebe5; margin: 10px 0 12px; }
 .promote-sub { font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; color: rgba(240,235,229,0.6); max-width: 56ch; margin: 0; }
 .promote-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 28px 0; }
+.promote-refbox { border: 1px solid rgba(255,62,154,0.3); border-radius: 14px; padding: 22px; background: rgba(255,62,154,0.06); margin: 0 0 28px; }
+.promote-refurl { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f0ebe5; background: #0a0805; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 14px; margin: 10px 0 14px; word-break: break-all; }
 .promote-stat { background: #100d09; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px 16px; }
 .promote-stat-value { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 30px; line-height: 1; letter-spacing: -0.03em; }
 .promote-stat-label { font-family: 'DM Sans', sans-serif; font-size: 13px; color: rgba(240,235,229,0.55); margin-top: 6px; }

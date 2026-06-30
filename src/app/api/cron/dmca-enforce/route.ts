@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
       await sendGenericEmail({
         to: ownerEmail,
         subject: `[iHYPE] DMCA notice enforced — ${show.title}`,
-        text: `Your show "${show.title}" has been canceled due to a DMCA takedown request that was not resolved before the deadline. Contact support@ihype.org to appeal.`,
-        html: `<p>Your show <strong>${show.title}</strong> has been canceled due to an unresolved DMCA notice.</p><p>Contact <a href="mailto:support@ihype.org">support@ihype.org</a> to appeal.</p>`,
+        text: `Your show "${show.title}" has been canceled due to a DMCA takedown request that was not resolved before the deadline. Contact admin@ihype.org to appeal.`,
+        html: `<p>Your show <strong>${show.title}</strong> has been canceled due to an unresolved DMCA notice.</p><p>Contact <a href="mailto:admin@ihype.org">admin@ihype.org</a> to appeal.</p>`,
       }).catch(() => {});
     }
 

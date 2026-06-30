@@ -183,6 +183,15 @@ const shows = await db.event.findMany({
 | 14 | Offline.dc.html | New 503/offline fallback page. Handles ?code=offline\|503\|500. Auto-retries on window.online event. | — | ✅ ebb8fdd |
 | 18 | Index.dc.html | Add "What's a HYPE?" section between Features and Final CTA — eyebrow, H2, lead paragraph, hype-fire chip, 3 steps in 2-col grid | — | ✅ pending commit |
 | 19 | WebRadio.dc.html | Live/Replay pills, 44-bar waveform scrubber (click to seek), hype mechanic at timestamp, DJ identity block (follow/tip), up-next crate queue (live only), schedule rail with notify-me toggle, offline/no-show state | GET /api/shows?radioShows=1 | ✅ pending commit |
+| 20 | Welcome.dc.html | Role-specific onboarding step cards (Fan/Artist/Venue/DJ) | — | ✅ pending commit |
+| 21 | Venue.dc.html | Stats row (shows hosted, tickets sold, cut %) + 45/45/10 split card in About tab | — | ✅ pending commit |
+| 22 | 404.dc.html | Updated copy/visuals — gradient bars, "This page doesn't exist." headline | — | ✅ pending commit |
+| 23 | Offline.dc.html | Auto-retry countdown bar with escalating backoff (8s/15s/30s), HEAD /api/health check | — | ✅ pending commit |
+| 24 | Settings.dc.html | Added Security (password) + Danger Zone (delete request) sections — scoped to what has real backend support; 2FA/sessions/backup-codes/data-export skipped (no backend) | — | ✅ pending commit |
+| 25 | Pages.dc.html | Added My Page/Network/Creator/Referral tabs | GET /api/referral, GET /api/referrals/stats | ✅ pending commit |
+| 26 | PromoterHome.dc.html | Resolved via existing `/me/promote` dashboard (already real per-show promoter stats) — added top-level referral link box | GET existing promoterDashboard data | ✅ pending commit |
+| 27 | FanHome.dc.html | Resolved — already implemented as the Search/Seeds/Radio/Charts/Playlists tabs inside WorkbenchShellV2's `ViewListen` (no new route needed) | — | ✅ N/A — already implemented |
+| 28 | Terms.dc.html / Privacy.dc.html | Expanded legal copy to match design's section structure (Charter, Responsibilities, Payments, Liability, etc. / Overview, Data We Collect, Sharing, Security, etc.); kept factually accurate to what's actually implemented | — | ✅ pending commit |
 
 ---
 
