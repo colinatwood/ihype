@@ -26,7 +26,7 @@
     "cf:build": "node scripts/bump-sw-version.mjs && opennextjs-cloudflare build && node scripts/patch-worker-bundle.mjs",
     "cf:preview": "opennextjs-cloudflare preview",
     "cf:dev": "wrangler dev",
-    "cf:deploy": "wrangler deploy worker.js --experimental-autoconfig=false"
+    "cf:deploy": "wrangler deploy worker.js --autoconfig=false"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.97.1",
