@@ -2,6 +2,41 @@ import { db } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getBaseUrl } from '@/lib/utils';
+import type { Metadata } from 'next';
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    select: { name: true, headline: true, avatarImage: true },
+  });
+
+  if (!profile) return { title: 'Press Kit · iHYPE' };
+
+  const title       = `${profile.name} — Press Kit · iHYPE`;
+  const description = profile.headline ?? `Press kit for ${profile.name} on iHYPE`;
+  const ogImage      = `/api/og?${new URLSearchParams({ title: profile.name, subtitle: 'Press Kit', type: 'artist' }).toString()}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: 'website',
+      siteName: 'iHYPE',
+      title,
+      description,
+      url: `/artists/${slug}/presskit`,
+      images: profile.avatarImage ? [{ url: profile.avatarImage }] : [{ url: ogImage, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  };
+}
 
 export default async function PressKitPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

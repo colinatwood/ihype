@@ -1,8 +1,43 @@
 import { db } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+  const { slug } = await params;
+  const playlist = await db.fanPlaylist.findUnique({
+    where: { id: slug },
+    select: { name: true, user: { select: { username: true } }, items: { select: { id: true } } },
+  });
+
+  if (!playlist) return { title: 'Playlist · iHYPE' };
+
+  const title       = `${playlist.name} · iHYPE`;
+  const description = `Playlist by @${playlist.user.username} · ${playlist.items.length} tracks`;
+  const ogImage      = `/api/og?${new URLSearchParams({ title: playlist.name, subtitle: `by @${playlist.user.username}`, type: 'playlist' }).toString()}`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: 'website',
+      siteName: 'iHYPE',
+      title,
+      description,
+      url: `/playlist/${slug}`,
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+    },
+  };
+}
 
 export default async function PlaylistPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
