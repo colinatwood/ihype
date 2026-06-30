@@ -7,9 +7,6 @@ on:
         description: 'Type: reset test logins'
         required: true
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   reset:
     runs-on: ubuntu-latest
@@ -21,9 +18,9 @@ jobs:
       RESET_LOGIN_PASSWORD: ${{ secrets.TEMP_LOGIN_RESET_PASSWORD }}
       CONFIRM_RESET_TEST_LOGINS: ${{ github.event.inputs.confirm }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: 'npm'
