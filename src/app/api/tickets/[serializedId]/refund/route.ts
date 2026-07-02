@@ -21,12 +21,15 @@ export async function POST(
 
   const order = await db.ticketOrder.findUnique({
     where: { id: serializedId },
-    include: { show: { select: { title: true } } },
+    include: { show: { select: { title: true, startsAt: true } } },
   });
 
   if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   if (order.buyerUserId !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   if (order.status === 'VOID') return NextResponse.json({ error: 'Order already voided' }, { status: 409 });
+  if (order.show?.startsAt && order.show.startsAt.getTime() - Date.now() < 48 * 60 * 60 * 1000) {
+    return NextResponse.json({ error: 'Cancellation closes 48h before the show — transfer your tickets instead' }, { status: 400 });
+  }
 
   const supportRequest = await db.supportRequest.create({
     data: {
