@@ -51,9 +51,9 @@ export default async function PromotePage() {
 
       {d.refHexId && (
         <section className="promote-refbox">
-          <span className="promote-eyebrow">YOUR REFERRAL LINK</span>
-          <div className="promote-refurl">{`${baseUrl}/register?ref=${d.refHexId}`}</div>
-          <PromoteShareButton link={`${baseUrl}/register?ref=${d.refHexId}`} title="iHYPE" slug="referral" />
+          <span className="promote-eyebrow">YOUR HYPE LINK</span>
+          <div className="promote-refurl">{`${baseUrl}/h/${d.refHexId}`}</div>
+          <PromoteShareButton link={`${baseUrl}/h/${d.refHexId}`} title="iHYPE" slug="referral" />
           <p className="promote-foot" style={{ margin: '12px 0 0', textAlign: 'left' }}>
             When someone buys a ticket through your link, you earn a proportional share of that show&apos;s 10% promoter pool.
           </p>

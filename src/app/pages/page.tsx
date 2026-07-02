@@ -35,7 +35,7 @@ const TABS = [
   { id: 'mypage', label: 'My Page' },
   { id: 'network', label: 'Network' },
   { id: 'creator', label: 'Creator' },
-  { id: 'referral', label: 'Referral' },
+  { id: 'referral', label: 'HYPE Link' },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];

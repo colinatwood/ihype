@@ -23,13 +23,15 @@ export async function GET() {
     const djProfile = user.profiles.find(p => p.type === 'DJ');
 
     const hexId = fanProfile?.hexId ?? null;
+    // "HYPE Link" — short /h/{code} alias that resolves to the same
+    // /register?ref= flow (see src/app/h/[code]/page.tsx).
     const referralLink = hexId
-      ? `${baseUrl}/register?ref=${hexId}`
-      : `${baseUrl}/register?ref=${user.username}`;
+      ? `${baseUrl}/h/${hexId}`
+      : `${baseUrl}/h/${user.username}`;
 
-    const artistLink = artistProfile?.hexId ? `${baseUrl}/register?ref=${artistProfile.hexId}` : null;
-    const venueLink = venueProfile?.hexId ? `${baseUrl}/register?ref=${venueProfile.hexId}` : null;
-    const djLink = djProfile?.hexId ? `${baseUrl}/register?ref=${djProfile.hexId}` : null;
+    const artistLink = artistProfile?.hexId ? `${baseUrl}/h/${artistProfile.hexId}` : null;
+    const venueLink = venueProfile?.hexId ? `${baseUrl}/h/${venueProfile.hexId}` : null;
+    const djLink = djProfile?.hexId ? `${baseUrl}/h/${djProfile.hexId}` : null;
 
     // Count referrals — username-based and hexId-based
     const usernameCount = await db.auditLog.count({
