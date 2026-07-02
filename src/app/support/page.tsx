@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { SupportForm } from '@/components/SupportForm';
+import { SupportPageClient } from '@/components/SupportPageClient';
 
 export const metadata: Metadata = {
   title: 'Support | iHYPE.org',
@@ -26,7 +26,7 @@ export default function SupportPage() {
       </section>
 
       <section className="panel support-form-panel">
-        <SupportForm />
+        <SupportPageClient />
       </section>
     </main>
   );

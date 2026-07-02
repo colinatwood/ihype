@@ -17,11 +17,11 @@ async function postSupportRequest(body: unknown) {
   return payload;
 }
 
-export function SupportForm() {
-  const [type, setType] = useState('login');
+export function SupportForm({ initialType = 'login', initialSubject = '' }: { initialType?: string; initialSubject?: string } = {}) {
+  const [type, setType] = useState(initialType);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState(initialSubject);
   const [details, setDetails] = useState('');
   const [company, setCompany] = useState('');
   const [message, setMessage] = useState('');
@@ -56,6 +56,7 @@ export function SupportForm() {
           <option value="copyright">Copyright or takedown</option>
           <option value="ticketing">Ticketing problem</option>
           <option value="safety">Safety or abuse report</option>
+          <option value="privacy">Privacy or data concern</option>
           <option value="general">General support</option>
         </select>
       </label>

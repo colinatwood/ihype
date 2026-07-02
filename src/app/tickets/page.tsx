@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import type { Metadata } from 'next';
+import { TicketActions } from '@/components/TicketActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,9 +28,16 @@ function fmtCents(cents: number) {
   return `$${(cents / 100).toFixed(2)}`;
 }
 
-export default async function MyTicketsPage() {
+export default async function MyTicketsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ view?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) redirect('/login?callbackUrl=/me/tickets');
+
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const view = resolvedSearchParams.view === 'archive' ? 'archive' : 'active';
 
   const orders = await db.ticketOrder.findMany({
     where: { buyerUserId: session.user.id },
@@ -59,10 +67,15 @@ export default async function MyTicketsPage() {
     },
   });
 
+  const now = new Date();
+  const activeOrders = orders.filter((o) => o.status !== 'VOID' && new Date(o.show.startsAt) >= now);
+  const archiveOrders = orders.filter((o) => o.status === 'VOID' || new Date(o.show.startsAt) < now);
+  const visibleOrders = view === 'archive' ? archiveOrders : activeOrders;
+
   return (
     <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 24px 100px' }}>
 
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 24 }}>
         <Link href="/home" style={{ fontSize: 12, color: 'rgba(240,235,229,.4)', textDecoration: 'none', fontFamily: 'var(--font-mono)', letterSpacing: '.06em' }}>
           ← HOME
         </Link>
@@ -71,27 +84,47 @@ export default async function MyTicketsPage() {
         </h1>
       </div>
 
-      {orders.length === 0 ? (
+      <div style={{ display: 'flex', gap: 0, borderRadius: 10, border: '1px solid var(--line, rgba(255,255,255,.08))', overflow: 'hidden', width: 'fit-content', marginBottom: 24 }}>
+        {(['active', 'archive'] as const).map((v) => (
+          <Link
+            key={v}
+            href={v === 'active' ? '/tickets' : '/tickets?view=archive'}
+            style={{
+              padding: '8px 18px', textDecoration: 'none', fontSize: 13, fontFamily: 'var(--font-mono)', letterSpacing: '.04em',
+              background: view === v ? 'rgba(255,80,41,.1)' : 'transparent',
+              color: view === v ? 'var(--accent, #ff5029)' : 'rgba(240,235,229,.5)',
+            }}
+          >
+            {v === 'active' ? `Active (${activeOrders.length})` : `Archive (${archiveOrders.length})`}
+          </Link>
+        ))}
+      </div>
+
+      {visibleOrders.length === 0 ? (
         <div className="ihype-empty-state">
           <div className="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a1 1 0 0 0 0 2v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1a1 1 0 0 1 0-2V9Z"/><line x1="10" y1="7" x2="10" y2="17"/></svg></div>
-          <h3>No tickets yet</h3>
-          <p>Browse upcoming shows and grab your first ticket.</p>
-          <Link href="/shows" className="ihype-btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
-            Browse shows →
-          </Link>
+          <h3>{view === 'archive' ? 'No past tickets' : 'No tickets yet'}</h3>
+          <p>{view === 'archive' ? 'Tickets for shows that have passed will show up here.' : 'Browse upcoming shows and grab your first ticket.'}</p>
+          {view === 'active' && (
+            <Link href="/shows" className="ihype-btn-primary" style={{ display: 'inline-block', textDecoration: 'none' }}>
+              Browse shows →
+            </Link>
+          )}
         </div>
       ) : (
         <div className="ihype-list" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {orders.map(order => {
+          {visibleOrders.map(order => {
             const show = order.show;
             const date = new Date(show.startsAt).toLocaleDateString('en-US', {
               weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
             });
-            const isPast = new Date(show.startsAt) < new Date();
+            const isPast = new Date(show.startsAt) < now;
+            const isArchived = view === 'archive';
             const statusColor = STATUS_COLOR[order.status] ?? 'rgba(240,235,229,.3)';
+            const canCancel = order.show.startsAt.getTime() - now.getTime() >= 48 * 60 * 60 * 1000;
 
             return (
-              <div key={order.id} className="ihype-card" style={{ padding: '20px 22px' }}>
+              <div key={order.id} className="ihype-card" style={{ padding: '20px 22px', opacity: isArchived ? 0.7 : 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                   <div style={{ flex: 1 }}>
                     <Link href={`/shows/${show.slug}`} style={{ textDecoration: 'none' }}>
@@ -136,56 +169,76 @@ export default async function MyTicketsPage() {
                   </div>
                 </div>
 
-                {order.tickets.length > 0 && order.status === 'CAPTURED' && (
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 16 }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(240,235,229,.35)', marginBottom: 4 }}>
-                      Your ticket{order.tickets.length > 1 ? 's' : ''} — show QR at the door
-                    </div>
-                    {(show.venueProfile?.name || show.startsAt) && (
-                      <div style={{ marginBottom: 12 }}>
-                        {show.venueProfile?.name && (
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#22e5d4', marginBottom: 2 }}>
-                            {show.venueProfile.name}{show.venueProfile.city ? ` · ${show.venueProfile.city}` : ''}
+                {isArchived ? (
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 12 }}>
+                    <Link href={`/payout/${show.slug}`} style={{ fontSize: 11, color: 'rgba(240,235,229,.5)', textDecoration: 'none', fontFamily: 'var(--font-mono)', letterSpacing: '.06em' }}>
+                      VIEW RECEIPT →
+                    </Link>
+                  </div>
+                ) : (
+                  <>
+                    {order.tickets.length > 0 && order.status === 'CAPTURED' && (
+                      <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 16, marginBottom: 14 }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(240,235,229,.35)', marginBottom: 4 }}>
+                          Your ticket{order.tickets.length > 1 ? 's' : ''} — show QR at the door
+                        </div>
+                        {(show.venueProfile?.name || show.startsAt) && (
+                          <div style={{ marginBottom: 12 }}>
+                            {show.venueProfile?.name && (
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#22e5d4', marginBottom: 2 }}>
+                                {show.venueProfile.name}{show.venueProfile.city ? ` · ${show.venueProfile.city}` : ''}
+                              </div>
+                            )}
+                            <div style={{ fontSize: 12, color: 'rgba(240,235,229,.5)', fontFamily: 'var(--font-mono)' }}>{date}</div>
                           </div>
                         )}
-                        <div style={{ fontSize: 12, color: 'rgba(240,235,229,.5)', fontFamily: 'var(--font-mono)' }}>{date}</div>
+                        <div className="ihype-ticket-qr-wrap" style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+                          {order.tickets.map(t => (
+                            <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={`/api/tickets/${t.serializedId}/qr`}
+                                alt={`QR code for ticket ${t.serializedId}`}
+                                width={120}
+                                height={120}
+                                className="ihype-ticket-qr"
+                                style={{ borderRadius: 8, background: '#f0ebe5' }}
+                              />
+                              <span style={{
+                                fontSize: 10, fontFamily: 'var(--font-mono)',
+                                color: 'rgba(240,235,229,.4)', letterSpacing: '.04em',
+                              }}>
+                                {t.serializedId}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    <div className="ihype-ticket-qr-wrap" style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-                      {order.tickets.map(t => (
-                        <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={`/api/tickets/${t.serializedId}/qr`}
-                            alt={`QR code for ticket ${t.serializedId}`}
-                            width={120}
-                            height={120}
-                            className="ihype-ticket-qr"
-                            style={{ borderRadius: 8, background: '#f0ebe5' }}
-                          />
-                          <span style={{
-                            fontSize: 10, fontFamily: 'var(--font-mono)',
-                            color: 'rgba(240,235,229,.4)', letterSpacing: '.04em',
+                    {order.tickets.length > 0 && order.status !== 'CAPTURED' && (
+                      <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 12, marginBottom: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {order.tickets.map(t => (
+                          <span key={t.id} style={{
+                            padding: '4px 10px', border: '1px solid rgba(255,255,255,.08)',
+                            borderRadius: 6, fontSize: 11, fontFamily: 'var(--font-mono)',
+                            color: 'rgba(240,235,229,.45)', letterSpacing: '.04em',
                           }}>
                             {t.serializedId}
                           </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {order.tickets.length > 0 && order.status !== 'CAPTURED' && (
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {order.tickets.map(t => (
-                      <span key={t.id} style={{
-                        padding: '4px 10px', border: '1px solid rgba(255,255,255,.08)',
-                        borderRadius: 6, fontSize: 11, fontFamily: 'var(--font-mono)',
-                        color: 'rgba(240,235,229,.45)', letterSpacing: '.04em',
-                      }}>
-                        {t.serializedId}
-                      </span>
-                    ))}
-                  </div>
+                        ))}
+                      </div>
+                    )}
+                    {order.status === 'CAPTURED' && (
+                      <div style={{ borderTop: '1px solid rgba(255,255,255,.06)', paddingTop: 14 }}>
+                        <TicketActions
+                          orderId={order.id}
+                          showTitle={show.title}
+                          startsAt={show.startsAt.toISOString()}
+                          canCancel={canCancel}
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             );

@@ -47,7 +47,7 @@ export function PagesReferralTab() {
   return (
     <div>
       <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', color: 'rgba(240,235,229,.35)', marginBottom: 14 }}>
-        REFERRAL LINK
+        HYPE LINK
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 12 }}>
         <div style={statBox}>
@@ -71,7 +71,7 @@ export function PagesReferralTab() {
       </div>
       <div style={{ background: 'rgba(185,131,255,.06)', border: '1px solid rgba(185,131,255,.18)', borderRadius: 16, padding: 20 }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#b983ff', marginBottom: 12 }}>
-          Your referral link · earn on every ticket you drive
+          Your HYPE Link · your unique fan ID — earn on every ticket you drive
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 14 }}>
           <div style={{ flex: 1, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 9, padding: '11px 14px', fontFamily: 'var(--font-mono)', fontSize: 12, color: 'rgba(240,235,229,.7)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
