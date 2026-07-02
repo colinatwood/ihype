@@ -12,7 +12,7 @@ const ROLE_DESTINATIONS: Record<string, { href: string; label: string }> = {
   FAN: { href: '/home', label: 'Go to your feed' },
   ARTIST: { href: '/home', label: 'Go to your dashboard' },
   VENUE: { href: '/home', label: 'Go to your dashboard' },
-  DJ: { href: '/radio/studio', label: 'Open Radio Studio' },
+  DJ: { href: '/home', label: 'Go to your dashboard' },
   PROMOTER: { href: '/home', label: 'Go to your dashboard' },
 };
 
