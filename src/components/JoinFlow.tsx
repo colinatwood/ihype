@@ -27,9 +27,9 @@ const STEPS = ['Role', 'City', 'Music', 'Done'];
 
 const ROLE_REDIRECT: Record<RoleId, string> = {
   FAN:    '/home',
-  ARTIST: '/studio',
+  ARTIST: '/home',
   VENUE:  '/home',
-  DJ:     '/studio/radio',
+  DJ:     '/radio/studio',
 };
 
 function StepDots({ step }: { step: number }) {
