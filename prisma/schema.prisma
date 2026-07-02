@@ -208,6 +208,7 @@ model Profile {
   verificationReviewedAt        DateTime?
   verificationNotes             String?
   verificationRequested         Boolean                     @default(false)
+  verificationProofUrl          String?
   hypeCount                     Int                         @default(0)
   ownerId                       String
   owner                         User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)

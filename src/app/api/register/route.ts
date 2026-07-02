@@ -132,7 +132,7 @@ function getVenueProfileOverrides(body: z.infer<typeof schema>) {
 }
 
 function getVerificationStatusForType(type: ProfileType) {
-  if (type === 'ARTIST' || type === 'VENUE') {
+  if (type === 'ARTIST' || type === 'VENUE' || type === 'DJ') {
     return 'PENDING' as const;
   }
 
