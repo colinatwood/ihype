@@ -1186,7 +1186,9 @@ export function WorkbenchMobile({ data }: { data: WorkbenchData }) {
   const [hypeTrack, setHypeTrack] = useState<WbTrack | null>(null);
   const [manageMode, setManageMode] = useState(false);
   const [journalMode, setJournalMode] = useState(false);
-  const [studioMode, setStudioMode] = useState(false);
+  // Artist/DJ/Venue land on their Studio dashboard rather than the
+  // fan-facing Listen tab; fans keep Listen. Matches WorkbenchShellV2.
+  const [studioMode, setStudioMode] = useState(() => ['ARTIST', 'DJ', 'VENUE'].includes((data.profileType ?? '').toUpperCase()));
   const [halflightMode, setHalflightMode] = useState(false);
   const [matchmakerMode, setMatchmakerMode] = useState(false);
   const [cockpitMode, setCockpitMode] = useState(false);

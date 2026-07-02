@@ -56,8 +56,11 @@ export function WorkbenchShell({ data, starterPack = [] }: { data: WorkbenchData
   void starterPack;
   const [liveData, setLiveData] = useState<WorkbenchData>(data);
   const [revalidating, setRevalidating] = useState(data.degraded === true);
-  const [view, setView] = useState<View>('listen');
-  const [prevView, setPrevView] = useState<View>('listen');
+  // Artist/DJ/Venue land on their Studio dashboard (shows, demand radar,
+  // earnings) rather than the fan-facing Listen tab; fans keep Listen.
+  const defaultView: View = ['ARTIST', 'DJ', 'VENUE'].includes((data.profileType ?? '').toUpperCase()) ? 'studio' : 'listen';
+  const [view, setView] = useState<View>(defaultView);
+  const [prevView, setPrevView] = useState<View>(defaultView);
   const mainRef = useRef<HTMLDivElement>(null);
   const navigateTo = (v: View) => {
     if (v !== view) setPrevView(view);
