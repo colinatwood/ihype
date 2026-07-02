@@ -7,7 +7,7 @@ import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 
 const supportSchema = z.object({
-  type: z.enum(['login', 'verification', 'copyright', 'ticketing', 'safety', 'general']),
+  type: z.enum(['login', 'verification', 'copyright', 'ticketing', 'safety', 'privacy', 'general']),
   name: z.string().trim().max(120).optional(),
   email: z.string().trim().email().optional().or(z.literal('')),
   subject: z.string().trim().min(3).max(160),
@@ -16,7 +16,7 @@ const supportSchema = z.object({
 });
 
 function getPriority(type: z.infer<typeof supportSchema>['type']) {
-  if (type === 'safety' || type === 'copyright' || type === 'ticketing') {
+  if (type === 'safety' || type === 'copyright' || type === 'ticketing' || type === 'privacy') {
     return 'HIGH';
   }
 
