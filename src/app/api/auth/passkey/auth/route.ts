@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { isSafeLocalRedirect, resolvePostAuthRedirect } from '@/lib/auth-redirects';
 import { buildAuthSessionCookie } from '@/lib/auth-session';
+import { checkAndRecordLogin } from '@/lib/login-security';
 import { getPasskeyAuthenticationOptions, verifyPasskeyAuthentication } from '@/lib/passkey';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
@@ -78,11 +79,13 @@ export async function POST(request: Request) {
 
     if (!userId) return clearChallenge(NextResponse.json({ error: 'Passkey verification failed.' }, { status: 401 }));
 
-    const user = await db.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, image: true, role: true, emailVerified: true } });
+    const user = await db.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, image: true, role: true, emailVerified: true, lastLoginCountry: true } });
     if (!user) return clearChallenge(NextResponse.json({ error: 'User not found.' }, { status: 404 }));
 
     const sessionCookie = await buildAuthSessionCookie(user);
     if (!sessionCookie) return clearChallenge(NextResponse.json({ error: 'Server misconfiguration.' }, { status: 500 }));
+
+    void checkAndRecordLogin(user, request);
 
     const resp = NextResponse.json({ redirect: resolvePostAuthRedirect(callbackRedirect) });
     resp.cookies.set(sessionCookie);

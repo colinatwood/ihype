@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { PasskeyManager } from '@/components/AuthScreens';
 
 interface Prefs {
   newShows: boolean;
@@ -218,8 +219,8 @@ export default function SettingsPage() {
           {/* Security */}
           <div className="settings-section">
             <div className="settings-section-title">Security</div>
-            <div className="settings-group">
-              <Row action={<Link className="settings-btn settings-btn-ghost" href="/forgot">Change</Link>} detail="Reset your password by email" label="Password" />
+            <div className="settings-group settings-passkeys">
+              <PasskeyManager />
             </div>
           </div>
 
@@ -285,6 +286,7 @@ export default function SettingsPage() {
         .settings-input-inline:focus { outline: none; border-color: var(--accent); }
         .settings-danger-zone { border: 1px solid rgba(239,68,68,.2); }
         .settings-danger-zone .settings-row { border-color: rgba(239,68,68,.1); }
+        .settings-passkeys { padding: 18px 20px; }
         .settings-payout-card { align-items: center; gap: 14px; }
         .settings-payout-ic { width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,.06); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .settings-split-mini { display: flex; gap: 10px; margin-top: 10px; }

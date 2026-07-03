@@ -1,5 +1,4 @@
-import { Suspense } from 'react';
-import { AuthUnified } from '@/components/AuthUnified';
+import { LoginScreen } from '@/components/AuthScreens';
 
 export const metadata = {
   title: 'Sign in | iHYPE.org',
@@ -9,27 +8,14 @@ export const metadata = {
 export default async function LoginPage({
   searchParams
 }: {
-  searchParams?: Promise<{ identifier?: string; registered?: string; auth?: string }>;
+  searchParams?: Promise<{ identifier?: string; registered?: string }>;
 }) {
   const resolvedSearchParams = searchParams ? await searchParams : {};
 
-  if (resolvedSearchParams.auth === 'full') {
-    const { LoginScreen } = await import('@/components/AuthScreens');
-    return (
-      <LoginScreen
-        initialIdentifier={resolvedSearchParams.identifier}
-        justRegistered={resolvedSearchParams.registered === '1'}
-      />
-    );
-  }
-
   return (
-    <Suspense fallback={null}>
-      <AuthUnified
-        initialEmail={resolvedSearchParams.identifier}
-        initialMode="signin"
-        justRegistered={resolvedSearchParams.registered === '1'}
-      />
-    </Suspense>
+    <LoginScreen
+      initialIdentifier={resolvedSearchParams.identifier}
+      justRegistered={resolvedSearchParams.registered === '1'}
+    />
   );
 }

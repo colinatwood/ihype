@@ -150,7 +150,6 @@ export function LoginScreen({
 
       <div className="auth-route-links">
         <Link className="text-link" href="/register">Join free</Link>
-        <Link className="text-link" href="/forgot">Reset password</Link>
       </div>
     </AuthSignalShell>
   );

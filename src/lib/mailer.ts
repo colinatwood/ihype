@@ -165,75 +165,6 @@ async function sendConfiguredEmail(input: ConfiguredEmailInput) {
   return 'resend' as const;
 }
 
-type LoginOtpEmailInput = {
-  email: string;
-  name?: string | null;
-  otp: string;
-};
-
-export async function sendLoginOtpEmail({ email, name, otp }: LoginOtpEmailInput) {
-  const resolvedName = name?.trim() || 'there';
-
-  if (!isEmailDeliveryConfigured()) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.info(`[login-otp] ${email} -> ${otp}`);
-      await recordEmailDelivery({ type: 'login-otp', recipient: email, status: 'LOGGED', provider: 'console' });
-      return { mode: 'log' as const };
-    }
-    throw new Error('Email delivery is not configured for OTP delivery.');
-  }
-
-  const enqueued = await enqueueEmail('login-otp', { email, name, otp });
-  if (enqueued) {
-    return { mode: 'queued' as const };
-  }
-
-  try {
-    const provider = await sendConfiguredEmail({
-      to: email,
-      subject: 'Your iHYPE sign-in code',
-      text: [
-      `Hi ${resolvedName},`,
-      '',
-      `Your iHYPE sign-in code is ${otp}.`,
-      'It expires in 10 minutes. Do not share it.',
-      '',
-      'If you did not request this, you can safely ignore this email.'
-    ].join('\n'),
-      html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#10182a;">
-        <p style="margin:0 0 16px;">Hi ${resolvedName},</p>
-        <p style="margin:0 0 16px;">Your iHYPE sign-in code is:</p>
-        <div style="margin:0 0 20px;padding:18px 20px;border-radius:16px;background:#10182a;color:#ffffff;font-size:32px;font-weight:700;letter-spacing:0.35em;text-align:center;">
-          ${otp}
-        </div>
-        <p style="margin:0 0 12px;">Expires in 10 minutes. Do not share this code.</p>
-        <p style="margin:0;color:#5b657a;">If you did not try to sign in to iHYPE, you can safely ignore this email.</p>
-      </div>
-    `
-    });
-    await recordEmailDelivery({ type: 'login-otp', recipient: email, status: 'SENT', provider });
-  } catch (error) {
-    await recordEmailDelivery({
-      type: 'login-otp',
-      recipient: email,
-      status: 'FAILED',
-      provider: 'resend',
-      error: error instanceof Error ? error.message : String(error)
-    });
-    throw error;
-  }
-
-  return { mode: 'resend' as const };
-}
-
-type PasswordResetEmailInput = {
-  email: string;
-  code: string;
-  name?: string | null;
-  expiresInMinutes: number;
-};
-
 type IssuedTicketEmailInput = {
   email: string;
   name?: string | null;
@@ -251,63 +182,6 @@ type IssuedTicketEmailInput = {
     qrCodeDataUrl?: string | null;
   }>;
 };
-
-export async function sendPasswordResetPasscodeEmail({
-  email,
-  code,
-  name,
-  expiresInMinutes
-}: PasswordResetEmailInput) {
-  if (!isEmailDeliveryConfigured()) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.info(`[password-reset] ${email} -> ${code} (valid ${expiresInMinutes} minutes)`);
-      await recordEmailDelivery({ type: 'password-reset', recipient: email, status: 'LOGGED', provider: 'console' });
-      return { mode: 'log' as const };
-    }
-
-    throw new Error('Password reset email delivery is not configured.');
-  }
-
-  const resolvedName = name?.trim() || 'there';
-
-  try {
-    const provider = await sendConfiguredEmail({
-      to: email,
-      subject: 'iHYPE password reset passcode',
-      text: [
-      `Hi ${resolvedName},`,
-      '',
-      `Your iHYPE password reset passcode is ${code}.`,
-      `It expires in ${expiresInMinutes} minutes.`,
-      '',
-      'If you did not request this change, you can ignore this email.'
-    ].join('\n'),
-      html: `
-      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#10182a;">
-        <p style="margin:0 0 16px;">Hi ${resolvedName},</p>
-        <p style="margin:0 0 16px;">Your iHYPE password reset passcode is:</p>
-        <div style="margin:0 0 20px;padding:18px 20px;border-radius:16px;background:#10182a;color:#ffffff;font-size:28px;font-weight:700;letter-spacing:0.28em;text-align:center;">
-          ${code}
-        </div>
-        <p style="margin:0 0 12px;">It expires in ${expiresInMinutes} minutes.</p>
-        <p style="margin:0;color:#5b657a;">If you did not request this change, you can safely ignore this email.</p>
-      </div>
-    `
-    });
-    await recordEmailDelivery({ type: 'password-reset', recipient: email, status: 'SENT', provider });
-  } catch (error) {
-    await recordEmailDelivery({
-      type: 'password-reset',
-      recipient: email,
-      status: 'FAILED',
-      provider: 'resend',
-      error: error instanceof Error ? error.message : String(error)
-    });
-    throw error;
-  }
-
-  return { mode: 'resend' as const };
-}
 
 export async function sendIssuedTicketEmail({
   email,

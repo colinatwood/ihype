@@ -1,6 +1,5 @@
 import { randomBytes } from 'crypto';
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { auth } from '@/lib/auth';
 import { recordAuditEvent } from '@/lib/audit';
 import { db } from '@/lib/db';
@@ -25,9 +24,6 @@ export async function POST(request: Request) {
   const stamp = startedAt.toString(36);
   const email = `qa+${stamp}@ihype.test`;
   const username = `qa${stamp}`.slice(0, 30);
-  const passwordHash = await bcrypt.hash(`Qa-${stamp}-123`, 8);
-  const otp = '123456';
-  const otpHash = await bcrypt.hash(otp, 8);
   const token = randomBytes(24).toString('hex');
 
   try {
@@ -37,7 +33,6 @@ export async function POST(request: Request) {
           email,
           username,
           name: 'QA Signup Test',
-          passwordHash,
           isThirteenOrOlder: true,
           role: 'FAN'
         },
@@ -57,27 +52,26 @@ export async function POST(request: Request) {
         }
       });
 
-      await tx.mfaChallenge.create({
+      await tx.magicLinkToken.create({
         data: {
           userId: user.id,
           token,
-          secretCiphertext: otpHash,
           expiresAt: new Date(Date.now() + 10 * 60 * 1000)
         }
       });
 
-      const challenge = await tx.mfaChallenge.findUnique({
+      const linkToken = await tx.magicLinkToken.findUnique({
         where: { token },
-        select: { secretCiphertext: true }
+        select: { userId: true, used: true, expiresAt: true }
       });
-      const emailCodeVerified = Boolean(
-        challenge?.secretCiphertext && (await bcrypt.compare(otp, challenge.secretCiphertext))
+      const magicLinkVerified = Boolean(
+        linkToken && linkToken.userId === user.id && !linkToken.used && linkToken.expiresAt > new Date()
       );
 
       await tx.user.delete({ where: { id: user.id } });
 
       return {
-        emailCodeVerified,
+        magicLinkVerified,
         profileCreated: true,
         userCreated: true
       };
@@ -85,14 +79,14 @@ export async function POST(request: Request) {
 
     await recordAuditEvent({
       actorUserId: session?.user?.id,
-      action: result.emailCodeVerified ? 'admin_signup_test_passed' : 'admin_signup_test_failed',
+      action: result.magicLinkVerified ? 'admin_signup_test_passed' : 'admin_signup_test_failed',
       entityType: 'signup_test',
       ipAddress: readClientAddress(request),
       metadata: { durationMs: Date.now() - startedAt, ...result }
     });
 
     return NextResponse.json({
-      ok: result.emailCodeVerified,
+      ok: result.magicLinkVerified,
       durationMs: Date.now() - startedAt,
       ...result
     });

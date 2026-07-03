@@ -5,7 +5,7 @@ import { postJson } from '@/lib/api-client';
 
 export type RoleOption = 'FAN' | 'ARTIST' | 'DJ' | 'VENUE';
 export type AuthMethod = 'email' | 'passkey';
-export type RegisterStep = 'form' | 'passkey' | 'email-code';
+export type RegisterStep = 'form' | 'passkey' | 'magic-link-sent';
 export type SignupVariant = 'email_first' | 'passkey_first';
 export type SignupFunnelMetadata = {
   role?: RoleOption;
