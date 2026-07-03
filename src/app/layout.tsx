@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { ReactNode } from 'react';
+import Script from 'next/script';
 import { Syne, DM_Sans, JetBrains_Mono, Instrument_Serif, Forum } from 'next/font/google';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
@@ -96,6 +97,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <ServiceWorkerRegister />
 
         </AppProviders>
+        {process.env.NEXT_PUBLIC_CF_BEACON_TOKEN ? (
+          <Script
+            data-cf-beacon={`{"token": "${process.env.NEXT_PUBLIC_CF_BEACON_TOKEN}"}`}
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            strategy="afterInteractive"
+          />
+        ) : null}
       </body>
     </html>
   );
