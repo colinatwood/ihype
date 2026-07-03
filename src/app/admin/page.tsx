@@ -305,10 +305,10 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
       <section className="panel admin-console-hero">
         <div>
           <div className="badge">Admin beta console</div>
-          <h1>Trust, launch, and support signals</h1>
+          <h1>Admin Console</h1>
           <p className="subtitle">
-            One place to watch account growth, verification, email/MFA delivery, reports, tickets, media, and audit
-            events during beta.
+            Platform management · iH/OPS — account growth, verification, email/MFA delivery, reports, tickets,
+            media, and audit events during beta.
           </p>
         </div>
         <div className="cta-row">
