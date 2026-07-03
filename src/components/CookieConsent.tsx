@@ -31,6 +31,7 @@ export function CookieConsent() {
     <div
       role="dialog"
       aria-label="Cookie preferences"
+      className="ihype-cookie-consent"
       style={{
         position: 'fixed',
         left: '50%',
@@ -70,6 +71,17 @@ export function CookieConsent() {
           Accept all
         </button>
       </div>
+      <style>{`
+        /* Clear the fixed mobile bottom nav (60px + safe-area) instead of
+           sitting underneath it — the nav has a higher z-index and a solid
+           background, so without this the accept/decline buttons are
+           unreachable on phones. */
+        @media (max-width: 768px) {
+          .ihype-cookie-consent {
+            bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
