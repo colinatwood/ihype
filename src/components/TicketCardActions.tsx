@@ -11,9 +11,13 @@ interface TicketRef {
 export function TicketCardActions({
   orderId,
   tickets,
+  showsAt,
+  showCancel,
 }: {
   orderId: string;
   tickets: TicketRef[];
+  showsAt?: string;
+  showCancel?: boolean;
 }) {
   const [showQr, setShowQr] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
@@ -21,7 +25,39 @@ export function TicketCardActions({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelDone, setCancelDone] = useState<string | null>(null);
   const router = useRouter();
+
+  const hoursUntilShow = showsAt ? (new Date(showsAt).getTime() - Date.now()) / 3_600_000 : null;
+  const tooLateToCancel = hoursUntilShow !== null && hoursUntilShow < 48;
+
+  async function requestCancellation() {
+    setCancelSubmitting(true);
+    setCancelError(null);
+    try {
+      const res = await fetch(`/api/tickets/${orderId}/refund`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setCancelError(data.error ?? 'Could not submit cancellation request.');
+        return;
+      }
+      setCancelDone('Cancellation requested. Our support team will process your refund shortly.');
+      router.refresh();
+    } catch {
+      setCancelError('Network error');
+    } finally {
+      setCancelSubmitting(false);
+    }
+  }
+
+  function closeCancel() {
+    setCancelOpen(false);
+    setCancelError(null);
+    setCancelDone(null);
+  }
 
   async function transfer() {
     setSubmitting(true);
@@ -73,6 +109,9 @@ export function TicketCardActions({
         </button>
         <button className="btn" onClick={() => setTransferOpen(true)} type="button">Transfer</button>
         <button className="btn" onClick={share} type="button">Share</button>
+        {showCancel && (
+          <button className="btn" onClick={() => setCancelOpen(true)} style={{ color: '#ff5029' }} type="button">Cancel ticket</button>
+        )}
       </div>
 
       {showQr && (
@@ -124,6 +163,48 @@ export function TicketCardActions({
                   <button className="btn" onClick={closeTransfer} style={{ flex: 1 }} type="button">Cancel</button>
                   <button className="btn btn-primary" disabled={submitting || !email} onClick={transfer} style={{ flex: 1 }} type="button">
                     {submitting ? 'Transferring…' : 'Transfer'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {cancelOpen && (
+        <div
+          aria-modal="true"
+          onClick={(e) => e.target === e.currentTarget && closeCancel()}
+          role="dialog"
+          style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        >
+          <div style={{ background: 'var(--bg2, #100d09)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, padding: 28, maxWidth: 420, width: '100%' }}>
+            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Cancel ticket</h3>
+            {cancelDone ? (
+              <>
+                <p style={{ fontSize: 13, color: '#22e5d4', marginBottom: 16 }}>{cancelDone}</p>
+                <button className="btn btn-primary" onClick={closeCancel} style={{ width: '100%' }} type="button">Close</button>
+              </>
+            ) : tooLateToCancel ? (
+              <>
+                <p style={{ fontSize: 13, color: '#ffb84a', marginBottom: 16 }}>
+                  Cancellations close 48 hours before the show, so this ticket can no longer be cancelled — you can still transfer it to someone else.
+                </p>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn" onClick={closeCancel} style={{ flex: 1 }} type="button">Close</button>
+                  <button className="btn btn-primary" onClick={() => { setCancelOpen(false); setTransferOpen(true); }} style={{ flex: 1 }} type="button">Transfer instead</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 13, color: 'rgba(240,235,229,.6)', marginBottom: 16 }}>
+                  We&apos;ll route this to our support team to process your refund. Cancellation is allowed up to 48 hours before the event.
+                </p>
+                {cancelError && <p style={{ color: '#ff5029', fontSize: 12, marginBottom: 12 }}>{cancelError}</p>}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn" onClick={closeCancel} style={{ flex: 1 }} type="button">Keep ticket</button>
+                  <button className="btn btn-primary" disabled={cancelSubmitting} onClick={requestCancellation} style={{ flex: 1 }} type="button">
+                    {cancelSubmitting ? 'Submitting…' : 'Cancel & refund'}
                   </button>
                 </div>
               </>
