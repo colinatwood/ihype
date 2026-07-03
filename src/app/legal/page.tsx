@@ -80,11 +80,23 @@ function LegalTabs() {
       </div>
 
       <div className={`legal-doc${tab === 'charter' ? ' active' : ''}`}>
+        <h2>The problem we built this to fix</h2>
+        <p>Pay-to-play has quietly broken live music. Venues need to book artists people will actually pay to see — but have no way to know that themselves, so they lean on promoters chasing their own cut, and ticket platforms tack fees on top of that. What&apos;s left barely covers the room, or loses money outright. Fans never hear about new artists. Artists can&apos;t afford to keep making music. Venues stop booking altogether. iHYPE exists to break that cycle.</p>
         <h2>The founding constraint</h2>
         <p>iHYPE was incorporated with a single non-negotiable structural commitment: the platform takes nothing from ticket sales. This commitment is embedded in the company&apos;s founding documents and cannot be amended by management, board resolution, investor pressure, or acquisition.</p>
         <h2>The split</h2>
         <p className="legal-split-display">45% artist · 45% venue · 10% promoters · 0% iHYPE.</p>
-        <p>This is not a pricing strategy. It is a constraint. We built the business model around it, not the other way around.</p>
+        <p>This is not a pricing strategy. It is a constraint. We built the business model around it, not the other way around. Anyone can get paid to promote a show through their own referral link — real word-of-mouth income, not payola.</p>
+        <h2>Open by design</h2>
+        <p>Our code and our moderation heuristics are published for public audit. Nothing about how the split is calculated, how uploads are screened, or how the platform ranks anything is a secret — anyone can check that it does exactly what we say.</p>
+        <h2>Your data is never for sale</h2>
+        <p>iHYPE does not aggregate user data for resale and never sells it to advertisers or anyone else — not now, not after an acquisition. This is a charter commitment, not a policy that can be quietly reversed. See our <Link href="/legal?tab=privacy">Privacy Policy</Link> for exactly what we collect and why.</p>
+        <h2>You get a vote</h2>
+        <p>Users of iHYPE are treated as stakeholders, not just customers. Meaningful changes to the platform — the split, moderation rules, new fees of any kind — are put to the people who use it, with feedback built into every release.</p>
+        <h2>Funded like radio, not like Big Tech</h2>
+        <p>iHYPE is funded entirely by advertising, the same way terrestrial radio has always worked — and those ads are restricted to music-related sources only, forever. No user-data resale funds this platform, and no other category of advertiser will ever be let in to change that.</p>
+        <h2>Why so few people run this</h2>
+        <p>iHYPE is run by two people, leaning on AI automation to keep operating costs at the absolute minimum. That&apos;s deliberate: a lean operation is a sustainable operation, and there&apos;s no boardroom of investors around to talk us into breaking any of the above.</p>
         <h2>Why lock it in?</h2>
         <p>Because every platform that started with good intentions eventually faced a board meeting where fees made sense. We wanted to make that conversation impossible. The charter is the answer to &quot;what if the company needs revenue?&quot; — the answer is: find another way. Not this.</p>
         <h2>What &quot;locked in&quot; means</h2>

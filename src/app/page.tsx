@@ -87,6 +87,54 @@ export default async function RootPage() {
         </div>
       </section>
 
+      {/* ── Why iHYPE exists ─────────────────────────────────── */}
+      <section style={{ padding: '2rem 0 3rem' }}>
+        <div className="container">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', alignItems: 'start' }} className="why-grid-inner">
+            <div>
+              <p style={{ fontFamily: 'var(--f-m)', fontSize: '0.75rem', letterSpacing: '.2em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                WHY IHYPE EXISTS
+              </p>
+              <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 'clamp(1.8rem, 4vw, 3rem)', letterSpacing: '-0.03em', color: 'var(--ink)', margin: '0 0 1.25rem', lineHeight: 1.02 }}>
+                Pay-to-play was never the deal.
+              </h2>
+              <p style={{ fontFamily: 'var(--f-b)', fontSize: '1.05rem', lineHeight: 1.65, color: 'rgba(240,235,229,.72)', maxWidth: '42ch', margin: '0 0 1rem' }}>
+                Venues book artists people will actually show up for — but have no way to know that on their own, so they lean on promoters chasing their own cut, and ticket platforms tack on fees on top of that. What&apos;s left barely covers the room.
+              </p>
+              <p style={{ fontFamily: 'var(--f-b)', fontSize: '1.05rem', lineHeight: 1.65, color: 'rgba(240,235,229,.72)', maxWidth: '42ch', margin: 0 }}>
+                Fans never hear the new stuff. Artists can&apos;t afford to keep making it. Venues stop booking. iHYPE exists to break that cycle — by taking nothing out of it.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { color: '#ff5029', name: 'Free. Forever.', desc: 'No ticket fees, no cost to host an artist, DJ, or venue page — for anyone, always.' },
+                { color: '#b983ff', name: 'Anyone can get paid to promote', desc: 'Real word-of-mouth income for whoever brings the fan — not payola, not an algorithm.' },
+                { color: '#22e5d4', name: 'Open for public audit', desc: 'Our code and our heuristics are published. Anyone can check that the split does what we say.' },
+                { color: '#ffb84a', name: 'Your data is never for sale', desc: 'No aggregating it, no selling it, no exceptions — not now, not after an acquisition.' },
+                { color: '#ff3e9a', name: 'You get a vote', desc: 'Users are stakeholders. Real changes to the platform go to the people who use it.' },
+                { color: '#22e5d4', name: 'Funded like radio, not like Big Tech', desc: 'Advertising only, restricted to music sources, forever — never your data.' },
+              ].map(item => (
+                <div key={item.name} style={{ display: 'flex', gap: 14, padding: 16, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', borderRadius: 10 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color, marginTop: 6, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontFamily: 'var(--f-d)', fontWeight: 700, fontSize: 15, color: 'var(--ink)', marginBottom: 4 }}>{item.name}</div>
+                    <p style={{ fontFamily: 'var(--f-b)', fontSize: 13, lineHeight: 1.5, color: 'rgba(240,235,229,.5)', margin: 0 }}>{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p style={{ fontFamily: 'var(--f-m)', fontSize: '0.8rem', letterSpacing: '.04em', color: 'var(--ink-3)', marginTop: '2rem', maxWidth: '60ch' }}>
+            Two people run the whole thing, leaning on AI automation to keep costs near zero — on purpose. There&apos;s no boardroom to talk us out of the charter. Made for the scene, powered by the people who love it. <a href="/legal?tab=charter" style={{ color: 'var(--ink-2)' }}>Read the full charter →</a>
+          </p>
+        </div>
+        <style>{`
+          @media (max-width:768px) { .why-grid-inner { grid-template-columns:1fr!important; gap:2rem!important; } }
+        `}</style>
+      </section>
+
       {/* ── Three Tabs Showcase ──────────────────────────────── */}
       <section style={{ padding: '3rem 0 2rem' }}>
         <div className="container">
