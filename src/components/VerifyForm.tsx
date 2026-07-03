@@ -88,6 +88,10 @@ export function VerifyForm({ profileId, type, initialName, initialCity, initialG
   if (step === 1) {
     return (
       <div>
+        <div style={{ ...labelStyle, marginBottom: 10 }}>Step 1 of 2</div>
+        <div style={{ height: 3, background: 'var(--bg-3, #0a0805)', borderRadius: 999, marginBottom: 28, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: '50%', background: '#ff5029', borderRadius: 999, transition: 'width .4s ease' }} />
+        </div>
         <label style={labelStyle}>{type === 'VENUE' ? 'Venue name' : 'Stage / Artist name'}</label>
         <input style={fieldStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Midnight Echo" />
 
@@ -113,6 +117,10 @@ export function VerifyForm({ profileId, type, initialName, initialCity, initialG
 
   return (
     <div>
+      <div style={{ ...labelStyle, marginBottom: 10 }}>Step 2 of 2</div>
+      <div style={{ height: 3, background: 'var(--bg-3, #0a0805)', borderRadius: 999, marginBottom: 28, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: '100%', background: '#ff5029', borderRadius: 999, transition: 'width .4s ease' }} />
+      </div>
       <p style={{ fontSize: '0.88rem', color: 'var(--ink-2, #9e9080)', lineHeight: 1.65, marginBottom: 16 }}>
         We need to confirm you are who you say you are. This is reviewed by the iHYPE team within 48 hours.
       </p>

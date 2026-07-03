@@ -10,14 +10,14 @@ import type { Metadata } from 'next';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Share & Earn · iHYPE',
-  description: 'Promote shows you love and earn a share of the 10% promoter pool on every ticket you drive.',
+  title: 'Promoter Dashboard · iHYPE',
+  description: 'Your HYPE Link, click stats, and 10% pool earnings.',
   robots: { index: false, follow: false },
 };
 
 function fmtDate(iso: string | null): string {
   if (!iso) return 'TBD';
-  return new Date(iso).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 export default async function PromotePage() {
@@ -30,96 +30,99 @@ export default async function PromotePage() {
   const baseUrl = getBaseUrl();
 
   return (
-    <main className="promote-page">
-      <style>{PROMOTE_CSS}</style>
+    <div className="promo-page">
+      <div className="promo-page-header">
+        <h1>Promoter Dashboard</h1>
+        <p>Your HYPE Link, click stats, and 10% pool earnings</p>
+      </div>
 
-      <header className="promote-head">
-        <span className="promote-eyebrow">SHARE &amp; EARN · 10% PROMOTER POOL</span>
-        <h1 className="promote-title">Promote the scene.<br />Earn your cut.</h1>
-        <p className="promote-sub">
-          Share any show with your link. When someone buys a ticket through it, you earn a
-          proportional slice of that show&apos;s 10% promoter pool — no cost to the fan, no cut from the artist or venue.
-        </p>
-      </header>
+      <div className="promo-stats-grid">
+        <div className="promo-stat-card">
+          <div className="promo-stat-label">Total Earned</div>
+          <div className="promo-stat-value">{formatCurrencyFromCents(d.earnedCents)}</div>
+          <div className="promo-stat-sub">Pending settlement · {d.ordersDriven} order{d.ordersDriven === 1 ? '' : 's'}</div>
+        </div>
+        <div className="promo-stat-card">
+          <div className="promo-stat-label">Gate Driven</div>
+          <div className="promo-stat-value">{formatCurrencyFromCents(d.grossRevenueCents)}</div>
+          <div className="promo-stat-sub">Total ticket revenue via your link</div>
+        </div>
+        <div className="promo-stat-card">
+          <div className="promo-stat-label">HYPE Link Clicks</div>
+          <div className="promo-stat-value">{d.clicks.toLocaleString()}</div>
+          <div className="promo-stat-sub">Lifetime clicks</div>
+        </div>
+        <div className="promo-stat-card">
+          <div className="promo-stat-label">Tickets Driven</div>
+          <div className="promo-stat-value">{d.ticketsSold.toLocaleString()}</div>
+          <div className="promo-stat-sub">Across all events</div>
+        </div>
+      </div>
 
-      <section className="promote-stats">
-        <Stat value={String(d.clicks)} label="Link clicks" color="#b983ff" />
-        <Stat value={String(d.ticketsSold)} label="Tickets driven" color="#22e5d4" />
-        <Stat value={formatCurrencyFromCents(d.grossRevenueCents)} label="Gate driven" color="#ff5029" />
-        <Stat value={formatCurrencyFromCents(d.earnedCents)} label="Earned (pending)" color="#ff3e9a" />
-      </section>
-
-      {d.refHexId && (
-        <section className="promote-refbox">
-          <span className="promote-eyebrow">YOUR HYPE LINK</span>
-          <div className="promote-refurl">{`${baseUrl}/h/${d.refHexId}`}</div>
-          <PromoteShareButton link={`${baseUrl}/h/${d.refHexId}`} title="iHYPE" slug="referral" />
-          <p className="promote-foot" style={{ margin: '12px 0 0', textAlign: 'left' }}>
-            When someone buys a ticket through your link, you earn a proportional share of that show&apos;s 10% promoter pool.
+      {d.refHexId ? (
+        <div className="promo-referral-box">
+          <div className="promo-referral-label">Your HYPE Link</div>
+          <div className="promo-referral-url">{`${baseUrl}/h/${d.refHexId}`}</div>
+          <PromoteShareButton link={`${baseUrl}/h/${d.refHexId}`} slug="referral" title="iHYPE" />
+          <p className="promo-split-explainer">
+            Your HYPE Link is your unique fan ID. When someone buys a ticket through it, you earn a proportional share of the 10% promoter pool — based on how much of the total gate your HYPE Link drove.
           </p>
-        </section>
+        </div>
+      ) : (
+        <div className="promo-referral-box">
+          <div className="promo-referral-label">Your HYPE Link</div>
+          <p className="promo-split-explainer" style={{ margin: 0 }}>Create a page to get your HYPE Link.</p>
+        </div>
       )}
 
-      <section className="promote-shows">
-        <h2 className="promote-h2">Shows you can promote</h2>
+      <div className="promo-section">
+        <div className="promo-section-title">Shows you can promote</div>
         {d.shows.length === 0 ? (
-          <div className="promote-empty">
+          <div className="promo-empty">
             <p>No upcoming ticketed shows to promote right now.</p>
-            <Link href="/discover" className="promote-cta">Browse the scene</Link>
+            <Link className="promo-cta" href="/discover">Browse the scene</Link>
           </div>
         ) : (
-          <ul className="promote-list">
-            {d.shows.map((s) => (
-              <li key={s.slug} className="promote-row">
-                <div className="promote-row-main">
-                  <Link href={`/shows/${s.slug}`} className="promote-row-title">{s.title}</Link>
-                  <div className="promote-row-meta">
-                    {fmtDate(s.startsAt)}{s.venueName ? ` · ${s.venueName}` : ''} · {s.promoterPayoutPercent}% pool
-                  </div>
-                </div>
-                <PromoteShareButton link={s.promoLink} title={s.title} slug={s.slug} />
-              </li>
-            ))}
-          </ul>
+          d.shows.map((s) => (
+            <div className="promo-event-row" key={s.slug}>
+              <div>
+                <h3><Link href={`/shows/${s.slug}`} style={{ color: 'inherit', textDecoration: 'none' }}>{s.title}</Link></h3>
+                <p>{fmtDate(s.startsAt)}{s.venueName ? ` · ${s.venueName}` : ''} · {s.promoterPayoutPercent}% pool</p>
+              </div>
+              <PromoteShareButton link={s.promoLink} slug={s.slug} title={s.title} />
+            </div>
+          ))
         )}
-      </section>
+      </div>
 
-      <p className="promote-foot">
+      <p className="promo-foot">
         Earnings settle to your payout account once it&apos;s connected. Splits are locked at 45% artist / 45% venue / 10% promoters.
       </p>
-    </main>
-  );
-}
 
-function Stat({ value, label, color }: { value: string; label: string; color: string }) {
-  return (
-    <div className="promote-stat">
-      <div className="promote-stat-value" style={{ color }}>{value}</div>
-      <div className="promote-stat-label">{label}</div>
+      <style>{`
+        .promo-page { max-width: 1000px; margin: 0 auto; padding: 32px 24px 100px; }
+        .promo-page-header { margin-bottom: 40px; }
+        .promo-page-header h1 { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; color: var(--ink); }
+        .promo-page-header p { font-size: 14px; color: rgba(240,235,229,.7); }
+        .promo-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 20px; margin-bottom: 40px; }
+        .promo-stat-card { border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 24px; background: var(--bg2); }
+        .promo-stat-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: rgba(240,235,229,.55); margin-bottom: 8px; }
+        .promo-stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: var(--role-promoter, #ff3e9a); }
+        .promo-stat-sub { font-size: 12px; color: rgba(240,235,229,.5); margin-top: 4px; }
+        .promo-referral-box { border: 1px solid rgba(255,62,154,.3); border-radius: 12px; padding: 28px; background: rgba(255,62,154,.06); margin-bottom: 32px; }
+        .promo-referral-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--role-promoter, #ff3e9a); margin-bottom: 12px; }
+        .promo-referral-url { font-family: var(--font-mono); font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid rgba(255,255,255,.1); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; word-break: break-all; }
+        .promo-split-explainer { font-size: 13px; color: rgba(240,235,229,.6); margin-top: 12px; line-height: 1.6; }
+        .promo-section { margin-bottom: 32px; }
+        .promo-section-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; margin-bottom: 20px; color: var(--ink); }
+        .promo-event-row { border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 20px; background: var(--bg2); display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+        .promo-event-row h3 { font-family: var(--font-display); font-size: 15px; font-weight: 800; margin-bottom: 4px; color: var(--ink); }
+        .promo-event-row p { font-size: 12px; color: rgba(240,235,229,.6); }
+        .promo-cta { flex-shrink: 0; font-family: var(--font-body); font-weight: 600; font-size: 14px; padding: 10px 18px; border-radius: 9999px; border: none; cursor: pointer; background: linear-gradient(135deg, #ff5029, #ff3e6e); color: #fff; text-decoration: none; display: inline-block; }
+        .promo-empty { text-align: center; padding: 24px; background: var(--bg2); border: 1px solid rgba(255,255,255,.06); border-radius: 10px; }
+        .promo-empty p { color: rgba(240,235,229,.6); margin: 0 0 14px; }
+        .promo-foot { font-size: 12px; color: rgba(240,235,229,.4); text-align: center; margin-top: 28px; line-height: 1.6; }
+      `}</style>
     </div>
   );
 }
-
-const PROMOTE_CSS = `
-.promote-page { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
-.promote-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: #b983ff; }
-.promote-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 34px; line-height: 1.0; letter-spacing: -0.03em; color: #f0ebe5; margin: 10px 0 12px; }
-.promote-sub { font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.6; color: rgba(240,235,229,0.6); max-width: 56ch; margin: 0; }
-.promote-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 28px 0; }
-.promote-refbox { border: 1px solid rgba(255,62,154,0.3); border-radius: 14px; padding: 22px; background: rgba(255,62,154,0.06); margin: 0 0 28px; }
-.promote-refurl { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f0ebe5; background: #0a0805; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 14px; margin: 10px 0 14px; word-break: break-all; }
-.promote-stat { background: #100d09; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 18px 16px; }
-.promote-stat-value { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 30px; line-height: 1; letter-spacing: -0.03em; }
-.promote-stat-label { font-family: 'DM Sans', sans-serif; font-size: 13px; color: rgba(240,235,229,0.55); margin-top: 6px; }
-.promote-h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.02em; color: #f0ebe5; margin: 0 0 14px; }
-.promote-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.promote-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; background: #100d09; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
-.promote-row-main { min-width: 0; }
-.promote-row-title { font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 15px; color: #f0ebe5; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.promote-row-title:hover { color: #ff5029; }
-.promote-row-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(240,235,229,0.45); margin-top: 4px; }
-.promote-share-btn, .promote-cta { flex-shrink: 0; font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 10px 18px; border-radius: 9999px; border: none; cursor: pointer; background: linear-gradient(135deg, #ff5029, #ff3e6e); color: #fff; text-decoration: none; display: inline-block; }
-.promote-empty { text-align: center; padding: 24px; background: #100d09; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
-.promote-empty p { font-family: 'DM Sans', sans-serif; color: rgba(240,235,229,0.6); margin: 0 0 14px; }
-.promote-foot { font-family: 'DM Sans', sans-serif; font-size: 12px; color: rgba(240,235,229,0.4); text-align: center; margin-top: 28px; line-height: 1.6; }
-`;
