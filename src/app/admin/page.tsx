@@ -329,6 +329,40 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
 
       <section className="panel admin-console-panel">
         <div className="admin-console-panel-head">
+          <h2>Needs attention</h2>
+        </div>
+        <div className="admin-health-grid">
+          <Link className="admin-health-card" href="/admin/review?tab=verifications">
+            <span>Pending verifications</span>
+            <strong className={pendingVerificationCount > 0 ? 'admin-health-status warn' : 'admin-health-status ok'}>{pendingVerificationCount}</strong>
+          </Link>
+          <Link className="admin-health-card" href="/admin/review?tab=reports">
+            <span>Open reports</span>
+            <strong className={openReportCount > 0 ? 'admin-health-status warn' : 'admin-health-status ok'}>{openReportCount}</strong>
+          </Link>
+          <Link className="admin-health-card" href="/admin#support-requests">
+            <span>Open support requests</span>
+            <strong className={openSupportCount > 0 ? 'admin-health-status warn' : 'admin-health-status ok'}>{openSupportCount}</strong>
+          </Link>
+          <Link className="admin-health-card" href="/admin/ads">
+            <span>Ads awaiting approval</span>
+            <strong className={pendingAds.length > 0 ? 'admin-health-status warn' : 'admin-health-status ok'}>{pendingAds.length}</strong>
+          </Link>
+        </div>
+        {healthOperations && healthOperations.reservedTicketOrders > 0 && (
+          <div className="admin-alert-row">
+            <span>{healthOperations.reservedTicketOrders} ticket order{healthOperations.reservedTicketOrders === 1 ? '' : 's'} reserved (unpaid) — check Finance if this stays high</span>
+          </div>
+        )}
+        {pendingVerificationCount === 0 && openReportCount === 0 && openSupportCount === 0 && pendingAds.length === 0 && (
+          <div className="admin-alert-row admin-alert-row-ok">
+            <span>Nothing needs review right now.</span>
+          </div>
+        )}
+      </section>
+
+      <section className="panel admin-console-panel">
+        <div className="admin-console-panel-head">
           <div>
             <h2>User search</h2>
             <p className="meta">Search by email or username.</p>
@@ -595,7 +629,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
           </div>
         </article>
 
-        <article className="panel admin-console-panel">
+        <article className="panel admin-console-panel" id="support-requests">
           <h2>Support requests</h2>
           <div className="admin-list">
             {recentSupport.length ? (
