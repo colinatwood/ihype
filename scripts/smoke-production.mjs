@@ -9,6 +9,8 @@ const checks = [
   { path: '/', expect: [200] },
   { path: '/login', expect: [200] },
   { path: '/shows', expect: [200] },
+  { path: '/listen', expect: [200] },
+  { path: '/pages', expect: [200] },
   { path: '/status', expect: [200] },
   { path: '/api/health', expect: [200], json: true }
 ];
