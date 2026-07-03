@@ -14,7 +14,7 @@ async function getEmailQueue(): Promise<CFQueue | null> {
 }
 
 export async function enqueueEmail(
-  type: 'login-otp' | 'password-reset' | 'ticket',
+  type: 'ticket',
   payload: Record<string, unknown>
 ): Promise<boolean> {
   const queue = await getEmailQueue();

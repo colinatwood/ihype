@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { buildAuthSessionCookie } from '@/lib/auth-session';
+import { checkAndRecordLogin } from '@/lib/login-security';
 import { resolvePostAuthRedirect } from '@/lib/auth-redirects';
 
 export const dynamic = 'force-dynamic';
@@ -29,11 +30,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/login?error=expired_magic_link', request.url));
   }
 
-  let user: { id: string; name: string | null; email: string | null; image: string | null; role: string; emailVerified: Date | null; userSecurityVersion: number } | null = null;
+  let user: { id: string; name: string | null; email: string | null; image: string | null; role: string; emailVerified: Date | null; userSecurityVersion: number; lastLoginCountry: string | null } | null = null;
   try {
     user = await db.user.findUnique({
       where: { id: record.userId },
-      select: { id: true, name: true, email: true, image: true, role: true, emailVerified: true, userSecurityVersion: true },
+      select: { id: true, name: true, email: true, image: true, role: true, emailVerified: true, userSecurityVersion: true, lastLoginCountry: true },
     });
   } catch (err) {
     console.error('[magic-link] user lookup failed:', err);
@@ -42,6 +43,15 @@ export async function GET(request: NextRequest) {
 
   if (!user) {
     return NextResponse.redirect(new URL('/login?error=expired_magic_link', request.url));
+  }
+
+  // Clicking the link proves ownership of the inbox, same as the old OTP flow.
+  if (!user.emailVerified) {
+    const emailVerified = new Date();
+    user = { ...user, emailVerified };
+    db.user.update({ where: { id: user.id }, data: { emailVerified } }).catch((e: unknown) => {
+      console.error('[magic-link] emailVerified update failed', e);
+    });
   }
 
   try {
@@ -61,6 +71,8 @@ export async function GET(request: NextRequest) {
     console.error('[magic-link] buildAuthSessionCookie returned null for user', user.id, 'securityVersion:', user.userSecurityVersion);
     return NextResponse.redirect(new URL('/login?error=ml_cookie_error', request.url));
   }
+
+  void checkAndRecordLogin(user, request);
 
   const rawCallback = searchParams.get('callbackUrl');
   const defaultDest = user.role === 'ADMIN' ? '/admin' : undefined;

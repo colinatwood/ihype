@@ -1,6 +1,5 @@
-import { Suspense } from 'react';
+import { RegisterScreen } from '@/components/AuthScreens';
 import { isInviteCodeRequiredRuntime } from '@/lib/runtime-flags';
-import { AuthUnified } from '@/components/AuthUnified';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -12,7 +11,7 @@ export const metadata: Metadata = {
 export default async function RegisterPage({
   searchParams
 }: {
-  searchParams?: Promise<{ role?: string | string[]; auth?: string }>;
+  searchParams?: Promise<{ role?: string | string[] }>;
 }) {
   const params = searchParams ? await searchParams : undefined;
 
@@ -24,19 +23,5 @@ export default async function RegisterPage({
     normalized === 'DJ' || normalized === 'PROMOTER' ? 'DJ' :
     normalized === 'VENUE' || normalized === 'VENUES' ? 'VENUE' : 'FAN';
 
-  // ?auth=full falls back to the legacy RegisterScreen with passkey support
-  if (params?.auth === 'full') {
-    const { RegisterScreen } = await import('@/components/AuthScreens');
-    return <RegisterScreen initialRole={initialRole} inviteOnly={await isInviteCodeRequiredRuntime()} />;
-  }
-
-  return (
-    <Suspense fallback={null}>
-      <AuthUnified
-        initialMode="signup"
-        initialRole={initialRole}
-        inviteOnly={await isInviteCodeRequiredRuntime()}
-      />
-    </Suspense>
-  );
+  return <RegisterScreen initialRole={initialRole} inviteOnly={await isInviteCodeRequiredRuntime()} />;
 }

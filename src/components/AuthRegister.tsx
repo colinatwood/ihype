@@ -30,8 +30,6 @@ export function RegisterScreen({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [acceptedAge, setAcceptedAge] = useState(false);
   const [acceptedPolicy, setAcceptedPolicy] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
@@ -42,9 +40,6 @@ export function RegisterScreen({
   const [turnstileToken, setTurnstileToken] = useState('');
   const [step, setStep] = useState<RegisterStep>('form');
   const [createdAccountId, setCreatedAccountId] = useState('');
-  const [challengeId, setChallengeId] = useState('');
-  const [deliveryEmail, setDeliveryEmail] = useState('');
-  const [otp, setOtp] = useState('');
   const needsPublicName = role !== 'FAN';
   const needsUploadPolicy = role === 'ARTIST' || role === 'DJ';
   const selectedRole = useMemo(() => roleOptions.find((option) => option.value === role), [role]);
@@ -57,18 +52,8 @@ export function RegisterScreen({
   }, [initialRole]);
 
   function validateAccountForm() {
-    const normalizedEmail = email.trim();
-
-    if (!normalizedEmail) {
-      throw new Error('Email is required so you can sign in if the passkey prompt is blocked.');
-    }
-
-    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      throw new Error('Password must be at least 8 characters and include a letter and a number.');
-    }
-
-    if (password !== confirmPassword) {
-      throw new Error('Passwords do not match.');
+    if (!email.trim()) {
+      throw new Error('Email is required so you can sign in with a magic link.');
     }
   }
 
@@ -83,7 +68,6 @@ export function RegisterScreen({
       name,
       email: email.trim(),
       phone: phone.trim() || undefined,
-      password,
       role,
       isThirteenOrOlder: acceptedAge,
       acceptedArtistUploadPolicy: needsUploadPolicy ? acceptedPolicy : true,
@@ -98,23 +82,16 @@ export function RegisterScreen({
     return result;
   }
 
-  async function requestEmailCodeForAccount() {
-    const payload = await postJson<{ challengeId: string; email?: string | null }>('/api/auth/otp/request', {
-      identifier: email.trim(),
-      password
-    });
-
-    setChallengeId(payload.challengeId);
-    setDeliveryEmail(payload.email || email.trim());
-    setOtp('');
-    setStep('email-code');
-    setStatus('Account created. Check your inbox for the 6-digit sign-in code.');
-    trackSignupFunnel('email_code_requested', { role, method: 'email', step: 'register', variant: signupVariant });
+  async function sendSignupMagicLink() {
+    await postJson('/api/auth/magic-link', { email: email.trim() });
+    setStep('magic-link-sent');
+    setStatus('Account created. Check your inbox for a one-tap sign-in link.');
+    trackSignupFunnel('login_magic_link_sent', { role, method: 'email', step: 'register', variant: signupVariant });
   }
 
   async function registerPasskeyForAccount(userId: string) {
     setStep('passkey');
-    setStatus('Follow your device prompt. If it closes, retry here or finish with an email code.');
+    setStatus('Follow your device prompt. If it closes, retry here or finish with a magic link.');
     trackSignupFunnel('passkey_prompt', { role, method: 'passkey', step: 'register', variant: signupVariant, ...getPasskeyDiagnostics() });
 
     const optRes = await fetch(`/api/auth/passkey/register-first?userId=${userId}`);
@@ -142,11 +119,11 @@ export function RegisterScreen({
       if (authMethod === 'passkey') {
         await registerPasskeyForAccount(result.id);
       } else {
-        await requestEmailCodeForAccount();
+        await sendSignupMagicLink();
       }
     } catch (err) {
       const reason = getErrorMessage(err, 'Could not create account.');
-      trackSignupFunnel(authMethod === 'passkey' ? 'passkey_failed' : 'email_code_failed', {
+      trackSignupFunnel(authMethod === 'passkey' ? 'passkey_failed' : 'login_magic_link_failed', {
         role,
         method: authMethod,
         step: accountCreated ? step : 'form',
@@ -156,7 +133,7 @@ export function RegisterScreen({
       });
       if (accountCreated) {
         setStep('passkey');
-        setStatus('Your account was created. Retry the passkey prompt or use email code to finish signing in.');
+        setStatus('Your account was created. Retry the passkey prompt or use a magic link to finish signing in.');
       } else {
         setStep('form');
       }
@@ -180,37 +157,20 @@ export function RegisterScreen({
       const reason = getErrorMessage(err, 'Passkey setup was interrupted.');
       trackSignupFunnel('passkey_retry_failed', { role, method: 'passkey', step: 'register', reason, variant: signupVariant, ...getPasskeyDiagnostics(err) });
       setError(reason);
-      setStatus('Retry the passkey prompt, or use email code to finish signing in.');
+      setStatus('Retry the passkey prompt, or use a magic link to finish signing in.');
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function useEmailCodeInstead() {
+  async function useMagicLinkInstead() {
     setError('');
     setIsSubmitting(true);
     try {
-      await requestEmailCodeForAccount();
+      await sendSignupMagicLink();
     } catch (err) {
-      const reason = getErrorMessage(err, 'Could not send an email sign-in code.');
-      trackSignupFunnel('email_code_failed', { role, method: 'email', step: 'register', reason, variant: signupVariant });
-      setError(reason);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function verifySignupEmailCode(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-    try {
-      const payload = await postJson<{ redirect?: string }>('/api/auth/otp/signin', { challengeId, otp });
-      trackSignupFunnel('email_code_success', { role, method: 'email', step: 'register', variant: signupVariant });
-      window.location.href = resolvePostAuthRedirect(payload.redirect);
-    } catch (err) {
-      const reason = getErrorMessage(err, 'Could not verify that code.');
-      trackSignupFunnel('email_code_verify_failed', { role, method: 'email', step: 'register', reason, variant: signupVariant });
+      const reason = getErrorMessage(err, 'Could not send a magic link.');
+      trackSignupFunnel('login_magic_link_failed', { role, method: 'email', step: 'register', reason, variant: signupVariant });
       setError(reason);
     } finally {
       setIsSubmitting(false);
@@ -222,10 +182,10 @@ export function RegisterScreen({
       badge="Join iHYPE"
       cardSubtitle={
         step === 'passkey'
-          ? 'Retry the device prompt or finish with an email code. Your account is not stranded.'
-          : step === 'email-code'
-          ? 'Enter the inbox code to finish signup. You can add a passkey later from Settings.'
-          : 'Pick your lane, then choose email-code signup or passkey setup with an email fallback.'
+          ? 'Retry the device prompt or finish with a magic link. Your account is not stranded.'
+          : step === 'magic-link-sent'
+          ? 'Check your inbox for a one-tap link to finish signing in. You can add a passkey later from Settings.'
+          : 'Pick your lane, then choose magic-link signup or passkey setup with a magic-link fallback.'
       }
       cardTitle="Create your account"
       description="One free account opens the ecosystem. Pick your role first, then build the page, shows, tickets, and discovery tools that match your lane."
@@ -247,37 +207,14 @@ export function RegisterScreen({
             <button className="button" disabled={isSubmitting} onClick={retryPasskey} type="button">
               {isSubmitting ? 'Opening prompt...' : 'Try passkey again'}
             </button>
-            <button className="button secondary" disabled={isSubmitting} onClick={useEmailCodeInstead} type="button">
-              Use email code instead
+            <button className="button secondary" disabled={isSubmitting} onClick={useMagicLinkInstead} type="button">
+              Use a magic link instead
             </button>
           </div>
-          <p className="meta">You can add a passkey later from Settings after email sign-in.</p>
+          <p className="meta">You can add a passkey later from Settings after signing in.</p>
         </div>
-      ) : step === 'email-code' ? (
-        <form className="form" onSubmit={verifySignupEmailCode}>
-          <p className="status-note">Enter the 6-digit code sent to {deliveryEmail}.</p>
-          <label className="field">
-            <span>6-digit code</span>
-            <input
-              autoComplete="one-time-code"
-              inputMode="numeric"
-              maxLength={6}
-              onChange={(event) => setOtp(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              pattern="[0-9]{6}"
-              required
-              type="text"
-              value={otp}
-            />
-          </label>
-          <div className="auth-code-actions">
-            <button className="button" disabled={isSubmitting} type="submit">
-              {isSubmitting ? 'Verifying...' : 'Finish signup'}
-            </button>
-            <button className="text-link" disabled={isSubmitting} onClick={useEmailCodeInstead} type="button">
-              Send a new code
-            </button>
-          </div>
-        </form>
+      ) : step === 'magic-link-sent' ? (
+        <p className="status-note">Check your inbox for a sign-in link (expires in 15 min). You can close this tab.</p>
       ) : (
         <form className="form" onSubmit={createAccount}>
           <fieldset className="role-choice-grid">
@@ -310,8 +247,8 @@ export function RegisterScreen({
               }}
               type="button"
             >
-              <strong>Email code</strong>
-              <span>Most reliable: verify by inbox code, add passkey later.</span>
+              <strong>Magic link</strong>
+              <span>Most reliable: one-tap link sent to your inbox.</span>
             </button>
             <button
               aria-selected={authMethod === 'passkey'}
@@ -323,7 +260,7 @@ export function RegisterScreen({
               type="button"
             >
               <strong>Passkey</strong>
-              <span>Use your device prompt now, with email code as backup.</span>
+              <span>Use your device prompt now, with a magic link as backup.</span>
             </button>
           </div>
 
@@ -338,7 +275,7 @@ export function RegisterScreen({
             />
           </label>
 
-          <div className="field-group-label">Sign-in backup <span className="field-group-optional">- required so passkey setup can fall back safely</span></div>
+          <div className="field-group-label">Sign-in email <span className="field-group-optional">- required so passkey setup can fall back safely</span></div>
 
           <label className="field">
             <span>Email</span>
@@ -352,31 +289,6 @@ export function RegisterScreen({
               value={email}
             />
           </label>
-
-          <div className="auth-field-grid">
-            <label className="field">
-              <span>Password</span>
-              <input
-                autoComplete="new-password"
-                minLength={8}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                type="password"
-                value={password}
-              />
-            </label>
-            <label className="field">
-              <span>Confirm password</span>
-              <input
-                autoComplete="new-password"
-                minLength={8}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                required
-                type="password"
-                value={confirmPassword}
-              />
-            </label>
-          </div>
 
           <label className="field">
             <span>Phone</span>
@@ -431,7 +343,7 @@ export function RegisterScreen({
               ? 'Setting up...'
               : authMethod === 'passkey'
               ? 'Create account with passkey'
-              : 'Create account with email code'}
+              : 'Create account with magic link'}
           </button>
           <div className="auth-trust-row" aria-label="Signup trust links">
             <Link href="/privacy">Privacy</Link>

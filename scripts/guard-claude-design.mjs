@@ -86,11 +86,6 @@ assertIncludes(
   'Manual OTP/passkey/magic-link session issuance should stay centralized.'
 );
 assertIncludes(
-  'src/app/api/auth/otp/signin/route.ts',
-  'buildAuthSessionCookie',
-  'OTP sign-in should use the shared Auth.js session cookie helper.'
-);
-assertIncludes(
   'src/app/api/auth/passkey/auth/route.ts',
   'buildAuthSessionCookie',
   'Passkey sign-in should use the shared Auth.js session cookie helper.'

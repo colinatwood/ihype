@@ -7,7 +7,7 @@ type TestResult = {
   durationMs: number;
   userCreated: boolean;
   profileCreated: boolean;
-  emailCodeVerified: boolean;
+  magicLinkVerified: boolean;
 };
 
 export function AdminSignupTestPanel() {
