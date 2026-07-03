@@ -86,10 +86,10 @@ export function SupportPrivacyPanel({ onReportProblem }: { onReportProblem: () =
         <div
           role="dialog"
           aria-modal="true"
+          className="ihype-sheet-overlay"
           onClick={(e) => e.target === e.currentTarget && close()}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20 }}
         >
-          <div style={{ width: '100%', maxWidth: 460, background: 'var(--bg-2, #100d09)', border: '1px solid rgba(255,255,255,.1)', borderRadius: 16, padding: 26, maxHeight: '88vh', overflowY: 'auto' }}>
+          <div className="ihype-sheet-panel" style={{ maxWidth: 460 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800 }}>Privacy &amp; your data</h2>
               <button onClick={close} aria-label="Close" style={{ background: 'none', border: 'none', color: 'rgba(240,235,229,.5)', fontSize: 22, cursor: 'pointer', lineHeight: 1, padding: 0 }}>×</button>

@@ -137,11 +137,11 @@ export function TicketCardActions({
       {transferOpen && (
         <div
           aria-modal="true"
+          className="ihype-sheet-overlay"
           onClick={(e) => e.target === e.currentTarget && closeTransfer()}
           role="dialog"
-          style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
         >
-          <div style={{ background: 'var(--bg2, #100d09)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, padding: 28, maxWidth: 420, width: '100%' }}>
+          <div className="ihype-sheet-panel">
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Transfer tickets</h3>
             {done ? (
               <>
@@ -174,11 +174,11 @@ export function TicketCardActions({
       {cancelOpen && (
         <div
           aria-modal="true"
+          className="ihype-sheet-overlay"
           onClick={(e) => e.target === e.currentTarget && closeCancel()}
           role="dialog"
-          style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
         >
-          <div style={{ background: 'var(--bg2, #100d09)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 12, padding: 28, maxWidth: 420, width: '100%' }}>
+          <div className="ihype-sheet-panel">
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, marginBottom: 16 }}>Cancel ticket</h3>
             {cancelDone ? (
               <>

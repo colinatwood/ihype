@@ -107,7 +107,7 @@ export default async function ArtistPage({
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 32 }}>{profile.name.charAt(0)}</span>
             )}
           </div>
-          <div style={{ flex: 1 }}>
+          <div className="artist-hero-info" style={{ flex: 1 }}>
             <div className="artist-name">{profile.name}</div>
             <div className="artist-sub">{profile.genres.join(' · ')}{profile.city ? ` · ${profile.city}` : ''}</div>
             <div className="artist-hero-badges">
@@ -195,11 +195,11 @@ export default async function ArtistPage({
                 const date = show.startsAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
                 return (
                   <Link className="artist-show-card" href={`/shows/${show.slug}`} key={show.id}>
-                    <div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div className="artist-show-title">{show.title}</div>
                       <div className="artist-show-meta">{date}{show.venueProfile?.city ? ` · ${show.venueProfile.city}` : ''}</div>
                     </div>
-                    <div>
+                    <div style={{ flexShrink: 0 }}>
                       <div className="artist-show-price">{show.isTicketed && show.ticketPriceCents ? `$${(show.ticketPriceCents / 100).toFixed(0)}` : 'Free'}</div>
                       <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.12em', color: 'rgba(240,235,229,.5)', textAlign: 'right' }}>$0 fees</div>
                     </div>
@@ -215,9 +215,8 @@ export default async function ArtistPage({
         .artist-page { max-width: 960px; margin: 0 auto; padding: 32px 0 100px; }
         .artist-hero { padding: 40px 32px 32px; border-bottom: 1px solid rgba(255,255,255,.06); }
         .artist-hero-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
-        @media (max-width: 600px) { .artist-hero { padding: 24px 20px; } .artist-content { padding: 0 20px; } }
         .artist-avatar { width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg,#ff5029,#b983ff); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }
-        .artist-name { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; color: var(--ink); }
+        .artist-name { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .artist-sub { font-size: 14px; color: rgba(240,235,229,.65); margin-bottom: 14px; }
         .artist-hero-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
         .artist-badge { display: inline-block; padding: 5px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; }
@@ -236,11 +235,27 @@ export default async function ArtistPage({
         .artist-split-bar { display: flex; border-radius: 8px; overflow: hidden; margin-top: 14px; }
         .artist-split-seg { flex: 1; padding: 12px; text-align: center; }
         .artist-empty { text-align: center; padding: 48px 24px; color: rgba(240,235,229,.5); }
-        .artist-show-card { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border: 1px solid rgba(255,255,255,.06); border-radius: 8px; background: var(--bg2); margin-bottom: 10px; text-decoration: none; color: inherit; }
+        .artist-show-card { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px; border: 1px solid rgba(255,255,255,.06); border-radius: 8px; background: var(--bg2); margin-bottom: 10px; text-decoration: none; color: inherit; }
         .artist-show-card:hover { background: var(--bg3); }
-        .artist-show-title { font-family: var(--font-display); font-size: 15px; font-weight: 800; margin-bottom: 3px; color: var(--ink); }
-        .artist-show-meta { font-size: 12px; color: rgba(240,235,229,.55); }
-        .artist-show-price { font-size: 18px; font-weight: 700; color: var(--accent); text-align: right; }
+        .artist-show-title { font-family: var(--font-display); font-size: 15px; font-weight: 800; margin-bottom: 3px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .artist-show-meta { font-size: 12px; color: rgba(240,235,229,.55); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .artist-show-price { font-size: 18px; font-weight: 700; color: var(--accent); text-align: right; flex-shrink: 0; }
+
+        @media (max-width: 600px) {
+          .artist-hero { padding: 28px 20px 24px; }
+          .artist-hero-row { flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+          .artist-avatar { width: 88px; height: 88px; }
+          .artist-hero-info { width: 100%; }
+          .artist-hero-badges, .artist-hero-actions { justify-content: center; }
+          .artist-hero-actions { width: 100%; }
+          .artist-hero-actions > * { flex: 1; min-width: 0; }
+          .artist-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; text-align: center; width: 100%; }
+          .artist-content { padding: 0 20px; }
+          .artist-tabs { gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+          .artist-tabs::-webkit-scrollbar { display: none; }
+          .artist-tab { flex: 1; min-width: max-content; text-align: center; padding: 12px 16px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+          .artist-show-card { min-height: 44px; }
+        }
       `}</style>
     </div>
   );

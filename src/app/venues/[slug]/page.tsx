@@ -196,9 +196,8 @@ export default async function VenuePage({
       <style>{`
         .venue-page { max-width: 960px; margin: 0 auto; padding: 32px 0 100px; }
         .venue-hero { background: linear-gradient(160deg, rgba(34,229,212,.18), rgba(185,131,255,.1)); border-bottom: 1px solid rgba(34,229,212,.2); padding: 48px 32px 40px; display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
-        @media (max-width: 600px) { .venue-hero { padding: 28px 20px; gap: 20px; } .venue-content { padding: 0 20px; } }
         .venue-avatar { width: 100px; height: 100px; border-radius: 16px; background: linear-gradient(135deg,#22e5d4,#b983ff); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .venue-info h1 { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; color: var(--ink); }
+        .venue-info h1 { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .venue-info p { font-size: 14px; color: rgba(240,235,229,.7); margin-bottom: 16px; }
         .venue-badges { display: flex; gap: 10px; flex-wrap: wrap; }
         .venue-badge { display: inline-block; padding: 5px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; }
@@ -220,11 +219,12 @@ export default async function VenuePage({
         .venue-tabs { display: flex; gap: 24px; border-bottom: 1px solid rgba(255,255,255,.06); margin: 32px 0 28px; }
         .venue-tab { padding: 10px 0; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 600; font-size: 14px; color: rgba(240,235,229,.6); text-decoration: none; }
         .venue-tab.active { color: var(--ink); border-color: var(--role-venue, #22e5d4); }
-        .venue-show-card { border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 20px; background: var(--bg2); display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; text-decoration: none; color: inherit; }
+        .venue-show-card { border: 1px solid rgba(255,255,255,.06); border-radius: 10px; padding: 20px; background: var(--bg2); display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; text-decoration: none; color: inherit; }
         .venue-show-card:hover { background: var(--bg3); border-color: rgba(255,255,255,.14); }
-        .venue-show-info h3 { font-family: var(--font-display); font-size: 16px; font-weight: 800; margin-bottom: 4px; color: var(--ink); }
-        .venue-show-meta { font-size: 13px; color: rgba(240,235,229,.6); }
-        .venue-show-price { font-size: 18px; font-weight: 700; color: var(--accent); text-align: right; }
+        .venue-show-info { min-width: 0; }
+        .venue-show-info h3 { font-family: var(--font-display); font-size: 16px; font-weight: 800; margin-bottom: 4px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .venue-show-meta { font-size: 13px; color: rgba(240,235,229,.6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .venue-show-price { font-size: 18px; font-weight: 700; color: var(--accent); text-align: right; flex-shrink: 0; }
         .venue-show-price small { font-size: 11px; color: rgba(240,235,229,.5); font-weight: 400; display: block; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .12em; }
         .venue-split-card { border: 1px solid rgba(34,229,212,.2); border-radius: 10px; padding: 24px; background: rgba(34,229,212,.05); margin-bottom: 24px; }
         .venue-split-title { font-family: var(--font-display); font-size: 16px; font-weight: 800; margin-bottom: 16px; color: var(--ink); }
@@ -235,6 +235,22 @@ export default async function VenuePage({
         .venue-promoter-seg { background: rgba(255,62,154,.15); }
         .venue-seg-pct { font-size: 18px; font-weight: 700; }
         .venue-seg-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; margin-top: 4px; }
+
+        @media (max-width: 600px) {
+          .venue-hero { padding: 28px 20px 24px; flex-direction: column; align-items: center; text-align: center; gap: 16px; }
+          .venue-avatar { width: 88px; height: 88px; }
+          .venue-info { width: 100%; }
+          .venue-info h1 { max-width: 100%; }
+          .venue-badges { justify-content: center; }
+          .venue-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+          .venue-capacity-row { max-width: 100%; }
+          .venue-hero-actions { width: 100%; justify-content: center; }
+          .venue-hero-actions > * { flex: 1; min-width: 0; }
+          .venue-content { padding: 0 20px; }
+          .venue-tabs { gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+          .venue-tabs::-webkit-scrollbar { display: none; }
+          .venue-tab { flex: 1; min-width: max-content; text-align: center; padding: 12px 14px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+        }
       `}</style>
     </div>
   );
