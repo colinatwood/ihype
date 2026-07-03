@@ -248,7 +248,7 @@ function CoverageBuilder() {
         </div>
         <div style={{ padding: '22px 20px', flex: 1 }}>
           {/* Dot grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: 7, padding: '4px 2px 0' }}>
+          <div className="adv-dot-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: 7, padding: '4px 2px 0' }}>
             {dots.map((lit, i) => (
               <span key={i} style={{ aspectRatio: '1', borderRadius: '50%', background: lit ? '#ff5029' : '#3a342e', boxShadow: lit ? '0 0 8px rgba(255,80,41,.5)' : 'none', transition: 'background .35s, box-shadow .35s', display: 'block' }} />
             ))}
@@ -495,6 +495,9 @@ export function AdvertisePage() {
         @media (max-width:1040px) {
           .adv-hero-grid, .adv-builder, .adv-guard, .adv-paths, .adv-trans { grid-template-columns:1fr !important }
           .adv-hero-title { font-size:52px !important }
+        }
+        @media (max-width:480px) {
+          .adv-dot-grid { grid-template-columns:repeat(8, 1fr) !important }
         }
       `}</style>
 

@@ -257,6 +257,56 @@ body:has(.site-dock) .site-shell {
   .ihype-mobile-nav { display: flex !important; }
   body { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
 }
+
+/* ── Bottom sheet on mobile: centered dialog on desktop, anchored to the
+   bottom edge with a drag-handle affordance on phones — shared pattern for
+   any modal/panel overlay across the app. ── */
+.ihype-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 950;
+  background: rgba(0,0,0,.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.ihype-sheet-panel {
+  background: var(--bg2, #100d09);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+@media (max-width: 640px) {
+  .ihype-sheet-overlay { align-items: flex-end; padding: 0; }
+  .ihype-sheet-panel {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 12px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+    max-height: calc(100vh - 60px);
+    animation: ihype-sheet-up .25s cubic-bezier(.32,.72,0,1) both;
+  }
+  .ihype-sheet-panel::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,.2);
+    margin: 0 auto 16px;
+  }
+}
+@keyframes ihype-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ihype-sheet-panel { animation: none !important; }
+}
 .admin-perspective-shell {
   position: sticky;
   top: 0;
