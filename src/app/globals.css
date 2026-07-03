@@ -5289,11 +5289,19 @@ html.high-contrast p {
   cursor: pointer;
 }
 .site-dock-track:hover { background: rgba(255,255,255,.14); }
-.site-dock-fill {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  background: #ff5029;
-  border-radius: 2px;
+.site-dock-waveform {
+  height: 24px;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.site-dock-waveform:hover { background: none; }
+.site-dock-wave-bar {
+  flex: 1;
+  min-width: 1px;
+  border-radius: 1px;
+  transition: background .1s;
   pointer-events: none;
 }
 .site-dock-r {
