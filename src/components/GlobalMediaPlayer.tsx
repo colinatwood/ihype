@@ -602,6 +602,20 @@ const DkSkipN   = () => <svg width={14} height={14} viewBox="0 0 24 24" fill="cu
 const DkShuffle = () => <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>;
 const DkRepeat  = () => <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>;
 
+// Deterministic pseudo-random bar heights per track id — a stable stand-in
+// for a real audio-derived waveform, which needs offline analysis we don't
+// run today. Same track always renders the same shape.
+function seededWaveform(seed: string, bars = 46): number[] {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (Math.imul(h, 31) + seed.charCodeAt(i)) >>> 0;
+  const out: number[] = [];
+  for (let i = 0; i < bars; i++) {
+    h = (Math.imul(h, 1103515245) + 12345) >>> 0;
+    out.push(0.22 + ((h >>> 8) % 1000) / 1000 * 0.78);
+  }
+  return out;
+}
+
 function repeatLabel(mode: RepeatMode) {
   if (mode === 'one') return '1';
   if (mode === 'all') return '∞';
@@ -633,6 +647,7 @@ export function SitePlayerDock() {
 
   const progress = duration > 0 ? currentTime / duration : 0;
   const fmt = (s: number) => { const sec = Math.floor(s); return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; };
+  const waveform = useMemo(() => currentTrack ? seededWaveform(currentTrack.id) : [], [currentTrack?.id]);
 
   const upcomingTracks = queue.slice(currentIndex + 1);
   const rLabel = repeatLabel(repeatMode);
@@ -728,9 +743,24 @@ export function SitePlayerDock() {
         </div>
         <div className="site-dock-scrub">
           <span className="site-dock-time">{fmt(currentTime)}</span>
-          <div className="site-dock-track" role="slider" aria-label="Playback position" aria-valuenow={Math.round(progress * 100)} tabIndex={0}
-            onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration); }}>
-            <div className="site-dock-fill" style={{ width: `${progress * 100}%` }} />
+          <div
+            className="site-dock-track site-dock-waveform"
+            role="slider"
+            aria-label="Playback position"
+            aria-valuenow={Math.round(progress * 100)}
+            tabIndex={0}
+            onClick={e => { const r = e.currentTarget.getBoundingClientRect(); seekTo(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * duration); }}
+          >
+            {waveform.map((h, i) => (
+              <span
+                key={i}
+                className="site-dock-wave-bar"
+                style={{
+                  height: `${h * 100}%`,
+                  background: i / waveform.length <= progress ? 'var(--accent, #ff5029)' : 'rgba(255,255,255,.14)',
+                }}
+              />
+            ))}
           </div>
           <span className="site-dock-time">{fmt(duration)}</span>
         </div>
