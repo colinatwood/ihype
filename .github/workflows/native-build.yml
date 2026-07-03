@@ -50,14 +50,13 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync ios
 
-      - name: Install CocoaPods dependencies
-        working-directory: ios/App
-        run: pod install
-
+      # Capacitor 8's iOS template uses a local Swift Package (CapApp-SPM)
+      # for plugin dependencies instead of CocoaPods, so there's no Podfile
+      # and no .xcworkspace — xcodebuild resolves the local package itself.
       - name: Build for iOS Simulator (no signing required)
         working-directory: ios/App
         run: |
-          xcodebuild -workspace App.xcworkspace -scheme App \
+          xcodebuild -project App.xcodeproj -scheme App \
             -destination 'generic/platform=iOS Simulator' \
             -configuration Debug build CODE_SIGNING_ALLOWED=NO
 
@@ -120,11 +119,6 @@ jobs:
       - name: Sync Capacitor
         if: steps.check.outputs.configured == 'true'
         run: npx cap sync ios
-
-      - name: Install CocoaPods dependencies
-        if: steps.check.outputs.configured == 'true'
-        working-directory: ios/App
-        run: pod install
 
       # TODO once the Apple Developer account exists: import the distribution
       # certificate + provisioning profile into a temporary keychain, then
