@@ -1,144 +1,52 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
-
-export const revalidate = 60;
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { buildArtistMediaCollection } from '@/lib/media';
-import { ShowCard } from '@/components/ShowCard';
 import { HypeButton } from '@/components/HypeButton';
-import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
-import { ContentReportControl } from '@/components/ContentReportControl';
-import { ShareButton } from '@/components/ShareButton';
 import { FollowButton } from '@/components/FollowButton';
-import { PeopleAlsoHype } from '@/components/PeopleAlsoHype';
-import { ProfileLinkShelf } from '@/components/ProfileLinkShelf';
-import { ReportButton } from '@/components/ReportButton';
-import { CollapsibleText } from '@/components/CollapsibleText';
-import { NetworkEarthGlobe } from '@/components/NetworkEarthGlobe';
-import { getSafeBackgroundImageStyle, getSafeImageUrl } from '@/lib/asset-safety';
+import { ShareButton } from '@/components/ShareButton';
+import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
+import { getSafeImageUrl } from '@/lib/asset-safety';
 import { canManageOwnedResource } from '@/lib/permissions';
-import { DEFAULT_PROFILE_DESIGN_PRESET, getProfileDesignStyleVars, getBuilderDesignStyleVars } from '@/lib/profile-design';
-import { parsePublishedPage } from '@/lib/page-builder';
-import { detectRequestLocation } from '@/lib/request-location';
-import { AdBanner } from '@/components/AdBanner';
-import { AvailabilityCalendar } from '@/components/AvailabilityCalendar';
-import { getDemoCreatorExclusion, getDemoOwnerExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
-import { SoundsLike } from '@/components/SoundsLike';
-import { StreamingLinks } from '@/components/StreamingLinks';
+import { getDemoCreatorExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { getBaseUrl } from '@/lib/utils';
-import { ProfileWidgetsDisplay } from '@/components/ProfileWidgets';
-import { parseWidgetConfig } from '@/lib/widgets';
-import { NewsletterSignup } from '@/components/NewsletterSignup';
 
-// True if this builder section should be visible (default on when builderSections is null)
-function secOn(sections: Array<{id: string; on: boolean}> | null, id: string): boolean {
-  if (!sections) return true;
-  const s = sections.find(x => x.id === id);
-  return s ? s.on : true;
-}
+export const revalidate = 60;
 
-const artistSections = ['about', 'media', 'merch'] as const;
-
+const artistSections = ['about', 'tracks', 'shows'] as const;
 type ArtistSection = (typeof artistSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): ArtistSection {
-  // Map legacy tour/events/journal params to about
-  if (section === 'tour' || section === 'events' || section === 'journal') {
-    return 'about';
-  }
-
-  if (typeof section === 'string' && artistSections.includes(section as ArtistSection)) {
-    return section as ArtistSection;
-  }
-
+  if (typeof section === 'string' && artistSections.includes(section as ArtistSection)) return section as ArtistSection;
   return 'about';
 }
 
-function getSectionLabel(section: ArtistSection) {
-  return section.charAt(0).toUpperCase() + section.slice(1);
-}
-
-function formatShowDate(value: Date) {
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  }).format(value);
-}
+const SECTION_LABEL: Record<ArtistSection, string> = { about: 'About', tracks: 'Tracks', shows: 'Shows' };
 
 const getArtistMeta = cache((slug: string) =>
   db.profile.findUnique({
     where: { slug },
-    select: {
-      name: true,
-      headline: true,
-      genres: true,
-      city: true,
-      stateRegion: true,
-      hypeCount: true,
-      avatarImage: true,
-      owner: { select: { email: true, username: true } }
-    }
+    select: { name: true, headline: true, genres: true, city: true, stateRegion: true, hypeCount: true, avatarImage: true },
   })
 );
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> }
-): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const profile = await getArtistMeta(slug);
-
-  if (!profile || (shouldHideDemoContent() && isDemoUser(profile.owner))) {
-    return { title: 'Artist | iHYPE' };
-  }
-
+  if (!profile) return { title: 'Artist · iHYPE' };
   const location = [profile.city, profile.stateRegion].filter(Boolean).join(', ');
-  const genres = profile.genres.slice(0, 3).join(', ');
-  const title = `${profile.name} | iHYPE`;
-  const description = [
-    'Artist',
-    genres || null,
-    location || null,
-    profile.hypeCount ? `${profile.hypeCount} HYPE` : null,
-    profile.headline || null
-  ]
-    .filter(Boolean)
-    .join(' | ');
-
-  const ogParams = new URLSearchParams({
-    title: profile.name,
-    subtitle: [genres, location].filter(Boolean).join(' · ') || 'Artist on iHYPE',
-    type: 'artist',
-  });
-  const ogImage = `/api/og?${ogParams.toString()}`;
-
   return {
-    title,
-    description,
-    openGraph: {
-      type: 'profile',
-      siteName: 'iHYPE',
-      title,
-      description,
-      url: `/artists/${slug}`,
-      images: profile.avatarImage ? [{ url: profile.avatarImage }] : [{ url: ogImage, width: 1200, height: 630 }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: profile.avatarImage ? [profile.avatarImage] : [ogImage],
-    }
+    title: `${profile.name} · iHYPE`,
+    description: ['Artist', profile.genres.slice(0, 3).join(', ') || null, location || null].filter(Boolean).join(' · '),
   };
 }
 
 export default async function ArtistPage({
   params,
-  searchParams
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<{ section?: string | string[] }>;
@@ -148,483 +56,192 @@ export default async function ArtistPage({
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const activeSection = getActiveSection(resolvedSearchParams.section);
 
-  const getArtistPage = cache((s: string) =>
-    db.profile.findUnique({
-      where: { slug: s },
-      include: {
-        owner: { select: { email: true, username: true } },
-        _count: { select: { followers: true } },
-        mediaUploads: {
-          select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, sortOrder: true },
-          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }]
-        }
-      }
-    })
-  );
-  const profile = await getArtistPage(slug);
+  const profile = await db.profile.findUnique({
+    where: { slug },
+    include: {
+      owner: { select: { email: true, username: true } },
+      _count: { select: { followers: true } },
+      mediaUploads: {
+        select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, sortOrder: true },
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      },
+    },
+  });
   if (!profile || profile.type !== 'ARTIST') return notFound();
   if (shouldHideDemoContent() && isDemoUser(profile.owner)) return notFound();
-  const profileSlug = profile.slug;
-  const media = buildArtistMediaCollection(profile.mediaContent, profile.mediaUploads);
 
+  const isOwner = canManageOwnedResource(session, profile.ownerId);
+  const media = buildArtistMediaCollection(profile.mediaContent, profile.mediaUploads);
   const uploadHexIds = profile.mediaUploads.map((u) => u.hexId);
-  const [shows, viewerLocation, venues, fanHypeCount, journalEntries, playCounts, firstBelievers, ownerHypes] = await Promise.all([
+  const artworkUrl = getSafeImageUrl(profile.galleryImage || profile.heroImage);
+
+  const [shows, userHype, playCounts] = await Promise.all([
     db.show.findMany({
-      where: {
-        headlinerProfileId: profile.id,
-        ...getDemoCreatorExclusion()
-      },
-      include: { venueProfile: true, headlinerProfile: true },
-      orderBy: { startsAt: 'asc' }
+      where: { headlinerProfileId: profile.id, ...getDemoCreatorExclusion() },
+      include: { venueProfile: true },
+      orderBy: { startsAt: 'asc' },
     }),
-    detectRequestLocation(),
-    db.profile.findMany({
-      where: {
-        type: 'VENUE',
-        latitude: { not: null },
-        longitude: { not: null },
-        ...getDemoOwnerExclusion()
-      },
-      orderBy: [{ verified: 'desc' }, { name: 'asc' }],
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        addressLine1: true,
-        hoursText: true,
-        city: true,
-        stateRegion: true,
-        country: true,
-        postalCode: true,
-        latitude: true,
-        longitude: true
-      }
-    }),
-    db.profileHypeEvent.count({
-      where: {
-        profileId: profile.id,
-        user: {
-          role: 'FAN'
-        }
-      }
-    }),
-    db.artistJournalPost.findMany({
-      where: { profileId: profile.id, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: { id: true, createdAt: true, title: true, content: true }
-    }),
+    session?.user?.id
+      ? db.profileHypeEvent.findUnique({ where: { userId_profileId: { userId: session.user.id, profileId: profile.id } }, select: { userId: true } })
+      : null,
     uploadHexIds.length > 0
-      ? db.mediaListen.groupBy({
-          by: ['mediaId'],
-          where: { mediaId: { in: uploadHexIds } },
-          _count: { _all: true }
-        })
+      ? db.mediaListen.groupBy({ by: ['mediaId'], where: { mediaId: { in: uploadHexIds } }, _count: { _all: true } })
       : Promise.resolve([]),
-    db.profileHypeEvent.findMany({
-      where: { profileId: profile.id },
-      orderBy: { createdAt: 'asc' },
-      take: 10,
-      select: {
-        createdAt: true,
-        userId: true,
-        user: { select: { username: true, name: true, image: true } }
-      }
-    }),
-    // For listening stats widget: fetch owner's top genres from their hyped profiles
-    db.profileHypeEvent.findMany({
-      where: { userId: profile.ownerId },
-      select: { profile: { select: { genres: true, name: true } } },
-      take: 200
-    })
   ]);
 
   const playCountMap = new Map(playCounts.map((r) => [r.mediaId, r._count._all]));
-
-  const widgetConfig = parseWidgetConfig(profile.widgetConfig);
-  const ownerGenreCounts = new Map<string, number>();
-  for (const h of ownerHypes) {
-    for (const g of h.profile.genres) {
-      const k = g.toLowerCase().trim();
-      if (k) ownerGenreCounts.set(k, (ownerGenreCounts.get(k) ?? 0) + 1);
-    }
-  }
-  const listeningData = {
-    topGenres: [...ownerGenreCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5) as [string, number][],
-    topArtists: [...new Set(ownerHypes.map(h => h.profile.name))].slice(0, 3)
-  };
+  const totalPlays = playCounts.reduce((sum, r) => sum + r._count._all, 0);
 
   const now = new Date();
-  const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
-  const previousShows = shows.filter((show) => show.status === 'ENDED' || (show.startsAt < now && show.status !== 'LIVE'));
-  const isBookMeReady = Boolean(profile.contactInfo && profile.genres.length > 0 && media.entries.length > 0);
-  const isOwner = canManageOwnedResource(session, profile.ownerId);
-  const canViewCustomPage = isOwner || profile.fanShareEnabled;
-  // Page-builder publish is an explicit owner action, so published overrides
-  // apply for every viewer. All values are plain text (see parsePublishedPage)
-  // and must only ever be rendered as React text nodes.
-  const publishedPage = parsePublishedPage(profile.pagePublished);
-  const sharedThemePreset = publishedPage?.themePreset
-    ?? (canViewCustomPage ? profile.themePreset : DEFAULT_PROFILE_DESIGN_PRESET);
-  const bannerStyle = canViewCustomPage ? getSafeBackgroundImageStyle(profile.heroImage) : undefined;
-  const pageDesignStyle = publishedPage?.builderPalette
-    ? getBuilderDesignStyleVars(publishedPage.builderPalette, publishedPage.builderFont, publishedPage.builderRadius, publishedPage.builderMood)
-    : getProfileDesignStyleVars(sharedThemePreset, {
-        accentTone: canViewCustomPage ? profile.themeAccentTone : undefined,
-        backdropTone: canViewCustomPage ? profile.themeBackdropTone : undefined,
-        fontPreset: canViewCustomPage ? profile.themeFontPreset : undefined
-      });
-  const artworkUrl = canViewCustomPage
-    ? getSafeImageUrl(profile.galleryImage || profile.heroImage)
-    : null;
-  const logoUrl = canViewCustomPage ? getSafeImageUrl(profile.logoImage || profile.avatarImage) : null;
-  const globeRouteStops = shows
-    .filter(
-      (show) =>
-        show.venueProfile?.latitude != null &&
-        show.venueProfile.longitude != null
-    )
-    .map((show) => ({
-      id: show.id,
-      title: show.title,
-      href: `/shows/${show.slug}`,
-      venueName: show.venueProfile?.name ?? 'Venue',
-      venueSlug: show.venueProfile?.slug ?? null,
-      city: show.venueProfile?.city ?? null,
-      stateRegion: show.venueProfile?.stateRegion ?? null,
-      country: show.venueProfile?.country ?? null,
-      postalCode: show.venueProfile?.postalCode ?? null,
-      latitude: show.venueProfile?.latitude ?? null,
-      longitude: show.venueProfile?.longitude ?? null,
-      startsAtLabel: formatShowDate(show.startsAt),
-      timing:
-        show.status === 'LIVE'
-          ? ('live' as const)
-          : show.startsAt >= now
-            ? ('upcoming' as const)
-            : ('past' as const)
-    }));
-
-  const base = getBaseUrl();
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'MusicGroup',
-    name: profile.name,
-    url: `${base}/artists/${profile.slug}`,
-    ...(profile.headline ? { description: profile.headline } : {}),
-    ...(profile.avatarImage ? { image: profile.avatarImage } : {}),
-    ...(profile.city ? { foundingLocation: { '@type': 'Place', name: [profile.city, profile.stateRegion].filter(Boolean).join(', ') } } : {}),
-    ...(profile.genres?.length ? { genre: profile.genres } : {}),
-  };
-
-  const userHype = session?.user?.id
-    ? await db.profileHypeEvent.findUnique({ where: { userId_profileId: { userId: session.user.id, profileId: profile.id } }, select: { userId: true } })
-    : null;
+  const upcomingShows = shows.filter((s) => s.status === 'LIVE' || s.startsAt >= now);
 
   return (
-    <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-    <main className="container section profile-design-shell" style={pageDesignStyle}>
-      <header className="artist-banner panel" style={bannerStyle}>
-        <div className="profile-banner-row">
-          <div className="artist-banner-copy">
-            {logoUrl ? <img alt={`${profile.name} logo`} className="artist-logo-mark" src={logoUrl} /> : null}
-            <div className="badge">ARTIST</div>
-            <h1 className="title" style={{ fontSize: '2.9rem' }}>
-              {profile.name}
-              {profile.verificationStatus === 'VERIFIED' ? (
-                <span
-                  title="Verified artist"
-                  aria-label="Verified"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '1.6rem',
-                    height: '1.6rem',
-                    borderRadius: '50%',
-                    marginLeft: '0.5rem',
-                    background: '#1d9bf0',
-                    color: '#fff',
-                    fontSize: '1rem',
-                    verticalAlign: 'middle'
-                  }}
-                >
-                  ✓
-                </span>
-              ) : null}
-            </h1>
-            <p className="artist-headline">{publishedPage?.headline || profile.headline || 'Build your headline banner and tell people what this chapter sounds like.'}</p>
-            <p className="subtitle">{publishedPage?.bio || profile.bio}</p>
-            {publishedPage?.builderPalette && profile.hypeCount > 0 ? (
-              <div className="builder-hype-stat builder-stat-live">
-                <span className="builder-hype-num">{profile.hypeCount.toLocaleString()}</span>
-                <span className="builder-hype-label">HYPE</span>
-              </div>
-            ) : null}
-            <p className="meta">{[profile.city, profile.country].filter(Boolean).join(', ')}</p>
-            {profile.contactInfo ? <p className="meta">Contact: {profile.contactInfo}</p> : null}
-            <p className="meta">Share ID: <Link href={`/profiles/${profile.hexId}`}>{profile.hexId}</Link></p>
-            {!publishedPage?.builderPalette ? <p className="meta">Fan hype: {fanHypeCount}{profile._count.followers > 0 ? ` · ${profile._count.followers.toLocaleString()} followers` : ''}</p> : null}
-            <div className={publishedPage?.builderPalette ? 'builder-badge-block' : 'tag-row'}>
-              {isBookMeReady ? <span className={publishedPage?.builderPalette ? 'builder-badge builder-badge-accent' : 'tag artist-ready-tag'}>Book me ready</span> : null}
-              {profile.genres.map((genre) => <span key={genre} className={publishedPage?.builderPalette ? 'builder-badge' : 'tag'}>{genre}</span>)}
-              {profile.genre ? <span className={publishedPage?.builderPalette ? 'builder-badge' : 'tag'}>{profile.genre}</span> : null}
-            </div>
-            <ProfileLinkShelf linksJson={profile.links ?? null} />
-            <HypeButton targetType="profile" targetId={profile.id} initialCount={profile.hypeCount} initiallyHyped={!!userHype} entityLabel="artist" />
-            {profile.hypeCount > 0 && (
-              <a href={`/artists/${profile.slug}/believers`} style={{ display: 'inline-block', marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--accent)', textDecoration: 'none' }}>
-                See early believers →
-              </a>
+    <div className="artist-page">
+      <div className="artist-hero">
+        <div className="artist-hero-row">
+          <div className="artist-avatar">
+            {profile.avatarImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img alt={profile.name} src={profile.avatarImage} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+            ) : (
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 32 }}>{profile.name.charAt(0)}</span>
             )}
-            <FollowButton profileId={profile.id} />
-            {profile.contactInfo && secOn(publishedPage?.builderSections ?? null, 'booking') ? (
-              <div className="cta-row" style={{ marginTop: 12 }}>
-                <a
-                  className="button"
-                  href={profile.contactInfo.includes('@') ? `mailto:${profile.contactInfo}?subject=${encodeURIComponent(`Booking inquiry for ${profile.name}`)}` : '#'}
-                >
-                  Send booking inquiry
-                </a>
-              </div>
-            ) : null}
-            <div className="profile-public-actions">
-              <Link className="button small secondary" href="/register?role=FAN">Follow as fan</Link>
-              <Link className="button small secondary" href={`/artists/${profile.slug}?section=media`}>Hear media</Link>
-              <Link className="button small secondary" href="/register?role=VENUE">Book artists</Link>
-              <ShareButton path={`/artists/${profile.slug}`} title={profile.name} label="Copy profile link" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div className="artist-name">{profile.name}</div>
+            <div className="artist-sub">{profile.genres.join(' · ')}{profile.city ? ` · ${profile.city}` : ''}</div>
+            <div className="artist-hero-badges">
+              <span className="artist-badge" style={{ background: 'rgba(255,80,41,.15)', color: 'var(--accent)' }}>Artist</span>
+              {profile.verificationStatus === 'VERIFIED' && <span className="artist-badge" style={{ background: 'rgba(34,229,212,.15)', color: 'var(--role-venue, #22e5d4)' }}>✓ Verified</span>}
+            </div>
+            <div className="artist-hero-actions">
+              <FollowButton profileId={profile.id} />
+              <ShareButton label="Share" path={`/artists/${profile.slug}`} title={profile.name} />
+              {isOwner && (
+                <>
+                  <Link className="artist-hero-btn" href="/pages">Customize</Link>
+                  <Link className="artist-hero-btn" href="/settings">Settings</Link>
+                </>
+              )}
             </div>
           </div>
-          {isOwner ? (
-            <div className="profile-banner-actions">
-              <Link className="button small secondary" href={`/home?profile=${profile.id}`}>
-                Edit Page
-              </Link>
-            </div>
-          ) : null}
         </div>
-      </header>
+        <div className="artist-stats">
+          <div><div className="artist-stat-val">{totalPlays.toLocaleString()}</div><div className="artist-stat-label">Total Plays</div></div>
+          <div><div className="artist-stat-val">{profile.hypeCount.toLocaleString()}</div><div className="artist-stat-label">Total Hypes</div></div>
+          <div><div className="artist-stat-val">{shows.length}</div><div className="artist-stat-label">Shows</div></div>
+          <div><div className="artist-stat-val">{profile._count.followers.toLocaleString()}</div><div className="artist-stat-label">Followers</div></div>
+        </div>
+      </div>
 
-      <section className="section">
-        <nav className="section-tabs" aria-label="Artist page sections">
+      <div className="artist-content">
+        <div className="artist-tabs">
           {artistSections.map((section) => (
-            <Link
-              key={section}
-              className={section === activeSection ? 'section-tab active' : 'section-tab'}
-              href={`/artists/${profileSlug}?section=${section}`}
-            >
-              {getSectionLabel(section)}
+            <Link className={section === activeSection ? 'artist-tab active' : 'artist-tab'} href={`/artists/${profile.slug}?section=${section}`} key={section}>
+              {SECTION_LABEL[section]}
             </Link>
           ))}
-        </nav>
+        </div>
 
-        <div className="panel artist-section-panel">
-          {activeSection === 'about' ? (
-            <>
-              <h2>About</h2>
-              <div className="artist-copy">
-                <CollapsibleText text={profile.aboutContent || profile.bio || 'This artist has not filled out the About section yet.'} lines={3} />
+        {activeSection === 'about' && (
+          <div>
+            <p className="artist-about-text">{profile.aboutContent || profile.bio || 'This artist has not filled out the About section yet.'}</p>
+            <div className="artist-split-card">
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(240,235,229,.5)' }}>Charter Split · Every ticket</div>
+              <div className="artist-split-bar">
+                <div className="artist-split-seg" style={{ background: 'rgba(255,80,41,.15)' }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent)' }}>45%</div>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.12em', color: 'var(--accent)', marginTop: 4 }}>Artist</div>
+                </div>
+                <div className="artist-split-seg" style={{ background: 'rgba(34,229,212,.15)' }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--role-venue, #22e5d4)' }}>45%</div>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.12em', color: 'var(--role-venue, #22e5d4)', marginTop: 4 }}>Venue</div>
+                </div>
+                <div className="artist-split-seg" style={{ background: 'rgba(255,62,154,.15)' }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#ff3e9a' }}>10%</div>
+                  <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.12em', color: '#ff3e9a', marginTop: 4 }}>Promoters</div>
+                </div>
               </div>
-              {profile.journalContent ? (
-                <div className="artist-copy">
-                  <strong>Journal</strong>
-                  <br />
-                  {profile.journalContent}
-                </div>
-              ) : null}
-              {journalEntries.length > 0 ? (
-                <div className="artist-copy" style={{ padding: '1rem 1.25rem', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <p style={{ fontSize: 12, color: 'rgba(240,235,229,.55)', marginTop: 12 }}>iHYPE takes 0% · locked in the charter</p>
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'tracks' && (
+          media.entries.length ? (
+            <ArtistMediaPlaylist
+              artistName={profile.name}
+              artistSlug={profile.slug}
+              artworkUrl={artworkUrl}
+              entries={media.entries}
+              isOwner={isOwner}
+              playCountMap={Object.fromEntries(playCountMap)}
+              profileId={profile.id}
+            />
+          ) : (
+            <div className="artist-empty">
+              <svg fill="none" height="34" stroke="rgba(240,235,229,.3)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="34"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
+              <p>No tracks yet.</p>
+            </div>
+          )
+        )}
+
+        {activeSection === 'shows' && (
+          <div>
+            {upcomingShows.length === 0 ? (
+              <div className="artist-empty"><p>No upcoming shows.</p></div>
+            ) : (
+              upcomingShows.map((show) => {
+                const date = show.startsAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                return (
+                  <Link className="artist-show-card" href={`/shows/${show.slug}`} key={show.id}>
                     <div>
-                      <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.4, fontFamily: 'var(--f-m, monospace)' }}>Road Journal</div>
-                      <div style={{ fontSize: '0.72rem', opacity: 0.4, marginTop: 2 }}>Thoughts from {profile.name}</div>
+                      <div className="artist-show-title">{show.title}</div>
+                      <div className="artist-show-meta">{date}{show.venueProfile?.city ? ` · ${show.venueProfile.city}` : ''}</div>
                     </div>
-                    <span style={{ fontSize: '0.62rem', opacity: 0.3 }}>{journalEntries.length} {journalEntries.length === 1 ? 'entry' : 'entries'}</span>
-                  </div>
-                  <div style={{ display: 'grid', gap: 0 }}>
-                    {journalEntries.map((entry, i) => (
-                      <div key={entry.id} style={{ paddingTop: i > 0 ? 14 : 0, marginTop: i > 0 ? 14 : 0, borderTop: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: 3 }}>{entry.title ?? 'Untitled'}</div>
-                        <div style={{ fontSize: '0.6rem', opacity: 0.35, marginBottom: 6, fontFamily: 'var(--f-m, monospace)' }}>
-                          {new Date(entry.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
-                        </div>
-                        <p style={{ margin: 0, fontSize: '0.82rem', opacity: 0.75, whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>{entry.content ?? ''}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Tour content merged into about */}
-              {profile.tourContent ? (
-                <div className="artist-copy">{profile.tourContent}</div>
-              ) : null}
-
-              {widgetConfig.enabled.length > 0 && (
-                <ProfileWidgetsDisplay
-                  config={widgetConfig}
-                  upcomingShows={upcomingShows.slice(0, 3).map(s => ({
-                    id: s.id,
-                    title: s.title,
-                    startsAt: s.startsAt.toISOString(),
-                    venueName: s.venueProfile?.name ?? undefined,
-                    slug: s.slug ?? undefined
-                  }))}
-                  listeningData={listeningData}
-                />
-              )}
-
-              <NetworkEarthGlobe
-                description="Start from the visitor ZIP, highlight nearby venues, then zoom out to trace the artist tour path across current and previous show stops."
-                emptyRouteLabel="No tour stops are mapped yet."
-                routeLabel="Tour path"
-                routeStops={globeRouteStops}
-                title="Earth globe for nearby venues and tour paths"
-                venues={venues}
-                viewerLocation={viewerLocation}
-              />
-
-              {secOn(publishedPage?.builderSections ?? null, 'shows') ? (
-                <>
-                  <div className="artist-tour-shows">
-                    <h3>Upcoming shows</h3>
-                    <div className="grid grid-2">
-                      {upcomingShows.length ? upcomingShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No upcoming dates yet.</div>}
+                    <div>
+                      <div className="artist-show-price">{show.isTicketed && show.ticketPriceCents ? `$${(show.ticketPriceCents / 100).toFixed(0)}` : 'Free'}</div>
+                      <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.12em', color: 'rgba(240,235,229,.5)', textAlign: 'right' }}>$0 fees</div>
                     </div>
-                  </div>
-
-                  <div className="artist-tour-shows">
-                    <h3>Previous shows</h3>
-                    <div className="grid grid-2">
-                      {previousShows.length ? previousShows.map((show) => <ShowCard key={show.id} show={show} />) : <div className="empty">No previous dates yet.</div>}
-                    </div>
-                  </div>
-                </>
-              ) : null}
-
-              {secOn(publishedPage?.builderSections ?? null, 'newsletter') && publishedPage?.builderSections?.some(s => s.id === 'newsletter' && s.on) ? (
-                <NewsletterSignup profileId={profile.id} />
-              ) : null}
-            </>
-          ) : null}
-
-          {activeSection === 'media' && secOn(publishedPage?.builderSections ?? null, 'music') ? (
-            <>
-              <h2>Media</h2>
-              {media.notes ? <div className="artist-copy">{media.notes}</div> : null}
-              {artworkUrl ? (
-                <div className="artist-media-visuals">
-                  <img alt={`${profile.name} featured artwork`} className="artist-media-visual-image" src={artworkUrl} />
-                </div>
-              ) : null}
-              {media.entries.length ? (
-                <ArtistMediaPlaylist
-                  artistName={profile.name}
-                  artistSlug={profile.slug}
-                  artworkUrl={artworkUrl}
-                  entries={media.entries}
-                  isOwner={isOwner}
-                  profileId={profile.id}
-                  playCountMap={Object.fromEntries(playCountMap)}
-                />
-              ) : (
-                <div className="empty">
-                  <span className="empty-title">No playable uploads yet.</span>
-                  <p>Example upload: Track title | audio link | short note. Artists can add it from the editor.</p>
-                  <div className="empty-example-card">Seed preview, artwork, and play controls will appear here.</div>
-                </div>
-              )}
-            </>
-          ) : null}
-
-          {activeSection === 'merch' ? (
-            <>
-              <h2>Merch</h2>
-              <div className="artist-copy">{profile.merchContent || 'No merch notes yet.'}</div>
-            </>
-          ) : null}
-        </div>
-      </section>
-
-      <div style={{ marginTop: 8 }}>
-        <Link className="button small secondary" href={`/artists/${profile.slug}/epk`}>Press Kit</Link>
+                  </Link>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
-      <div style={{ marginTop: 24 }}>
-        <h3 style={{ marginBottom: 8 }}>Availability</h3>
-        <AvailabilityCalendar profileId={profile.id} />
-      </div>
-      <PeopleAlsoHype profileId={profile.id} />
-      <SoundsLike profileId={profile.id} profileName={profile.name} />
-      <StreamingLinks linksJson={profile.links ?? null} />
-      {firstBelievers.length > 0 ? (
-        <div style={{ marginTop: 24 }}>
-          <h3 style={{ marginBottom: 8 }}>First Believers</h3>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 8 }}>
-            {firstBelievers.map((believer, index) => {
-              const rank = index + 1;
-              const rankColor =
-                rank === 1 ? '#fbbf24' :
-                rank === 2 ? '#94a3b8' :
-                rank === 3 ? '#cd7f32' :
-                undefined;
-              const displayName = believer.user.username ? `@${believer.user.username}` : (believer.user.name ?? 'Fan');
-              return (
-                <li key={index} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontWeight: 700, fontSize: 13, width: 24, color: rankColor }}>#{rank}</span>
-                  {believer.user.image ? (
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                      <Image
-                        src={believer.user.image}
-                        alt={displayName}
-                        fill
-                        sizes="28px"
-                        style={{ objectFit: 'cover' }}
-                      />
-                    </div>
-                  ) : (
-                    <div style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: rankColor ?? '#6b7280',
-                      flexShrink: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      color: '#fff',
-                      fontWeight: 700
-                    }}>
-                      {(believer.user.name ?? believer.user.username ?? '?').charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>{displayName}</span>
-                  <span className="meta" style={{ fontSize: 11, marginLeft: 'auto' }}>
-                    {new Date(believer.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-          {session?.user?.id && (() => {
-            const idx = firstBelievers.findIndex((b) => b.userId === session.user?.id);
-            return idx !== -1 ? (
-              <p className="meta" style={{ marginTop: 8, fontSize: 12 }}>
-                You are fan #{idx + 1} of this artist
-              </p>
-            ) : null;
-          })()}
-        </div>
-      ) : null}
-      <div style={{ marginTop: 16 }}>
-        <ReportButton entityType="profile" entityId={profile.id} />
-      </div>
-      <ContentReportControl targetId={profile.id} targetType="profile" />
-      <div style={{ marginTop: 24 }}>
-        <AdBanner />
-      </div>
-    </main>
-    </>
+
+      <style>{`
+        .artist-page { max-width: 960px; margin: 0 auto; padding: 32px 0 100px; }
+        .artist-hero { padding: 40px 32px 32px; border-bottom: 1px solid rgba(255,255,255,.06); }
+        .artist-hero-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+        @media (max-width: 600px) { .artist-hero { padding: 24px 20px; } .artist-content { padding: 0 20px; } }
+        .artist-avatar { width: 96px; height: 96px; border-radius: 50%; background: linear-gradient(135deg,#ff5029,#b983ff); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }
+        .artist-name { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; color: var(--ink); }
+        .artist-sub { font-size: 14px; color: rgba(240,235,229,.65); margin-bottom: 14px; }
+        .artist-hero-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .artist-badge { display: inline-block; padding: 5px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; }
+        .artist-hero-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .artist-hero-btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 18px; border-radius: 9px; font-size: 13px; font-weight: 700; text-decoration: none; background: rgba(255,255,255,.06); color: var(--ink); border: 1px solid rgba(255,255,255,.1); }
+        .artist-hero-btn:hover { background: rgba(255,255,255,.1); }
+        .artist-stats { display: flex; gap: 32px; margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.06); flex-wrap: wrap; }
+        .artist-stat-val { font-size: 22px; font-weight: 700; color: var(--accent); font-family: var(--font-display); }
+        .artist-stat-label { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: rgba(240,235,229,.55); margin-top: 2px; }
+        .artist-content { padding: 0 32px; }
+        .artist-tabs { display: flex; gap: 24px; border-bottom: 1px solid rgba(255,255,255,.06); margin: 28px 0; }
+        .artist-tab { padding: 10px 0; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 600; font-size: 14px; color: rgba(240,235,229,.6); text-decoration: none; }
+        .artist-tab.active { color: var(--ink); border-color: var(--accent); }
+        .artist-about-text { font-size: 15px; line-height: 1.7; color: rgba(240,235,229,.85); margin-bottom: 24px; white-space: pre-wrap; }
+        .artist-split-card { border: 1px solid rgba(255,80,41,.2); border-radius: 10px; padding: 20px; background: rgba(255,80,41,.05); }
+        .artist-split-bar { display: flex; border-radius: 8px; overflow: hidden; margin-top: 14px; }
+        .artist-split-seg { flex: 1; padding: 12px; text-align: center; }
+        .artist-empty { text-align: center; padding: 48px 24px; color: rgba(240,235,229,.5); }
+        .artist-show-card { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border: 1px solid rgba(255,255,255,.06); border-radius: 8px; background: var(--bg2); margin-bottom: 10px; text-decoration: none; color: inherit; }
+        .artist-show-card:hover { background: var(--bg3); }
+        .artist-show-title { font-family: var(--font-display); font-size: 15px; font-weight: 800; margin-bottom: 3px; color: var(--ink); }
+        .artist-show-meta { font-size: 12px; color: rgba(240,235,229,.55); }
+        .artist-show-price { font-size: 18px; font-weight: 700; color: var(--accent); text-align: right; }
+      `}</style>
+    </div>
   );
 }
