@@ -6,7 +6,6 @@ import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
 import { HeaderUserMenu } from '@/components/HeaderUserMenu';
 import { HeaderLogo } from '@/components/HeaderLogo';
-import { PwaInstallPrompt } from '@/components/PwaInstallPrompt';
 import { WebPushPrompt } from '@/components/WebPushPrompt';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
 import { NavDrawer } from '@/components/NavDrawer';
@@ -93,7 +92,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </div>
           <SitePlayerDock />
           <CookieConsent />
-          <PwaInstallPrompt />
           <WebPushPrompt />
           <ServiceWorkerRegister />
 

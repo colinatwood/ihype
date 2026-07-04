@@ -1,6 +1,7 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useSwipeRouteNav } from '@/lib/useSwipeRouteNav';
 
@@ -42,7 +43,11 @@ export function MobileQuickGrid({
   const cells: (QuickGridItem | null)[] = [...items];
   while (cells.length < 4) cells.push(null);
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  return createPortal(
     <div className={`mqg-overlay${active ? ' is-active' : ''}`} ref={swipeRef}>
       {searchPlaceholder && (searchHref ? (
         <Link className="mqg-search" href={searchHref}>
@@ -86,6 +91,7 @@ export function MobileQuickGrid({
           )
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
