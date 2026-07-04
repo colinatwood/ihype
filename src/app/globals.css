@@ -6187,6 +6187,12 @@ h1, h2 {
   }
 }
 
+/* Mobile has the same Advertise/Privacy/etc. links in the hamburger drawer's
+   secondary link list, so the desktop text footer is redundant there. */
+@media (max-width: 768px) {
+  .ihype-footer { display: none; }
+}
+
 /* ── Skip to content ─────────────────────────────────────────────────────
    Standard a11y pattern: off-screen until keyboard-focused, so it doesn't
    affect sighted-mouse users but lets keyboard/screen-reader users jump
