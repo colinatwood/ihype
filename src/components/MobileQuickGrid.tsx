@@ -45,6 +45,17 @@ export function MobileQuickGrid({
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!active) return;
+    document.documentElement.classList.add('mqg-scroll-lock');
+    document.body.classList.add('mqg-scroll-lock');
+    return () => {
+      document.documentElement.classList.remove('mqg-scroll-lock');
+      document.body.classList.remove('mqg-scroll-lock');
+    };
+  }, [active]);
+
   if (!mounted) return null;
 
   return createPortal(

@@ -6233,6 +6233,15 @@ h1, h2 {
     z-index: 40;
     background: var(--bg);
     padding: 10px 4px 0;
+    overscroll-behavior: none;
+    touch-action: pan-x;
+  }
+  /* Prevents iOS Safari's elastic overscroll bounce on the page underneath
+     while the overlay is shown — without this, pulling down at the top of
+     the page stretches/distorts the fixed overlay during the bounce. */
+  html.mqg-scroll-lock, body.mqg-scroll-lock {
+    overflow: hidden;
+    overscroll-behavior: none;
   }
   .mqg-tabstrip { display: none; }
   .mqg-back {
