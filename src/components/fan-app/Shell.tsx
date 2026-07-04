@@ -46,15 +46,15 @@ function MediaPlayerBar({ onExpand }: { onExpand: () => void }) {
       </div>
       <Waveform playing={playing} tint={tint} />
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-        <button aria-label="Previous track" onClick={e => { e.stopPropagation(); }} style={{ background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', padding: 0, display: 'grid', placeItems: 'center' }}>
+        <button aria-label="Previous track" onClick={e => { e.stopPropagation(); }} style={{ width: 44, height: 44, background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', padding: 0, display: 'grid', placeItems: 'center' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="19,20 9,12 19,4" /><line x1="5" y1="4" x2="5" y2="20" /></svg>
         </button>
-        <button aria-label={playing ? 'Pause' : 'Play'} onClick={e => { e.stopPropagation(); togglePlay(); }} style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--accent)', border: 'none', color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+        <button aria-label={playing ? 'Pause' : 'Play'} onClick={e => { e.stopPropagation(); togglePlay(); }} style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--accent)', border: 'none', color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
           {playing
             ? <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
             : <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21" /></svg>}
         </button>
-        <button aria-label="Next track" onClick={e => { e.stopPropagation(); }} style={{ background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', padding: 0, display: 'grid', placeItems: 'center' }}>
+        <button aria-label="Next track" onClick={e => { e.stopPropagation(); }} style={{ width: 44, height: 44, background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', padding: 0, display: 'grid', placeItems: 'center' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5,4 15,12 5,20" /><line x1="19" y1="4" x2="19" y2="20" /></svg>
         </button>
       </div>
@@ -69,7 +69,7 @@ function ExpandedPlayer({ onClose }: { onClose: () => void }) {
   if (!nowPlaying) return null;
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'var(--bg-base)', display: 'flex', flexDirection: 'column', padding: '2rem 1.5rem 1.5rem' }}>
-      <button aria-label="Minimize player" onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 22, alignSelf: 'center', marginBottom: 24 }}>⌄</button>
+      <button aria-label="Minimize player" onClick={onClose} style={{ width: 44, height: 44, background: 'none', border: 'none', color: 'var(--ink-3)', cursor: 'pointer', fontSize: 22, alignSelf: 'center', marginBottom: 12, display: 'grid', placeItems: 'center' }}>⌄</button>
       <div style={{ width: '100%', aspectRatio: '1', borderRadius: 24, background: `linear-gradient(135deg,${nowPlaying.tint}cc,${nowPlaying.tint}22)`, marginBottom: 28 }} />
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-.03em' }}>{nowPlaying.t}</div>
@@ -87,7 +87,7 @@ function ExpandedPlayer({ onClose }: { onClose: () => void }) {
         <span style={{ fontFamily: 'var(--font-mono)', fontSize: '.7rem', color: 'var(--ink-3)' }}>3:42</span>
       </div>
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 28 }}>
-        <button aria-label="Previous track" style={{ background: 'none', border: 'none', color: 'var(--ink-2)', cursor: 'pointer', padding: 0 }}>
+        <button aria-label="Previous track" style={{ width: 44, height: 44, background: 'none', border: 'none', color: 'var(--ink-2)', cursor: 'pointer', padding: 0, display: 'grid', placeItems: 'center' }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="19,20 9,12 19,4" /><line x1="5" y1="4" x2="5" y2="20" /></svg>
         </button>
         <button aria-label={playing ? 'Pause' : 'Play'} onClick={togglePlay} style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--accent)', border: 'none', color: '#fff', cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
@@ -95,7 +95,7 @@ function ExpandedPlayer({ onClose }: { onClose: () => void }) {
             ? <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><rect x="6" y="4" width="4" height="16" /><rect x="14" y="4" width="4" height="16" /></svg>
             : <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21" /></svg>}
         </button>
-        <button aria-label="Next track" style={{ background: 'none', border: 'none', color: 'var(--ink-2)', cursor: 'pointer', padding: 0 }}>
+        <button aria-label="Next track" style={{ width: 44, height: 44, background: 'none', border: 'none', color: 'var(--ink-2)', cursor: 'pointer', padding: 0, display: 'grid', placeItems: 'center' }}>
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5,4 15,12 5,20" /><line x1="19" y1="4" x2="19" y2="20" /></svg>
         </button>
       </div>
