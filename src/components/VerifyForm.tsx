@@ -38,7 +38,7 @@ interface Props {
 
 const fieldStyle: React.CSSProperties = {
   width: '100%', padding: '11px 14px', borderRadius: 10, border: '1px solid var(--line, rgba(255,255,255,.08))',
-  background: 'var(--bg-3, #0a0805)', color: 'var(--ink)', fontFamily: 'var(--font-body)', fontSize: '0.9rem',
+  background: 'var(--bg-3, #0a0805)', color: 'var(--ink)', fontFamily: 'var(--font-body)', fontSize: '1rem',
   marginBottom: 14, boxSizing: 'border-box',
 };
 const labelStyle: React.CSSProperties = {
