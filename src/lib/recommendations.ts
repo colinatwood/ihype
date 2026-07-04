@@ -43,6 +43,9 @@ export type RecommendationResult = {
     viewerHasLocation: boolean;
     viewerHasGenres: boolean;
     viewerHasHypeHistory: boolean;
+    viewerGenres: string[];
+    viewerCity: string | null;
+    viewerState: string | null;
     collabCandidates: number;
     comparableCandidates: number;
     weights: typeof WEIGHTS;
@@ -224,6 +227,9 @@ export async function getRecommendations(
         viewerHasLocation: Boolean(viewerState || viewerCountry),
         viewerHasGenres: viewerGenres.length > 0,
         viewerHasHypeHistory: alreadyHypedIds.size > 0,
+        viewerGenres,
+        viewerCity,
+        viewerState,
         collabCandidates: collabScores.size,
         comparableCandidates: comparableScores.size,
         weights: WEIGHTS,
@@ -295,6 +301,9 @@ export async function getRecommendations(
       viewerHasLocation: Boolean(viewerState || viewerCountry),
       viewerHasGenres: viewerGenres.length > 0,
       viewerHasHypeHistory: alreadyHypedIds.size > 0,
+      viewerGenres,
+      viewerCity,
+      viewerState,
       collabCandidates: collabScores.size,
       comparableCandidates: comparableScores.size,
       weights: WEIGHTS,

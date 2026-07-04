@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { buildAiTourPlan } from '@/lib/ai-tour';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,5 +59,14 @@ export async function GET() {
     select: { id: true, name: true, city: true, genres: true, hypeCount: true, slug: true, type: true },
   }).catch(() => [] as { id: string; name: string; city: string | null; genres: string[]; hypeCount: number; slug: string; type: string }[]);
 
-  return NextResponse.json({ stops, artists });
+  // AI routing layer: order the demand-ranked stops into an itinerary for the
+  // requesting artist. Null when no artist profile or the AI binding is down.
+  const ownProfile = await db.profile.findFirst({
+    where: { ownerId: session.user.id, type: { in: ['ARTIST', 'DJ'] } },
+    select: { name: true, genres: true, city: true, stateRegion: true, hypeCount: true },
+  }).catch(() => null);
+
+  const aiPlan = ownProfile ? await buildAiTourPlan(ownProfile, stops).catch(() => null) : null;
+
+  return NextResponse.json({ stops, artists, aiPlan });
 }

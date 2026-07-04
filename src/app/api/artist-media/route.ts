@@ -8,6 +8,8 @@ import { canManageOwnedResource } from '@/lib/permissions';
 import { areDatabaseMediaUploadsEnabledRuntime } from '@/lib/runtime-flags';
 import { validateAudioMagicBytes } from '@/lib/validate-upload';
 import { parseAudioDuration } from '@/lib/audio-duration';
+import { vetFreeUseSample } from '@/lib/media-vetting';
+import { recordAuditEvent } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -121,7 +123,8 @@ export async function POST(request: Request) {
         select: {
           id: true,
           ownerId: true,
-          type: true
+          type: true,
+          name: true
         }
       })
     );
@@ -151,6 +154,22 @@ export async function POST(request: Request) {
     const fileBytes = new Uint8Array(await file.arrayBuffer());
     const durationSecs = parseAudioDuration(fileBytes) ?? null;
 
+    // AI content vetting gates the free-use flag (the shared radio crate).
+    // A flagged track still uploads for the artist's own use — it just isn't
+    // released into the rebroadcastable pool without review.
+    let effectiveFreeUse = freeUseEnabled;
+    let vetting: Awaited<ReturnType<typeof vetFreeUseSample>> | null = null;
+    if (freeUseEnabled) {
+      vetting = await vetFreeUseSample({
+        title,
+        notes: notesValue || null,
+        fileName: file.name || '',
+        artistName: profile.name,
+        durationSecs,
+      });
+      effectiveFreeUse = vetting.cleared;
+    }
+
     const storedMedia = hasBlobStorage
       ? await uploadArtistMediaToBlob({ file, hexId, profileId: profile.id })
       : null;
@@ -175,7 +194,7 @@ export async function POST(request: Request) {
               storageProvider: storedMedia?.provider ?? 'database',
               storageKey: storedMedia?.key ?? null,
               storageUrl: storedMedia?.url ?? null,
-              freeUseEnabled,
+              freeUseEnabled: effectiveFreeUse,
               durationSecs,
             }
           }
@@ -202,12 +221,32 @@ export async function POST(request: Request) {
       throw new Error('Artist media upload did not return the created asset.');
     }
 
+    if (vetting) {
+      recordAuditEvent({
+        actorUserId: session.user.id,
+        action: vetting.cleared ? 'media.free_use.auto_cleared' : 'media.free_use.auto_flagged',
+        entityType: 'ArtistMediaAsset',
+        entityId: hexId,
+        metadata: { reasoning: vetting.reasoning, requiresManualReview: vetting.requiresManualReview },
+      }).catch(() => {});
+    }
+
     return NextResponse.json({
       asset: {
         ...asset,
         url: `/api/media/${asset.hexId}`,
         shareUrl: `/api/media/${asset.hexId}`
-      }
+      },
+      ...(vetting && !vetting.cleared
+        ? {
+            vetting: {
+              freeUseWithheld: true,
+              reasoning: vetting.reasoning,
+              message:
+                'Uploaded, but automated vetting kept it out of the shared free-use radio crate. It stays available on your own page.',
+            },
+          }
+        : {})
     });
   } catch (error) {
     console.error('Artist media upload failed', error);

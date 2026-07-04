@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { bookingTasteScore as tasteScore, bookingGeoScore as geoScore } from '@/lib/growth-util';
+import { runAIJson } from '@/lib/ai';
 
 export type BookingCandidate = {
   slug: string;
@@ -17,6 +18,7 @@ export type VenueBookingFeed = {
   venueName: string | null;
   venueCity: string | null;
   candidates: BookingCandidate[];
+  aiEnhanced: boolean;
 };
 
 const CANDIDATE_POOL = 200;
@@ -43,7 +45,7 @@ export async function getVenueBookingRecommendations(userId: string): Promise<Ve
   }).catch(() => null);
 
   if (!venue) {
-    return { hasVenue: false, venueName: null, venueCity: null, candidates: [] };
+    return { hasVenue: false, venueName: null, venueCity: null, candidates: [], aiEnhanced: false };
   }
 
   // Artists already booked at this venue — exclude from suggestions.
@@ -95,10 +97,71 @@ export async function getVenueBookingRecommendations(userId: string): Promise<Ve
       : 'Trending now',
   }));
 
+  const aiEnhanced = await enhanceBookingPitches(venue, candidates);
+
   return {
     hasVenue: true,
     venueName: venue.name,
     venueCity: venue.city,
     candidates,
+    aiEnhanced,
   };
+}
+
+const AI_PITCH_CANDIDATES = 12;
+
+type AiPitchResponse = { pitches?: Array<{ slug?: string; pitch?: string }> };
+
+/**
+ * AI layer over the deterministic booking recommender: writes a specific
+ * one-line booking pitch per top candidate (why THIS act fits THIS venue),
+ * replacing the generic heuristic reason chips. Mutates `candidates` in
+ * place; returns whether the AI pass succeeded. Deterministic reasons stay
+ * when the AI binding is unavailable.
+ */
+async function enhanceBookingPitches(
+  venue: { name: string; genres: string[]; city: string | null; stateRegion: string | null },
+  candidates: BookingCandidate[],
+): Promise<boolean> {
+  if (candidates.length === 0) return false;
+  const head = candidates.slice(0, AI_PITCH_CANDIDATES);
+
+  const result = await runAIJson<AiPitchResponse>({
+    system: `You are the booking assistant for iHYPE.org, writing for a venue owner deciding who to book.
+For each candidate act, write one short booking pitch (max 90 chars) grounded ONLY in the provided data: genre fit with the venue, locality, and hype momentum. Never invent facts, draw history, or ticket numbers.
+
+JSON shape: {"pitches": [{"slug": string, "pitch": string}, ...]} — one entry per candidate, same slugs.`,
+    input: {
+      venue: {
+        name: venue.name,
+        genres: venue.genres.slice(0, 6),
+        city: venue.city,
+        region: venue.stateRegion,
+      },
+      candidates: head.map((c) => ({
+        slug: c.slug,
+        name: c.name,
+        genres: c.genres,
+        city: c.city,
+        hypeCount: c.hypeCount,
+        local: c.local,
+      })),
+    },
+    maxTokens: 1024,
+  });
+
+  const pitches = result?.pitches;
+  if (!Array.isArray(pitches) || pitches.length === 0) return false;
+
+  const bySlug = new Map(head.map((c) => [c.slug, c]));
+  let applied = 0;
+  for (const p of pitches) {
+    const candidate = typeof p?.slug === 'string' ? bySlug.get(p.slug) : undefined;
+    const pitch = typeof p?.pitch === 'string' ? p.pitch.trim().slice(0, 120) : '';
+    if (candidate && pitch) {
+      candidate.reason = pitch;
+      applied++;
+    }
+  }
+  return applied > 0;
 }
