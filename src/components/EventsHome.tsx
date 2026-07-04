@@ -90,9 +90,11 @@ function EventList({ shows, emptyTitle, emptyBody }: { shows: Show[]; emptyTitle
 export function EventsHome({
   initialTab,
   initialTicketView,
+  isShellForeground = true,
 }: {
   initialTab?: string;
   initialTicketView?: string;
+  isShellForeground?: boolean;
 } = {}) {
   const validInitialTab = TABS.some((t) => t.id === initialTab) ? (initialTab as Tab) : null;
   const [tab, setTab] = useState<Tab>(validInitialTab ?? 'local');
@@ -153,7 +155,7 @@ export function EventsHome({
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 24px 100px' }}>
       <MobileQuickGrid
-        active={gridMode}
+        active={gridMode && isShellForeground}
         items={gridItems}
         onSearchTap={() => { setGridMode(false); setTab('search'); }}
         onSelect={(id) => { setGridMode(false); setTab(id as Tab); }}

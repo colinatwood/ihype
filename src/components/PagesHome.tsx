@@ -99,7 +99,7 @@ type PagesData = {
   mutualCount: number;
 };
 
-export function PagesHome({ initialTab }: { initialTab?: string } = {}) {
+export function PagesHome({ initialTab, isShellForeground = true }: { initialTab?: string; isShellForeground?: boolean } = {}) {
   const validInitialTab = TABS.some((t) => t.id === initialTab) ? (initialTab as TabId) : null;
   const [tab, setTab] = useState<TabId>(validInitialTab ?? 'mypage');
   const [gridMode, setGridMode] = useState(!validInitialTab);
@@ -160,7 +160,7 @@ export function PagesHome({ initialTab }: { initialTab?: string } = {}) {
 
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: '32px 24px 100px' }}>
-      <MobileQuickGrid active={gridMode} items={gridItems} onSelect={(id) => { setGridMode(false); setTab(id as TabId); }} />
+      <MobileQuickGrid active={gridMode && isShellForeground} items={gridItems} onSelect={(id) => { setGridMode(false); setTab(id as TabId); }} />
 
       <div className={`mqg-content${gridMode ? ' is-hidden' : ''}`}>
       <button className="mqg-back" onClick={() => setGridMode(true)} type="button">
