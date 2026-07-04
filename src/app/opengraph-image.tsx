@@ -31,7 +31,7 @@ export default function OgImage() {
             <span style={{ color: '#ff5029' }}>built for the scene.</span>
           </div>
           <div style={{ fontSize: 28, color: '#5a5048', maxWidth: 780 }}>
-            Not-for-profit · 0% ticket fees · Free forever
+            Listen free, forever · Not-for-profit · 0% ticket fees
           </div>
         </div>
 

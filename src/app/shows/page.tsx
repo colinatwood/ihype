@@ -259,10 +259,6 @@ export default async function ShowsIndexPage({
           )}
         </div>
       )}
-
-      <p style={{ marginTop: 40, fontSize: 11, color: 'rgba(240,235,229,.25)', fontFamily: 'var(--font-mono)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
-        iHYPE · 0% platform fee · 45/45/10 split · admin@ihype.org
-      </p>
     </div>
   );
 }

@@ -8,8 +8,8 @@ import { IndexTabsShowcase } from '@/components/IndexTabsShowcase';
 import { getBaseUrl } from '@/lib/utils';
 
 const TITLE = 'iHYPE — Independent music built for the scene';
-const DESCRIPTION = 'iHYPE is a fan-first music platform where artists, DJs, and venues keep 90% of every ticket — 45% artist, 45% venue, 10% promoters, 0% iHYPE. No fees, no video, just live radio shows and shows worth hyping.';
-const SOCIAL_DESCRIPTION = 'A fan-first music platform where artists, DJs, and venues keep 90% of every ticket. No fees. No video. Just the scene.';
+const DESCRIPTION = 'Listen free, forever. iHYPE is a fan-first music platform where artists, DJs, and venues keep 90% of every ticket — 45% artist, 45% venue, 10% promoters, 0% iHYPE. No fees, no video, just live radio shows and shows worth hyping.';
+const SOCIAL_DESCRIPTION = 'Listen free, forever. Artists, DJs, and venues keep 90% of every ticket. No fees. No video. Just the scene.';
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -50,6 +50,9 @@ export default async function RootPage() {
         <div className="container">
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '3rem', alignItems: 'center' }}>
             <div>
+              <p style={{ fontFamily: 'var(--f-m)', fontSize: '0.75rem', letterSpacing: '.2em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 1rem' }}>
+                Listen free, forever.
+              </p>
               {/* Live stats bar */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
                 {[
@@ -365,7 +368,7 @@ export default async function RootPage() {
           }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, var(--accent), #ff3e9a, #b983ff)' }} />
             <p style={{ fontFamily: 'var(--f-m)', fontSize: '0.75rem', letterSpacing: '.2em', color: 'var(--accent)', textTransform: 'uppercase', margin: '0 0 0.75rem' }}>
-              Free forever
+              Listen free, forever.
             </p>
             <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 'clamp(2rem, 5vw, 4rem)', letterSpacing: '-0.04em', color: 'var(--ink)', margin: '0 0 1rem', lineHeight: 1 }}>
               Join the scene.
