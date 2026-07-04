@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { vetAdvertisement, adCampaignStatusFromVetting } from '@/lib/ad-vetting';
+import { recordAuditEvent } from '@/lib/audit';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +37,17 @@ export async function POST(request: NextRequest) {
   const slot = await db.adSlot.findUnique({ where: { id: slotId, active: true } });
   if (!slot) return NextResponse.json({ error: 'Ad slot not found.' }, { status: 404 });
 
+  // AI vetting (music-industry-only policy). Approvals go live without an
+  // admin touch; only borderline submissions land in the manual queue.
+  const clickUrl = typeof body.clickUrl === 'string' ? body.clickUrl : '';
+  const vetting = await vetAdvertisement({
+    advertiserName: session.user.name ?? session.user.email ?? 'Self-serve advertiser',
+    advertiserType: `self-serve campaign in slot "${slot.name}"`,
+    campaignWebsite: clickUrl,
+    adTextCopy: title,
+  });
+  const status = adCampaignStatusFromVetting(vetting);
+
   const ad = await db.ad.create({
     data: {
       slotId,
@@ -46,10 +59,28 @@ export async function POST(request: NextRequest) {
       budgetCents: typeof body.budgetCents === 'number' ? body.budgetCents : 0,
       startsAt: typeof body.startsAt === 'string' ? new Date(body.startsAt) : undefined,
       endsAt: typeof body.endsAt === 'string' ? new Date(body.endsAt) : undefined,
-      status: 'PENDING',
+      status,
     },
     include: { slot: { select: { name: true } } },
   });
 
-  return NextResponse.json({ ad }, { status: 201 });
+  recordAuditEvent({
+    actorUserId: session.user.id,
+    action: `ad.campaign.auto_vetting.${status.toLowerCase()}`,
+    entityType: 'Ad',
+    entityId: ad.id,
+    metadata: { reasoning: vetting.reasoning },
+  }).catch(() => {});
+
+  return NextResponse.json({
+    ad,
+    vetting: {
+      status,
+      reasoning: vetting.reasoning,
+      message:
+        status === 'APPROVED' ? 'Campaign passed automated vetting and is live.'
+        : status === 'REJECTED' ? 'Campaign did not meet the music-industry supporter policy.'
+        : 'Campaign is queued for manual review (within 48 hours).',
+    },
+  }, { status: 201 });
 }

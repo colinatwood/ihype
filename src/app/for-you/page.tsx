@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { detectRequestLocation } from '@/lib/request-location';
 import { getRecommendations } from '@/lib/recommendations';
+import { enhanceRecommendationsWithAI } from '@/lib/ai-recommendations';
 import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,14 @@ const REASON_COLOR: Record<string, string> = {
 
 export default async function ForYouPage() {
   const [session, location] = await Promise.all([auth(), detectRequestLocation()]);
-  const { profiles, meta } = await getRecommendations(session?.user?.id ?? null, location, { type: null, limit: 30 });
+  const result = await getRecommendations(session?.user?.id ?? null, location, { type: null, limit: 30 });
+  const { meta } = result;
+  const { profiles } = await enhanceRecommendationsWithAI(result.profiles, {
+    genres: meta.viewerGenres,
+    city: meta.viewerCity,
+    stateRegion: meta.viewerState,
+    hasHypeHistory: meta.viewerHasHypeHistory,
+  });
 
   return (
     <main className="foryou-page">

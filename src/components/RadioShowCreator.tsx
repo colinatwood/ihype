@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, postJson } from '@/lib/api-client';
@@ -40,6 +40,16 @@ const TYPE_META: Record<Block['kind'], { label: string; color: string }> = {
 const GENRES = ['Deep House', 'Tech House', 'Techno', 'Electronic', 'Indie', 'Ambient'];
 const SCOPES: AdvertisingScope[] = ['local', 'regional', 'national', 'global'];
 
+type DjAdPlan = {
+  scope: AdvertisingScope;
+  breaksPerHour: number;
+  breakDurationSecs: number;
+  targetAdLoadPct: number;
+  advertiserTypes: string[];
+  rationale: string;
+  aiGenerated: boolean;
+};
+
 type DragPayload = { kind: 'crate'; track: CrateTrack } | { kind: 'block'; index: number };
 type RecorderState =
   | { phase: 'idle' }
@@ -61,6 +71,22 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
   const [saving, setSaving] = useState<'draft' | 'schedule' | 'live' | null>(null);
   const [recorder, setRecorder] = useState<RecorderState>({ phase: 'idle' });
   const [samplePicker, setSamplePicker] = useState(false);
+  const [adPlan, setAdPlan] = useState<DjAdPlan | null>(null);
+  const scopeTouchedRef = useRef(false);
+
+  // AI advertising recommendation for this DJ — pre-sets the ad scope and
+  // sizes ad breaks; the DJ can always override.
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch<{ plan?: DjAdPlan }>('/api/radio/ad-plan')
+      .then((data) => {
+        if (cancelled || !data?.plan) return;
+        setAdPlan(data.plan);
+        if (!scopeTouchedRef.current) setScope(data.plan.scope);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const dragRef = useRef<DragPayload | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,7 +149,7 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
   }
 
   function addAdBreak() {
-    const clips = buildAutoAdBreak(scope, 90);
+    const clips = buildAutoAdBreak(scope, adPlan?.breakDurationSecs ?? 90);
     if (!clips.length) {
       showToast('No ad clips available for this scope yet');
       return;
@@ -390,11 +416,16 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
           </label>
           <label className="rsc-field">
             <span>Ad reach / scope</span>
-            <select className="rsc-select" onChange={(e) => setScope(e.target.value as AdvertisingScope)} value={scope}>
+            <select className="rsc-select" onChange={(e) => { scopeTouchedRef.current = true; setScope(e.target.value as AdvertisingScope); }} value={scope}>
               {SCOPES.map((s) => (
                 <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
               ))}
             </select>
+            {adPlan && (
+              <span className="rsc-ai-hint" title={adPlan.rationale}>
+                AI: {adPlan.scope} · {adPlan.breaksPerHour} break{adPlan.breaksPerHour === 1 ? '' : 's'}/hr · target {adPlan.targetAdLoadPct}% load
+              </span>
+            )}
           </label>
           <label className="rsc-field">
             <span>Go live</span>
@@ -586,6 +617,7 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
         .rsc-metarow { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-top: 18px; }
         .rsc-field { display: flex; flex-direction: column; gap: 6px; }
         .rsc-field span { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .14em; color: rgba(240,235,229,.55); }
+        .rsc-field .rsc-ai-hint { text-transform: none; letter-spacing: .04em; color: #22e5d4; cursor: help; }
         .rsc-select, .rsc-dt { font-family: var(--font-body); font-size: 13px; color: var(--ink); background: var(--bg2); border: 1px solid rgba(255,255,255,.1); border-radius: 8px; padding: 9px 12px; outline: none; }
         .rsc-actions { display: flex; gap: 10px; margin-left: auto; align-items: flex-end; flex-wrap: wrap; }
         .rsc-btn { padding: 9px 16px; border-radius: 8px; font-family: var(--font-display); font-weight: 700; font-size: 13px; cursor: pointer; border: none; }
