@@ -67,7 +67,17 @@ export async function GET(request: Request) {
   if (radioOnly) {
     const profileSelect = { select: { id: true, name: true, slug: true, type: true, avatarImage: true, city: true, stateRegion: true } };
     const shows = await db.show.findMany({
-      include: { venueProfile: profileSelect, headlinerProfile: profileSelect, promoterProfile: profileSelect },
+      include: {
+        venueProfile: profileSelect,
+        headlinerProfile: { select: { ...profileSelect.select, genres: true } },
+        promoterProfile: profileSelect,
+        // Powers /radio's up-next crate and real show durations — all public
+        // fields already displayed on the show detail page.
+        radioTracks: {
+          select: { id: true, title: true, artistName: true, position: true, durationSecs: true },
+          orderBy: { position: 'asc' as const },
+        },
+      },
       where: { isRadioShow: true, status: { in: ['SCHEDULED', 'LIVE', 'ENDED'] }, ...getDemoCreatorExclusion() },
       orderBy: [{ startsAt: 'desc' }],
       take: 50,
