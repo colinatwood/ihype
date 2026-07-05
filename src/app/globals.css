@@ -5630,6 +5630,9 @@ html.high-contrast p {
 /* 4. Larger tap targets */
 @media (max-width: 768px) {
   .button, button, [role="button"] { min-height: 44px; min-width: 44px; }
+  /* .button.small's own min-height (2.15rem/34.4px) has higher specificity
+     than the plain .button rule above, so it needs its own override here. */
+  .button.small { min-height: 44px; }
   input, select, textarea { min-height: 44px; font-size: 16px; }
   .tag, .badge { padding: 6px 12px; }
   nav a, .nav-link { min-height: 44px; display: flex; align-items: center; }
