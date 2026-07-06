@@ -97,6 +97,15 @@ test.describe('Mobile app shell', () => {
     }, target);
     const wrapperSelector = '[data-qa-pull-target="true"]';
 
+    // Delay the refresh's own network round-trip so the spinner is
+    // guaranteed to still be visible when we assert on it below — without
+    // this, a fast enough response can flip `refreshing` back to false
+    // before the assertion gets a chance to poll for it.
+    await page.route('**/api/shows/directory', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      await route.continue();
+    });
+
     await dispatchTouch(page, wrapperSelector, 'touchstart', 200, 100);
     await page.waitForTimeout(100);
     // dy=240 from the original start -> pull caps at 90px, well past the 64px trigger.
