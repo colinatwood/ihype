@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { pathToSection, sectionToPath, SHELL_SECTIONS, type ShellSection } from '@/lib/mobileShell';
 
@@ -69,8 +69,13 @@ export function MobileShellProvider({ children }: { children: ReactNode }) {
 
   const active = isMobile && pathToSection(pathname) !== null;
 
+  const value = useMemo(
+    () => ({ active, section, setSection, swipeSection, resetTokens, goToSectionHome }),
+    [active, section, setSection, swipeSection, resetTokens, goToSectionHome]
+  );
+
   return (
-    <MobileShellCtx.Provider value={{ active, section, setSection, swipeSection, resetTokens, goToSectionHome }}>
+    <MobileShellCtx.Provider value={value}>
       {children}
     </MobileShellCtx.Provider>
   );
