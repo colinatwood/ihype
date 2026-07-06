@@ -20,6 +20,7 @@ import { CookieConsent } from '@/components/CookieConsent';
 import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
 import { MobileShellProvider } from '@/lib/MobileShellContext';
 import { MobileAppShellLoader } from '@/components/MobileAppShellLoader';
+import { AppSplash } from '@/components/AppSplash';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700', '800'], variable: '--font-syne', display: 'swap' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-dm', display: 'swap' });
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <AppProviders>
           <MobileShellProvider>
+            <AppSplash />
             <a href="#main-content" className="skip-to-content">Skip to main content</a>
             <WebVitals />
             <OfflineBanner />
