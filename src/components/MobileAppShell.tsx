@@ -31,11 +31,7 @@ export function MobileAppShell() {
 
   const handleCommit = useCallback(
     (direction: 'next' | 'prev') => {
-      if (!shell) return;
-      const idx = SHELL_SECTIONS.indexOf(shell.section);
-      const len = SHELL_SECTIONS.length;
-      const nextIdx = (idx + (direction === 'next' ? 1 : -1) + len) % len;
-      shell.setSection(SHELL_SECTIONS[nextIdx]);
+      shell?.swipeSection(direction);
     },
     [shell]
   );

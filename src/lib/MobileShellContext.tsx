@@ -2,13 +2,15 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
-import { pathToSection, sectionToPath, type ShellSection } from '@/lib/mobileShell';
+import { pathToSection, sectionToPath, SHELL_SECTIONS, type ShellSection } from '@/lib/mobileShell';
 
 type MobileShellValue = {
   /** True only on mobile viewports while sitting on one of the 3 shell routes — gates both the shell's own visibility and whether each route's own page content should render (it shouldn't, the shell already has a mounted copy). */
   active: boolean;
   section: ShellSection;
   setSection: (section: ShellSection) => void;
+  /** Moves to the next/previous section in the 3-item loop — shared by MobileAppShell's live drag-follow carousel (content view) and MobileQuickGrid's own swipe detection (grid view, which is portaled outside the carousel's DOM subtree and so needs its own gesture handling). */
+  swipeSection: (direction: 'next' | 'prev') => void;
   /** Bumped per-section each time goToSectionHome targets that section — each *Home component watches its own entry to reset back to its grid/landing view. */
   resetTokens: Record<ShellSection, number>;
   /** Switches to (or stays on) a section AND resets it back to its grid/landing view — used by the bottom nav so tapping a tab always returns to that section's home, even if you're drilled into a sub-tab. */
@@ -58,10 +60,17 @@ export function MobileShellProvider({ children }: { children: ReactNode }) {
     setResetTokens((prev) => ({ ...prev, [next]: prev[next] + 1 }));
   }, [setSection]);
 
+  const swipeSection = useCallback((direction: 'next' | 'prev') => {
+    const idx = SHELL_SECTIONS.indexOf(section);
+    const len = SHELL_SECTIONS.length;
+    const nextIdx = (idx + (direction === 'next' ? 1 : -1) + len) % len;
+    setSection(SHELL_SECTIONS[nextIdx]);
+  }, [section, setSection]);
+
   const active = isMobile && pathToSection(pathname) !== null;
 
   return (
-    <MobileShellCtx.Provider value={{ active, section, setSection, resetTokens, goToSectionHome }}>
+    <MobileShellCtx.Provider value={{ active, section, setSection, swipeSection, resetTokens, goToSectionHome }}>
       {children}
     </MobileShellCtx.Provider>
   );

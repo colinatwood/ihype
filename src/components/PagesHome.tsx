@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { FollowButton } from '@/components/FollowButton';
 import { MobileQuickGrid, type QuickGridItem } from '@/components/MobileQuickGrid';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { useMobileShell } from '@/lib/MobileShellContext';
 
 const TYPE_COLOR: Record<string, string> = {
   ARTIST: '#ff5029',
@@ -108,6 +109,7 @@ type PagesData = {
 };
 
 export function PagesHome({ initialTab, isShellForeground = true, resetToken }: { initialTab?: string; isShellForeground?: boolean; resetToken?: number } = {}) {
+  const shell = useMobileShell();
   const validInitialTab = TABS.some((t) => t.id === initialTab) ? (initialTab as TabId) : null;
   const [tab, setTab] = useState<TabId>(validInitialTab ?? 'mypage');
   const [gridMode, setGridMode] = useState(!validInitialTab);
@@ -206,6 +208,7 @@ export function PagesHome({ initialTab, isShellForeground = true, resetToken }: 
         items={gridItems}
         onSearchTap={() => { setGridMode(false); setTab('search'); }}
         onSelect={(id) => { setGridMode(false); setTab(id as TabId); }}
+        onSwipeSection={shell?.swipeSection}
         searchPlaceholder="Search artists, venues, shows…"
       />
 

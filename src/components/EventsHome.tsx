@@ -7,6 +7,7 @@ import { TicketCardActions } from '@/components/TicketCardActions';
 import { PagesReferralTab } from '@/components/PagesReferralTab';
 import { MobileQuickGrid, type QuickGridItem } from '@/components/MobileQuickGrid';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { useMobileShell } from '@/lib/MobileShellContext';
 
 type Tab = 'search' | 'local' | 'foryou' | 'tickets' | 'referral';
 const TABS: { id: Tab; label: string }[] = [
@@ -119,6 +120,7 @@ export function EventsHome({
   isShellForeground?: boolean;
   resetToken?: number;
 } = {}) {
+  const shell = useMobileShell();
   const validInitialTab = TABS.some((t) => t.id === initialTab) ? (initialTab as Tab) : null;
   const [tab, setTab] = useState<Tab>(validInitialTab ?? 'local');
   const [gridMode, setGridMode] = useState(!validInitialTab);
@@ -209,6 +211,7 @@ export function EventsHome({
         items={gridItems}
         onSearchTap={() => { setGridMode(false); setTab('search'); }}
         onSelect={(id) => { setGridMode(false); setTab(id as Tab); }}
+        onSwipeSection={shell?.swipeSection}
         searchPlaceholder="Search artists, venues, shows…"
       />
 

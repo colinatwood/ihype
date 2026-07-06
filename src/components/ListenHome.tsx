@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { MobileQuickGrid, type QuickGridItem } from '@/components/MobileQuickGrid';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import { useMobileShell } from '@/lib/MobileShellContext';
 
 const PALETTE = ['#ff5029', '#b983ff', '#22e5d4', '#ff3e9a', '#ffb84a', '#7fb3ff'];
 
@@ -278,6 +279,7 @@ export function ListenHome({
   isShellForeground?: boolean;
   resetToken?: number;
 } = {}) {
+  const shell = useMobileShell();
   const validInitialTab = TABS.some((t) => t.id === initialTab) ? (initialTab as ListenTab) : null;
   const [tab, setTab] = useState<ListenTab>(validInitialTab ?? 'seeds');
   const [gridMode, setGridMode] = useState(!validInitialTab);
@@ -476,6 +478,7 @@ export function ListenHome({
         items={gridItems}
         onSearchTap={() => { setGridMode(false); setTab('search'); }}
         onSelect={(id) => { setGridMode(false); setTab(id as typeof tab); }}
+        onSwipeSection={shell?.swipeSection}
         searchPlaceholder="Search artists, venues, shows…"
       />
 
