@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "npm@10.9.2",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "prebuild": "npm run guard:design && node scripts/bump-sw-version.mjs",
     "build": "next build --webpack",
     "guard:design": "node scripts/guard-claude-design.mjs",
