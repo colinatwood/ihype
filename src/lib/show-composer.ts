@@ -25,7 +25,12 @@ export const showMediaItemSchema = z.object({
   notes: z.string().nullable().optional(),
   mimeType: z.string().nullable().optional(),
   mediaType: showMediaTypeSchema.default('audio'),
-  previewImageUrl: z.string().nullable().optional()
+  previewImageUrl: z.string().nullable().optional(),
+  // The DJ's crate track already knows its real duration (ArtistMediaAsset.durationSecs)
+  // at authoring time — carrying it through here is what lets any consumer of a saved
+  // production plan (ShowSequencePlayer, /radio's hero) show a real total duration
+  // instead of falling back to a fake default.
+  durationSeconds: z.number().min(0).optional()
 });
 
 export const showSamplePadSchema = z.object({
@@ -125,6 +130,149 @@ export const royaltyFreeSampleClips: ShowSamplePad[] = [
 export function parseShowProductionPlan(value: unknown): ShowProductionPlan | null {
   const result = showProductionPlanSchema.safeParse(value);
   return result.success ? result.data : null;
+}
+
+export type ResolvedSequenceItem = {
+  id: string;
+  kind: ShowSequenceItem['kind'];
+  label: string;
+  url?: string;
+  mediaType?: 'audio';
+  notes?: string | null;
+  durationSeconds?: number;
+  previewImageUrl?: string | null;
+};
+
+// Expands a production plan's sequence (a list of refs) into the actual
+// playable items — resolving MEDIA/VOICE_OVER/SAMPLE refs against the plan's
+// own catalogs and auto-injecting ad breaks by frequency when the DJ hasn't
+// placed explicit AD cues. Shared by ShowSequencePlayer (real playback) and
+// any consumer that just needs a real total duration (e.g. /radio's hero).
+export function buildResolvedSequence(productionPlan: ShowProductionPlan): ResolvedSequenceItem[] {
+  const mediaById = new Map<string, ShowMediaItem>(
+    productionPlan.mediaItems.map((item) => [item.mediaId, item])
+  );
+  const voiceById = new Map<string, VoiceOverCue>(
+    productionPlan.voiceOvers.map((item) => [item.id, item])
+  );
+  const sampleByRef = new Map<string, ShowSamplePad>(
+    productionPlan.samplePads
+      .filter((item) => item.assignedPad)
+      .map((item) => [`pad-${item.assignedPad}`, item])
+  );
+
+  const adClipById = new Map<string, ShowAdClip>(
+    (productionPlan.advertising?.clips ?? []).map((clip) => [clip.clipId, clip])
+  );
+  const adClips = productionPlan.advertising?.enabled ? productionPlan.advertising.clips ?? [] : [];
+  const frequency = productionPlan.advertising?.frequency ?? 3;
+  // Shows that explicitly place AD cues in their sequence (e.g. the Radio
+  // Show Creator) opt out of the legacy frequency-based auto-injection below
+  // — otherwise ad breaks would play twice.
+  const hasExplicitAds = productionPlan.sequence.some((item) => item.kind === 'AD');
+  let mediaCount = 0;
+  let adIndex = 0;
+
+  const resolved: ResolvedSequenceItem[] = [];
+
+  for (const item of productionPlan.sequence) {
+    if (item.kind === 'AD') {
+      const adClip = adClipById.get(item.refId);
+      if (!adClip) {
+        continue;
+      }
+
+      resolved.push({
+        id: item.id,
+        kind: item.kind,
+        label: item.label,
+        url: adClip.url,
+        mediaType: 'audio',
+        notes: adClip.notes,
+        durationSeconds: adClip.durationSeconds
+      });
+      continue;
+    }
+
+    if (item.kind === 'MEDIA') {
+      const mediaItem = mediaById.get(item.refId);
+      if (!mediaItem) {
+        continue;
+      }
+
+      mediaCount += 1;
+      resolved.push({
+        id: item.id,
+        kind: item.kind,
+        label: item.label,
+        url: mediaItem.url,
+        mediaType: mediaItem.mediaType,
+        notes: mediaItem.notes,
+        durationSeconds: mediaItem.durationSeconds,
+        previewImageUrl: mediaItem.previewImageUrl
+      });
+
+      if (!hasExplicitAds && adClips.length && mediaCount % frequency === 0) {
+        const adClip = adClips[adIndex % adClips.length] as ShowAdClip;
+        resolved.push({
+          id: `ad-${adClip.clipId}-${mediaCount}`,
+          kind: 'AD',
+          label: `Advertisement: ${adClip.title}`,
+          url: adClip.url,
+          mediaType: 'audio',
+          notes: adClip.notes,
+          durationSeconds: adClip.durationSeconds
+        });
+        adIndex += 1;
+      }
+
+      continue;
+    }
+
+    if (item.kind === 'VOICE_OVER') {
+      const voiceItem = voiceById.get(item.refId);
+      if (!voiceItem) {
+        continue;
+      }
+
+      resolved.push({
+        id: item.id,
+        kind: item.kind,
+        label: item.label,
+        url: voiceItem.recordingDataUrl,
+        mediaType: voiceItem.recordingDataUrl ? 'audio' : undefined,
+        notes: voiceItem.script,
+        durationSeconds: voiceItem.durationSeconds
+      });
+      continue;
+    }
+
+    if (item.kind === 'SAMPLE') {
+      const sampleItem = sampleByRef.get(item.refId);
+      if (!sampleItem) {
+        continue;
+      }
+
+      resolved.push({
+        id: item.id,
+        kind: item.kind,
+        label: item.label,
+        url: sampleItem.url,
+        mediaType: 'audio',
+        notes: sampleItem.notes
+      });
+    }
+  }
+
+  return resolved;
+}
+
+// Real total duration of a production plan, in seconds — sums whatever
+// resolved items actually carry a known duration (media tracks, voiceover
+// recordings, ad clips) and silently omits the rest (e.g. sample pad hits)
+// rather than guessing, so callers never display a fabricated number.
+export function sumProductionPlanDurationSecs(productionPlan: ShowProductionPlan): number {
+  return buildResolvedSequence(productionPlan).reduce((total, item) => total + (item.durationSeconds ?? 0), 0);
 }
 
 // Placeholder ad-clip catalog, scoped like royaltyFreeSampleClips above —

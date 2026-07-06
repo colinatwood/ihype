@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FollowButton } from '@/components/FollowButton';
+import { parseShowProductionPlan, sumProductionPlanDurationSecs } from '@/lib/show-composer';
 
 type ShowStatus = 'live' | 'saved' | 'upcoming';
 
@@ -32,6 +33,7 @@ type ApiRadioShow = {
   hypeCount?: number;
   headlinerProfile?: { id: string; name: string; genres?: string[] } | null;
   radioTracks?: { id: string; title: string; artistName: string | null; position: number; durationSecs: number | null }[];
+  productionPlan?: unknown;
 };
 
 const PALETTE = ['#ff5029', '#22e5d4', '#b983ff', '#ff3e9a'];
@@ -105,13 +107,19 @@ export function RadioHome() {
             id: t.id, title: t.title, artistName: t.artistName ?? (s.headlinerProfile?.name ?? 'iHYPE Radio'), dur: t.durationSecs ?? 0,
           }));
           const trackDur = tracks.reduce((sum, t) => sum + t.dur, 0);
+          // Shows authored via the newer Radio Show Creator carry their real
+          // duration in productionPlan (mediaItems/voiceOvers/ad clips) instead
+          // of the legacy radioTracks table — sum that before ever falling
+          // back to a fabricated default.
+          const plan = parseShowProductionPlan(s.productionPlan);
+          const planDur = plan ? sumProductionPlanDurationSecs(plan) : 0;
           return {
             id: s.id,
             title: s.title,
             dj: s.headlinerProfile?.name ?? 'iHYPE Radio',
             djProfileId: s.headlinerProfile?.id ?? null,
             genre: s.headlinerProfile?.genres?.[0] ?? 'Radio',
-            dur: trackDur > 0 ? trackDur : 3600,
+            dur: trackDur > 0 ? trackDur : planDur > 0 ? planDur : 3600,
             color: PALETTE[i % PALETTE.length],
             status: s.status === 'LIVE' ? 'live' : s.status === 'SCHEDULED' ? 'upcoming' : 'saved',
             hypeCount: s.hypeCount ?? 0,

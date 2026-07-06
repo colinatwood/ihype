@@ -126,6 +126,7 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
       artistProfileId: profile.id,
       artistName: t.artistName,
       mediaType: 'audio',
+      durationSeconds: t.durationSecs,
     };
   }
 
