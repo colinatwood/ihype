@@ -23,6 +23,7 @@ const publicShowArgs = Prisma.validator<Prisma.ShowDefaultArgs>()({
     radioTracks: { select: { durationSecs: true } },
     venueProfile: {
       select: {
+        id: true,
         name: true,
         city: true,
         stateRegion: true,
@@ -31,6 +32,7 @@ const publicShowArgs = Prisma.validator<Prisma.ShowDefaultArgs>()({
     },
     headlinerProfile: {
       select: {
+        id: true,
         name: true,
         city: true,
         country: true,
@@ -92,7 +94,7 @@ type RedactedProfileFields = {
 };
 type RedactedVenueFields = { postalCode: null; latitude: null; longitude: null };
 type PublicProfile = PublicProfileRow & RedactedProfileFields;
-type PublicShow = Omit<PublicShowRow, 'venueProfile'> & {
+export type PublicShow = Omit<PublicShowRow, 'venueProfile'> & {
   venueProfile: (NonNullable<PublicShowRow['venueProfile']> & RedactedVenueFields) | null;
 };
 

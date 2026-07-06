@@ -52,6 +52,20 @@ export function finalScore(signals: Signals): number {
   return totalWeight > 0 ? weightedSum / totalWeight : 0;
 }
 
+/**
+ * Multiplicative boost for a candidate show whose headliner or venue the
+ * viewer has already bought a ticket to before — a repeat-affinity signal
+ * distinct from (and stacked on top of) the collaborative-filtering score,
+ * since "you've seen this artist / been to this room before" is a strong,
+ * cheaply-available personalization signal from ticket purchase history.
+ */
+export function historyBoost(seenArtistBefore: boolean, seenVenueBefore: boolean): number {
+  let boost = 1;
+  if (seenArtistBefore) boost += 0.35;
+  if (seenVenueBefore) boost += 0.15;
+  return boost;
+}
+
 // Picks the dominant weighted signal and turns it into a human "why" — the
 // "Because you hyped X" explainability. Naming a hyped artist is reserved for
 // the taste signal, where we can honestly tie it to a shared-genre artist the

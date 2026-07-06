@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { formatCurrencyFromCents } from '@/lib/ticketing';
 import { TicketCardActions } from '@/components/TicketCardActions';
@@ -29,6 +29,8 @@ type Show = {
   ticketPriceCents: number;
   headlinerProfile?: { name: string; genres?: string[] } | null;
   venueProfile?: { name: string; city?: string | null } | null;
+  /** Present only on For You results — a personalized "why this show" one-liner from the AI-enhanced recommender, e.g. "Because you hyped X". */
+  reason?: { text: string } | null;
 };
 
 type TicketOrder = {
@@ -92,6 +94,9 @@ function EventList({ shows, emptyTitle, emptyBody }: { shows: Show[]; emptyTitle
                 {show.headlinerProfile ? `${show.headlinerProfile.name} @ ${show.venueProfile?.name ?? show.title}` : show.title}
               </div>
               <div style={{ fontSize: 13, color: 'rgba(240,235,229,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{show.venueProfile?.name ?? ''}{show.venueProfile?.city ? ` · ${show.venueProfile.city}` : ''}</div>
+              {show.reason?.text && (
+                <div style={{ fontSize: 11, color: '#ff5029', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>✨ {show.reason.text}</div>
+              )}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', padding: '18px 20px', gap: 8, flexShrink: 0 }}>
               <div>
@@ -133,8 +138,8 @@ export function EventsHome({
   }, [resetToken]);
   const [q, setQ] = useState('');
   const [shows, setShows] = useState<Show[] | null>(null);
+  const [forYouShows, setForYouShows] = useState<Show[] | null>(null);
   const [nearCity, setNearCity] = useState<string | null>(null);
-  const [userGenres, setUserGenres] = useState<string[]>([]);
   const [loggedIn, setLoggedIn] = useState(false);
   const [ticketView, setTicketView] = useState<'active' | 'archive'>(initialTicketView === 'archive' ? 'archive' : 'active');
   const [ticketOrders, setTicketOrders] = useState<TicketOrder[] | null>(null);
@@ -147,8 +152,13 @@ export function EventsHome({
   const refreshDirectory = useCallback(() => {
     return fetch('/api/shows/directory')
       .then((r) => r.json())
-      .then((d) => { setShows(d.shows ?? []); setNearCity(d.nearCity ?? null); setUserGenres(d.userGenres ?? []); setLoggedIn(!!d.loggedIn); })
-      .catch(() => setShows([]));
+      .then((d) => {
+        setShows(d.shows ?? []);
+        setForYouShows(d.forYouShows ?? d.shows ?? []);
+        setNearCity(d.nearCity ?? null);
+        setLoggedIn(!!d.loggedIn);
+      })
+      .catch(() => { setShows([]); setForYouShows([]); });
   }, []);
 
   useEffect(() => {
@@ -172,13 +182,10 @@ export function EventsHome({
   const refreshAll = useCallback(() => Promise.all([refreshDirectory(), refreshTickets()]), [refreshDirectory, refreshTickets]);
 
   const allShows = shows ?? [];
-  const genresSet = useMemo(() => new Set(userGenres), [userGenres]);
+  const forYouShownList = forYouShows ?? [];
 
   const localShows = nearCity
     ? allShows.filter((s) => (s.venueProfile?.city ?? '').toLowerCase() === nearCity.toLowerCase())
-    : allShows;
-  const forYouShows = genresSet.size > 0
-    ? allShows.filter((s) => s.headlinerProfile?.genres?.some((g) => genresSet.has(g)))
     : allShows;
   const ql = q.trim().toLowerCase();
   const searchShows = ql
@@ -191,7 +198,7 @@ export function EventsHome({
       icon: <svg fill="none" height="30" stroke="#22e5d4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24" width="30"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>,
     },
     {
-      id: 'foryou', label: 'For You', color: '#ff5029', sublabel: `${forYouShows.length} matched`,
+      id: 'foryou', label: 'For You', color: '#ff5029', sublabel: `${forYouShownList.length} matched`,
       icon: <svg fill="none" height="30" stroke="#ff5029" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24" width="30"><path d="M12 21s-7.5-4.6-10-9.3C.5 8.2 2.4 4 6.4 4c2 0 3.6 1 5.6 3 2-2 3.6-3 5.6-3 4 0 5.9 4.2 4.4 7.7C19.5 16.4 12 21 12 21Z" /></svg>,
     },
     {
@@ -279,11 +286,11 @@ export function EventsHome({
       )}
 
       {tab === 'foryou' && (
-        shows === null ? <div style={emptyStyle}><p>Loading events…</p></div> : (
+        forYouShows === null ? <div style={emptyStyle}><p>Loading events…</p></div> : (
           <EventList
-            emptyBody="Hype some artists and we'll surface shows that match your taste."
+            emptyBody="Hype some artists, swipe some seeds, or buy a ticket — we'll start surfacing shows that match your taste."
             emptyTitle="Nothing here yet"
-            shows={forYouShows}
+            shows={forYouShownList}
           />
         )
       )}

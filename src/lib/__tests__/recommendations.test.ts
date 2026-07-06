@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { geoTier, tasteScore, finalScore, buildReason, WEIGHTS, type Signals } from '@/lib/recommendation-scoring';
+import { geoTier, tasteScore, finalScore, buildReason, historyBoost, WEIGHTS, type Signals } from '@/lib/recommendation-scoring';
 
 describe('geoTier', () => {
   it('returns null when the viewer has no location', () => {
@@ -101,5 +101,23 @@ describe('buildReason', () => {
   it('defaults to a social reason when nothing else is present', () => {
     const s: Signals = { taste: null, geo: null, social: 0, momentum: 0, collab: null, comparable: null };
     expect(buildReason(s, [], genreToArtist, null).kind).toBe('social');
+  });
+});
+
+describe('historyBoost', () => {
+  it('returns 1 (no boost) when neither the artist nor venue has been seen before', () => {
+    expect(historyBoost(false, false)).toBe(1);
+  });
+
+  it('boosts more for a repeat artist than a repeat venue', () => {
+    const artistOnly = historyBoost(true, false);
+    const venueOnly = historyBoost(false, true);
+    expect(artistOnly).toBeGreaterThan(1);
+    expect(venueOnly).toBeGreaterThan(1);
+    expect(artistOnly).toBeGreaterThan(venueOnly);
+  });
+
+  it('stacks both boosts when the fan has seen both the artist and the venue before', () => {
+    expect(historyBoost(true, true)).toBeCloseTo(historyBoost(true, false) + (historyBoost(false, true) - 1));
   });
 });
