@@ -6247,6 +6247,36 @@ h1, h2 {
   top: 1rem;
 }
 
+/* ── Installed-PWA launch splash (AppSplash.tsx) ─────────────────────────
+   Background matches the logo sticker's own canvas (~#fefdfe, not pure
+   white) so there's no visible seam around the rounded-square mark. */
+.app-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fefdfe;
+  opacity: 1;
+  transition: opacity .3s ease;
+}
+.app-splash img {
+  border-radius: 28px;
+  animation: app-splash-pulse 1.4s ease-in-out infinite;
+}
+.app-splash-fade {
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes app-splash-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-splash img { animation: none; }
+}
+
 /* ── Mobile quick-access grid ─────────────────────────────────────────────
    Shared by Listen/Events/Pages: on mobile, a full-screen search+grid
    "home" replaces the old horizontal tab strip. Desktop is untouched —
