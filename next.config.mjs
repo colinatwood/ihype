@@ -289,11 +289,6 @@ const nextConfig = {
         permanent: true
       },
       {
-        source: '/discover',
-        destination: '/home',
-        permanent: true
-      },
-      {
         source: '/workbench',
         destination: '/home',
         permanent: true
