@@ -15,10 +15,11 @@ function serializeShow<T extends { startsAt: Date | string }>(show: T) {
 
 /**
  * Powers the mobile Events home (EventsHome.tsx): the full upcoming-shows
- * feed plus enough personalization signal (nearest city, hyped genres) for
- * the client to compute the Local slice itself — mirrors exactly what
- * src/app/shows/page.tsx computes server-side for the desktop route. For
- * You is now computed here directly: a real multi-signal recommender
+ * feed plus enough personalization signal (nearest city + state/region,
+ * hyped genres) for the client to compute the Local slice itself — Local
+ * now covers both exact-city and same-state/region shows, not city-only.
+ * Mirrors exactly what src/app/shows/page.tsx computes server-side for the
+ * desktop route. For You is now computed here directly: a real multi-signal recommender
  * (show-recommendations.ts, reusing the same taste/geo/collaborative scoring
  * already unit-tested for the artist/venue recommender) over listening
  * history (hypes + Seed swipes), event/ticket-purchase history, and
@@ -32,16 +33,19 @@ export async function GET() {
   ]);
 
   let userCity: string | null = null;
+  let userRegion: string | null = null;
   let userGenres: string[] = [];
   if (session?.user?.id) {
     const [userProfile, hypedGenres] = await Promise.all([
-      db.profile.findFirst({ where: { ownerId: session.user.id }, select: { city: true }, orderBy: { createdAt: 'asc' } }).catch(() => null),
+      db.profile.findFirst({ where: { ownerId: session.user.id }, select: { city: true, stateRegion: true }, orderBy: { createdAt: 'asc' } }).catch(() => null),
       db.profileHypeEvent.findMany({ where: { userId: session.user.id }, select: { profile: { select: { genres: true } } }, take: 50 }).catch(() => []),
     ]);
     userCity = userProfile?.city ?? null;
+    userRegion = userProfile?.stateRegion ?? null;
     userGenres = Array.from(new Set(hypedGenres.flatMap((h) => h.profile.genres)));
   }
   const nearCity = userCity ?? viewerLocation?.city ?? null;
+  const nearRegion = userRegion ?? viewerLocation?.stateRegion ?? null;
 
   const now = new Date();
   // startsAt may already be a plain string here (unstable_cache round-trips
@@ -72,6 +76,7 @@ export async function GET() {
       forYouShows: forYouShows.map(serializeShow),
       aiEnhanced,
       nearCity,
+      nearRegion,
       userGenres,
       loggedIn: !!session?.user?.id,
     },

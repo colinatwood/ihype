@@ -28,9 +28,11 @@ type Show = {
   isTicketed: boolean;
   ticketPriceCents: number;
   headlinerProfile?: { name: string; genres?: string[] } | null;
-  venueProfile?: { name: string; city?: string | null } | null;
+  venueProfile?: { name: string; city?: string | null; stateRegion?: string | null } | null;
   /** Present only on For You results — a personalized "why this show" one-liner from the AI-enhanced recommender, e.g. "Because you hyped X". */
   reason?: { text: string } | null;
+  /** Set client-side on the Local tab only — true when a show matched by state/region rather than exact city. */
+  isRegional?: boolean;
 };
 
 type TicketOrder = {
@@ -93,7 +95,10 @@ function EventList({ shows, emptyTitle, emptyBody }: { shows: Show[]; emptyTitle
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, letterSpacing: '-.02em', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {show.headlinerProfile ? `${show.headlinerProfile.name} @ ${show.venueProfile?.name ?? show.title}` : show.title}
               </div>
-              <div style={{ fontSize: 13, color: 'rgba(240,235,229,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{show.venueProfile?.name ?? ''}{show.venueProfile?.city ? ` · ${show.venueProfile.city}` : ''}</div>
+              <div style={{ fontSize: 13, color: 'rgba(240,235,229,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {show.venueProfile?.name ?? ''}{show.venueProfile?.city ? ` · ${show.venueProfile.city}` : ''}
+                {show.isRegional && <span style={{ color: '#22e5d4' }}> · Regional</span>}
+              </div>
               {show.reason?.text && (
                 <div style={{ fontSize: 11, color: '#ff5029', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>✨ {show.reason.text}</div>
               )}
@@ -140,6 +145,7 @@ export function EventsHome({
   const [shows, setShows] = useState<Show[] | null>(null);
   const [forYouShows, setForYouShows] = useState<Show[] | null>(null);
   const [nearCity, setNearCity] = useState<string | null>(null);
+  const [nearRegion, setNearRegion] = useState<string | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [ticketView, setTicketView] = useState<'active' | 'archive'>(initialTicketView === 'archive' ? 'archive' : 'active');
   const [ticketOrders, setTicketOrders] = useState<TicketOrder[] | null>(null);
@@ -156,6 +162,7 @@ export function EventsHome({
         setShows(d.shows ?? []);
         setForYouShows(d.forYouShows ?? d.shows ?? []);
         setNearCity(d.nearCity ?? null);
+        setNearRegion(d.nearRegion ?? null);
         setLoggedIn(!!d.loggedIn);
       })
       .catch(() => { setShows([]); setForYouShows([]); });
@@ -184,8 +191,20 @@ export function EventsHome({
   const allShows = shows ?? [];
   const forYouShownList = forYouShows ?? [];
 
-  const localShows = nearCity
-    ? allShows.filter((s) => (s.venueProfile?.city ?? '').toLowerCase() === nearCity.toLowerCase())
+  // Local now covers both exact-city and same-state/region shows — city
+  // matches are tagged plain, region-only matches get an "· Regional" tag
+  // (below) and sort after the city matches within the list.
+  const localShows = nearCity || nearRegion
+    ? allShows
+        .filter((s) => {
+          const city = (s.venueProfile?.city ?? '').toLowerCase();
+          const region = (s.venueProfile?.stateRegion ?? '').toLowerCase();
+          const cityMatch = Boolean(nearCity) && city === nearCity!.toLowerCase();
+          const regionMatch = Boolean(nearRegion) && region === nearRegion!.toLowerCase();
+          return cityMatch || regionMatch;
+        })
+        .map((s) => ({ ...s, isRegional: nearCity ? (s.venueProfile?.city ?? '').toLowerCase() !== nearCity.toLowerCase() : false }))
+        .sort((a, b) => Number(a.isRegional) - Number(b.isRegional))
     : allShows;
   const ql = q.trim().toLowerCase();
   const searchShows = ql
@@ -278,7 +297,7 @@ export function EventsHome({
       {tab === 'local' && (
         shows === null ? <div style={emptyStyle}><p>Loading events…</p></div> : (
           <EventList
-            emptyBody="No shows near you right now — check For You or Search instead."
+            emptyBody="No shows in your city or region right now — check For You or Search instead."
             emptyTitle="Nothing here yet"
             shows={localShows}
           />
