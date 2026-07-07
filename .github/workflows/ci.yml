@@ -51,3 +51,4 @@ jobs:
           DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
           NEXT_PUBLIC_BASE_URL: https://ihype.org
           NEXT_PUBLIC_APP_URL: https://ihype.org
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADSF8WNxaeBIRmR7"

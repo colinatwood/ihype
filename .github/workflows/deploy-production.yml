@@ -70,6 +70,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NEXT_PUBLIC_BASE_URL: https://ihype.org
           NEXT_PUBLIC_APP_URL: https://ihype.org
+          # NEXT_PUBLIC_* vars are inlined into the client bundle at `next
+          # build` time — wrangler.toml's [vars] only configures the deployed
+          # Worker's runtime env and is never read by this build step, so the
+          # Turnstile site key must also be passed here or the widget never
+          # renders client-side (silently blocking every real registration).
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADSF8WNxaeBIRmR7"
 
       - name: Deploy to Cloudflare Workers
         if: env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != ''
