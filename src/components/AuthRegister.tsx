@@ -41,6 +41,11 @@ export function RegisterScreen({
   const [step, setStep] = useState<RegisterStep>('form');
   const [createdAccountId, setCreatedAccountId] = useState('');
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  // TurnstileWidget renders nothing when this is unset (local/dev without a
+  // site key configured) — only gate submission on a token when the widget
+  // can actually produce one, or signup would deadlock in those environments.
+  const turnstileConfigured = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const awaitingTurnstile = turnstileConfigured && !turnstileToken;
   const needsPublicName = role !== 'FAN';
   const needsUploadPolicy = role === 'ARTIST' || role === 'DJ';
   const selectedRole = useMemo(() => roleOptions.find((option) => option.value === role), [role]);
@@ -113,6 +118,16 @@ export function RegisterScreen({
     let accountCreated = Boolean(createdAccountId);
 
     try {
+      // Turnstile's challenge usually resolves in well under a second, but it's
+      // still async — a fast submit (autofill, or someone who fills the form
+      // quickly) can beat it, sending no token and failing the bot check even
+      // though the widget itself is working. Catch that case client-side with
+      // a clearer, retryable message instead of letting it hit the server and
+      // come back as a generic "Bot check failed."
+      if (!accountCreated && awaitingTurnstile) {
+        throw new Error('Still verifying you’re human — give it a second and try again.');
+      }
+
       trackSignupFunnel('submit', { role, method: authMethod, step: 'form', variant: signupVariant });
       const result = await createAccountOnce();
       accountCreated = true;
