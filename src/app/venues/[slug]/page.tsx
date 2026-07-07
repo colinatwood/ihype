@@ -196,7 +196,7 @@ export default async function VenuePage({
       </div>
 
       <style>{`
-        .venue-page { max-width: 960px; margin: 0 auto; padding: 32px 0 100px; }
+        .venue-page { max-width: 640px; margin: 0 auto; padding: 32px 0 100px; }
         .venue-hero { background: var(--profile-hero, linear-gradient(160deg, rgba(34,229,212,.18), rgba(185,131,255,.1))); border-bottom: 1px solid var(--profile-border, rgba(34,229,212,.2)); padding: 48px 32px 40px; display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
         .venue-avatar { width: 100px; height: 100px; border-radius: 16px; background: var(--profile-hero, linear-gradient(135deg,#22e5d4,#b983ff)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .venue-info h1 { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

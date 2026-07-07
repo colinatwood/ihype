@@ -203,7 +203,7 @@ export default async function DJProfilePage({
       </div>
 
       <style>{`
-        .dj-page { max-width: 900px; margin: 0 auto; padding: 32px 0 100px; }
+        .dj-page { max-width: 640px; margin: 0 auto; padding: 32px 0 100px; }
         .dj-hero { background: var(--profile-hero, linear-gradient(140deg, rgba(255,62,154,.12), rgba(185,131,255,.08))); border-bottom: 1px solid var(--profile-border, rgba(255,62,154,.18)); padding: 40px 32px 32px; }
         .dj-hero-row { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
         @media (max-width: 600px) { .dj-hero { padding: 24px 20px; } .dj-content { padding: 0 20px; } }

@@ -214,7 +214,7 @@ export default async function ArtistPage({
       </div>
 
       <style>{`
-        .artist-page { max-width: 960px; margin: 0 auto; padding: 32px 0 100px; }
+        .artist-page { max-width: 640px; margin: 0 auto; padding: 32px 0 100px; }
         .artist-hero { padding: 40px 32px 32px; border-bottom: 1px solid var(--profile-border, rgba(255,255,255,.06)); background: var(--profile-hero, transparent); }
         .artist-hero-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
         .artist-avatar { width: 96px; height: 96px; border-radius: 50%; background: var(--profile-hero, linear-gradient(135deg,#ff5029,#b983ff)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }
