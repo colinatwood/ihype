@@ -107,7 +107,7 @@ export default function DmcaPage() {
             />
           </label>
           {status === 'error' && <p style={{ color: 'var(--accent)' }}>{errorMsg}</p>}
-          <button className="button" type="submit" disabled={status === 'submitting'}>
+          <button className="ihype-btn-primary" type="submit" disabled={status === 'submitting'}>
             {status === 'submitting' ? 'Submitting…' : 'Submit DMCA request'}
           </button>
         </form>
