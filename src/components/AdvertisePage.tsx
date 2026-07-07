@@ -196,7 +196,7 @@ function CoverageBuilder() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'stretch' }}>
+    <div className="adv-builder" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, alignItems: 'stretch' }}>
       {/* Controls */}
       <div style={{ background: '#100d09', border: '1px solid rgba(255,255,255,.07)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -708,7 +708,7 @@ export function AdvertisePage({ stats }: { stats: AdvertisePageStats }) {
               Coverage scales from your block to the whole platform. Spots are impressions placed across discovery, charts, and seed feeds — priced per day, billed per spot.
             </p>
           </div>
-          <div className="adv-builder">
+          <div>
             <CoverageBuilder />
           </div>
         </div>

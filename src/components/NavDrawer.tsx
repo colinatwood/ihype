@@ -7,17 +7,13 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { AccessibilityControls } from '@/components/AccessibilityControls';
 
 export const menuLinks = [
-  { href: '/notifications', label: 'Notifications' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/community', label: 'Community' },
   { href: '/advertise', label: 'Advertise' },
   { href: '/about', label: 'About' },
   { href: '/transparency', label: 'Transparency' },
   { href: '/legal', label: 'Legal' },
   { href: '/privacy', label: 'Privacy' },
   { href: '/dmca', label: 'DMCA' },
-  { href: '/status', label: 'Status' },
-  { href: '/listen?tab=playlists', label: 'Playlists' },
-  { href: '/community', label: 'Community' },
   { href: '/feedback', label: 'Feedback' },
   { href: '/discover', label: 'Leaderboard' },
 ];
