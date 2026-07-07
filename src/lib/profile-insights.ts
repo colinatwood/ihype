@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { bucketHypePosition, computeShowDurationSecs } from '@/lib/hype-position';
+import { bucketHypePositionIndex, computeShowDurationSecs, HYPE_TIMELINE_BUCKET_COUNT } from '@/lib/hype-position';
 
 export type CityBreakdown = { city: string; count: number };
 
@@ -10,7 +10,12 @@ export type ProfileInsights = {
   /** Only present for ARTIST/DJ/VENUE — LISTENER profiles have no shows/media of their own. */
   listeners?: { distinctListeners: number; totalPlays: number };
   topTracks?: { title: string; plays: number }[];
-  hypePositions?: { early: number; mid: number; late: number; untracked: number };
+  /** % of track listens that reached MediaListen.completedAt — ARTIST/DJ only. */
+  trackCompletionRate?: number;
+  /** % of on-demand show listens that reached ShowListen.completedAt — any type with shows. */
+  showCompletionRate?: number;
+  /** Count of hypes per tenth of a show's runtime, oldest-first (bucket 0 = show start). */
+  hypeTimeline?: { buckets: number[]; untracked: number };
   topCities?: CityBreakdown[];
   ticketRevenueCents?: number;
   ticketsSold?: number;
@@ -46,15 +51,18 @@ async function getListenerStats(profileId: string) {
     where: { profileId },
     select: { hexId: true, title: true },
   });
-  if (assets.length === 0) return { listeners: { distinctListeners: 0, totalPlays: 0 }, topTracks: [] };
+  if (assets.length === 0) {
+    return { listeners: { distinctListeners: 0, totalPlays: 0 }, topTracks: [], trackCompletionRate: undefined };
+  }
 
   const hexIds = assets.map((a) => a.hexId);
   // MediaListen is unique per (userId, mediaId) — it records "has listened at
   // least once," not repeat plays — so grouping by mediaId gives per-track
   // listener counts, and a distinct userId count gives the overall reach.
-  const [playCounts, distinctListeners] = await Promise.all([
+  const [playCounts, distinctListeners, completedCount] = await Promise.all([
     db.mediaListen.groupBy({ by: ['mediaId'], where: { mediaId: { in: hexIds } }, _count: { _all: true } }),
     db.mediaListen.findMany({ where: { mediaId: { in: hexIds } }, select: { userId: true }, distinct: ['userId'] }),
+    db.mediaListen.count({ where: { mediaId: { in: hexIds }, completedAt: { not: null } } }),
   ]);
 
   const titleByHexId = new Map(assets.map((a) => [a.hexId, a.title]));
@@ -67,6 +75,7 @@ async function getListenerStats(profileId: string) {
   return {
     listeners: { distinctListeners: distinctListeners.length, totalPlays },
     topTracks,
+    trackCompletionRate: totalPlays > 0 ? completedCount / totalPlays : undefined,
   };
 }
 
@@ -82,22 +91,30 @@ async function getShowBasedStats(showWhere: ShowWhere) {
       productionPlan: true,
       radioTracks: { select: { durationSecs: true } },
       hypes: { select: { positionSeconds: true } },
+      showListens: { select: { completedAt: true } },
       ticketOrders: { where: { status: 'CAPTURED' }, select: { locationCity: true, totalChargeCents: true, quantity: true } },
     },
   });
 
-  const hypePositions = { early: 0, mid: 0, late: 0, untracked: 0 };
+  const hypeTimelineBuckets = new Array(HYPE_TIMELINE_BUCKET_COUNT).fill(0);
+  let hypeTimelineUntracked = 0;
   const cityCounts: Record<string, number> = {};
   let ticketRevenueCents = 0;
   let ticketsSold = 0;
+  let showListenTotal = 0;
+  let showListenCompleted = 0;
 
   for (const show of shows) {
     const durationSecs = computeShowDurationSecs(show);
     for (const hype of show.hypes) {
-      if (hype.positionSeconds == null) { hypePositions.untracked += 1; continue; }
-      const bucket = bucketHypePosition(hype.positionSeconds, durationSecs);
-      if (bucket) hypePositions[bucket] += 1;
-      else hypePositions.untracked += 1;
+      if (hype.positionSeconds == null) { hypeTimelineUntracked += 1; continue; }
+      const bucket = bucketHypePositionIndex(hype.positionSeconds, durationSecs);
+      if (bucket != null) hypeTimelineBuckets[bucket] += 1;
+      else hypeTimelineUntracked += 1;
+    }
+    for (const listen of show.showListens) {
+      showListenTotal += 1;
+      if (listen.completedAt) showListenCompleted += 1;
     }
     for (const order of show.ticketOrders) {
       ticketRevenueCents += order.totalChargeCents;
@@ -110,7 +127,13 @@ async function getShowBasedStats(showWhere: ShowWhere) {
 
   const topCities = topByCount(cityCounts, TOP_CITIES_LIMIT).map((c) => ({ city: c.key, count: c.count }));
 
-  return { hypePositions, topCities, ticketRevenueCents, ticketsSold };
+  return {
+    hypeTimeline: { buckets: hypeTimelineBuckets, untracked: hypeTimelineUntracked },
+    showCompletionRate: showListenTotal > 0 ? showListenCompleted / showListenTotal : undefined,
+    topCities,
+    ticketRevenueCents,
+    ticketsSold,
+  };
 }
 
 /** Owner-only aggregate stats for an Artist/DJ/Venue page — never fabricated, only real DB aggregates. */
@@ -133,7 +156,7 @@ export async function getProfileInsights(profileId: string, profileType: string)
     // DJ profiles' own shows are typically attached via promoterProfileId
     // (see src/app/promoters/[slug]/page.tsx), not headlinerProfileId like a
     // plain artist — check both so a DJ's hosted shows aren't silently missed.
-    const [{ listeners, topTracks }, showStats] = await Promise.all([
+    const [{ listeners, topTracks, trackCompletionRate }, showStats] = await Promise.all([
       getListenerStats(profileId),
       getShowBasedStats({ OR: [{ headlinerProfileId: profileId }, { promoterProfileId: profileId }] }),
     ]);
@@ -141,7 +164,9 @@ export async function getProfileInsights(profileId: string, profileType: string)
       ...base,
       listeners,
       topTracks,
-      hypePositions: showStats.hypePositions,
+      trackCompletionRate,
+      showCompletionRate: showStats.showCompletionRate,
+      hypeTimeline: showStats.hypeTimeline,
       topCities: showStats.topCities,
     };
   }
@@ -150,7 +175,8 @@ export async function getProfileInsights(profileId: string, profileType: string)
     const showStats = await getShowBasedStats({ venueProfileId: profileId });
     return {
       ...base,
-      hypePositions: showStats.hypePositions,
+      showCompletionRate: showStats.showCompletionRate,
+      hypeTimeline: showStats.hypeTimeline,
       topCities: showStats.topCities,
       ticketRevenueCents: showStats.ticketRevenueCents,
       ticketsSold: showStats.ticketsSold,

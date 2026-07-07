@@ -1,25 +1,33 @@
 import { describe, it, expect } from 'vitest';
-import { bucketHypePosition, computeShowDurationSecs } from '../hype-position';
+import { bucketHypePositionIndex, computeShowDurationSecs } from '../hype-position';
 
-describe('bucketHypePosition', () => {
-  it('buckets the first third as early', () => {
-    expect(bucketHypePosition(0, 900)).toBe('early');
-    expect(bucketHypePosition(299, 900)).toBe('early');
+describe('bucketHypePositionIndex', () => {
+  it('buckets the very start of a show into bucket 0', () => {
+    expect(bucketHypePositionIndex(0, 900)).toBe(0);
+    expect(bucketHypePositionIndex(89, 900)).toBe(0);
   });
 
-  it('buckets the middle third as mid', () => {
-    expect(bucketHypePosition(300, 900)).toBe('mid');
-    expect(bucketHypePosition(599, 900)).toBe('mid');
+  it('buckets the very end of a show into the last bucket', () => {
+    expect(bucketHypePositionIndex(899, 900)).toBe(9);
   });
 
-  it('buckets the final third as late', () => {
-    expect(bucketHypePosition(600, 900)).toBe('late');
-    expect(bucketHypePosition(899, 900)).toBe('late');
+  it('buckets the midpoint into the middle bucket', () => {
+    expect(bucketHypePositionIndex(450, 900)).toBe(5);
+  });
+
+  it('supports a custom bucket count', () => {
+    expect(bucketHypePositionIndex(0, 100, 4)).toBe(0);
+    expect(bucketHypePositionIndex(99, 100, 4)).toBe(3);
+  });
+
+  it('clamps a position at or past the known duration into the final bucket instead of overflowing', () => {
+    expect(bucketHypePositionIndex(900, 900)).toBe(9);
+    expect(bucketHypePositionIndex(1200, 900)).toBe(9);
   });
 
   it('returns null when duration is unknown', () => {
-    expect(bucketHypePosition(30, 0)).toBeNull();
-    expect(bucketHypePosition(30, -5)).toBeNull();
+    expect(bucketHypePositionIndex(30, 0)).toBeNull();
+    expect(bucketHypePositionIndex(30, -5)).toBeNull();
   });
 });
 

@@ -8,7 +8,9 @@ type InsightsData = {
   bookingRequests: { pending: number; accepted: number; declined: number };
   listeners?: { distinctListeners: number; totalPlays: number };
   topTracks?: { title: string; plays: number }[];
-  hypePositions?: { early: number; mid: number; late: number; untracked: number };
+  trackCompletionRate?: number;
+  showCompletionRate?: number;
+  hypeTimeline?: { buckets: number[]; untracked: number };
   topCities?: { city: string; count: number }[];
   ticketRevenueCents?: number;
   ticketsSold?: number;
@@ -45,17 +47,11 @@ function Stat({ label, value, color }: { label: string; value: number; color: st
   );
 }
 
-function PositionBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+function PercentStat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(240,235,229,.7)', marginBottom: 4 }}>
-        <span>{label}</span>
-        <span style={{ fontFamily: 'var(--font-mono)' }}>{value}</span>
-      </div>
-      <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,.06)', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${Math.max(pct, value > 0 ? 3 : 0)}%`, background: color, borderRadius: 3 }} />
-      </div>
+    <div>
+      <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: 'var(--font-display)' }}>{Math.round(value * 100)}%</div>
+      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.14em', color: 'rgba(240,235,229,.55)', marginTop: 2 }}>{label}</div>
     </div>
   );
 }
@@ -91,8 +87,9 @@ export function ProfileInsights({ profileId, profileType }: { profileId: string;
 
   const maxDay = Math.max(1, ...chart.map((d) => d.count));
   const hasChartActivity = chart.some((d) => d.count > 0);
-  const positions = data.hypePositions;
-  const maxPositionBucket = positions ? Math.max(positions.early, positions.mid, positions.late) : 0;
+  const timeline = data.hypeTimeline;
+  const timelineTotal = timeline ? timeline.buckets.reduce((sum, n) => sum + n, 0) : 0;
+  const maxTimelineBucket = timeline ? Math.max(1, ...timeline.buckets) : 1;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
@@ -101,6 +98,8 @@ export function ProfileInsights({ profileId, profileType }: { profileId: string;
         <Stat label="Followers" value={data.followerCount} color="#b983ff" />
         {data.listeners && <Stat label="Listeners" value={data.listeners.distinctListeners} color="#22e5d4" />}
         {typeof data.ticketsSold === 'number' && <Stat label="Tickets sold" value={data.ticketsSold} color="#22e5d4" />}
+        {typeof data.trackCompletionRate === 'number' && <PercentStat label="Track completion" value={data.trackCompletionRate} color="#ff3e9a" />}
+        {typeof data.showCompletionRate === 'number' && <PercentStat label="Show completion" value={data.showCompletionRate} color="#ff3e9a" />}
       </div>
 
       {typeof data.ticketRevenueCents === 'number' && (
@@ -149,16 +148,29 @@ export function ProfileInsights({ profileId, profileType }: { profileId: string;
         </Section>
       )}
 
-      {positions && (
-        <Section title="When people HYPE during a show">
-          {positions.early + positions.mid + positions.late > 0 ? (
+      {timeline && (
+        <Section title="Hype timeline — where in a show people HYPE">
+          {timelineTotal > 0 ? (
             <div>
-              <PositionBar label="Early third" value={positions.early} max={maxPositionBucket} color="#ff5029" />
-              <PositionBar label="Middle third" value={positions.mid} max={maxPositionBucket} color="#b983ff" />
-              <PositionBar label="Final third" value={positions.late} max={maxPositionBucket} color="#22e5d4" />
-              {positions.untracked > 0 && (
-                <p style={{ fontSize: 11, color: 'rgba(240,235,229,.4)', marginTop: 8 }}>
-                  +{positions.untracked} more hype{positions.untracked === 1 ? '' : 's'} fired without an active player open (position unknown).
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 60 }}>
+                {timeline.buckets.map((count, i) => (
+                  <div
+                    key={i}
+                    title={`${Math.round((i / timeline.buckets.length) * 100)}–${Math.round(((i + 1) / timeline.buckets.length) * 100)}% into the show: ${count}`}
+                    style={{
+                      flex: 1, height: `${Math.max(6, (count / maxTimelineBucket) * 100)}%`,
+                      background: '#ff3e9a', borderRadius: 2, opacity: count > 0 ? 0.85 : 0.15,
+                    }}
+                  />
+                ))}
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'rgba(240,235,229,.4)', marginTop: 6 }}>
+                <span>Show start</span>
+                <span>Show end</span>
+              </div>
+              {timeline.untracked > 0 && (
+                <p style={{ fontSize: 11, color: 'rgba(240,235,229,.4)', marginTop: 12 }}>
+                  +{timeline.untracked} more hype{timeline.untracked === 1 ? '' : 's'} fired without an active player open (position unknown).
                 </p>
               )}
             </div>
