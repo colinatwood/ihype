@@ -1,11 +1,11 @@
 import { unstable_cache } from 'next/cache';
-import { Prisma, ProfileType, ShowStatus } from '@prisma/client';
+import { Prisma, ProfileType, ShowStatus } from '@/generated/prisma/client';
 import { db, withDbRetry } from '@/lib/db';
 import { sortShowsForFeed } from '@/lib/integrity';
 import { demoUserEmails, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { getTransparencySnapshot } from '@/lib/transparency';
 
-const publicShowArgs = Prisma.validator<Prisma.ShowDefaultArgs>()({
+const publicShowArgs = {
   select: {
     id: true,
     slug: true,
@@ -40,9 +40,9 @@ const publicShowArgs = Prisma.validator<Prisma.ShowDefaultArgs>()({
       }
     }
   }
-});
+} satisfies Prisma.ShowDefaultArgs;
 
-const publicProfileArgs = Prisma.validator<Prisma.ProfileDefaultArgs>()({
+const publicProfileArgs = {
   select: {
     id: true,
     type: true,
@@ -60,9 +60,9 @@ const publicProfileArgs = Prisma.validator<Prisma.ProfileDefaultArgs>()({
     avatarImage: true,
     verified: true
   }
-});
+} satisfies Prisma.ProfileDefaultArgs;
 
-const publicRequestArgs = Prisma.validator<Prisma.VenueConnectionRequestDefaultArgs>()({
+const publicRequestArgs = {
   select: {
     venueProfile: {
       select: {
@@ -77,7 +77,7 @@ const publicRequestArgs = Prisma.validator<Prisma.VenueConnectionRequestDefaultA
       }
     }
   }
-});
+} satisfies Prisma.VenueConnectionRequestDefaultArgs;
 
 type PublicShowRow = Prisma.ShowGetPayload<typeof publicShowArgs>;
 type PublicProfileRow = Prisma.ProfileGetPayload<typeof publicProfileArgs>;
