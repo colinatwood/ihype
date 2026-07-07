@@ -64,6 +64,17 @@ jobs:
           # previously exported as DIRECT_URL, which Prisma never saw.
           DIRECT_DATABASE_URL: ${{ secrets.DIRECT_URL }}
 
+      - name: Diagnose Turnstile env var (temporary)
+        run: |
+          if [ -n "$NEXT_PUBLIC_TURNSTILE_SITE_KEY" ]; then
+            echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY is SET, length=${#NEXT_PUBLIC_TURNSTILE_SITE_KEY}"
+          else
+            echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY is EMPTY/UNSET"
+          fi
+          node -e "console.log('node sees:', process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? 'SET len=' + process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY.length : 'UNSET')"
+        env:
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADSF8WNxaeBIRmR7"
+
       - name: Build for Cloudflare Workers
         run: npm run cf:build
         env:
