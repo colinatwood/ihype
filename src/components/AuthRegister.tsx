@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { FormEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
 import { postJson } from '@/lib/api-client';
 import { resolvePostAuthRedirect } from '@/lib/auth-redirects';
@@ -15,7 +15,7 @@ import {
   trackSignupFunnel,
 } from '@/components/AuthShared';
 import type { AuthMethod, RegisterStep, RoleOption, SignupVariant } from '@/components/AuthShared';
-import { TurnstileWidget } from '@/components/TurnstileWidget';
+import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/TurnstileWidget';
 
 export function RegisterScreen({
   initialRole = 'FAN',
@@ -40,6 +40,7 @@ export function RegisterScreen({
   const [turnstileToken, setTurnstileToken] = useState('');
   const [step, setStep] = useState<RegisterStep>('form');
   const [createdAccountId, setCreatedAccountId] = useState('');
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const needsPublicName = role !== 'FAN';
   const needsUploadPolicy = role === 'ARTIST' || role === 'DJ';
   const selectedRole = useMemo(() => roleOptions.find((option) => option.value === role), [role]);
@@ -136,6 +137,12 @@ export function RegisterScreen({
         setStatus('Your account was created. Retry the passkey prompt or use a magic link to finish signing in.');
       } else {
         setStep('form');
+        // Turnstile tokens are single-use — a failed /api/register call already
+        // consumed this one, so every retry would fail the bot check again
+        // (even for an unrelated error like a duplicate email) unless we fetch
+        // a fresh token now.
+        setTurnstileToken('');
+        turnstileRef.current?.reset();
       }
       setError(reason);
     } finally {
@@ -335,6 +342,7 @@ export function RegisterScreen({
           ) : null}
 
           <TurnstileWidget
+            ref={turnstileRef}
             onToken={setTurnstileToken}
             onExpire={() => setTurnstileToken('')}
           />
