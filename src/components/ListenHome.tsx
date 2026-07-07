@@ -76,6 +76,19 @@ type FavoriteMedia = {
   artistProfileSlug: string | null;
 };
 
+type SavedSeed = {
+  id: string;
+  mediaId: string;
+  title: string;
+  artistName: string;
+  artistProfileSlug: string;
+  artistProfileType: string;
+};
+
+function profileHref(type: string, slug: string) {
+  return type === 'VENUE' ? `/venues/${slug}` : type === 'DJ' ? `/promoters/${slug}` : `/artists/${slug}`;
+}
+
 const b: React.CSSProperties = {
   fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 13, padding: '9px 16px', minHeight: 44,
   borderRadius: 9, cursor: 'pointer', border: 'none', transition: 'all 150ms',
@@ -301,6 +314,7 @@ export function ListenHome({
   const [chartGenre, setChartGenre] = useState('All');
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null);
   const [favorites, setFavorites] = useState<FavoriteMedia[]>([]);
+  const [savedSeeds, setSavedSeeds] = useState<SavedSeed[]>([]);
   const [openPl, setOpenPl] = useState<string | null>(null);
   const [newPlName, setNewPlName] = useState('');
   const [dragState, setDragState] = useState<{ index: number; overIndex: number } | null>(null);
@@ -323,7 +337,7 @@ export function ListenHome({
       fetch('/api/shows?radioShows=1').then((r) => (r.ok ? r.json() : [])).then((d) => setRadio(Array.isArray(d) ? d : [])).catch(() => setRadio([])),
       fetch('/api/charts').then((r) => r.json()).then((d) => setCharts(d)).catch(() => setCharts({ national: [], local: [], forYou: [] })),
       fetch('/api/fan-playlists').then((r) => (r.ok ? r.json() : null)).then((d) => {
-        if (d) { setPlaylists(d.playlists ?? []); setFavorites(d.favorites ?? []); }
+        if (d) { setPlaylists(d.playlists ?? []); setFavorites(d.favorites ?? []); setSavedSeeds(d.savedSeeds ?? []); }
       }).catch(() => {}),
     ]);
   }, []);
@@ -351,6 +365,11 @@ export function ListenHome({
     }
     try {
       await fetch(`/api/discover/seeds/${seed.id}/${action}`, { method: 'POST' });
+      if (action === 'save') {
+        fetch('/api/fan-playlists').then((r) => (r.ok ? r.json() : null)).then((d) => {
+          if (d) setSavedSeeds(d.savedSeeds ?? []);
+        }).catch(() => {});
+      }
     } catch { /* best-effort */ }
   }
 
@@ -770,6 +789,19 @@ export function ListenHome({
               </div>
             ))}
           </div>
+
+          {savedSeeds.length > 0 && (
+            <div style={{ marginTop: 32 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.16em', textTransform: 'uppercase', color: 'rgba(240,235,229,.5)', marginBottom: 12 }}>Discover · saved from Seeds</div>
+              <div style={panel}>
+                {savedSeeds.map((s) => (
+                  <Link key={s.id} href={profileHref(s.artistProfileType, s.artistProfileSlug)} style={{ ...chartRow, textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}><div style={rowTitle}>{s.title}</div><div style={rowSubtitle}>{s.artistName}</div></div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {favorites.length > 0 && (
             <div style={{ marginTop: 32 }}>
