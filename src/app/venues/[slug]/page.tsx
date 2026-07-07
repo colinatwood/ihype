@@ -6,12 +6,13 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { HypeButton } from '@/components/HypeButton';
 import { VenueRequestForm } from '@/components/VenueRequestForm';
+import { ProfileInsights } from '@/components/ProfileInsights';
 import { getDemoCreatorExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
 
 export const revalidate = 60;
 
-const venueSections = ['about', 'shows', 'request'] as const;
+const venueSections = ['about', 'shows', 'request', 'insights'] as const;
 type VenueSection = (typeof venueSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): VenueSection {
@@ -23,6 +24,7 @@ const SECTION_LABEL: Record<VenueSection, string> = {
   about: 'About',
   shows: 'Upcoming Shows',
   request: 'Request Artist',
+  insights: 'Insights',
 };
 
 const getVenueMeta = cache((slug: string) =>
@@ -127,7 +129,7 @@ export default async function VenuePage({
 
       <div className="venue-content">
         <div className="venue-tabs">
-          {venueSections.map((section) => (
+          {venueSections.filter((section) => section !== 'insights' || isOwner).map((section) => (
             <Link className={section === activeSection ? 'venue-tab active' : 'venue-tab'} href={`/venues/${profile.slug}?section=${section}`} key={section}>
               {SECTION_LABEL[section]}
             </Link>
@@ -192,6 +194,10 @@ export default async function VenuePage({
               <p style={{ color: 'rgba(240,235,229,.5)' }}>Log in to recommend booking an artist for this venue.</p>
             )}
           </div>
+        )}
+
+        {activeSection === 'insights' && isOwner && (
+          <ProfileInsights profileId={profile.id} profileType={profile.type} />
         )}
       </div>
 

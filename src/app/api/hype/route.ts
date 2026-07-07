@@ -145,7 +145,11 @@ export async function GET(request: NextRequest) {
 }
 
 const schema = z.discriminatedUnion('targetType', [
-  z.object({ targetType: z.literal('show'), targetId: z.string().cuid() }),
+  z.object({
+    targetType: z.literal('show'),
+    targetId: z.string().cuid(),
+    positionSeconds: z.number().int().nonnegative().max(86_400).optional()
+  }),
   z.object({ targetType: z.literal('profile'), targetId: z.string().cuid() })
 ]);
 
@@ -192,7 +196,9 @@ export async function POST(request: NextRequest) {
       }
 
       const [, updatedShow] = await withDbRetry(() => db.$transaction([
-        db.hypeEvent.create({ data: { userId: session.user.id, showId: payload.targetId } }),
+        db.hypeEvent.create({
+          data: { userId: session.user.id, showId: payload.targetId, positionSeconds: payload.positionSeconds }
+        }),
         db.show.update({ where: { id: payload.targetId }, data: { hypeCount: { increment: 1 } } })
       ]));
 

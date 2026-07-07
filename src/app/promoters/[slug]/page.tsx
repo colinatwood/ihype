@@ -7,6 +7,7 @@ import { buildArtistMediaCollection } from '@/lib/media';
 import { HypeButton } from '@/components/HypeButton';
 import { FollowButton } from '@/components/FollowButton';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
+import { ProfileInsights } from '@/components/ProfileInsights';
 import { getSafeImageUrl } from '@/lib/asset-safety';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
 import { canManageOwnedResource } from '@/lib/permissions';
@@ -14,7 +15,7 @@ import { getDemoCreatorExclusion, isDemoUser, shouldHideDemoContent } from '@/li
 
 export const revalidate = 60;
 
-const djSections = ['shows', 'crate', 'earnings'] as const;
+const djSections = ['shows', 'crate', 'earnings', 'insights'] as const;
 type DjSection = (typeof djSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): DjSection {
@@ -22,7 +23,7 @@ function getActiveSection(section: string | string[] | undefined): DjSection {
   return 'shows';
 }
 
-const SECTION_LABEL: Record<DjSection, string> = { shows: 'Shows', crate: 'Crate', earnings: 'Earnings' };
+const SECTION_LABEL: Record<DjSection, string> = { shows: 'Shows', crate: 'Crate', earnings: 'Earnings', insights: 'Insights' };
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -135,7 +136,7 @@ export default async function DJProfilePage({
 
       <div className="dj-content">
         <div className="dj-tabs">
-          {djSections.filter((s) => s !== 'earnings' || isOwner).map((section) => (
+          {djSections.filter((s) => (s !== 'earnings' && s !== 'insights') || isOwner).map((section) => (
             <Link className={section === activeSection ? 'dj-tab active' : 'dj-tab'} href={`/promoters/${profile.slug}?section=${section}`} key={section}>
               {SECTION_LABEL[section]}
             </Link>
@@ -195,6 +196,10 @@ export default async function DJProfilePage({
               </div>
             )}
           </div>
+        )}
+
+        {activeSection === 'insights' && isOwner && (
+          <ProfileInsights profileId={profile.id} profileType={profile.type} />
         )}
       </div>
 

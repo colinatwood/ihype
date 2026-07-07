@@ -618,12 +618,16 @@ model Passkey {
 }
 
 model HypeEvent {
-  id        String   @id @default(cuid())
-  userId    String
-  showId    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  show      Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  userId          String
+  showId          String
+  /// Playback position (seconds into the show) at the moment this hype fired,
+  /// when the client had one to report (e.g. an active radio player). Null for
+  /// hypes fired without a playback context, like a static show-detail button.
+  positionSeconds Int?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  show            Show     @relation(fields: [showId], references: [id], onDelete: Cascade)
 
   @@unique([userId, showId])
   @@index([userId])
