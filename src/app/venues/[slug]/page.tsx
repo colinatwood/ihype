@@ -119,6 +119,7 @@ export default async function VenuePage({
             <HypeButton entityLabel="venue" initialCount={profile.hypeCount} initiallyHyped={!!userHype} targetId={profile.id} targetType="profile" />
             {isOwner && (
               <>
+                <Link className="venue-hero-btn" href="/me/booking">Book artists</Link>
                 <Link className="venue-hero-btn" href="/pages">Customize</Link>
                 <Link className="venue-hero-btn" href="/settings">Settings</Link>
               </>

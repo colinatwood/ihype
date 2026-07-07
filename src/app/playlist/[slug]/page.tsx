@@ -77,7 +77,7 @@ export default async function PlaylistPage({ params }: { params: Promise<{ slug:
               <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
               <div className="meta">
                 {item.artistProfileSlug
-                  ? <Link href={`/${item.artistProfileSlug}`}>{item.artistName}</Link>
+                  ? <Link href={`/artists/${item.artistProfileSlug}`}>{item.artistName}</Link>
                   : item.artistName}
               </div>
             </div>

@@ -421,31 +421,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
         ))}
       </section>
 
-      <section className="panel admin-console-panel">
-        <div className="admin-console-panel-head">
-          <div>
-            <h2>QA role perspectives</h2>
-            <p className="meta">
-              Switch from the header or open a role lane directly to verify the signed-in experience.
-            </p>
-          </div>
-        </div>
-        <div className="admin-export-row" aria-label="Admin QA role views">
-          <Link className="button small secondary" href="/fans?module=tool-hub">
-            Fan QA
-          </Link>
-          <Link className="button small secondary" href="/artists?module=tool-hub">
-            Artist QA
-          </Link>
-          <Link className="button small secondary" href="/promoters?module=tool-hub">
-            Promoter QA
-          </Link>
-          <Link className="button small secondary" href="/venues?module=tool-hub">
-            Venue QA
-          </Link>
-        </div>
-      </section>
-
       <section className="panel admin-console-panel admin-health-panel">
         <div className="admin-console-panel-head">
           <div>

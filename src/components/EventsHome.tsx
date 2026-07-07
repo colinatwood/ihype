@@ -296,11 +296,16 @@ export function EventsHome({
 
       {tab === 'local' && (
         shows === null ? <div style={emptyStyle}><p>Loading events…</p></div> : (
-          <EventList
-            emptyBody="No shows in your city or region right now — check For You or Search instead."
-            emptyTitle="Nothing here yet"
-            shows={localShows}
-          />
+          <>
+            <div style={{ textAlign: 'right', marginBottom: 10 }}>
+              <Link href="/shows/map" style={{ fontSize: 12.5, color: 'rgba(240,235,229,.6)' }}>View on map →</Link>
+            </div>
+            <EventList
+              emptyBody="No shows in your city or region right now — check For You or Search instead."
+              emptyTitle="Nothing here yet"
+              shows={localShows}
+            />
+          </>
         )
       )}
 

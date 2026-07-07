@@ -70,7 +70,7 @@ export default async function PayoutPage({ params }: { params: Promise<{ id: str
   const CELLS = [
     { label: 'Artist', pct: artistPct, cents: artistCents, color: '#ff5029', name: show.headlinerProfile?.name, href: show.headlinerProfile ? `/artists/${show.headlinerProfile.slug}` : null },
     { label: 'Venue', pct: venuePct, cents: venueCents, color: '#22e5d4', name: show.venueProfile?.name, href: show.venueProfile ? `/venues/${show.venueProfile.slug}` : null },
-    { label: 'Promoters', pct: promoterPct, cents: promoterCents, color: '#b983ff', name: show.promoterProfile?.name ?? 'Referrers (shared pool)', href: show.promoterProfile ? `/artists/${show.promoterProfile.slug}` : null },
+    { label: 'Promoters', pct: promoterPct, cents: promoterCents, color: '#b983ff', name: show.promoterProfile?.name ?? 'Referrers (shared pool)', href: show.promoterProfile ? `/promoters/${show.promoterProfile.slug}` : null },
   ];
 
   return (
