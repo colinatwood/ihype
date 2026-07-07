@@ -6,12 +6,13 @@ import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { HypeButton } from '@/components/HypeButton';
 import { VenueRequestForm } from '@/components/VenueRequestForm';
+import { ProfileInsights } from '@/components/ProfileInsights';
 import { getDemoCreatorExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
 
 export const revalidate = 60;
 
-const venueSections = ['about', 'shows', 'request'] as const;
+const venueSections = ['about', 'shows', 'request', 'insights'] as const;
 type VenueSection = (typeof venueSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): VenueSection {
@@ -23,6 +24,7 @@ const SECTION_LABEL: Record<VenueSection, string> = {
   about: 'About',
   shows: 'Upcoming Shows',
   request: 'Request Artist',
+  insights: 'Insights',
 };
 
 const getVenueMeta = cache((slug: string) =>
@@ -127,7 +129,7 @@ export default async function VenuePage({
 
       <div className="venue-content">
         <div className="venue-tabs">
-          {venueSections.map((section) => (
+          {venueSections.filter((section) => section !== 'insights' || isOwner).map((section) => (
             <Link className={section === activeSection ? 'venue-tab active' : 'venue-tab'} href={`/venues/${profile.slug}?section=${section}`} key={section}>
               {SECTION_LABEL[section]}
             </Link>
@@ -193,10 +195,14 @@ export default async function VenuePage({
             )}
           </div>
         )}
+
+        {activeSection === 'insights' && isOwner && (
+          <ProfileInsights profileId={profile.id} profileType={profile.type} />
+        )}
       </div>
 
       <style>{`
-        .venue-page { max-width: 960px; margin: 0 auto; padding: 32px 0 100px; }
+        .venue-page { max-width: 640px; margin: 0 auto; padding: 32px 0 100px; }
         .venue-hero { background: var(--profile-hero, linear-gradient(160deg, rgba(34,229,212,.18), rgba(185,131,255,.1))); border-bottom: 1px solid var(--profile-border, rgba(34,229,212,.2)); padding: 48px 32px 40px; display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
         .venue-avatar { width: 100px; height: 100px; border-radius: 16px; background: var(--profile-hero, linear-gradient(135deg,#22e5d4,#b983ff)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .venue-info h1 { font-family: var(--font-display); font-size: 32px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

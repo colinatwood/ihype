@@ -7,6 +7,8 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { AccessibilityControls } from '@/components/AccessibilityControls';
 
 export const menuLinks = [
+  { href: '/notifications', label: 'Notifications' },
+  { href: '/settings', label: 'Settings' },
   { href: '/advertise', label: 'Advertise' },
   { href: '/about', label: 'About' },
   { href: '/transparency', label: 'Transparency' },

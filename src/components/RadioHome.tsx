@@ -210,7 +210,7 @@ export function RadioHome() {
       const res = await fetch('/api/hype', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetType: 'show', targetId: current.id }),
+        body: JSON.stringify({ targetType: 'show', targetId: current.id, positionSeconds: elapsed }),
       });
       if (res.status === 401) { showToast('Log in to hype shows'); return; }
       const data = await res.json();

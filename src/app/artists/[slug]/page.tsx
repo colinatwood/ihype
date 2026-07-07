@@ -9,6 +9,7 @@ import { HypeButton } from '@/components/HypeButton';
 import { FollowButton } from '@/components/FollowButton';
 import { ShareButton } from '@/components/ShareButton';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
+import { ProfileInsights } from '@/components/ProfileInsights';
 import { getSafeImageUrl } from '@/lib/asset-safety';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
 import { canManageOwnedResource } from '@/lib/permissions';
@@ -17,7 +18,7 @@ import { getBaseUrl } from '@/lib/utils';
 
 export const revalidate = 60;
 
-const artistSections = ['about', 'tracks', 'shows'] as const;
+const artistSections = ['about', 'tracks', 'shows', 'insights'] as const;
 type ArtistSection = (typeof artistSections)[number];
 
 function getActiveSection(section: string | string[] | undefined): ArtistSection {
@@ -25,7 +26,7 @@ function getActiveSection(section: string | string[] | undefined): ArtistSection
   return 'about';
 }
 
-const SECTION_LABEL: Record<ArtistSection, string> = { about: 'About', tracks: 'Tracks', shows: 'Shows' };
+const SECTION_LABEL: Record<ArtistSection, string> = { about: 'About', tracks: 'Tracks', shows: 'Shows', insights: 'Insights' };
 
 const getArtistMeta = cache((slug: string) =>
   db.profile.findUnique({
@@ -138,7 +139,7 @@ export default async function ArtistPage({
 
       <div className="artist-content">
         <div className="artist-tabs">
-          {artistSections.map((section) => (
+          {artistSections.filter((section) => section !== 'insights' || isOwner).map((section) => (
             <Link className={section === activeSection ? 'artist-tab active' : 'artist-tab'} href={`/artists/${profile.slug}?section=${section}`} key={section}>
               {SECTION_LABEL[section]}
             </Link>
@@ -211,10 +212,14 @@ export default async function ArtistPage({
             )}
           </div>
         )}
+
+        {activeSection === 'insights' && isOwner && (
+          <ProfileInsights profileId={profile.id} profileType={profile.type} />
+        )}
       </div>
 
       <style>{`
-        .artist-page { max-width: 960px; margin: 0 auto; padding: 32px 0 100px; }
+        .artist-page { max-width: 640px; margin: 0 auto; padding: 32px 0 100px; }
         .artist-hero { padding: 40px 32px 32px; border-bottom: 1px solid var(--profile-border, rgba(255,255,255,.06)); background: var(--profile-hero, transparent); }
         .artist-hero-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
         .artist-avatar { width: 96px; height: 96px; border-radius: 50%; background: var(--profile-hero, linear-gradient(135deg,#ff5029,#b983ff)); flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; overflow: hidden; }

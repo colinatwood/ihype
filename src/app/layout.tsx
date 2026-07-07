@@ -4,10 +4,8 @@ import { ReactNode } from 'react';
 import { Syne, DM_Sans, JetBrains_Mono, Instrument_Serif, Forum } from 'next/font/google';
 import { AppProviders } from '@/components/AppProviders';
 import { HeaderAuthLinks } from '@/components/HeaderAuthLinks';
-import { HeaderUserMenu } from '@/components/HeaderUserMenu';
 import { HeaderLogo } from '@/components/HeaderLogo';
 import { ServiceWorkerRegister } from '@/components/ServiceWorkerRegister';
-import { NavDrawer } from '@/components/NavDrawer';
 import { SearchBar } from '@/components/SearchBar';
 import { SiteNavTabs } from '@/components/SiteNavTabs';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
@@ -83,10 +81,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   <SiteNavTabs />
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                  <SearchBar />
                   <HeaderAuthLinks />
-                  <HeaderUserMenu />
                 </div>
-                <NavDrawer />
               </div>
             </header>
             <MobileBottomNav />
