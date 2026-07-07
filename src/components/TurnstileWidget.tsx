@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 
 declare global {
   interface Window {
@@ -12,18 +12,28 @@ declare global {
   }
 }
 
-export function TurnstileWidget({
-  onToken,
-  onExpire,
-}: {
+export type TurnstileWidgetHandle = {
+  /** Fetches a fresh token — call after a failed submit, since Turnstile tokens are single-use. */
+  reset: () => void;
+};
+
+export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, {
   onToken: (token: string) => void;
   onExpire?: () => void;
-}) {
+}>(function TurnstileWidget({ onToken, onExpire }, ref) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const onTokenRef = useRef(onToken);
   const onExpireRef = useRef(onExpire);
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.reset(widgetIdRef.current);
+      }
+    },
+  }), []);
 
   useEffect(() => { onTokenRef.current = onToken; }, [onToken]);
   useEffect(() => { onExpireRef.current = onExpire; }, [onExpire]);
@@ -77,4 +87,4 @@ export function TurnstileWidget({
   if (!siteKey) return null;
 
   return <div ref={containerRef} style={{ margin: '8px 0' }} />;
-}
+});

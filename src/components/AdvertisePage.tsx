@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { postJson } from '@/lib/api-client';
 import {
   AD_SCOPES, AD_SCOPE_LABELS, AD_SCOPE_DESCRIPTIONS, AD_RUN_LENGTHS_DAYS,
@@ -345,6 +346,9 @@ function CoverageBuilder() {
                   {submit.message}
                 </div>
                 <div style={{ fontSize: 11, color: '#9e9080', marginTop: 4, lineHeight: 1.5 }}>{submit.reasoning}</div>
+                <Link href="/advertise/dashboard" style={{ display: 'inline-block', marginTop: 8, fontSize: 11, color: '#f0ebe5', textDecoration: 'underline' }}>
+                  View my campaigns →
+                </Link>
               </div>
             )}
             {submit.phase === 'error' && (
