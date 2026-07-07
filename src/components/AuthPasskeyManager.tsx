@@ -73,38 +73,44 @@ export function PasskeyManager() {
     }
   }
 
+  const ghostButton: React.CSSProperties = {
+    padding: '10px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    border: 'none', background: 'rgba(255,255,255,.06)', color: 'var(--ink)',
+  };
+
   return (
     <div>
-      <button className="button" disabled={busy} onClick={registerPasskey} type="button">
+      <button disabled={busy} onClick={registerPasskey} style={{ ...ghostButton, background: 'var(--accent)', color: '#fff', opacity: busy ? 0.7 : 1 }} type="button">
         {busy ? 'Registering...' : 'Add a passkey'}
       </button>
-      {status ? <p className="status-note" style={{ marginTop: 8 }}>{status}</p> : null}
-      {error ? <p className="status-note status-note-error" style={{ marginTop: 8 }}>{error}</p> : null}
+      {status ? <p style={{ marginTop: 8, fontSize: 13, color: 'var(--accent)' }}>{status}</p> : null}
+      {error ? <p style={{ marginTop: 8, fontSize: 13, color: '#ef4444' }}>{error}</p> : null}
 
       {!loadingList && passkeys && passkeys.length > 0 ? (
-        <div style={{ marginTop: 16 }}>
-          <p style={{ fontWeight: 600, marginBottom: 8 }}>Registered passkeys</p>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {passkeys.map((pk) => (
-              <li key={pk.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <span style={{ flex: 1 }}>
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', color: 'rgba(240,235,229,.5)', marginBottom: 10 }}>
+            Registered passkeys
+          </div>
+          <div style={{ border: '1px solid rgba(255,255,255,.06)', borderRadius: 12, overflow: 'hidden' }}>
+            {passkeys.map((pk, i) => (
+              <div key={pk.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: i === passkeys.length - 1 ? 'none' : '1px solid rgba(255,255,255,.06)' }}>
+                <span style={{ flex: 1, fontSize: 13, color: 'var(--ink)' }}>
                   <span style={{ textTransform: 'capitalize' }}>{pk.deviceType.replace(/-/g, ' ')}</span>
                   {pk.backedUp ? ' · synced' : ' · single device'}
                   {' · '}
                   {new Date(pk.createdAt).toLocaleDateString()}
                 </span>
                 <button
-                  className="button"
                   disabled={removingId === pk.id}
                   onClick={() => void removePasskey(pk.id)}
-                  style={{ padding: '4px 12px', fontSize: '0.85em' }}
+                  style={{ ...ghostButton, padding: '6px 14px', fontSize: 12, opacity: removingId === pk.id ? 0.7 : 1 }}
                   type="button"
                 >
                   {removingId === pk.id ? 'Removing...' : 'Remove'}
                 </button>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       ) : null}
     </div>

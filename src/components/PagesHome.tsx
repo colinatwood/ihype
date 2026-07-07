@@ -127,6 +127,10 @@ export function PagesHome({ initialTab, isShellForeground = true, resetToken }: 
   const [signedOut, setSignedOut] = useState(false);
   const [q, setQ] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[] | null>(null);
+  const [creatingType, setCreatingType] = useState<string | null>(null);
+  const [creatingName, setCreatingName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const contentTopRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -147,6 +151,33 @@ export function PagesHome({ initialTab, isShellForeground = true, resetToken }: 
     refreshAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function addProfile(type: string) {
+    const name = creatingName.trim();
+    if (!name) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const res = await fetch('/api/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: type, name }),
+      });
+      const created = await res.json();
+      if (!res.ok) {
+        setCreateError(created.error ?? 'Could not create page.');
+        return;
+      }
+      await refreshAll();
+      setSelectedPageId(created.id);
+      setCreatingType(null);
+      setCreatingName('');
+    } catch {
+      setCreateError('Network error — try again.');
+    } finally {
+      setCreating(false);
+    }
+  }
 
   useEffect(() => {
     const ql = q.trim();
@@ -316,9 +347,9 @@ export function PagesHome({ initialTab, isShellForeground = true, resetToken }: 
               <p style={{ fontSize: 14, color: 'rgba(240,235,229,.5)', marginBottom: 24 }}>
                 Create an artist, venue, or promoter page to get started.
               </p>
-              <Link href="/register?addPage=1" style={{ display: 'inline-block', padding: '12px 24px', background: 'var(--accent)', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+              <button onClick={() => setTab('creator')} style={{ display: 'inline-block', padding: '12px 24px', background: 'var(--accent)', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }} type="button">
                 Create your first page →
-              </Link>
+              </button>
             </div>
           ) : (
             <>
@@ -552,29 +583,87 @@ export function PagesHome({ initialTab, isShellForeground = true, resetToken }: 
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.18em', textTransform: 'uppercase', color: 'rgba(240,235,229,.35)', marginBottom: 14 }}>
             {selectedProfile ? 'ADD ANOTHER PAGE' : 'PAGE CREATOR'}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-            {CREATE_CARDS.map((card) => (
-              <Link key={card.type} href={`/register?role=${card.type}&addPage=1`} style={{
-                border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: 20,
-                background: 'rgba(255,255,255,.03)', textDecoration: 'none', color: 'inherit',
-                display: 'flex', flexDirection: 'column', gap: 12,
-              }}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: card.bg }}>
-                  {card.icon}
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, letterSpacing: '-.01em', marginBottom: 3, color: card.color }}>
-                    {card.name}
+          <div className="pages-create-grid">
+            {CREATE_CARDS.map((card) => {
+              const isCreating = creatingType === card.type;
+              if (isCreating) {
+                return (
+                  <div key={card.type} style={{
+                    border: `1px solid ${hexA(card.color, 0.35)}`, borderRadius: 14, padding: 20,
+                    background: hexA(card.color, 0.06), display: 'flex', flexDirection: 'column', gap: 12,
+                  }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: card.bg }}>
+                      {card.icon}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, letterSpacing: '-.01em', color: card.color }}>
+                      {card.name}
+                    </div>
+                    <input
+                      autoFocus
+                      disabled={creating}
+                      onChange={(e) => setCreatingName(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') addProfile(card.type); }}
+                      placeholder={`${card.name} name`}
+                      style={{ boxSizing: 'border-box', width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(255,255,255,.04)', color: 'var(--ink)', fontFamily: 'var(--font-body)', fontSize: 14 }}
+                      type="text"
+                      value={creatingName}
+                    />
+                    {createError && <div style={{ fontSize: 12, color: '#ff5029' }}>{createError}</div>}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        disabled={creating || !creatingName.trim()}
+                        onClick={() => addProfile(card.type)}
+                        style={{ flex: 1, padding: '10px 0', borderRadius: 8, border: 'none', background: card.color, color: '#fff', fontWeight: 700, fontSize: 13, cursor: creating ? 'default' : 'pointer', opacity: creating || !creatingName.trim() ? 0.6 : 1 }}
+                        type="button"
+                      >
+                        {creating ? 'Creating…' : 'Create'}
+                      </button>
+                      <button
+                        disabled={creating}
+                        onClick={() => { setCreatingType(null); setCreatingName(''); setCreateError(null); }}
+                        style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,.1)', background: 'transparent', color: 'rgba(240,235,229,.7)', fontSize: 13, cursor: 'pointer' }}
+                        type="button"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 12, color: 'rgba(240,235,229,.55)', lineHeight: 1.5 }}>{card.desc}</div>
-                </div>
-              </Link>
-            ))}
+                );
+              }
+              return (
+                <button
+                  key={card.type}
+                  onClick={() => { setCreatingType(card.type); setCreatingName(''); setCreateError(null); }}
+                  style={{
+                    border: '1px solid rgba(255,255,255,.07)', borderRadius: 14, padding: 20,
+                    background: 'rgba(255,255,255,.03)', textAlign: 'left', color: 'inherit', cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', gap: 12, font: 'inherit',
+                  }}
+                  type="button"
+                >
+                  <div style={{ width: 40, height: 40, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: card.bg }}>
+                    {card.icon}
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, fontWeight: 800, letterSpacing: '-.01em', marginBottom: 3, color: card.color }}>
+                      {card.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'rgba(240,235,229,.55)', lineHeight: 1.5 }}>{card.desc}</div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </>
       )}
       </div>
       </PullToRefresh>
+      <style>{`
+        .pages-create-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+        @media (max-width: 640px) {
+          .pages-create-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </div>
   );
 }

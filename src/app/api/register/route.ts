@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { Prisma, ProfileType } from '@prisma/client/wasm';
+import { Prisma } from '@prisma/client/wasm';
 import { getDiscoverPathForType, getProfilePathForType } from '@/lib/account-routing';
 import { recordAuditEvent } from '@/lib/audit';
 import { db } from '@/lib/db';
-import { createHexId } from '@/lib/hex-id';
+import {
+  generateUniqueProfileHexId,
+  getProfileCopy,
+  getProfileType,
+  getVerificationStatusForType,
+} from '@/lib/profile-creation';
 import { profileAccentToneIds, profileBackdropToneIds, profileDesignPresetIds } from '@/lib/profile-design';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
@@ -60,52 +65,6 @@ const schema = z.object({
   turnstileToken: z.string().optional(),
 });
 
-function getProfileType(role: 'FAN' | 'ARTIST' | 'DJ' | 'VENUE'): ProfileType {
-  if (role === 'ARTIST') return 'ARTIST';
-  if (role === 'DJ') return 'DJ';
-  if (role === 'VENUE') return 'VENUE';
-  return 'LISTENER';
-}
-
-function getProfileCopy(type: ProfileType, name: string) {
-  if (type === 'ARTIST') {
-    return {
-      headline: `${name} is shaping the next chapter.`,
-      bio: 'Add your story, current focus, and favorite way to move a room.',
-      aboutContent: 'Tell people who you are, what you make, and what drives your work.',
-      journalContent: 'Share updates, studio notes, release thoughts, or behind-the-scenes moments.',
-      mediaContent: 'Drop video links, press pull quotes, playlists, or embed-ready media notes here.',
-      tourContent: 'List upcoming dates, routing plans, and travel notes for booking conversations.',
-      merchContent: 'Point fans to limited drops, vinyl, bundles, or whatever your merch table is cooking.'
-    };
-  }
-
-  if (type === 'DJ') {
-    return {
-      headline: `${name} is building the next room worth talking about.`,
-      bio: 'Introduce your sound, your rooms, and how you like to move a crowd.',
-      aboutContent: 'Tell artists and venues what kind of nights you build and what you are looking for next.',
-      recommendContent: 'Use this section to talk about the artists, collaborators, and scenes you champion.'
-    };
-  }
-
-  if (type === 'VENUE') {
-    return {
-      headline: `${name} is opening its doors to the next wave.`,
-      bio: 'Describe the room, the neighborhood, and the kind of nights you want to host.',
-      aboutContent: 'Tell artists and promoters what the venue feels like, what it supports, and who it is for.',
-      requestContent: 'Set expectations for artist recommendations, booking notes, and how fans should use this request tab.'
-    };
-  }
-
-  return {
-    headline: `${name} is curating a personal listening world.`,
-    bio: 'Introduce yourself, the scenes you love, and what you are always looking for next.',
-    aboutContent: 'Tell people what kind of fan you are and what sounds stay in rotation.',
-    topFiveContent: 'List your current top 5 artists, records, or live moments here.'
-  };
-}
-
 function getVenueProfileOverrides(body: z.infer<typeof schema>) {
   return {
     headline: body.headline || null,
@@ -129,24 +88,6 @@ function getVenueProfileOverrides(body: z.infer<typeof schema>) {
     themeAccentTone: body.themeAccentTone ?? undefined,
     themeBackdropTone: body.themeBackdropTone ?? undefined
   };
-}
-
-function getVerificationStatusForType(type: ProfileType) {
-  if (type === 'ARTIST' || type === 'VENUE' || type === 'DJ') {
-    return 'PENDING' as const;
-  }
-
-  return 'UNVERIFIED' as const;
-}
-
-async function generateUniqueProfileHexId() {
-  let hexId = createHexId();
-
-  while (await db.profile.findUnique({ where: { hexId } })) {
-    hexId = createHexId();
-  }
-
-  return hexId;
 }
 
 export async function POST(request: Request) {

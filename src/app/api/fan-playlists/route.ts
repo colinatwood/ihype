@@ -22,7 +22,7 @@ export async function GET() {
     return NextResponse.json({ error: 'Fan playlists are only available to fan accounts' }, { status: 403 });
   }
 
-  const [playlists, favorites] = await Promise.all([
+  const [playlists, favorites, savedSeedRows] = await Promise.all([
     db.fanPlaylist.findMany({
       where: { userId: session.user.id },
       include: {
@@ -35,10 +35,38 @@ export async function GET() {
     db.fanFavoriteMedia.findMany({
       where: { userId: session.user.id },
       orderBy: [{ createdAt: 'desc' }]
+    }),
+    db.seed.findMany({
+      where: { userId: session.user.id, action: 'save' },
+      orderBy: [{ createdAt: 'desc' }],
+      select: { id: true, mediaId: true }
     })
   ]);
 
-  return NextResponse.json({ playlists, favorites });
+  const mediaIds = savedSeedRows.map((s) => s.mediaId);
+  const media = mediaIds.length
+    ? await db.artistMediaAsset.findMany({
+        where: { id: { in: mediaIds } },
+        select: { id: true, title: true, profile: { select: { name: true, slug: true, type: true } } }
+      })
+    : [];
+  const mediaById = new Map(media.map((m) => [m.id, m]));
+  const savedSeeds = savedSeedRows
+    .map((seed) => {
+      const asset = mediaById.get(seed.mediaId);
+      if (!asset || !asset.profile) return null;
+      return {
+        id: seed.id,
+        mediaId: seed.mediaId,
+        title: asset.title,
+        artistName: asset.profile.name,
+        artistProfileSlug: asset.profile.slug,
+        artistProfileType: asset.profile.type
+      };
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
+
+  return NextResponse.json({ playlists, favorites, savedSeeds });
 }
 
 export async function POST(request: Request) {
