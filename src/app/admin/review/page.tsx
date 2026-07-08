@@ -6,6 +6,7 @@ import { WORKBENCH_PATH } from '@/lib/auth-redirects';
 import { db } from '@/lib/db';
 import { isAdminSession } from '@/lib/permissions';
 import { AdminVerificationQueue } from '@/app/admin/verifications/AdminVerificationQueue';
+import { ReportPageBulkButtons } from '@/components/admin/ReportPageBulkButtons';
 import type { VerificationProfile } from '@/lib/types/admin';
 import React from 'react';
 
@@ -205,16 +206,7 @@ export default async function AdminReviewPage({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <p style={{ fontFamily: 'var(--f-m)', fontSize: 13, color: 'var(--ink-2)', margin: 0 }}>{reportsTotal} {rStatus.toLowerCase()} report{reportsTotal !== 1 ? 's' : ''}</p>
             {rStatus === 'OPEN' && reports.length > 0 && (
-              <form method="post" action="/api/admin/bulk-actions" style={{ display: 'flex', gap: 6 }}>
-                <input type="hidden" name="action" value="resolve_reports" />
-                {reports.map(r => <input key={r.id} type="hidden" name="ids" value={r.id} />)}
-                <button type="submit" style={{ background: 'rgba(34,229,212,.1)', color: '#22e5d4', border: '1px solid rgba(34,229,212,.25)', borderRadius: 6, padding: '5px 14px', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--f-m)' }}>
-                  Resolve all on page ({reports.length})
-                </button>
-                <button type="submit" onClick={e => { (e.currentTarget.previousElementSibling as HTMLInputElement | null)?.setAttribute('value', 'dismiss_reports'); }} style={{ background: 'rgba(255,255,255,.06)', color: 'var(--ink-2)', border: '1px solid var(--line)', borderRadius: 6, padding: '5px 14px', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--f-m)' }}>
-                  Dismiss all on page
-                </button>
-              </form>
+              <ReportPageBulkButtons ids={reports.map(r => r.id)} />
             )}
           </div>
 

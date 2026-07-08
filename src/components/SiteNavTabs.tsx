@@ -108,6 +108,7 @@ export function SiteNavTabs() {
       <button
         aria-expanded={menuOpen}
         aria-label="Open menu"
+        className="nav-menu-trigger"
         onClick={() => setMenuOpen(true)}
         style={{
           display: 'flex',
