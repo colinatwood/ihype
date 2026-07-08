@@ -1,4 +1,7 @@
-import { Prisma, PrismaClient } from '@/generated/prisma/client';
+// The /wasm entrypoint is required on Cloudflare Workers: the default
+// '@prisma/client' entry loads the native/library query engine, which
+// cannot exist in workerd ("could not locate the Query Engine").
+import { Prisma, PrismaClient } from '@prisma/client/wasm';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { log } from '@/lib/logger';
 
