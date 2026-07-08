@@ -45,9 +45,14 @@ export default async function EpkPage({ params }: { params: Promise<{ slug: stri
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 24px', fontFamily: 'serif', color: '#111' }}>
       <style>{`@media print { .no-print { display: none !important; } body { background: white; } }`}</style>
       <div className="no-print" style={{ marginBottom: 24 }}>
-        <button onClick={() => window.print()} style={{ padding: '8px 18px', cursor: 'pointer' }}>
+        {/* Server Component — a function prop here crashes RSC serialization
+            (this page rendered a hard error for every visitor). Wire the
+            handler with the same inline-script pattern the sibling presskit
+            page already uses. */}
+        <button id="epk-print-btn" type="button" style={{ padding: '8px 18px', cursor: 'pointer' }}>
           Print / Save PDF
         </button>
+        <script dangerouslySetInnerHTML={{ __html: `document.getElementById('epk-print-btn').onclick=()=>window.print()` }} />
       </div>
 
       <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>

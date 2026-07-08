@@ -211,7 +211,10 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
                         {s.headlinerProfile?.name ?? 'iHYPE Radio'}
                         {s.venueProfile?.city ? ` · ${s.venueProfile.city}` : ''}
                       </div>
-                      <div onClick={e => { e.preventDefault(); e.stopPropagation(); }}>
+                      {/* No onClick wrapper: this is a Server Component, and function
+                          props crash RSC serialization the moment a show row exists.
+                          CompactHypeButton stops propagation/navigation itself. */}
+                      <div>
                         <CompactHypeButton targetType="show" targetId={s.id} initialCount={s.hypeCount} />
                       </div>
                     </div>
@@ -253,7 +256,10 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
                     )}
                   </div>
                 </Link>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={e => e.stopPropagation()}>
+                {/* Sibling of the card's Link (not nested inside it), so clicks here
+                    can't trigger navigation — no handler needed, and Server Components
+                    can't pass one anyway. */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CompactHypeButton targetType="profile" targetId={p.id} initialCount={p.hypeCount} />
                   {session?.user && <FollowButton profileId={p.id} />}
                 </div>
@@ -286,7 +292,9 @@ export default async function DiscoverPage({ searchParams }: { searchParams?: Pr
                 <div className="ihype-card" style={{ padding: '16px 18px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: '#22e5d4', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🏛️ {p.name}</div>
-                    <div style={{ flexShrink: 0 }} onClick={e => { e.preventDefault(); e.stopPropagation(); }}>
+                    {/* No onClick wrapper (Server Component) — CompactHypeButton
+                        stops propagation/navigation itself. */}
+                    <div style={{ flexShrink: 0 }}>
                       <CompactHypeButton targetType="profile" targetId={p.id} initialCount={p.hypeCount} />
                     </div>
                   </div>
