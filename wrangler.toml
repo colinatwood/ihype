@@ -36,6 +36,8 @@ NEXT_PUBLIC_APP_URL = "https://ihype.org"
 NEXT_PUBLIC_BASE_URL = "https://ihype.org"
 R2_PUBLIC_BASE_URL = "https://ihype.org"
 NEXT_PUBLIC_TURNSTILE_SITE_KEY = "0x4AAAAAADSF8WNxaeBIRmR7"
+# Paid ticketing must remain an explicit configuration change, not dashboard residue.
+FEATURE_ENABLE_TICKET_PAYMENTS = "false"
 
 [[kv_namespaces]]
 binding = "KV"
@@ -71,7 +73,6 @@ new_sqlite_classes = ["RateLimiterDO"]
 [[analytics_engine_datasets]]
 binding = "AE"
 dataset = "ihype_analytics"
-
 
 [[services]]
 binding = "WORKER_SELF_REFERENCE"
