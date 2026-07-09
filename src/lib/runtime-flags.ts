@@ -2,34 +2,18 @@ import { kvGet } from '@/lib/kv';
 import { db } from '@/lib/db';
 
 function parseBooleanFlag(value: unknown, defaultValue: boolean) {
-  if (value == null) {
-    return defaultValue;
-  }
-
-  if (typeof value === 'boolean') {
-    return value;
-  }
-
+  if (value == null) return defaultValue;
+  if (typeof value === 'boolean') return value;
   if (typeof value === 'number') {
     if (value === 1) return true;
     if (value === 0) return false;
     return defaultValue;
   }
-
-  if (typeof value !== 'string') {
-    return defaultValue;
-  }
+  if (typeof value !== 'string') return defaultValue;
 
   const normalized = value.trim().toLowerCase();
-
-  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
-    return true;
-  }
-
-  if (['0', 'false', 'no', 'off'].includes(normalized)) {
-    return false;
-  }
-
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
   return defaultValue;
 }
 
@@ -64,20 +48,42 @@ const demoIdentifiers = new Set([
   'promoter',
   'promoter@ihype.org',
   'venue',
-  'venue@ihype.org'
+  'venue@ihype.org',
 ]);
+
+const knownWeakInviteCodes = new Set(['ihype', 'hype2026', 'beta', 'listen']);
+
+function isStrongInviteCode(code: string) {
+  return code.length >= 16 && !knownWeakInviteCodes.has(code.toLowerCase());
+}
+
+function getConfiguredInviteCodes() {
+  const codes = process.env.BETA_INVITE_CODES?.split(',')
+    .map((code) => code.trim().toLowerCase())
+    .filter(Boolean) ?? [];
+
+  if (process.env.NODE_ENV !== 'production') return codes;
+
+  const strongCodes = codes.filter(isStrongInviteCode);
+  if (strongCodes.length !== codes.length) {
+    console.error(
+      '[invite-codes] Ignoring weak production invite codes. Use at least 16 random characters per code.',
+    );
+  }
+  return strongCodes;
+}
 
 export const demoUserEmails = [
   'fan@ihype.org',
   'artist@ihype.org',
   'promoter@ihype.org',
-  'venue@ihype.org'
+  'venue@ihype.org',
 ];
 
 export function areDemoLoginsEnabled() {
   return parseBooleanFlag(
     process.env.FEATURE_ENABLE_DEMO_LOGINS,
-    process.env.NODE_ENV !== 'production'
+    process.env.NODE_ENV !== 'production',
   );
 }
 
@@ -86,17 +92,11 @@ export async function areDemoLoginsEnabledRuntime() {
 }
 
 export function isDemoIdentifier(identifier: string | null | undefined) {
-  if (!identifier) {
-    return false;
-  }
-
+  if (!identifier) return false;
   return demoIdentifiers.has(identifier.trim().toLowerCase());
 }
 
-export function isDemoUser(user: {
-  email?: string | null;
-  username?: string | null;
-}) {
+export function isDemoUser(user: { email?: string | null; username?: string | null }) {
   return isDemoIdentifier(user.email) || isDemoIdentifier(user.username);
 }
 
@@ -105,7 +105,10 @@ export function shouldHideDemoContent() {
 }
 
 export async function shouldHideDemoContentRuntime() {
-  return getRuntimeFlag('hide_demo_content', process.env.NODE_ENV === 'production' && !(await areDemoLoginsEnabledRuntime()));
+  return getRuntimeFlag(
+    'hide_demo_content',
+    process.env.NODE_ENV === 'production' && !(await areDemoLoginsEnabledRuntime()),
+  );
 }
 
 export function getDemoOwnerExclusion() {
@@ -117,18 +120,19 @@ export function getDemoCreatorExclusion() {
 }
 
 export function getDemoProfileRelationExclusion() {
-  return shouldHideDemoContent() ? { profile: { owner: { email: { notIn: demoUserEmails } } } } : {};
+  return shouldHideDemoContent()
+    ? { profile: { owner: { email: { notIn: demoUserEmails } } } }
+    : {};
 }
 
 export function getDemoShowRelationExclusion() {
-  return shouldHideDemoContent() ? { show: { creator: { email: { notIn: demoUserEmails } } } } : {};
+  return shouldHideDemoContent()
+    ? { show: { creator: { email: { notIn: demoUserEmails } } } }
+    : {};
 }
 
 export function isReservedPlatformEmail(email: string | null | undefined) {
-  if (!email) {
-    return false;
-  }
-
+  if (!email) return false;
   return email.trim().toLowerCase().endsWith('@ihype.org');
 }
 
@@ -148,7 +152,7 @@ export function isProductionSeedingAllowed() {
 export function areDatabaseMediaUploadsEnabled() {
   return parseBooleanFlag(
     process.env.FEATURE_ALLOW_DATABASE_MEDIA_STORAGE,
-    process.env.NODE_ENV !== 'production'
+    process.env.NODE_ENV !== 'production',
   );
 }
 
@@ -164,14 +168,11 @@ export async function isInviteCodeRequiredRuntime() {
   return getRuntimeFlag('invite_only_signup', isInviteCodeRequired());
 }
 
-export function isValidInviteCode(value: string | null | undefined, requiredOverride?: boolean) {
-  const configuredCodes = process.env.BETA_INVITE_CODES?.split(',')
-    .map((code) => code.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (!configuredCodes?.length) {
-    return !(requiredOverride ?? isInviteCodeRequired());
-  }
-
+export function isValidInviteCode(
+  value: string | null | undefined,
+  requiredOverride?: boolean,
+) {
+  const configuredCodes = getConfiguredInviteCodes();
+  if (!configuredCodes.length) return !(requiredOverride ?? isInviteCodeRequired());
   return configuredCodes.includes(value?.trim().toLowerCase() ?? '');
 }
