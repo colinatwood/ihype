@@ -17,8 +17,9 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
+  const openEndedCutoff = new Date(now.getTime() - 12 * 60 * 60 * 1000);
 
-  const [toLive, toEnded] = await Promise.all([
+  const [toLive, toEnded, staleEnded] = await Promise.all([
     // SCHEDULED → LIVE: startsAt has passed and no endsAt or endsAt is in the future
     db.show.updateMany({
       where: {
@@ -35,13 +36,24 @@ export async function GET(request: NextRequest) {
         endsAt: { lte: now }
       },
       data: { status: 'ENDED' }
+    }),
+    // LIVE → ENDED (open-ended): shows with no endsAt otherwise stay LIVE
+    // forever — the launch seeds sat "live" for weeks. 12h past startsAt is
+    // a generous cap for any real set or radio marathon.
+    db.show.updateMany({
+      where: {
+        status: 'LIVE',
+        endsAt: null,
+        startsAt: { lte: openEndedCutoff }
+      },
+      data: { status: 'ENDED' }
     })
   ]);
 
   return NextResponse.json({
     ok: true,
     transitionedToLive: toLive.count,
-    transitionedToEnded: toEnded.count,
+    transitionedToEnded: toEnded.count + staleEnded.count,
     evaluatedAt: now.toISOString()
   });
 }

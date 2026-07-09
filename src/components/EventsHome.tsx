@@ -58,19 +58,19 @@ function EventList({ shows, emptyTitle, emptyBody }: { shows: Show[]; emptyTitle
     return (
       <div>
         {/* Ghost event card — the module keeps its designed shape even with nothing to list */}
-        <div aria-hidden="true" style={{ ...eventCard, border: '1px dashed rgba(255,255,255,.12)', background: 'rgba(255,255,255,.015)' }}>
-          <div style={{ width: 110, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,.04)', background: 'linear-gradient(135deg, rgba(255,80,41,.07) 0%, transparent 100%)', fontSize: 30, opacity: 0.35 }}>🎵</div>
-          <div style={{ flex: 1, minWidth: 0, padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <div aria-hidden="true" className="ev-card" style={{ ...eventCard, border: '1px dashed rgba(255,255,255,.12)', background: 'rgba(255,255,255,.015)' }}>
+          <div className="ev-art" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,.04)', background: 'linear-gradient(135deg, rgba(255,80,41,.07) 0%, transparent 100%)', opacity: 0.35 }}>🎵</div>
+          <div className="ev-main" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(240,235,229,.25)', marginBottom: 7 }}>Date · Time</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, letterSpacing: '-.02em', marginBottom: 4, color: 'rgba(240,235,229,.3)' }}>Your next show</div>
+            <div className="ev-title" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-.02em', marginBottom: 4, color: 'rgba(240,235,229,.3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Your next show</div>
             <div style={{ fontSize: 13, color: 'rgba(240,235,229,.22)' }}>Venue · City</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', padding: '18px 20px', gap: 8, flexShrink: 0 }}>
+          <div className="ev-cta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: 8, flexShrink: 0 }}>
             <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'rgba(255,80,41,.35)', letterSpacing: '-.02em' }}>—</div>
+              <div className="ev-price" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'rgba(255,80,41,.35)', letterSpacing: '-.02em' }}>—</div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(240,235,229,.2)' }}>$0 fees</div>
             </div>
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 12, padding: '8px 14px', borderRadius: 8, background: 'rgba(255,80,41,.2)', color: 'rgba(255,255,255,.4)' }}>Get ticket</span>
+            <span className="ev-pill" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, borderRadius: 8, background: 'rgba(255,80,41,.2)', color: 'rgba(255,255,255,.4)', whiteSpace: 'nowrap' }}>Get ticket</span>
           </div>
         </div>
         <div style={{ ...emptyStyle, padding: '28px 24px' }}>
@@ -85,14 +85,16 @@ function EventList({ shows, emptyTitle, emptyBody }: { shows: Show[]; emptyTitle
       {shows.map((show) => {
         const demandLabel = show.hypeCount >= 50 ? `+${Math.min(99, Math.round(show.hypeCount / 5))}% this week` : null;
         return (
-          <Link href={`/shows/${show.slug}`} key={show.id} style={eventCard}>
-            <div style={{ width: 110, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,.05)', background: 'linear-gradient(135deg, rgba(255,80,41,.15) 0%, transparent 100%)', fontSize: 30 }}>🎵</div>
-            <div style={{ flex: 1, minWidth: 0, padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Link className="ev-card" href={`/shows/${show.slug}`} key={show.id} style={eventCard}>
+            <div className="ev-art" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRight: '1px solid rgba(255,255,255,.05)', background: 'linear-gradient(135deg, rgba(255,80,41,.15) 0%, transparent 100%)' }}>🎵</div>
+            <div className="ev-main" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(240,235,229,.5)', marginBottom: 7, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <span>{fmtDate(show.startsAt)}</span>
+                {show.status === 'LIVE'
+                  ? <span style={{ color: 'var(--accent)' }}>● LIVE NOW</span>
+                  : <span>{fmtDate(show.startsAt)}</span>}
                 {demandLabel && <span style={{ color: '#22e5d4' }}>{demandLabel}</span>}
               </div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 800, letterSpacing: '-.02em', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="ev-title" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-.02em', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {show.headlinerProfile ? `${show.headlinerProfile.name} @ ${show.venueProfile?.name ?? show.title}` : show.title}
               </div>
               <div style={{ fontSize: 13, color: 'rgba(240,235,229,.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -103,14 +105,14 @@ function EventList({ shows, emptyTitle, emptyBody }: { shows: Show[]; emptyTitle
                 <div style={{ fontSize: 11, color: '#ff5029', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>✨ {show.reason.text}</div>
               )}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', padding: '18px 20px', gap: 8, flexShrink: 0 }}>
+            <div className="ev-cta" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: 8, flexShrink: 0 }}>
               <div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 800, color: 'var(--accent)', letterSpacing: '-.02em' }}>
+                <div className="ev-price" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--accent)', letterSpacing: '-.02em' }}>
                   {show.isTicketed ? formatCurrencyFromCents(show.ticketPriceCents) : 'Free'}
                 </div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: 'rgba(240,235,229,.35)' }}>$0 fees</div>
               </div>
-              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 12, padding: '8px 14px', borderRadius: 8, background: 'var(--accent)', color: '#fff' }}>Get ticket</span>
+              <span className="ev-pill" style={{ fontFamily: 'var(--font-display)', fontWeight: 800, borderRadius: 8, background: 'var(--accent)', color: '#fff', whiteSpace: 'nowrap' }}>Get ticket</span>
             </div>
           </Link>
         );
@@ -297,8 +299,13 @@ export function EventsHome({
       {tab === 'local' && (
         shows === null ? <div style={emptyStyle}><p>Loading events…</p></div> : (
           <>
-            <div style={{ textAlign: 'right', marginBottom: 10 }}>
-              <Link href="/shows/map" style={{ fontSize: 12.5, color: 'rgba(240,235,229,.6)' }}>View on map →</Link>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: 'rgba(240,235,229,.45)' }}>
+                {nearCity || nearRegion
+                  ? `NEAR ${(nearCity ?? nearRegion)!.toUpperCase()}`
+                  : 'ALL CITIES — SET YOUR HOMETOWN IN SETTINGS TO LOCALIZE'}
+              </div>
+              <Link href="/shows/map" style={{ fontSize: 12.5, color: 'rgba(240,235,229,.6)', flexShrink: 0 }}>View on map →</Link>
             </div>
             <EventList
               emptyBody="No shows in your city or region right now — check For You or Search instead."
@@ -391,6 +398,22 @@ export function EventsHome({
       {tab === 'referral' && <PagesReferralTab />}
       </div>
       </PullToRefresh>
+      <style>{`
+        .ev-art { width: 110px; font-size: 30px; }
+        .ev-main { padding: 18px 20px; }
+        .ev-cta { padding: 18px 20px; }
+        .ev-title { font-size: 18px; }
+        .ev-price { font-size: 20px; }
+        .ev-pill { font-size: 12px; padding: 8px 14px; }
+        @media (max-width: 560px) {
+          .ev-art { width: 56px; font-size: 20px; }
+          .ev-main { padding: 12px 12px; }
+          .ev-cta { padding: 12px 12px; }
+          .ev-title { font-size: 15px; }
+          .ev-price { font-size: 16px; }
+          .ev-pill { font-size: 11px; padding: 7px 10px; }
+        }
+      `}</style>
     </div>
   );
 }
