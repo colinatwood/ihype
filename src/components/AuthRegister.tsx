@@ -7,7 +7,7 @@ import { startRegistration } from '@simplewebauthn/browser';
 import { postJson } from '@/lib/api-client';
 import { resolvePostAuthRedirect } from '@/lib/auth-redirects';
 import {
-  AuthSignalShell,
+  AuthCardShell,
   getErrorMessage,
   getPasskeyDiagnostics,
   getStoredSignupVariant,
@@ -16,6 +16,13 @@ import {
 } from '@/components/AuthShared';
 import type { AuthMethod, RegisterStep, RoleOption, SignupVariant } from '@/components/AuthShared';
 import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/TurnstileWidget';
+
+const ROLE_COLOR: Record<RoleOption, string> = {
+  FAN: '#b983ff',
+  ARTIST: '#ff5029',
+  DJ: '#ff3e9a',
+  VENUE: '#22e5d4'
+};
 
 export function RegisterScreen({
   initialRole = 'FAN',
@@ -200,69 +207,69 @@ export function RegisterScreen({
   }
 
   return (
-    <AuthSignalShell
-      badge="Join iHYPE"
-      cardSubtitle={
+    <AuthCardShell
+      eyebrow="JOIN THE SCENE"
+      mode="signup"
+      subtitle={
         step === 'passkey'
           ? 'Retry the device prompt or finish with a magic link. Your account is not stranded.'
           : step === 'magic-link-sent'
           ? 'Check your inbox for a one-tap link to finish signing in. You can add a passkey later from Settings.'
-          : 'Pick your lane, then choose magic-link signup or passkey setup with a magic-link fallback.'
+          : 'Zero fees. 45/45/10. iHYPE takes nothing.'
       }
-      cardTitle="Create your account"
-      description="One free account opens the ecosystem. Pick your role first, then build the page, shows, tickets, and discovery tools that match your lane."
-      eyebrow="Free forever"
-      highlight="Choose your lane."
-      signals={[
-        { label: 'Fans', value: 'Hype', detail: 'Discover and attend' },
-        { label: 'Artists', value: 'Publish', detail: 'Media and tour signals' },
-        { label: 'Rooms', value: 'Book', detail: 'Venue event tools' }
-      ]}
-      title="Join free."
-      wide
+      title="Create account."
     >
       {step === 'passkey' ? (
-        <div className="auth-passkey-pending">
+        <div className="authcard-passkey-pending">
           <p>Waiting for your device passkey prompt.</p>
-          <p className="subtitle">Use Face ID, Touch ID, or your device PIN when prompted.</p>
-          <div className="auth-passkey-actions">
-            <button className="button" disabled={isSubmitting} onClick={retryPasskey} type="button">
+          <p className="meta">Use Face ID, Touch ID, or your device PIN when prompted.</p>
+          <div className="authcard-passkey-actions">
+            <button className="authcard-btn-primary" disabled={isSubmitting} onClick={retryPasskey} type="button">
               {isSubmitting ? 'Opening prompt...' : 'Try passkey again'}
             </button>
-            <button className="button secondary" disabled={isSubmitting} onClick={useMagicLinkInstead} type="button">
+            <button className="authcard-btn-ghost" disabled={isSubmitting} onClick={useMagicLinkInstead} type="button">
               Use a magic link instead
             </button>
           </div>
           <p className="meta">You can add a passkey later from Settings after signing in.</p>
         </div>
       ) : step === 'magic-link-sent' ? (
-        <p className="status-note">Check your inbox for a sign-in link (expires in 15 min). You can close this tab.</p>
+        <p className="authcard-status">Check your inbox for a sign-in link (expires in 15 min). You can close this tab.</p>
       ) : (
-        <form className="form" onSubmit={createAccount}>
-          <fieldset className="role-choice-grid">
-            <legend>Account type</legend>
-            {roleOptions.map((option) => (
-              <label className={option.value === role ? 'role-choice active' : 'role-choice'} key={option.value}>
-                <input
-                  checked={option.value === role}
-                  name="role"
-                  onChange={() => {
-                    setRole(option.value);
-                    trackSignupFunnel('role_selected', { role: option.value, method: authMethod, step: 'form', variant: signupVariant });
-                  }}
-                  type="radio"
-                  value={option.value}
-                />
-                <strong>{option.label}</strong>
-                <span>{option.help}</span>
-              </label>
-            ))}
+        <form onSubmit={createAccount}>
+          <fieldset className="authcard-field">
+            <legend>I&apos;m joining as</legend>
+            <div className="authcard-role-grid">
+              {roleOptions.map((option) => (
+                <label
+                  className={option.value === role ? 'authcard-role-opt active' : 'authcard-role-opt'}
+                  key={option.value}
+                  style={option.value === role
+                    ? ({ '--role-c': ROLE_COLOR[option.value], '--role-bg': `${ROLE_COLOR[option.value]}1a` } as React.CSSProperties)
+                    : undefined}
+                >
+                  <input
+                    checked={option.value === role}
+                    className="authcard-role-radio"
+                    name="role"
+                    onChange={() => {
+                      setRole(option.value);
+                      trackSignupFunnel('role_selected', { role: option.value, method: authMethod, step: 'form', variant: signupVariant });
+                    }}
+                    type="radio"
+                    value={option.value}
+                  />
+                  <div className="authcard-role-dot" style={{ background: ROLE_COLOR[option.value] }} />
+                  <div className="authcard-role-name">{option.label}</div>
+                </label>
+              ))}
+            </div>
           </fieldset>
 
-          <div className="auth-method-grid" role="tablist" aria-label="Signup method">
+          <div className="authcard-method-grid" role="tablist" aria-label="Signup method">
             <button
               aria-selected={authMethod === 'email'}
-              className={authMethod === 'email' ? 'auth-method-choice active' : 'auth-method-choice'}
+              className={authMethod === 'email' ? 'authcard-method-choice active' : 'authcard-method-choice'}
               onClick={() => {
                 setAuthMethod('email');
                 trackSignupFunnel('method_selected', { role, method: 'email', step: 'form', variant: signupVariant });
@@ -274,7 +281,7 @@ export function RegisterScreen({
             </button>
             <button
               aria-selected={authMethod === 'passkey'}
-              className={authMethod === 'passkey' ? 'auth-method-choice active' : 'auth-method-choice'}
+              className={authMethod === 'passkey' ? 'authcard-method-choice active' : 'authcard-method-choice'}
               onClick={() => {
                 setAuthMethod('passkey');
                 trackSignupFunnel('method_selected', { role, method: 'passkey', step: 'form', variant: signupVariant });
@@ -286,8 +293,8 @@ export function RegisterScreen({
             </button>
           </div>
 
-          <label className="field">
-            <span>{needsPublicName ? (selectedRole?.label ?? 'Profile') + ' name' : 'Display name'}</span>
+          <div className="authcard-field">
+            <label>{needsPublicName ? (selectedRole?.label ?? 'Profile') + ' name' : 'Display name'}</label>
             <input
               onChange={(event) => setName(event.target.value)}
               placeholder={needsPublicName ? 'Your public artist/venue name' : 'Optional - shown on your profile'}
@@ -295,12 +302,10 @@ export function RegisterScreen({
               type="text"
               value={name}
             />
-          </label>
+          </div>
 
-          <div className="field-group-label">Sign-in email <span className="field-group-optional">- required so passkey setup can fall back safely</span></div>
-
-          <label className="field">
-            <span>Email</span>
+          <div className="authcard-field">
+            <label>Email <span className="authcard-field-optional">— required so passkey setup can fall back safely</span></label>
             <input
               autoComplete="email"
               inputMode="email"
@@ -310,10 +315,10 @@ export function RegisterScreen({
               type="email"
               value={email}
             />
-          </label>
+          </div>
 
-          <label className="field">
-            <span>Phone</span>
+          <div className="authcard-field">
+            <label>Phone</label>
             <input
               autoComplete="tel"
               onChange={(event) => setPhone(event.target.value)}
@@ -321,11 +326,11 @@ export function RegisterScreen({
               type="tel"
               value={phone}
             />
-          </label>
+          </div>
 
           {inviteOnly ? (
-            <label className="field">
-              <span>Beta invite code</span>
+            <div className="authcard-field">
+              <label>Beta invite code</label>
               <input
                 autoComplete="off"
                 onChange={(event) => setInviteCode(event.target.value)}
@@ -333,10 +338,10 @@ export function RegisterScreen({
                 type="text"
                 value={inviteCode}
               />
-            </label>
+            </div>
           ) : null}
 
-          <label className="check-row">
+          <label className="authcard-check-row">
             <input checked={acceptedAge} onChange={(event) => setAcceptedAge(event.target.checked)} required type="checkbox" />
             <span>
               I attest that I am 13 years of age or older and I recognize that iHYPE is not responsible for any
@@ -345,7 +350,7 @@ export function RegisterScreen({
           </label>
 
           {needsUploadPolicy ? (
-            <label className="check-row">
+            <label className="authcard-check-row">
               <input
                 checked={acceptedPolicy}
                 onChange={(event) => setAcceptedPolicy(event.target.checked)}
@@ -361,14 +366,14 @@ export function RegisterScreen({
             onToken={setTurnstileToken}
             onExpire={() => setTurnstileToken('')}
           />
-          <button className="button" disabled={isSubmitting} type="submit">
+          <button className="authcard-btn-primary" disabled={isSubmitting} type="submit">
             {isSubmitting
               ? 'Setting up...'
               : authMethod === 'passkey'
               ? 'Create account with passkey'
               : 'Create account with magic link'}
           </button>
-          <div className="auth-trust-row" aria-label="Signup trust links">
+          <div className="authcard-trust-row" aria-label="Signup trust links">
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
             <Link href="/community-rules">Community rules</Link>
@@ -386,8 +391,8 @@ export function RegisterScreen({
         </form>
       )}
 
-      {status ? <p className="status-note">{status}</p> : null}
-      {error ? <p className="status-note status-note-error">{error}</p> : null}
-    </AuthSignalShell>
+      {status ? <p className="authcard-status">{status}</p> : null}
+      {error ? <p className="authcard-status authcard-status-error">{error}</p> : null}
+    </AuthCardShell>
   );
 }

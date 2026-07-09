@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { postJson } from '@/lib/api-client';
 
@@ -27,72 +28,53 @@ export const roleOptions: Array<{ value: RoleOption; label: string; help: string
   { value: 'VENUE', label: 'Venue', help: 'Manage events, ticketing, and demand signals.' }
 ];
 
-export type AuthSignal = {
-  label: string;
-  value: string;
-  detail: string;
-};
-
-export function AuthSignalShell({
+/**
+ * Single centered auth card — matches the Auth.dc.html redesign. Replaces
+ * the old two-column AuthSignalShell (marketing copy + glass card); the
+ * sitewide header already carries the pitch, so this page is just the form.
+ */
+export function AuthCardShell({
+  mode,
   eyebrow,
   title,
-  highlight,
-  description,
-  badge,
-  cardTitle,
-  cardSubtitle,
-  signals,
-  wide = false,
-  compactOnMobile = false,
+  subtitle,
   children
 }: {
+  mode: 'signin' | 'signup';
   eyebrow: string;
   title: string;
-  highlight: string;
-  description: string;
-  badge: string;
-  cardTitle: string;
-  cardSubtitle: string;
-  signals: AuthSignal[];
-  wide?: boolean;
-  /** Hides the marketing copy column on mobile so the actual sign-in card
-   * is reachable without scrolling — the pitch already happened on Index. */
-  compactOnMobile?: boolean;
+  subtitle: string;
   children: ReactNode;
 }) {
-  const classNames = [
-    'auth-signal-page',
-    wide && 'auth-signal-page-wide',
-    compactOnMobile && 'auth-signal-page-compact',
-  ].filter(Boolean).join(' ');
-
   return (
-    <section className={classNames}>
-      <div className="auth-signal-shell">
-        <div className="auth-signal-copy">
-          <p className="auth-signal-eyebrow">{eyebrow}</p>
-          <h1>
-            {title}
-            <span>{highlight}</span>
-          </h1>
-          <p>{description}</p>
-          <div className="auth-signal-grid" aria-label="iHYPE account signals">
-            {signals.map((signal) => (
-              <article className="auth-signal-tile" key={signal.label}>
-                <span>{signal.label}</span>
-                <strong>{signal.value}</strong>
-                <small>{signal.detail}</small>
-              </article>
-            ))}
-          </div>
+    <section className="authcard-page">
+      <div className="authcard-wrap">
+        <p className="authcard-eyebrow">{eyebrow}</p>
+        <h1 className="authcard-title">{title}</h1>
+        <p className="authcard-sub">{subtitle}</p>
+
+        <div className="authcard-tabs" role="tablist" aria-label="Sign in or create an account">
+          <Link
+            aria-selected={mode === 'signin'}
+            className={mode === 'signin' ? 'authcard-tab active' : 'authcard-tab'}
+            href="/login"
+            role="tab"
+          >
+            Sign In
+          </Link>
+          <Link
+            aria-selected={mode === 'signup'}
+            className={mode === 'signup' ? 'authcard-tab active' : 'authcard-tab'}
+            href="/register"
+            role="tab"
+          >
+            Create Account
+          </Link>
         </div>
 
-        <div className="auth-route-card auth-signal-card">
-          <div className="badge">{badge}</div>
-          <h2>{cardTitle}</h2>
-          <p className="subtitle">{cardSubtitle}</p>
-          {children}
-        </div>
+        {children}
+
+        <p className="authcard-charter">iHYPE takes nothing · locked in the charter</p>
       </div>
     </section>
   );
