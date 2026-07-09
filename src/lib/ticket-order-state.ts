@@ -129,9 +129,13 @@ export async function voidReservedTicketOrder(tx: Tx, orderId: string) {
   });
   if (transitioned.count !== 1) return false;
 
-  await tx.show.updateMany({
+  const released = await tx.show.updateMany({
     where: { id: order.showId, ticketsSoldCount: { gte: order.quantity } },
     data: { ticketsSoldCount: { decrement: order.quantity } },
   });
+  if (released.count !== 1) {
+    throw new Error(`Ticket order ${order.id} was voided without releasing reserved capacity.`);
+  }
+
   return true;
 }
