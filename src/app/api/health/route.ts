@@ -18,7 +18,7 @@ async function publicLivenessResponse() {
   try {
     await db.user.count();
     return NextResponse.json(
-      { status: 'ok', scope: 'liveness', database: { ok: true } },
+      { status: 'ok', scope: 'liveness' },
       {
         status: 200,
         headers: {
@@ -28,7 +28,7 @@ async function publicLivenessResponse() {
     );
   } catch {
     return NextResponse.json(
-      { status: 'degraded', scope: 'liveness', database: { ok: false } },
+      { status: 'degraded', scope: 'liveness' },
       { status: 503, headers: { 'Cache-Control': 'no-store' } },
     );
   }
