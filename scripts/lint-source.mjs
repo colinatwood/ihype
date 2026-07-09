@@ -1,0 +1,91 @@
+#!/usr/bin/env node
+import { readFile, readdir } from 'node:fs/promises';
+import path from 'node:path';
+
+const root = process.cwd();
+const failures = [];
+
+async function text(relativePath) {
+  return readFile(path.join(root, relativePath), 'utf8');
+}
+
+function fail(file, message) {
+  failures.push(`${file}: ${message}`);
+}
+
+async function walk(directory) {
+  const entries = await readdir(path.join(root, directory), { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    const relative = path.join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...(await walk(relative)));
+    else if (/\.(?:ts|tsx|js|mjs)$/.test(entry.name)) files.push(relative);
+  }
+  return files;
+}
+
+const sourceFiles = [...(await walk('src')), 'middleware.ts'];
+for (const file of sourceFiles) {
+  const content = await text(file);
+  if (/\beval\s*\(/.test(content)) fail(file, 'eval() is forbidden.');
+  if (/\bnew\s+Function\s*\(/.test(content)) fail(file, 'new Function() is forbidden.');
+}
+
+const readme = await text('README.md');
+if (readme.includes('cite')) fail('README.md', 'internal rendered citation tokens must not be committed.');
+
+const environmentExample = await text('.env.example');
+if (/BETA_INVITE_CODES=.*\b(?:IHYPE|HYPE2026|BETA|LISTEN)\b/i.test(environmentExample)) {
+  fail('.env.example', 'predictable beta invite codes are forbidden.');
+}
+if (!/FEATURE_ENABLE_TICKET_PAYMENTS="false"/.test(environmentExample)) {
+  fail('.env.example', 'paid ticketing must default to disabled.');
+}
+
+const payments = await text('src/lib/payments.ts');
+if (!payments.includes('FEATURE_ENABLE_TICKET_PAYMENTS')) {
+  fail('src/lib/payments.ts', 'payment readiness must require the explicit launch flag.');
+}
+
+const magicLinkRequest = await text('src/app/api/auth/magic-link/route.ts');
+if (!magicLinkRequest.includes('token: tokenHash')) {
+  fail('src/app/api/auth/magic-link/route.ts', 'magic-link bearer tokens must be hashed at rest.');
+}
+
+const magicLinkConsume = await text('src/app/api/auth/magic/route.ts');
+if (!magicLinkConsume.includes('updateMany') || !magicLinkConsume.includes('used: false')) {
+  fail('src/app/api/auth/magic/route.ts', 'magic-link consumption must use a conditional atomic update.');
+}
+
+const scanRoute = await text('src/app/api/tickets/[serializedId]/scan/route.ts');
+if (!scanRoute.includes('updateMany') || !scanRoute.includes("status: 'VALID'")) {
+  fail('src/app/api/tickets/[serializedId]/scan/route.ts', 'ticket scanning must be a conditional atomic transition.');
+}
+
+const middleware = await text('middleware.ts');
+const scriptDirective = middleware.match(/script-src[^`\n]*/)?.[0] ?? '';
+if (scriptDirective.includes("'unsafe-inline'")) {
+  fail('middleware.ts', 'script-src must not allow unsafe-inline scripts.');
+}
+if (!middleware.includes("'nonce-${nonce}'")) {
+  fail('middleware.ts', 'script-src must include a per-request nonce.');
+}
+
+for (const webhookFile of [
+  'src/app/api/stripe/webhook/route.ts',
+  'src/app/api/ads/stripe-webhook/route.ts',
+  'src/app/api/webhooks/resend/route.ts',
+]) {
+  const content = await text(webhookFile);
+  if (!content.includes('db.$transaction')) {
+    fail(webhookFile, 'webhook business logic and idempotency marker must share a transaction.');
+  }
+}
+
+if (failures.length > 0) {
+  console.error('Source policy lint failed:\n');
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
+}
+
+console.log(`Source policy lint passed for ${sourceFiles.length} source files.`);
