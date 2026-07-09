@@ -42,9 +42,17 @@ if (!/FEATURE_ENABLE_TICKET_PAYMENTS="false"/.test(environmentExample)) {
   fail('.env.example', 'paid ticketing must default to disabled.');
 }
 
+const wranglerConfig = await text('wrangler.toml');
+if (!/FEATURE_ENABLE_TICKET_PAYMENTS\s*=\s*"false"/.test(wranglerConfig)) {
+  fail('wrangler.toml', 'the deployed Workers runtime must pin paid ticketing to disabled.');
+}
+
 const payments = await text('src/lib/payments.ts');
 if (!payments.includes('FEATURE_ENABLE_TICKET_PAYMENTS')) {
   fail('src/lib/payments.ts', 'payment readiness must require the explicit launch flag.');
+}
+if (!payments.includes("NODE_ENV === 'production'") || !payments.includes("startsWith('sk_test_')")) {
+  fail('src/lib/payments.ts', 'production payment readiness must reject Stripe test credentials.');
 }
 
 const magicLinkRequest = await text('src/app/api/auth/magic-link/route.ts');
