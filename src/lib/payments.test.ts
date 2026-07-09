@@ -2,15 +2,23 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { getPaymentProcessingReadiness } from '@/lib/payments';
 
 const original = {
-  feature: process.env.FEATURE_ENABLE_TICKET_PAYMENTS,
-  secret: process.env.STRIPE_SECRET_KEY,
-  webhook: process.env.STRIPE_WEBHOOK_SECRET,
+  FEATURE_ENABLE_TICKET_PAYMENTS: process.env.FEATURE_ENABLE_TICKET_PAYMENTS,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 };
 
+function restoreEnvironment(
+  key: keyof typeof original,
+  value: string | undefined,
+) {
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
+}
+
 afterEach(() => {
-  process.env.FEATURE_ENABLE_TICKET_PAYMENTS = original.feature;
-  process.env.STRIPE_SECRET_KEY = original.secret;
-  process.env.STRIPE_WEBHOOK_SECRET = original.webhook;
+  for (const [key, value] of Object.entries(original)) {
+    restoreEnvironment(key as keyof typeof original, value);
+  }
 });
 
 describe('payment processing readiness', () => {
