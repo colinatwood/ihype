@@ -1,44 +1,50 @@
 #!/usr/bin/env node
 /**
- * Validates that all required secrets are present before a beta launch.
+ * Validates required configuration before beta launch.
  *
- * Usage (local .env):
+ * Usage:
  *   node -r dotenv/config scripts/beta-launch-check.mjs
- *
- * Usage (Cloudflare Workers secrets via wrangler):
- *   wrangler secret list  (then verify manually)
- *
- * Exit code 0 = all required secrets present.
- * Exit code 1 = one or more required secrets missing.
  */
 
+const paymentEnabled = process.env.FEATURE_ENABLE_TICKET_PAYMENTS?.trim().toLowerCase() === 'true';
+
 const REQUIRED = [
-  { key: 'AUTH_SECRET',            hint: 'Generate with: openssl rand -hex 32' },
-  { key: 'DATABASE_URL',           hint: 'Supabase session pooler URL' },
-  { key: 'RESEND_API_KEY',         hint: 'Required for OTP login and ticket emails' },
-  { key: 'CRON_SECRET',            hint: 'Protects /api/cron/* routes; generate with: openssl rand -hex 32' },
-  { key: 'STRIPE_SECRET_KEY',      hint: 'Required for ticketing and payouts (use sk_live_* in production)' },
-  { key: 'STRIPE_WEBHOOK_SECRET',  hint: 'From Stripe Dashboard → Webhooks → signing secret' },
-  { key: 'VAPID_PUBLIC_KEY',       hint: 'Generate with: node scripts/generate-vapid-keys.mjs' },
-  { key: 'VAPID_PRIVATE_KEY',      hint: 'Generate with: node scripts/generate-vapid-keys.mjs' },
-  { key: 'VAPID_SUBJECT',          hint: 'e.g. mailto:hello@ihype.org' },
-  { key: 'BETA_INVITE_CODES',      hint: 'Comma-separated codes, e.g. IHYPE,HYPE2026' },
+  { key: 'AUTH_SECRET', hint: 'Generate with: openssl rand -hex 32' },
+  { key: 'DATABASE_URL', hint: 'Runtime Postgres connection URL' },
+  { key: 'RESEND_API_KEY', hint: 'Required for OTP login and account email' },
+  { key: 'CRON_SECRET', hint: 'Protects /api/cron/* routes; generate with: openssl rand -hex 32' },
+  { key: 'VAPID_PUBLIC_KEY', hint: 'Generate with: node scripts/generate-vapid-keys.mjs' },
+  { key: 'VAPID_PRIVATE_KEY', hint: 'Generate with: node scripts/generate-vapid-keys.mjs' },
+  { key: 'VAPID_SUBJECT', hint: 'e.g. mailto:hello@ihype.org' },
+  { key: 'BETA_INVITE_CODES', hint: 'Comma-separated high-entropy codes; generate with openssl rand -hex 16' },
+  ...(paymentEnabled
+    ? [
+        { key: 'STRIPE_SECRET_KEY', hint: 'Required only when paid ticketing is explicitly enabled' },
+        { key: 'STRIPE_WEBHOOK_SECRET', hint: 'Required only when paid ticketing is explicitly enabled' },
+      ]
+    : []),
 ];
 
 const OPTIONAL = [
   { key: 'NEXT_PUBLIC_SENTRY_DSN', hint: 'Sentry error monitoring' },
-  { key: 'OPENAI_API_KEY',         hint: 'AI discovery features' },
-  { key: 'MUX_TOKEN_ID',           hint: 'Video streaming' },
-  { key: 'MUX_TOKEN_SECRET',       hint: 'Video streaming' },
+  { key: 'OPENAI_API_KEY', hint: 'AI discovery features' },
+  { key: 'MUX_TOKEN_ID', hint: 'Video streaming' },
+  { key: 'MUX_TOKEN_SECRET', hint: 'Video streaming' },
+  ...(!paymentEnabled
+    ? [
+        { key: 'STRIPE_SECRET_KEY', hint: 'Not required while FEATURE_ENABLE_TICKET_PAYMENTS=false' },
+        { key: 'STRIPE_WEBHOOK_SECRET', hint: 'Not required while FEATURE_ENABLE_TICKET_PAYMENTS=false' },
+      ]
+    : []),
 ];
 
 let failed = false;
-
-console.log('\n=== iHYPE Beta Launch — Secret Check ===\n');
+console.log('\n=== iHYPE Beta Launch Configuration Check ===\n');
+console.log(`  Paid ticketing: ${paymentEnabled ? 'ENABLED' : 'DISABLED'}\n`);
 
 for (const { key, hint } of REQUIRED) {
-  const val = process.env[key];
-  if (!val || val.trim() === '') {
+  const value = process.env[key];
+  if (!value || value.trim() === '') {
     console.error(`  MISSING  ${key}`);
     console.error(`           ${hint}\n`);
     failed = true;
@@ -47,11 +53,23 @@ for (const { key, hint } of REQUIRED) {
   }
 }
 
-console.log('\n--- Optional ---\n');
+const inviteCodes = (process.env.BETA_INVITE_CODES ?? '')
+  .split(',')
+  .map((code) => code.trim())
+  .filter(Boolean);
+const weakInviteCodes = inviteCodes.filter(
+  (code) => code.length < 16 || /^(ihype|hype2026|beta|listen)$/i.test(code),
+);
+if (weakInviteCodes.length > 0) {
+  console.error('  WEAK     BETA_INVITE_CODES contains short or predictable values.');
+  console.error('           Replace every code with at least 16 random characters.\n');
+  failed = true;
+}
 
+console.log('\n--- Optional ---\n');
 for (const { key, hint } of OPTIONAL) {
-  const val = process.env[key];
-  if (!val || val.trim() === '') {
+  const value = process.env[key];
+  if (!value || value.trim() === '') {
     console.log(`  MISSING  ${key}  (optional: ${hint})`);
   } else {
     console.log(`  OK       ${key}`);
@@ -59,8 +77,8 @@ for (const { key, hint } of OPTIONAL) {
 }
 
 if (failed) {
-  console.error('\nFAILED: one or more required secrets are missing. See above.\n');
+  console.error('\nFAILED: required configuration is missing or insecure.\n');
   process.exit(1);
-} else {
-  console.log('\nPASSED: all required secrets are present.\n');
 }
+
+console.log('\nPASSED: required beta configuration is present.\n');
