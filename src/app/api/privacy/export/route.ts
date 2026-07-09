@@ -6,44 +6,140 @@ import { consumeRateLimit, rateLimitKey } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
-// Real, instant, read-only export of everything iHYPE holds tied to the
-// signed-in user — no side effects, so (unlike deletion/detach/hype-wipe)
-// this is safe to run automatically rather than routing through support.
+const OMITTED_EXPORT_KEYS = new Set([
+  'passwordHash',
+  'mfaSecret',
+  'mfaBackupCodes',
+  'adminDeviceTokenHash',
+  'storedPaymentTokenRef',
+  'stripeCustomerId',
+  'stripeConnectAccountId',
+  'stripePaymentIntentId',
+  'paymentTokenRef',
+  'sessionToken',
+  'refresh_token',
+  'access_token',
+  'id_token',
+  'token',
+  'tokenHash',
+  'codeHash',
+  'credentialId',
+  'publicKey',
+  'counter',
+  'auth',
+  'p256dh',
+  'endpoint',
+  'deviceToken',
+  'fileDataBase64',
+  'storageKey',
+]);
+
+function sanitizeForExport(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (typeof value === 'bigint') return value.toString();
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.map(sanitizeForExport);
+  if (typeof value !== 'object') return value;
+
+  const result: Record<string, unknown> = {};
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (OMITTED_EXPORT_KEYS.has(key)) continue;
+    result[key] = sanitizeForExport(child);
+  }
+  return result;
+}
+
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Login required' }, { status: 401 });
   }
 
-  const rl = await consumeRateLimit(rateLimitKey('privacy-export', session.user.id, null), { limit: 5, windowMs: 60 * 60 * 1000 });
-  if (!rl.allowed) return NextResponse.json({ error: 'Too many requests — try again later.' }, { status: 429 });
-
   const userId = session.user.id;
+  const rateLimit = await consumeRateLimit(
+    rateLimitKey('privacy-export', userId, null),
+    { limit: 5, windowMs: 60 * 60 * 1000 },
+  );
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: 'Too many requests. Try again later.' }, { status: 429 });
+  }
 
-  const [user, profiles, ticketOrders, hypeEvents, profileHypeEvents, favoriteMedia, fanPlaylists] = await Promise.all([
-    db.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true, name: true, email: true, username: true, role: true,
-        createdAt: true, isThirteenOrOlder: true,
-        notificationPreference: true,
+  const userData = await db.user.findUnique({
+    where: { id: userId },
+    include: {
+      accounts: true,
+      sessions: true,
+      profiles: {
+        include: {
+          hostedShows: true,
+          headlinerShows: true,
+          promotedShows: true,
+          mediaUploads: true,
+          profileHypes: true,
+          venueConnectionRequests: true,
+          recommendedConnectionRequests: true,
+          issuedTickets: true,
+          affiliateTicketOrders: true,
+          accountsPayableEntries: true,
+          journalPosts: true,
+          followers: true,
+          setlistTemplates: true,
+          availabilityDates: true,
+          receivedBookingRequests: true,
+          promoCodes: true,
+          newsletterSubscriptions: true,
+        },
       },
-    }),
-    db.profile.findMany({
-      where: { ownerId: userId },
-      select: { id: true, slug: true, name: true, type: true, city: true, stateRegion: true, bio: true, genres: true, createdAt: true },
-    }),
-    db.ticketOrder.findMany({
-      where: { buyerUserId: userId },
-      select: { id: true, confirmationCode: true, status: true, quantity: true, subtotalCents: true, totalChargeCents: true, createdAt: true, show: { select: { title: true, slug: true, startsAt: true } } },
-    }),
-    db.hypeEvent.findMany({ where: { userId }, select: { showId: true, createdAt: true } }),
-    db.profileHypeEvent.findMany({ where: { userId }, select: { profileId: true, createdAt: true } }),
-    db.fanFavoriteMedia.findMany({ where: { userId }, select: { title: true, artistName: true, createdAt: true } }),
-    db.fanPlaylist.findMany({ where: { userId }, select: { name: true, createdAt: true, items: { select: { title: true, artistName: true } } } }),
-  ]);
+      shows: {
+        include: {
+          radioTracks: true,
+          comments: true,
+          rsvps: true,
+          attendees: true,
+          setlistVotes: true,
+          promoCodes: true,
+          advertisingConfig: true,
+        },
+      },
+      ticketOrders: {
+        include: {
+          tickets: true,
+          accountsPayableEntries: true,
+          show: true,
+        },
+      },
+      hypeEvents: true,
+      mediaListens: true,
+      showListens: true,
+      profileHypeEvents: true,
+      passwordResetCodes: true,
+      venueConnectionRequests: true,
+      scannedTickets: true,
+      reassignedTickets: true,
+      fanPlaylists: { include: { items: true } },
+      favoriteMedia: true,
+      auditLogs: true,
+      contentReports: true,
+      seeds: true,
+      passkeys: true,
+      showComments: true,
+      showRsvps: true,
+      premiumInterests: true,
+      notificationPreference: true,
+      follows: true,
+      notifications: true,
+      magicLinkTokens: true,
+      pushSubscriptions: true,
+      nativeDeviceTokens: true,
+      badges: true,
+      showAttendees: true,
+      setlistVotes: true,
+      sentBookingRequests: true,
+      advertisedAds: true,
+    },
+  });
 
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!userData) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   await recordAuditEvent({
     actorUserId: userId,
@@ -54,21 +150,19 @@ export async function GET() {
 
   const payload = {
     exportedAt: new Date().toISOString(),
-    account: user,
-    profiles,
-    ticketOrders,
-    hypeEvents,
-    profileHypeEvents,
-    favoriteMedia,
-    fanPlaylists,
+    formatVersion: 2,
+    notice:
+      'Credential secrets, session tokens, payment processor identifiers, push credentials, and raw binary media are intentionally excluded for account security.',
+    data: sanitizeForExport(userData),
   };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {
     status: 200,
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
       'Content-Disposition': `attachment; filename="ihype-data-export-${userId}.json"`,
-      'Cache-Control': 'no-store',
+      'Cache-Control': 'no-store, private',
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }
