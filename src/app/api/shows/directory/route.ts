@@ -50,8 +50,12 @@ export async function GET() {
   const now = new Date();
   // startsAt may already be a plain string here (unstable_cache round-trips
   // through JSON), so re-wrap rather than compare it to `now` directly.
+  // LIVE shows are kept even though their startsAt has passed — a show
+  // happening right now is the most important thing on the Events feed.
   const upcoming = sortShowsForFeed(rawShows)
-    .filter((show) => show.status !== 'ENDED' && show.status !== 'CANCELED' && new Date(show.startsAt) >= now);
+    .filter((show) =>
+      show.status !== 'ENDED' && show.status !== 'CANCELED' &&
+      (show.status === 'LIVE' || new Date(show.startsAt) >= now));
 
   let forYouShows = upcoming;
   let aiEnhanced = false;
