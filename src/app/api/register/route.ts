@@ -18,23 +18,18 @@ import { verifyTurnstileToken } from '@/lib/turnstile';
 import { isInviteCodeRequiredRuntime, isReservedPlatformEmail, isValidInviteCode } from '@/lib/runtime-flags';
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
 import { generateUniqueNonwordSlug } from '@/lib/nonword-slug';
-import { sendDay1Email } from '@/lib/onboarding-emails';
-import { checkForSpam } from '@/lib/spam-detection';
 import { log } from '@/lib/logger';
-import { checkAndAwardBadges } from '@/lib/badges';
-import { sendGenericEmail } from '@/lib/mailer';
+import { runRegistrationPostProcessing } from '@/lib/registration-post-processing';
 
 const schema = z.object({
-  name: z.preprocess(v => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().min(2).optional()),
+  name: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+    z.string().trim().min(2).optional(),
+  ),
   email: z.string().email().optional(),
   phone: z.string().trim().max(30).optional(),
   username: z.string().min(3).max(30).optional(),
-  password: z
-    .string()
-    .min(8)
-    .regex(/[A-Za-z]/)
-    .regex(/[0-9]/)
-    .optional(),
+  password: z.string().min(8).regex(/[A-Za-z]/).regex(/[0-9]/).optional(),
   role: z.enum(['FAN', 'ARTIST', 'DJ', 'VENUE']).default('FAN'),
   isThirteenOrOlder: z.boolean().optional().default(false),
   acceptedArtistUploadPolicy: z.boolean().optional().default(false),
@@ -86,7 +81,7 @@ function getVenueProfileOverrides(body: z.infer<typeof schema>) {
     previousShowHighlights: body.previousShowHighlights || null,
     themePreset: body.themePreset ?? undefined,
     themeAccentTone: body.themeAccentTone ?? undefined,
-    themeBackdropTone: body.themeBackdropTone ?? undefined
+    themeBackdropTone: body.themeBackdropTone ?? undefined,
   };
 }
 
@@ -95,33 +90,24 @@ export async function POST(request: Request) {
     const clientAddress = readClientAddress(request);
     const rateLimit = await consumeRateLimit(`register:${clientAddress}`, {
       limit: 8,
-      windowMs: 15 * 60 * 1000
+      windowMs: 15 * 60 * 1000,
     });
-
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: 'Too many signup attempts. Please wait a few minutes and try again.' },
-        {
-          status: 429,
-          headers: {
-            'Retry-After': String(rateLimit.retryAfterSeconds)
-          }
-        }
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } },
       );
     }
 
-    const rawBody = await request.json();
-    const body = schema.parse(rawBody);
-
-    const turnstileOk = await verifyTurnstileToken(body.turnstileToken, clientAddress);
-    if (!turnstileOk) {
+    const body = schema.parse(await request.json());
+    if (!(await verifyTurnstileToken(body.turnstileToken, clientAddress))) {
       return NextResponse.json({ error: 'Bot check failed. Please try again.' }, { status: 400 });
     }
+
     const trimmedName = body.name?.trim() ?? '';
     const normalizedEmail = body.email ? body.email.toLowerCase() : null;
     const normalizedPhone = body.phone ? body.phone.replace(/\s+/g, '').toLowerCase() : null;
 
-    // Auto-generate username from name or a random string if not provided
     let normalizedUsername: string;
     if (body.username) {
       normalizedUsername = normalizeUsername(body.username);
@@ -135,7 +121,7 @@ export async function POST(request: Request) {
     if (!body.passkeyFlow && !normalizedEmail && !normalizedPhone) {
       return NextResponse.json(
         { error: 'An email address or phone number is required to create an account.' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -144,7 +130,7 @@ export async function POST(request: Request) {
         action: 'bot_trap_triggered',
         entityType: 'register',
         ipAddress: clientAddress,
-        metadata: { field: 'company' }
+        metadata: { field: 'company' },
       });
       return NextResponse.json({ error: 'Invalid registration payload' }, { status: 400 });
     }
@@ -156,14 +142,14 @@ export async function POST(request: Request) {
     if ((body.role === 'ARTIST' || body.role === 'DJ') && !body.acceptedArtistUploadPolicy) {
       return NextResponse.json(
         { error: 'Artists and promoters must accept the iHYPE artist upload and limited use license policy.' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!body.isThirteenOrOlder) {
       return NextResponse.json(
         { error: 'You must attest that you are 13 or older before creating an account.' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -171,14 +157,14 @@ export async function POST(request: Request) {
     if (inviteCodeRequired && !isValidInviteCode(body.inviteCode, inviteCodeRequired)) {
       return NextResponse.json(
         { error: 'A valid beta invite code is required while invite-only signup is enabled.' },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     if (normalizedEmail && isReservedPlatformEmail(normalizedEmail)) {
       return NextResponse.json(
         { error: 'Please use an email address you control. @ihype.org email addresses are reserved.' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -186,67 +172,69 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name is required for this account type.' }, { status: 400 });
     }
 
-    const orConditions: Array<{ email: string } | { phone: string } | { username: string }> = [{ username: normalizedUsername }];
+    const orConditions: Array<{ email: string } | { phone: string } | { username: string }> = [
+      { username: normalizedUsername },
+    ];
     if (normalizedEmail) orConditions.push({ email: normalizedEmail });
     if (normalizedPhone) orConditions.push({ phone: normalizedPhone });
 
     const existing = await db.user.findFirst({
       where: { OR: orConditions },
-      select: { id: true, email: true, username: true }
+      select: { id: true, email: true },
     });
-
     if (existing) {
       return NextResponse.json(
         {
           error:
             normalizedEmail && existing.email === normalizedEmail
               ? 'An account with that email already exists'
-              : 'An account with those credentials already exists'
+              : 'An account with those credentials already exists',
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     const passwordHash = body.password ? await bcrypt.hash(body.password, 10) : null;
-    const user = await db.user.create({
-      data: {
-        name: body.role === 'FAN' ? normalizedUsername : trimmedName,
-        email: normalizedEmail ?? undefined,
-        phone: normalizedPhone ?? undefined,
-        username: normalizedUsername || `user${Math.random().toString(36).slice(2, 8)}`,
-        passwordHash,
-        isThirteenOrOlder: body.isThirteenOrOlder,
-        role: body.role
-      },
-      select: { id: true, email: true, username: true, role: true }
-    });
-
     const profileType = getProfileType(body.role);
     const hexId = await generateUniqueProfileHexId();
-    // New profiles get a pronounceable nonword slug (e.g. "veloka") for
-    // maximum availability; existing profiles keep their slugs.
     const slug = await generateUniqueNonwordSlug(db);
-
     const profileName = profileType === 'LISTENER' ? hexId : trimmedName;
     const profileCopyName = profileType === 'LISTENER' ? normalizedUsername : trimmedName;
 
-    const profile = await db.profile.create({
-      data: {
-        slug,
-        hexId,
-        type: profileType,
-        name: profileName,
-        ownerId: user.id,
-        contactInfo: body.contactInfo || null,
-        hometown: body.hometown || null,
-        city: body.city || body.hometown || null,
-        postalCode: body.postalCode || null,
-        verificationStatus: getVerificationStatusForType(profileType),
-        verificationSubmittedAt:
-          profileType === 'ARTIST' || profileType === 'VENUE' ? new Date() : null,
-        ...getProfileCopy(profileType, profileCopyName),
-        ...(profileType === 'VENUE' ? getVenueProfileOverrides(body) : {})
-      }
+    const { user, profile } = await db.$transaction(async (tx) => {
+      const createdUser = await tx.user.create({
+        data: {
+          name: body.role === 'FAN' ? normalizedUsername : trimmedName,
+          email: normalizedEmail ?? undefined,
+          phone: normalizedPhone ?? undefined,
+          username: normalizedUsername,
+          passwordHash,
+          isThirteenOrOlder: body.isThirteenOrOlder,
+          role: body.role,
+        },
+        select: { id: true, email: true, username: true, role: true },
+      });
+
+      const createdProfile = await tx.profile.create({
+        data: {
+          slug,
+          hexId,
+          type: profileType,
+          name: profileName,
+          ownerId: createdUser.id,
+          contactInfo: body.contactInfo || null,
+          hometown: body.hometown || null,
+          city: body.city || body.hometown || null,
+          postalCode: body.postalCode || null,
+          verificationStatus: getVerificationStatusForType(profileType),
+          verificationSubmittedAt:
+            profileType === 'ARTIST' || profileType === 'VENUE' ? new Date() : null,
+          ...getProfileCopy(profileType, profileCopyName),
+          ...(profileType === 'VENUE' ? getVenueProfileOverrides(body) : {}),
+        },
+      });
+
+      return { user: createdUser, profile: createdProfile };
     });
 
     await recordAuditEvent({
@@ -255,113 +243,23 @@ export async function POST(request: Request) {
       entityType: 'user',
       entityId: user.id,
       ipAddress: clientAddress,
-      metadata: {
-        role: user.role,
-        profileType: profile.type,
-        profileId: profile.id
-      }
+      metadata: { role: user.role, profileType: profile.type, profileId: profile.id },
+    }).catch((error) => {
+      log.error('[register]', error instanceof Error ? error : null, 'Registration audit event failed');
     });
 
-    // Spam detection — check bio/headline content if provided
-    const spamCheckText = [body.name, body.bio, body.headline, body.aboutContent]
+    const spamText = [body.name, body.bio, body.headline, body.aboutContent]
       .filter(Boolean)
       .join('\n')
       .trim();
-    if (spamCheckText.length > 20) {
-      checkForSpam(spamCheckText, 'registration profile content')
-        .then(async (spamResult) => {
-          if (spamResult.isSpam && spamResult.confidence > 0.85) {
-            await recordAuditEvent({
-              actorUserId: user.id,
-              action: 'account_flagged_spam',
-              entityType: 'user',
-              entityId: user.id,
-              ipAddress: clientAddress,
-              metadata: { confidence: spamResult.confidence }
-            });
-          }
-        })
-        .catch(() => {});
-    }
+    await runRegistrationPostProcessing({
+      user,
+      clientAddress,
+      spamText,
+      referral: body.ref,
+    });
 
-    // Track referral if present — verify the ref is a real username or hexId first
-    if (body.ref) {
-      const refValue = body.ref;
-
-      (async () => {
-        try {
-          // Try username first, then hexId-based profile lookup
-          let resolvedUsername: string | null = null;
-          let referrerId: string | null = null;
-          let referrerProfileId: string | null = null;
-
-          const refUser = await db.user.findUnique({
-            where: { username: refValue },
-            select: { id: true, username: true, profiles: { select: { id: true }, orderBy: { createdAt: 'asc' }, take: 1 } }
-          });
-          if (refUser) {
-            resolvedUsername = refUser.username;
-            referrerId = refUser.id;
-            referrerProfileId = refUser.profiles[0]?.id ?? null;
-          } else {
-            const refProfile = await db.profile.findUnique({
-              where: { hexId: refValue },
-              select: { id: true, owner: { select: { id: true, username: true } } }
-            });
-            if (refProfile?.owner) {
-              resolvedUsername = refProfile.owner.username;
-              referrerId = refProfile.owner.id;
-              referrerProfileId = refProfile.id;
-            }
-          }
-
-          if (!resolvedUsername || !referrerId) return;
-
-          await recordAuditEvent({
-            actorUserId: null,
-            action: 'REFERRAL_SIGNUP',
-            entityType: 'User',
-            entityId: user.id,
-            metadata: { referrer: resolvedUsername, referrerHexId: refValue }
-          });
-
-          // Award a hype point to the referrer's profile for bringing in a new user
-          if (referrerProfileId) {
-            db.$transaction([
-              db.profileHypeEvent.create({ data: { userId: user.id, profileId: referrerProfileId } }),
-              db.profile.update({ where: { id: referrerProfileId }, data: { hypeCount: { increment: 1 } } })
-            ]).catch(() => {});
-          }
-
-          // Referrer badge check
-          checkAndAwardBadges(referrerId, { referrerUsername: resolvedUsername }).catch(() => {});
-
-          // Milestone email
-          const milestones = [1, 5, 10, 25];
-          const totalReferrals = await db.auditLog.count({
-            where: { action: 'REFERRAL_SIGNUP', metadata: { path: ['referrer'], equals: resolvedUsername } }
-          });
-          if (milestones.includes(totalReferrals)) {
-            const referrerUser = await db.user.findUnique({ where: { id: referrerId }, select: { email: true, name: true } });
-            if (referrerUser?.email) {
-              sendGenericEmail({
-                to: referrerUser.email,
-                subject: `🎉 You've referred ${totalReferrals} ${totalReferrals === 1 ? 'person' : 'people'} to iHYPE!`,
-                text: `Congrats! You've now referred ${totalReferrals} ${totalReferrals === 1 ? 'person' : 'people'} to iHYPE. Keep sharing your link to earn more rewards!`,
-                html: `<p>Congrats${referrerUser.name ? `, ${referrerUser.name}` : ''}!</p><p>You've now brought <strong>${totalReferrals} ${totalReferrals === 1 ? 'person' : 'people'}</strong> to iHYPE. Keep sharing to earn more XP and unlock badges!</p>`
-              }).catch(() => {});
-            }
-          }
-        } catch {
-          // Best-effort
-        }
-      })();
-    }
-
-    // Fire-and-forget onboarding email
-    void sendDay1Email(user.id);
-
-    const resp = NextResponse.json({
+    const response = NextResponse.json({
       id: user.id,
       email: user.email,
       username: user.username,
@@ -370,25 +268,26 @@ export async function POST(request: Request) {
       profileHexId: profile.hexId,
       profileSlug: profile.slug,
       publicProfilePath: getProfilePathForType(profile.type, profile.slug),
-      profilePath: getDiscoverPathForType(profile.type)
+      profilePath: getDiscoverPathForType(profile.type),
     });
 
     if (body.passkeyFlow) {
-      const isProduction = process.env.NODE_ENV === 'production';
-      resp.cookies.set('pk_reg_first_uid', user.id, {
+      response.cookies.set('pk_reg_first_uid', user.id, {
         httpOnly: true,
         sameSite: 'strict',
         maxAge: 600,
         path: '/',
-        secure: isProduction
+        secure: process.env.NODE_ENV === 'production',
       });
     }
 
-    return resp;
+    return response;
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const first = error.issues[0];
-      return NextResponse.json({ error: first?.message ?? 'Invalid registration payload' }, { status: 400 });
+      return NextResponse.json(
+        { error: error.issues[0]?.message ?? 'Invalid registration payload' },
+        { status: 400 },
+      );
     }
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return NextResponse.json({ error: 'Username or email already taken.' }, { status: 409 });
