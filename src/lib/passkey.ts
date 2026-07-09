@@ -21,12 +21,12 @@ function getRpInfo() {
 export async function getPasskeyRegistrationOptions(userId: string, userName: string) {
   const { rpID, rpName } = getRpInfo();
   const existing = await db.passkey.findMany({ where: { userId }, select: { credentialId: true } });
-  const excludeCredentials = existing.map(p => ({
-    id: p.credentialId,
+  const excludeCredentials = existing.map((passkey) => ({
+    id: passkey.credentialId,
     type: 'public-key' as const,
   }));
 
-  const options = await generateRegistrationOptions({
+  return generateRegistrationOptions({
     rpName,
     rpID,
     userID: new TextEncoder().encode(userId),
@@ -35,11 +35,9 @@ export async function getPasskeyRegistrationOptions(userId: string, userName: st
     excludeCredentials,
     authenticatorSelection: {
       residentKey: 'preferred',
-      userVerification: 'preferred',
+      userVerification: 'required',
     },
   });
-
-  return options;
 }
 
 export async function verifyPasskeyRegistration(
@@ -54,12 +52,12 @@ export async function verifyPasskeyRegistration(
     expectedChallenge,
     expectedOrigin: origin,
     expectedRPID: rpID,
+    requireUserVerification: true,
   });
 
   if (!verification.verified || !verification.registrationInfo) return false;
 
   const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
-
   await db.passkey.create({
     data: {
       userId,
@@ -79,22 +77,28 @@ export async function verifyPasskeyRegistration(
 export async function getPasskeyAuthenticationOptions(userId?: string) {
   const { rpID } = getRpInfo();
 
-  let allowCredentials: { id: string; type: 'public-key'; transports?: AuthenticatorTransportFuture[] }[] | undefined;
+  let allowCredentials:
+    | { id: string; type: 'public-key'; transports?: AuthenticatorTransportFuture[] }[]
+    | undefined;
   if (userId) {
-    const passkeys = await db.passkey.findMany({ where: { userId }, select: { credentialId: true, transports: true } });
-    allowCredentials = passkeys.map(p => ({
-      id: p.credentialId,
+    const passkeys = await db.passkey.findMany({
+      where: { userId },
+      select: { credentialId: true, transports: true },
+    });
+    allowCredentials = passkeys.map((passkey) => ({
+      id: passkey.credentialId,
       type: 'public-key' as const,
+      transports: passkey.transports
+        ? (passkey.transports.split(',') as AuthenticatorTransportFuture[])
+        : undefined,
     }));
   }
 
-  const options = await generateAuthenticationOptions({
+  return generateAuthenticationOptions({
     rpID,
-    userVerification: 'preferred',
+    userVerification: 'required',
     allowCredentials,
   });
-
-  return options;
 }
 
 export async function verifyPasskeyAuthentication(
@@ -105,7 +109,13 @@ export async function verifyPasskeyAuthentication(
 
   const passkey = await db.passkey.findUnique({
     where: { credentialId: response.id },
-    select: { credentialId: true, publicKey: true, counter: true, transports: true, userId: true },
+    select: {
+      credentialId: true,
+      publicKey: true,
+      counter: true,
+      transports: true,
+      userId: true,
+    },
   });
   if (!passkey) return null;
 
@@ -114,11 +124,18 @@ export async function verifyPasskeyAuthentication(
     expectedChallenge,
     expectedOrigin: origin,
     expectedRPID: rpID,
+    requireUserVerification: true,
     credential: {
       id: passkey.credentialId,
-      publicKey: new Uint8Array(Buffer.isBuffer(passkey.publicKey) ? passkey.publicKey : Buffer.from(passkey.publicKey as unknown as ArrayBuffer)),
+      publicKey: new Uint8Array(
+        Buffer.isBuffer(passkey.publicKey)
+          ? passkey.publicKey
+          : Buffer.from(passkey.publicKey as unknown as ArrayBuffer),
+      ),
       counter: Number(passkey.counter),
-      transports: passkey.transports ? (passkey.transports.split(',') as AuthenticatorTransportFuture[]) : undefined,
+      transports: passkey.transports
+        ? (passkey.transports.split(',') as AuthenticatorTransportFuture[])
+        : undefined,
     },
   });
 

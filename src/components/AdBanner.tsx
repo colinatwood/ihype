@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
+import { getCspNonce } from '@/lib/csp-nonce';
 
 const TIERS = ['premium', 'featured', 'standard'] as const;
 
@@ -40,6 +41,7 @@ export async function AdBanner({ showId }: { showId?: string } = {}) {
   if (!ad) return null;
 
   const adId = ad.id;
+  const nonce = await getCspNonce();
 
   return (
     <aside className="panel" style={{ borderLeft: '3px solid var(--accent)', padding: '10px 14px' }}>
@@ -48,6 +50,7 @@ export async function AdBanner({ showId }: { showId?: string } = {}) {
         dangerouslySetInnerHTML={{
           __html: `(function(){fetch('/api/ads/${adId}/impression',{method:'POST'}).catch(function(){});})();`
         }}
+        nonce={nonce}
       />
       <p className="meta" style={{ marginBottom: 4 }}>Supporter{ad.tier !== 'standard' ? ` · ${ad.tier}` : ''}</p>
       <p style={{ margin: 0 }}>

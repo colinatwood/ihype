@@ -32,18 +32,29 @@ export async function POST(
     return NextResponse.json({ error: 'Only the venue owner or admin can scan tickets.' }, { status: 403 });
   }
 
-  if (ticket.status !== 'VALID') {
-    return NextResponse.json({ error: 'This ticket is no longer valid for entry.' }, { status: 400 });
-  }
-
-  await db.ticket.update({
-    where: { id: ticket.id },
+  const scannedAt = new Date();
+  const result = await db.ticket.updateMany({
+    where: {
+      id: ticket.id,
+      status: 'VALID'
+    },
     data: {
       status: 'SCANNED',
-      scannedAt: new Date(),
+      scannedAt,
       scannedByUserId: session.user.id
     }
   });
 
-  return NextResponse.json({ ok: true, message: 'Ticket verified and marked as scanned.' });
+  if (result.count !== 1) {
+    return NextResponse.json(
+      { error: 'This ticket was already scanned or is no longer valid for entry.' },
+      { status: 409 }
+    );
+  }
+
+  return NextResponse.json({
+    ok: true,
+    scannedAt: scannedAt.toISOString(),
+    message: 'Ticket verified and marked as scanned.'
+  });
 }

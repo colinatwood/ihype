@@ -1,97 +1,82 @@
 // Upgrade checklist for next-auth beta bumps:
-//   1. Read https://github.com/nextauthjs/next-auth/releases for the target version.
-//   2. Check for NextAuthConfig type changes (especially cookies, session, callbacks shapes).
-//   3. Verify PrismaAdapter interface parity with the new @auth/prisma-adapter release.
-//   4. Test the full OTP login flow and session persistence after the bump.
-//   5. Update the pinned version in package.json overrides AND the dependency specifier.
+//   1. Read the release notes for the target version.
+//   2. Check NextAuthConfig changes, especially cookie, JWT, and callback shapes.
+//   3. Verify Prisma adapter parity.
+//   4. Run the OTP, magic-link, passkey, and session persistence tests.
+//   5. Update the pinned dependency and override together.
 //
-// Edge-safe: this file must not import Node.js-only modules or @prisma/client.
-// It is used directly in middleware.ts which runs on the Edge runtime.
-// DB-dependent callbacks (jwt security-version check, session enrichment) live in auth.ts.
+// Edge-safe: this file is imported by middleware and must not import Node-only modules.
 import type { NextAuthConfig } from 'next-auth';
+import {
+  AUTH_SESSION_MAX_AGE_SECONDS,
+  AUTH_TRANSIENT_COOKIE_MAX_AGE_SECONDS,
+  getAuthSessionCookieName,
+  getAuthSessionCookieOptions,
+  useSecureAuthCookies,
+} from '@/lib/auth-cookie';
 
-const useSecureCookies = process.env.NODE_ENV === 'production';
-const sessionMaxAgeSeconds = 12 * 60 * 60;
-const transientAuthCookieMaxAgeSeconds = 10 * 60;
+const useSecureCookies = useSecureAuthCookies();
 const trustHost = process.env.AUTH_TRUST_HOST === 'true' || Boolean(process.env.AUTH_URL);
+
+const transientCookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  path: '/api/auth',
+  secure: useSecureCookies,
+  maxAge: AUTH_TRANSIENT_COOKIE_MAX_AGE_SECONDS,
+};
 
 export const authConfig: NextAuthConfig = {
   pages: {
-    signIn: '/login'
+    signIn: '/login',
   },
   trustHost,
   useSecureCookies,
   cookies: {
     sessionToken: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: useSecureCookies,
-        maxAge: sessionMaxAgeSeconds
-      }
+      name: getAuthSessionCookieName(),
+      options: getAuthSessionCookieOptions(),
     },
     callbackUrl: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies,
-        maxAge: transientAuthCookieMaxAgeSeconds
-      }
+      options: transientCookieOptions,
     },
     csrfToken: {
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies,
-        maxAge: transientAuthCookieMaxAgeSeconds
-      }
+      options: transientCookieOptions,
     },
     pkceCodeVerifier: {
       options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies
-      }
+        ...transientCookieOptions,
+        maxAge: undefined,
+      },
     },
     state: {
       options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies
-      }
+        ...transientCookieOptions,
+        maxAge: undefined,
+      },
     },
     nonce: {
       options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies
-      }
+        ...transientCookieOptions,
+        maxAge: undefined,
+      },
     },
     webauthnChallenge: {
       options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/auth',
-        secure: useSecureCookies
-      }
-    }
+        ...transientCookieOptions,
+        maxAge: undefined,
+      },
+    },
   },
   session: {
     strategy: 'jwt',
-    maxAge: sessionMaxAgeSeconds,
-    updateAge: 24 * 60 * 60
+    maxAge: AUTH_SESSION_MAX_AGE_SECONDS,
+    updateAge: 24 * 60 * 60,
   },
   events: {
     async signIn({ user }) {
-      // emailVerified enforcement is handled at the page level via /verify-email
       void user;
-    }
+    },
   },
-  providers: []
+  providers: [],
 };

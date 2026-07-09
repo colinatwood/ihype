@@ -1,43 +1,20 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
 
 /** @type {import('next').NextConfig} */
-const isProduction = process.env.NODE_ENV === 'production';
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "img-src 'self' data: blob: https:",
-  "media-src 'self' data: blob: https:",
-  "font-src 'self' data: https:",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com https://js.stripe.com${isProduction ? '' : " 'unsafe-eval'"}`,
-  "connect-src 'self' https://challenges.cloudflare.com https://api.stripe.com",
-  "frame-src 'self' https://challenges.cloudflare.com https://js.stripe.com",
-  'upgrade-insecure-requests'
-].join('; ');
-
-const securityHeaders = [
+// src/middleware.ts sets Content-Security-Policy, X-Frame-Options,
+// X-Content-Type-Options, Referrer-Policy, and Permissions-Policy on every
+// route its matcher covers (everything except /api, /_next/static,
+// /_next/image, and /favicon.ico) — CSP needs a fresh per-request nonce
+// middleware alone can provide. Setting those same 5 headers here for
+// '/:path*' too would send two values for each on every page (browsers often
+// treat duplicate/conflicting header values as invalid rather than picking
+// one, which can silently disable the protection instead of enforcing it).
+// Keep this file's copies scoped to exactly the routes middleware excludes,
+// and don't reintroduce them under '/:path*'.
+const baselineSecurityHeaders = [
   {
     key: 'Strict-Transport-Security',
     value: 'max-age=63072000; includeSubDomains; preload'
-  },
-  {
-    key: 'X-Content-Type-Options',
-    value: 'nosniff'
-  },
-  {
-    key: 'Referrer-Policy',
-    value: 'strict-origin-when-cross-origin'
-  },
-  {
-    key: 'X-Frame-Options',
-    value: 'DENY'
-  },
-  {
-    key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(self), geolocation=()'
   },
   {
     key: 'Cross-Origin-Opener-Policy',
@@ -54,10 +31,27 @@ const securityHeaders = [
   {
     key: 'X-DNS-Prefetch-Control',
     value: 'off'
+  }
+];
+
+// Mirrors src/middleware.ts's non-CSP security headers, for the routes its
+// matcher doesn't reach (API routes and static/image assets).
+const middlewareExcludedRouteHeaders = [
+  {
+    key: 'X-Content-Type-Options',
+    value: 'nosniff'
   },
   {
-    key: 'Content-Security-Policy',
-    value: contentSecurityPolicy
+    key: 'Referrer-Policy',
+    value: 'strict-origin-when-cross-origin'
+  },
+  {
+    key: 'X-Frame-Options',
+    value: 'DENY'
+  },
+  {
+    key: 'Permissions-Policy',
+    value: 'camera=(), microphone=(), geolocation=()'
   }
 ];
 
@@ -369,7 +363,23 @@ const nextConfig = {
     return [
       {
         source: '/:path*',
-        headers: securityHeaders
+        headers: baselineSecurityHeaders
+      },
+      {
+        source: '/api/:path*',
+        headers: middlewareExcludedRouteHeaders
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: middlewareExcludedRouteHeaders
+      },
+      {
+        source: '/_next/image/:path*',
+        headers: middlewareExcludedRouteHeaders
+      },
+      {
+        source: '/favicon.ico',
+        headers: middlewareExcludedRouteHeaders
       },
       {
         source: '/sw.js',

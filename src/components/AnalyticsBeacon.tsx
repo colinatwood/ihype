@@ -9,7 +9,7 @@ const STORAGE_KEY = 'ihype_cookie_consent';
 // this is that read. The beacon must never load until the user has opted
 // into analytics cookies (Accept all), and must start loading immediately
 // if they choose that in the banner during the current visit.
-export function AnalyticsBeacon({ token }: { token: string }) {
+export function AnalyticsBeacon({ token, nonce }: { token: string; nonce?: string }) {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
@@ -32,6 +32,7 @@ export function AnalyticsBeacon({ token }: { token: string }) {
   return (
     <Script
       data-cf-beacon={`{"token": "${token}"}`}
+      nonce={nonce}
       src="https://static.cloudflareinsights.com/beacon.min.js"
       strategy="afterInteractive"
     />

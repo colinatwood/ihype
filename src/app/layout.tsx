@@ -15,6 +15,7 @@ import { WebVitals } from '@/components/WebVitals';
 import { SiteFooter } from '@/components/SiteFooter';
 import { CookieConsent } from '@/components/CookieConsent';
 import { AnalyticsBeacon } from '@/components/AnalyticsBeacon';
+import { getCspNonce } from '@/lib/csp-nonce';
 import { MobileShellProvider } from '@/lib/MobileShellContext';
 import { MobileAppShellLoader } from '@/components/MobileAppShellLoader';
 import { AppSplash } from '@/components/AppSplash';
@@ -58,7 +59,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const nonce = await getCspNonce();
   return (
     <html lang="en" suppressHydrationWarning className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} ${instrumentSerif.variable} ${forum.variable}`}>
       <body>
@@ -98,7 +100,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </MobileShellProvider>
         </AppProviders>
         {process.env.NEXT_PUBLIC_CF_BEACON_TOKEN ? (
-          <AnalyticsBeacon token={process.env.NEXT_PUBLIC_CF_BEACON_TOKEN} />
+          <AnalyticsBeacon nonce={nonce} token={process.env.NEXT_PUBLIC_CF_BEACON_TOKEN} />
         ) : null}
       </body>
     </html>

@@ -2,6 +2,7 @@ import { db } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getBaseUrl } from '@/lib/utils';
+import { getCspNonce } from '@/lib/csp-nonce';
 import type { Metadata } from 'next';
 
 export async function generateMetadata(
@@ -48,6 +49,7 @@ export default async function PressKitPage({ params }: { params: Promise<{ slug:
   });
   if (!profile) notFound();
 
+  const nonce = await getCspNonce();
   const baseUrl = getBaseUrl();
   const profileUrl = `${baseUrl}/artists/${slug}`;
 
@@ -73,7 +75,7 @@ export default async function PressKitPage({ params }: { params: Promise<{ slug:
       <div style={{ marginTop: 32, display: 'flex', gap: 12 }}>
         <button className="button" onClick={undefined} type="button" id="print-btn" suppressHydrationWarning>Print / Save PDF</button>
       </div>
-      <script dangerouslySetInnerHTML={{ __html: `document.getElementById('print-btn').onclick=()=>window.print()` }} />
+      <script dangerouslySetInnerHTML={{ __html: `document.getElementById('print-btn').onclick=()=>window.print()` }} nonce={nonce} />
     </div>
   );
 }
