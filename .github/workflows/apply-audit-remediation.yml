@@ -45,15 +45,32 @@ jobs:
           npx prisma format
           npx prisma generate
 
-      - name: Validate source
+      - name: Typecheck
         run: |
-          npm run typecheck
-          npm run lint
-          npm test
+          set -o pipefail
+          npm run typecheck 2>&1 | tee remediation-typecheck.log
+
+      - name: Source policy lint
+        run: |
+          set -o pipefail
+          npm run lint 2>&1 | tee remediation-lint.log
+
+      - name: Unit tests
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee remediation-tests.log
+
+      - name: Upload remediation diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: audit-remediation-diagnostics
+          path: remediation-*.log
+          if-no-files-found: warn
 
       - name: Commit validated remediation
         run: |
-          rm -f scripts/apply-audit-remediation.py .github/workflows/apply-audit-remediation.yml
+          rm -f scripts/apply-audit-remediation.py .github/workflows/apply-audit-remediation.yml remediation-*.log
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
