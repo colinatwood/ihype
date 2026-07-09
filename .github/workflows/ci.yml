@@ -7,10 +7,9 @@ on:
 
 jobs:
   check:
-    name: Typecheck and test
+    name: Typecheck, test, build, and browser smoke
     runs-on: ubuntu-latest
     services:
-      # Scratch Postgres for the workerd smoke stage below.
       postgres:
         image: postgres:16
         env:
@@ -24,6 +23,16 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ihype:ihype@localhost:55432/ihype
+      AUTH_SECRET: ci-only-auth-secret-change-me-0123456789
+      NEXTAUTH_SECRET: ci-only-auth-secret-change-me-0123456789
+      NEXT_PUBLIC_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
+      FEATURE_REQUIRE_INVITE_CODE: 'false'
+      FEATURE_ENABLE_TICKET_PAYMENTS: 'false'
+
     steps:
       - uses: actions/checkout@v5
 
@@ -35,30 +44,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate Prisma client
+        run: npx prisma generate
+
       - name: Typecheck
         run: npx tsc --noEmit
 
       - name: Design guard
         run: npm run guard:design
 
-      - name: Test
+      - name: Unit tests
         run: npm test
 
-      - name: Install Playwright browsers
-        if: vars.E2E_ENABLED == 'true'
+      - name: Prepare scratch database
+        run: |
+          psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS citext;'
+          npx prisma db push --skip-generate --accept-data-loss
+
+      - name: Install Playwright browser
         run: npx playwright install chromium --with-deps
 
-      - name: E2E smoke test
+      - name: Mandatory public browser smoke
+        run: npx playwright test e2e/public-smoke.spec.ts --project=chromium
+
+      - name: Authenticated E2E suite
         if: vars.E2E_ENABLED == 'true'
-        run: npm run test:e2e
+        run: npm run test:e2e -- --project=chromium
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXT_PUBLIC_BASE_URL: https://ihype.org
-          NEXT_PUBLIC_APP_URL: https://ihype.org
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_USER_OTP: ${{ secrets.TEST_USER_OTP }}
+          TEST_SESSION_COOKIE: ${{ secrets.TEST_SESSION_COOKIE }}
 
       - name: Cloudflare build
         run: npm run cf:build
@@ -68,30 +83,13 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://ihype.org
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADSF8WNxaeBIRmR7"
 
-      # Boot the built worker in the REAL Workers runtime (workerd via
-      # wrangler dev) against the scratch Postgres and exercise the code
-      # paths that only break on workerd — Prisma engine selection passed
-      # every Node-based check while production auth was down for a day
-      # (DESIGN_SYNC rows 171-176). This is the only pre-deploy gate that
-      # can catch that class of failure; the post-deploy production smoke
-      # is currently blind (Cloudflare edge 403s GitHub runners).
-      #
-      # Also runs the Lighthouse performance budget against this same
-      # instance (see lighthouse-budget.mjs's header comment): its DB-backed
-      # pages have the identical workerd-only requirement, so it shares this
-      # boot instead of starting a second, Prisma-broken `next start` server.
-      # ubuntu-latest ships google-chrome-stable; chrome-launcher finds it
-      # without any extra install step.
       - name: Workerd smoke + performance budget (real Workers runtime)
-        run: |
-          psql "$WORKERD_SMOKE_DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS citext;'
-          npx prisma db push --skip-generate --accept-data-loss
-          node scripts/workerd-smoke.mjs
+        run: node scripts/workerd-smoke.mjs
         env:
           DATABASE_URL: postgresql://ihype:ihype@localhost:55432/ihype
           WORKERD_SMOKE_DATABASE_URL: postgresql://ihype:ihype@localhost:55432/ihype
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          AUTH_SECRET: ci-only-auth-secret-change-me-0123456789
+          NEXTAUTH_SECRET: ci-only-auth-secret-change-me-0123456789
 
       - name: Upload Lighthouse report
         if: always()
