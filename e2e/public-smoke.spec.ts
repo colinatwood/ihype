@@ -15,11 +15,19 @@ test.describe('Public application smoke', () => {
     await expect(page).toHaveURL(/\/login(?:\?|$)/, { timeout: 8_000 });
   });
 
-  test('public health endpoint is a lightweight liveness probe', async ({ request }) => {
+  test('public health endpoint reports a truthful liveness probe', async ({ request }) => {
+    // The endpoint runs a real DB check for unauthenticated callers (a
+    // hardcoded 200 previously let a real production outage go undetected —
+    // see DESIGN_SYNC history). This suite runs against `next dev`, which
+    // cannot load the `@prisma/client/wasm` engine at all (a longstanding,
+    // workerd-only requirement of this project — see scripts/workerd-smoke.mjs),
+    // so the DB check here always reports degraded; that's the correct,
+    // truthful behavior for this environment, not a bug. The real, DB-backed
+    // 200 case is covered by the Workerd smoke stage instead.
     const response = await request.get('/api/health');
-    expect(response.status()).toBe(200);
+    expect([200, 503]).toContain(response.status());
     await expect(response.json()).resolves.toMatchObject({
-      status: 'ok',
+      status: response.status() === 200 ? 'ok' : 'degraded',
       scope: 'liveness',
     });
   });

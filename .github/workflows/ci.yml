@@ -27,6 +27,11 @@ jobs:
       DATABASE_URL: postgresql://ihype:ihype@localhost:55432/ihype
       AUTH_SECRET: ci-only-auth-secret-change-me-0123456789
       NEXTAUTH_SECRET: ci-only-auth-secret-change-me-0123456789
+      # src/middleware.ts wraps NextAuth's auth() with no AUTH_URL configured
+      # for this job; without this, NextAuth rejects localhost as an
+      # untrusted host and the /home auth-gate silently fails open instead
+      # of redirecting anonymous visitors to /login.
+      AUTH_TRUST_HOST: 'true'
       NEXT_PUBLIC_BASE_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
