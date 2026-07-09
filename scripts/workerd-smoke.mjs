@@ -31,6 +31,9 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const DB_URL = process.env.WORKERD_SMOKE_DATABASE_URL;
 const HEALTH_CHECK_TOKEN =
   process.env.WORKERD_SMOKE_CRON_SECRET || 'workerd-smoke-health-token-0123456789';
+const AUTH_SECRET =
+  process.env.AUTH_SECRET || 'workerd-smoke-auth-secret-0123456789';
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || AUTH_SECRET;
 const BOOT_TIMEOUT_MS = 120_000;
 const TMP_CONFIG = '.wrangler-workerd-smoke.toml';
 
@@ -43,6 +46,13 @@ function tomlString(value) {
   return value.replaceAll('\\', '\\\\').replaceAll('"', '\\"');
 }
 
+function upsertTomlVariable(varsSection, name, value) {
+  const assignment = `${name} = "${tomlString(value)}"`;
+  const pattern = new RegExp(`^${name}\\s*=.*$`, 'm');
+  if (pattern.test(varsSection)) return varsSection.replace(pattern, assignment);
+  return varsSection.replace('\n[vars]\n', `\n[vars]\n${assignment}\n`);
+}
+
 // Derive a smoke config from the real wrangler.toml at runtime so bindings
 // cannot drift between two files, minus two sections:
 // - [build]: re-runs the full cf:build on `wrangler dev` startup; CI already
@@ -51,9 +61,9 @@ function tomlString(value) {
 //   CLOUDFLARE_API_TOKEN credentials. The app's AI call sites already degrade
 //   when the binding is absent, so the smoke runs without it.
 //
-// The protected health endpoint requires CRON_SECRET at runtime. Inject a
-// local-only value into the derived config so this test exercises the same
-// authorization boundary as production without depending on repository secrets.
+// Shell environment variables are not automatically exposed as Worker runtime
+// variables by `wrangler dev`. Inject only the local smoke values required by
+// the production configuration validator and protected health/auth routes.
 function writeStrippedConfig() {
   const source = readFileSync('wrangler.toml', 'utf8');
   let stripped = source;
@@ -66,19 +76,21 @@ function writeStrippedConfig() {
   }
 
   const varsPattern = /\n\[vars\]\n[\s\S]*?(?=\n\[|$)/;
-  const varsSection = stripped.match(varsPattern)?.[0];
+  let varsSection = stripped.match(varsPattern)?.[0];
   if (!varsSection) {
-    throw new Error('wrangler.toml must contain a [vars] section for the health smoke secret');
+    throw new Error('wrangler.toml must contain a [vars] section for Workerd smoke configuration');
   }
 
-  const withoutExistingSecret = varsSection
-    .replace(/^CRON_SECRET\s*=.*(?:\n|$)/m, '')
-    .replace(/\n{3,}/g, '\n\n');
-  const withHealthSecret = withoutExistingSecret.replace(
-    '\n[vars]\n',
-    `\n[vars]\nCRON_SECRET = "${tomlString(HEALTH_CHECK_TOKEN)}"\n`,
-  );
-  stripped = stripped.replace(varsPattern, withHealthSecret);
+  for (const [name, value] of Object.entries({
+    CRON_SECRET: HEALTH_CHECK_TOKEN,
+    DATABASE_URL: DB_URL,
+    AUTH_SECRET,
+    NEXTAUTH_SECRET,
+  })) {
+    varsSection = upsertTomlVariable(varsSection, name, value);
+  }
+  varsSection = varsSection.replace(/\n{3,}/g, '\n\n');
+  stripped = stripped.replace(varsPattern, varsSection);
 
   writeFileSync(TMP_CONFIG, stripped);
 }
@@ -175,7 +187,19 @@ async function run() {
       `status=${health.status} body=${health.text.slice(0, 200)}`,
     );
 
-    // 3. The historically-broken auth path: magic-link runs user.findUnique
+    // 3. Auth.js must have its runtime secret inside the Worker isolate. A
+    // successful unauthenticated session response proves configuration without
+    // manufacturing a user session for the smoke test.
+    const authSession = await probe('/api/auth/session', {
+      headers: { accept: 'application/json' },
+    });
+    check(
+      'GET /api/auth/session responds without Auth.js configuration errors',
+      authSession.status === 200,
+      `status=${authSession.status} body=${authSession.text.slice(0, 200)}`,
+    );
+
+    // 4. The historically-broken auth path: magic-link runs user.findUnique
     // through the Prisma engine. On every broken engine config this returned
     // a 500 "Something went wrong".
     const magicLink = await probe('/api/auth/magic-link', {
@@ -189,7 +213,7 @@ async function run() {
       `status=${magicLink.status} body=${magicLink.text.slice(0, 200)}`,
     );
 
-    // 4. The magic verify route must reject a bogus token without surfacing
+    // 5. The magic verify route must reject a bogus token without surfacing
     // raw database/engine failures.
     const magicVerify = await probe('/api/auth/magic?token=workerd-smoke-bogus');
     const verifyOk = magicVerify.status === 307 || magicVerify.status === 302;
@@ -199,13 +223,13 @@ async function run() {
       `status=${magicVerify.status} body=${magicVerify.text.slice(0, 200)}`,
     );
 
-    // 5. Core pages render.
+    // 6. Core pages render.
     for (const path of ['/', '/discover', '/login']) {
       const page = await probe(path);
       check(`GET ${path} returns 200`, page.status === 200, `status=${page.status}`);
     }
 
-    // 6. Session-gated API routes reject cleanly (401, not a 500 crash).
+    // 7. Session-gated API routes reject cleanly (401, not a 500 crash).
     const notifications = await probe('/api/me/notifications');
     check(
       'GET /api/me/notifications rejects unauthenticated with 401',
@@ -213,7 +237,7 @@ async function run() {
       `status=${notifications.status} body=${notifications.text.slice(0, 200)}`,
     );
 
-    // 7. Performance budget. It must run against this workerd instance, not a
+    // 8. Performance budget. It must run against this workerd instance, not a
     // `next start` Node server, because the production Prisma configuration is
     // only representative inside workerd.
     if (process.env.SKIP_LIGHTHOUSE_BUDGET !== '1') {
