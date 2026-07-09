@@ -8,17 +8,15 @@ const original = {
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 };
 
-function restoreEnvironment(
-  key: keyof typeof original,
-  value: string | undefined,
-) {
-  if (value === undefined) delete process.env[key];
-  else process.env[key] = value;
+function setEnvironment(key: keyof typeof original, value: string | undefined) {
+  const environment = process.env as unknown as Record<string, string | undefined>;
+  if (value === undefined) delete environment[key];
+  else environment[key] = value;
 }
 
 afterEach(() => {
   for (const [key, value] of Object.entries(original)) {
-    restoreEnvironment(key as keyof typeof original, value);
+    setEnvironment(key as keyof typeof original, value);
   }
 });
 
@@ -44,7 +42,7 @@ describe('payment processing readiness', () => {
   });
 
   it('rejects Stripe test credentials when production ticketing is enabled', () => {
-    process.env.NODE_ENV = 'production';
+    setEnvironment('NODE_ENV', 'production');
     process.env.FEATURE_ENABLE_TICKET_PAYMENTS = 'true';
     process.env.STRIPE_SECRET_KEY = 'sk_test_example';
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_example';
@@ -55,7 +53,7 @@ describe('payment processing readiness', () => {
   });
 
   it('is ready only when the switch and live-shaped credentials are configured', () => {
-    process.env.NODE_ENV = 'production';
+    setEnvironment('NODE_ENV', 'production');
     process.env.FEATURE_ENABLE_TICKET_PAYMENTS = 'true';
     process.env.STRIPE_SECRET_KEY = 'sk_live_example';
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_example';
