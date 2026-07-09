@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { getSafeImageUrl } from '@/lib/asset-safety';
+import { getCspNonce } from '@/lib/csp-nonce';
 
 export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
@@ -37,6 +38,7 @@ export default async function EpkPage({ params }: { params: Promise<{ slug: stri
 
   if (!profile || (profile.type !== 'ARTIST' && profile.type !== 'DJ')) return notFound();
 
+  const nonce = await getCspNonce();
   const avatarUrl = getSafeImageUrl(profile.avatarImage);
   const galleryUrl = getSafeImageUrl(profile.galleryImage);
   const location = [profile.city, profile.stateRegion, profile.country].filter(Boolean).join(', ');
@@ -52,7 +54,7 @@ export default async function EpkPage({ params }: { params: Promise<{ slug: stri
         <button id="epk-print-btn" type="button" style={{ padding: '8px 18px', cursor: 'pointer' }}>
           Print / Save PDF
         </button>
-        <script dangerouslySetInnerHTML={{ __html: `document.getElementById('epk-print-btn').onclick=()=>window.print()` }} />
+        <script dangerouslySetInnerHTML={{ __html: `document.getElementById('epk-print-btn').onclick=()=>window.print()` }} nonce={nonce} />
       </div>
 
       <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>

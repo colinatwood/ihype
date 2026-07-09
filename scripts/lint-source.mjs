@@ -24,7 +24,7 @@ async function walk(directory) {
   return files;
 }
 
-const sourceFiles = [...(await walk('src')), 'middleware.ts'];
+const sourceFiles = await walk('src');
 for (const file of sourceFiles) {
   const content = await text(file);
   if (/\beval\s*\(/.test(content)) fail(file, 'eval() is forbidden.');
@@ -70,13 +70,21 @@ if (!scanRoute.includes('updateMany') || !scanRoute.includes("status: 'VALID'"))
   fail('src/app/api/tickets/[serializedId]/scan/route.ts', 'ticket scanning must be a conditional atomic transition.');
 }
 
-const middleware = await text('middleware.ts');
+const middleware = await text('src/middleware.ts');
 const scriptDirective = middleware.match(/script-src[^`\n]*/)?.[0] ?? '';
 if (scriptDirective.includes("'unsafe-inline'")) {
-  fail('middleware.ts', 'script-src must not allow unsafe-inline scripts.');
+  fail('src/middleware.ts', 'script-src must not allow unsafe-inline scripts.');
 }
 if (!middleware.includes("'nonce-${nonce}'")) {
-  fail('middleware.ts', 'script-src must include a per-request nonce.');
+  fail('src/middleware.ts', 'script-src must include a per-request nonce.');
+}
+
+const nextConfig = await text('next.config.mjs');
+if (/key:\s*['"]Content-Security-Policy['"]/.test(nextConfig)) {
+  fail(
+    'next.config.mjs',
+    "must not set Content-Security-Policy — it's set exclusively by src/middleware.ts (a static header here applies to the same routes and silently wins over middleware's per-request nonce, making the CSP script-src check above meaningless in practice)."
+  );
 }
 
 for (const webhookFile of [

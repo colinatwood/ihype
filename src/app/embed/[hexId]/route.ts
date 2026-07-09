@@ -8,6 +8,7 @@ export async function GET(
   { params }: { params: Promise<{ hexId: string }> }
 ) {
   const { hexId } = await params;
+  const nonce = request.headers.get('x-nonce') ?? '';
 
   // hexId could be a profile hexId or mediaAsset hexId
   let track: { title: string; artistName: string; audioUrl: string; artworkUrl: string | null } | null = null;
@@ -80,7 +81,7 @@ body{background:#0a0805;color:#f0ebe5;font-family:"DM Sans",system-ui,sans-serif
     <div class="artist">${escHtml(track.artistName)}</div>
   </div>
   <div class="ctrl">
-    <button class="playbtn" id="btn" onclick="toggle()">
+    <button class="playbtn" id="btn">
       <svg id="play-icon" viewBox="0 0 16 16"><polygon points="4,2 14,8 4,14"/></svg>
       <svg id="pause-icon" viewBox="0 0 16 16" style="display:none"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg>
     </button>
@@ -88,9 +89,10 @@ body{background:#0a0805;color:#f0ebe5;font-family:"DM Sans",system-ui,sans-serif
   </div>
 </div>
 <audio id="audio" src="${escHtml(track.audioUrl)}" preload="none"></audio>
-<script>
-var a=document.getElementById('audio'),pi=document.getElementById('play-icon'),pa=document.getElementById('pause-icon');
+<script nonce="${nonce}">
+var a=document.getElementById('audio'),pi=document.getElementById('play-icon'),pa=document.getElementById('pause-icon'),btn=document.getElementById('btn');
 function toggle(){if(a.paused){a.play();pi.style.display='none';pa.style.display=''}else{a.pause();pi.style.display='';pa.style.display='none'}}
+btn.addEventListener('click',toggle);
 a.onended=function(){pi.style.display='';pa.style.display='none'};
 </script>
 </body>

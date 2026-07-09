@@ -216,10 +216,18 @@ export async function POST(
         ? {}
         : { ticketsSoldCount: { lte: show.ticketCapacity - body.quantity } };
 
+      // The ticketsSoldCount comparison below is the atomic capacity guard —
+      // it's evaluated against the row's live value at update time, so it
+      // alone is sufficient to prevent overselling under concurrent
+      // reservations. Do not also gate on show.updatedAt: that column is
+      // bumped by any write to the row (including another buyer's own
+      // successful reservation moments earlier), so pinning it to a value
+      // read before this transaction started would reject concurrent,
+      // still-within-capacity purchases as spurious "availability changed"
+      // errors.
       const reserved = await tx.show.updateMany({
         where: {
           id: show.id,
-          updatedAt: show.updatedAt,
           isTicketed: true,
           status: { in: ['SCHEDULED', 'LIVE'] },
           ...remainingCapacityGuard,
