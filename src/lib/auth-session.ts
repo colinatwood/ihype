@@ -1,7 +1,12 @@
 import { encode } from 'next-auth/jwt';
 import { db } from '@/lib/db';
+import {
+  AUTH_SESSION_MAX_AGE_SECONDS,
+  getAuthSessionCookieName,
+  getAuthSessionCookieOptions,
+} from '@/lib/auth-cookie';
 
-export const AUTH_SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
+export { AUTH_SESSION_MAX_AGE_SECONDS, getAuthSessionCookieName } from '@/lib/auth-cookie';
 
 type AuthSessionUser = {
   id: string;
@@ -13,31 +18,22 @@ type AuthSessionUser = {
   userSecurityVersion?: number;
 };
 
-export function getAuthSessionCookieName() {
-  return process.env.NODE_ENV === 'production'
-    ? '__Secure-authjs.session-token'
-    : 'authjs.session-token';
-}
-
 function getEmailVerifiedIso(emailVerified: AuthSessionUser['emailVerified']) {
   if (!emailVerified) return null;
   return emailVerified instanceof Date ? emailVerified.toISOString() : emailVerified;
 }
 
 async function readUserSecurityVersion(user: AuthSessionUser) {
-  if (typeof user.userSecurityVersion === 'number') {
-    return user.userSecurityVersion;
-  }
+  if (typeof user.userSecurityVersion === 'number') return user.userSecurityVersion;
 
   try {
     const dbUser = await db.user.findUnique({
       where: { id: user.id },
-      select: { userSecurityVersion: true }
+      select: { userSecurityVersion: true },
     });
-
     return dbUser?.userSecurityVersion ?? null;
-  } catch (err) {
-    console.error('[auth-session] Unable to read user security version:', err);
+  } catch (error) {
+    console.error('[auth-session] Unable to read user security version:', error);
     return null;
   }
 }
@@ -62,19 +58,16 @@ export async function buildAuthSessionCookie(user: AuthSessionUser) {
       securityVersion,
       iat: now,
       exp: now + AUTH_SESSION_MAX_AGE_SECONDS,
-      jti: crypto.randomUUID()
+      jti: crypto.randomUUID(),
     },
     secret,
-    salt: cookieName
+    salt: cookieName,
+    maxAge: AUTH_SESSION_MAX_AGE_SECONDS,
   });
 
   return {
     name: cookieName,
     value,
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    path: '/',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: AUTH_SESSION_MAX_AGE_SECONDS
+    ...getAuthSessionCookieOptions(),
   };
 }
