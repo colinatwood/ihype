@@ -864,147 +864,299 @@ body:has(.standalone-page) .site-shell { padding-top: 0; }
   outline-offset: 4px;
   box-shadow: 0 0 0 6px rgba(57, 216, 223, 0.18);
 }
-.auth-route-card{
-  border: 1px solid var(--line);
-  border-radius: 30px;
-  background:
-    radial-gradient(circle at top right, rgba(255,122,24,0.12), transparent 30%),
-    rgba(16,24,42,0.86);
-  box-shadow: var(--shadow);
+
+/* ─── Auth card (Sign in / Create account) ─────────────────────────
+   Single centered card, matches Auth.dc.html. Shares the sitewide header
+   (this page adds no header of its own) — min-height accounts for it. */
+.authcard-page {
+  min-height: calc(100vh - 70px);
+  padding: clamp(2rem, 6vw, 4.5rem) 24px 5rem;
 }
-.auth-route-card {
-  width: min(100%, 640px);
-  padding: clamp(1.2rem, 4vw, 2rem);
+.authcard-wrap {
+  width: min(440px, 100%);
+  margin: 0 auto;
 }
-.auth-route-card h1 {
-  margin: 0.75rem 0 0.65rem;
-  font-size: clamp(2.2rem, 6vw, 4rem);
-  line-height: 0.96;
-  letter-spacing: -0.055em;
-}
-.auth-route-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin-top: 1rem;
-}
-.auth-field-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
-}
-.role-choice-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
-  padding: 0;
-  border: 0;
-}
-.role-choice-grid legend {
-  margin-bottom: 0.45rem;
-  color: var(--muted);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+.authcard-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .18em;
   text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+  text-align: center;
 }
-.role-choice {
+.authcard-title {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 6vw, 40px);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1;
+  text-align: center;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+.authcard-sub {
+  font-size: 14px;
+  color: var(--ink-3);
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.authcard-tabs {
   display: grid;
-  gap: 0.35rem;
-  min-height: 150px;
-  padding: 1rem;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 22px;
-  background: rgba(255,255,255,0.04);
-  cursor: pointer;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 28px;
 }
-.role-choice input {
-  width: 1rem;
-  height: 1rem;
+.authcard-tab {
+  padding: 11px;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 9px;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+  transition: all 160ms cubic-bezier(.2,.7,.3,1);
 }
-.role-choice strong {
-  color: #fff2df;
-  font-size: 1.05rem;
+.authcard-tab.active {
+  background: rgba(255,80,41,.12);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(255,80,41,.3);
 }
-.role-choice span,
-.check-row span {
-  color: var(--muted);
-  line-height: 1.45;
+
+.authcard-field { margin-bottom: 16px; }
+fieldset.authcard-field { border: 0; padding: 0; }
+/* Direct-child selector matters: role options are also <label> elements
+   (for accessible radio semantics), nested inside .authcard-role-grid — a
+   descendant selector here would leak this uppercase/mono label styling
+   onto those role cards too. */
+.authcard-field > label,
+.authcard-field > legend,
+.authcard-field .authcard-field-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--ink-3);
+  margin-bottom: 7px;
 }
-.role-choice.active {
-  border-color: rgba(255,122,24,0.55);
-  background: rgba(255,122,24,0.12);
+.authcard-field-optional {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: .75;
 }
-.auth-method-grid {
+.authcard-field input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(255,255,255,.03);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  transition: border-color 150ms;
+}
+.authcard-field input:focus {
+  outline: none;
+  border-color: rgba(255,80,41,.45);
+}
+.authcard-field input::placeholder { color: var(--ink-4); }
+
+.authcard-method-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
 }
-.auth-method-choice {
-  display: grid;
-  gap: 0.35rem;
-  min-height: 96px;
-  padding: 0.95rem 1rem;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 18px;
-  background: rgba(255,255,255,0.04);
+.authcard-method-choice {
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(255,255,255,.03);
   color: inherit;
   cursor: pointer;
   text-align: left;
-}
-.auth-method-choice strong {
-  color: #fff2df;
-}
-.auth-method-choice span {
-  color: var(--muted);
-  line-height: 1.45;
-}
-.auth-method-choice.active {
-  border-color: rgba(255,122,24,.45);
-  background: rgba(255,122,24,.1);
-}
-.auth-method-choice.active strong {
-  color: #ffe2c8;
-}
-.auth-code-actions,
-.auth-passkey-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
-.auth-trust-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 0.2rem;
-  color: var(--muted);
-  font-size: 0.78rem;
-}
-.auth-trust-row a {
-  color: #d8f8ff;
-  text-decoration: none;
-}
-.auth-trust-row a:hover {
-  text-decoration: underline;
-  text-underline-offset: 0.24em;
-}
-.auth-passkey-pending {
   display: grid;
-  gap: 0.8rem;
+  gap: 3px;
+  transition: all 150ms cubic-bezier(.2,.7,.3,1);
 }
-.check-row {
+.authcard-method-choice strong {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.authcard-method-choice span {
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+.authcard-method-choice.active {
+  border-color: rgba(255,80,41,.45);
+  background: rgba(255,80,41,.1);
+}
+
+.authcard-role-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 6px;
+}
+@media (max-width: 480px) { .authcard-role-grid { grid-template-columns: 1fr 1fr; } }
+.authcard-role-opt {
+  display: block;
+  padding: 12px 6px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(255,255,255,.03);
+  cursor: pointer;
+  text-align: center;
+  transition: all 150ms cubic-bezier(.2,.7,.3,1);
+}
+.authcard-role-opt:hover { border-color: var(--line-2); }
+.authcard-role-opt.active { border-color: var(--role-c, var(--accent)); background: var(--role-bg, rgba(255,80,41,.1)); }
+.authcard-role-opt:has(.authcard-role-radio:focus-visible) {
+  outline: 3px solid #39d8df;
+  outline-offset: 2px;
+}
+.authcard-role-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+.authcard-role-dot { width: 8px; height: 8px; border-radius: 50%; margin: 0 auto 7px; }
+.authcard-role-name { font-family: var(--font-display); font-size: 12px; font-weight: 800; letter-spacing: -.01em; color: var(--ink); }
+
+.authcard-check-row {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 18px;
-  background: rgba(255,255,255,0.04);
+  gap: 10px;
+  padding: 13px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: rgba(255,255,255,.03);
+  margin-bottom: 16px;
 }
-.check-row input {
-  margin-top: 0.2rem;
+.authcard-check-row input { margin-top: 3px; }
+.authcard-check-row span { font-size: 13px; color: var(--ink-3); line-height: 1.45; }
+
+.authcard-btn-primary {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 150ms;
+  margin-top: 8px;
 }
+.authcard-btn-primary:hover { opacity: .9; }
+.authcard-btn-primary:disabled { opacity: .6; cursor: default; }
+.authcard-btn-ghost {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--ink-2);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 150ms;
+}
+.authcard-btn-ghost:hover { background: rgba(255,255,255,.04); color: var(--ink); }
+.authcard-btn-ghost:disabled { opacity: .6; cursor: default; }
+
+.authcard-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.authcard-divider::before, .authcard-divider::after { content: ''; flex: 1; height: 1px; background: var(--line-2); }
+
+.authcard-trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  margin-top: 14px;
+  font-size: 12px;
+}
+.authcard-trust-row a { color: var(--ink-3); text-decoration: none; }
+.authcard-trust-row a:hover { color: var(--ink); text-decoration: underline; }
+
+.authcard-fine {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: 22px;
+}
+.authcard-fine a { color: var(--accent); text-decoration: none; }
+.authcard-fine a:hover { text-decoration: underline; }
+.authcard-charter {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-top: 32px;
+}
+
+.authcard-status {
+  margin-bottom: 16px;
+  padding: 13px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(34,229,212,.24);
+  background: rgba(34,229,212,.08);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.authcard-status-error {
+  border-color: rgba(255,80,41,.3);
+  background: rgba(255,80,41,.08);
+}
+
+.authcard-passkey-pending {
+  display: grid;
+  gap: 14px;
+  text-align: center;
+}
+.authcard-passkey-pending p { margin: 0; color: var(--ink); font-size: 14px; }
+.authcard-passkey-pending .meta { color: var(--ink-3); font-size: 12px; }
+.authcard-passkey-actions { display: grid; gap: 10px; }
+
+@media (max-width: 480px) {
+  .authcard-method-grid { grid-template-columns: 1fr; }
+}
+
 .bot-field {
   position: absolute;
   left: -10000px;
@@ -1056,15 +1208,8 @@ body:has(.standalone-page) .site-shell { padding-top: 0; }
   color: #ffd8d8;
 }
 @media (max-width: 760px) {
-  .public-promise-hero,
-  .auth-field-grid,
-  .auth-method-grid,
-  .role-choice-grid {
+  .public-promise-hero {
     grid-template-columns: 1fr;
-  }
-
-  .role-choice {
-    min-height: auto;
   }
 }
 .admin-console {
@@ -4157,7 +4302,6 @@ html.high-contrast .panel,
 html.high-contrast .card,
 html.high-contrast .nav,
 html.high-contrast .a11y-panel,
-html.high-contrast .auth-signal-card,
 html.high-contrast .signed-landing-schema,
 html.high-contrast .discover-module-panel,
 html.high-contrast .recommendation-engine-panel,
@@ -4170,7 +4314,6 @@ html.high-contrast .visual-drop-studio {
 }
 
 html.high-contrast .ihype-gradient-text,
-html.high-contrast .auth-signal-copy h1 span,
 html.high-contrast .badge {
   background: none !important;
   color: #ffffff !important;
@@ -4612,369 +4755,6 @@ html.high-contrast p {
   .hype-queue,
   .hype-queue-card{
     border-radius: 18px;
-  }
-}
-
-/* Current auth schema: matches the dark signal launch pages while preserving MFA form behavior. */
-.auth-signal-page {
-  min-height: calc(100vh - 70px);
-  display: flex;
-  align-items: center;
-  padding: clamp(2rem, 6vw, 5.5rem) 24px;
-  color: #f7f4ff;
-}
-
-.auth-signal-shell {
-  width: min(1120px, 100%);
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.78fr);
-  gap: clamp(1.25rem, 4vw, 4rem);
-  align-items: center;
-  margin: 0 auto;
-}
-
-.auth-signal-page-wide .auth-signal-shell {
-  width: min(1240px, 100%);
-  grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1fr);
-  align-items: start;
-}
-
-.auth-signal-copy {
-  display: grid;
-  gap: 22px;
-}
-
-.auth-signal-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  color: #ff5738;
-  font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-  font-size: 0.74rem;
-  font-weight: 900;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-}
-
-.auth-signal-eyebrow::before {
-  content: "";
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: #ff5738;
-  box-shadow: 0 0 24px rgba(255, 87, 56, 0.78);
-}
-
-.auth-signal-copy h1 {
-  max-width: 780px;
-  margin: 0;
-  color: #f7f4ff;
-  font-size: clamp(3.1rem, 7vw, 6.2rem);
-  font-weight: 900;
-  letter-spacing: -0.075em;
-  line-height: 0.94;
-}
-
-.auth-signal-copy h1 span {
-  display: block;
-  font-style: italic;
-  background: linear-gradient(105deg, #ff4732 0%, #ff3b8f 35%, #b879d6 62%, #35ded9 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.auth-signal-copy > p:not(.auth-signal-eyebrow) {
-  max-width: 580px;
-  margin: 0;
-  color: #aeb8d3;
-  font-size: 1.04rem;
-  font-weight: 650;
-  line-height: 1.6;
-}
-
-.auth-signal-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  max-width: 720px;
-}
-
-.auth-signal-tile {
-  min-height: 126px;
-  display: grid;
-  align-content: end;
-  gap: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  padding: 18px;
-  background:
-    radial-gradient(circle at 90% 0%, rgba(255, 61, 135, 0.08), transparent 34%),
-    rgba(9, 10, 25, 0.58);
-}
-
-.auth-signal-tile span {
-  color: #ff5738;
-  font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.auth-signal-tile strong {
-  color: #f7f4ff;
-  font-size: 1.2rem;
-  font-weight: 950;
-  letter-spacing: -0.045em;
-}
-
-.auth-signal-tile small {
-  color: #8995b5;
-  font-weight: 750;
-  line-height: 1.35;
-}
-
-.auth-signal-card {
-  width: 100%;
-  border-color: rgba(255, 255, 255, 0.11);
-  border-radius: 26px;
-  padding: clamp(1.35rem, 3vw, 2rem);
-  background:
-    radial-gradient(circle at 86% 10%, rgba(57, 216, 223, 0.12), transparent 30%),
-    radial-gradient(circle at 10% 0%, rgba(255, 61, 135, 0.08), transparent 28%),
-    rgba(9, 10, 25, 0.74);
-  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.26);
-  backdrop-filter: blur(18px);
-}
-
-.auth-signal-page-wide .auth-signal-card {
-  max-height: none;
-}
-
-.auth-signal-card h2 {
-  margin: 0.75rem 0 0.65rem;
-  color: #f7f4ff;
-  font-size: clamp(2.15rem, 4vw, 3.7rem);
-  font-weight: 900;
-  letter-spacing: -0.065em;
-  line-height: 0.98;
-}
-
-.auth-signal-card .subtitle {
-  margin: 0 0 1.2rem;
-  color: #aeb8d3;
-  font-size: 0.98rem;
-  line-height: 1.55;
-}
-
-.auth-signal-card .form {
-  display: grid;
-  gap: 0.95rem;
-}
-
-.auth-signal-card .field-group-label {
-  color: #8995b5;
-  font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-  font-size: 0.7rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  margin-top: 0.3rem;
-}
-
-.auth-signal-card .field-group-optional {
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-  font-size: 0.7rem;
-  opacity: 0.7;
-}
-
-.auth-signal-card .field span,
-.auth-signal-card .role-choice-grid legend {
-  color: #8995b5;
-  font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
-  font-size: 0.7rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.auth-signal-card .field input,
-.auth-signal-card .field select,
-.auth-signal-card .field textarea {
-  min-height: 48px;
-  border-color: rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  background: rgba(3, 6, 18, 0.72);
-  color: #f7f4ff;
-}
-
-.auth-signal-card .field input:focus,
-.auth-signal-card .field select:focus,
-.auth-signal-card .field textarea:focus {
-  border-color: rgba(57, 216, 223, 0.46);
-  box-shadow: 0 0 0 4px rgba(57, 216, 223, 0.12);
-}
-
-.auth-signal-card .button {
-  min-height: 48px;
-  justify-content: center;
-  border: 0;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #ff4635 0%, #ff3d87 44%, #39d8df 100%);
-  color: #fff;
-  box-shadow: 0 18px 44px rgba(255, 61, 135, 0.24);
-}
-
-.auth-signal-card .text-link {
-  width: max-content;
-  border: 0;
-  background: transparent;
-  color: #aeb8d3;
-  cursor: pointer;
-}
-
-.auth-signal-card .text-link:hover {
-  color: #fff;
-}
-
-.auth-signal-card .auth-route-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 1.1rem;
-}
-
-.auth-signal-card .auth-inline-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.8rem;
-  align-items: center;
-}
-
-.auth-signal-card .status-note {
-  border: 1px solid rgba(57, 216, 223, 0.18);
-  border-radius: 16px;
-  padding: 0.85rem 1rem;
-  background: rgba(57, 216, 223, 0.08);
-  color: #d9fbff;
-}
-
-.auth-signal-card .status-note-error {
-  border-color: rgba(255, 90, 90, 0.24);
-  background: rgba(255, 90, 90, 0.1);
-  color: #ffd8d8;
-}
-
-.auth-signal-card .auth-field-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem;
-}
-
-.auth-signal-card .field small {
-  display: block;
-  margin-top: 0.45rem;
-  color: #8995b5;
-  font-size: 0.78rem;
-  line-height: 1.4;
-}
-
-.auth-signal-card .role-choice-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
-  padding: 0;
-  border: 0;
-}
-
-.auth-signal-card .role-choice {
-  min-height: 144px;
-  border-color: rgba(255, 255, 255, 0.1);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.035);
-}
-
-.auth-signal-card .role-choice.active {
-  border-color: rgba(57, 216, 223, 0.42);
-  background:
-    radial-gradient(circle at top right, rgba(57, 216, 223, 0.14), transparent 36%),
-    rgba(255, 255, 255, 0.06);
-}
-
-.auth-signal-card .role-choice strong {
-  color: #f7f4ff;
-}
-
-.auth-signal-card .role-choice span,
-.auth-signal-card .check-row span {
-  color: #aeb8d3;
-}
-
-.auth-signal-card .check-row {
-  border-color: rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.035);
-}
-
-@media (max-width: 980px) {
-  .auth-signal-shell,
-  .auth-signal-page-wide .auth-signal-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .auth-signal-copy h1 {
-    max-width: 680px;
-  }
-}
-
-@media (max-width: 680px) {
-  .auth-signal-page {
-    padding: 2rem 16px;
-  }
-
-  .auth-signal-grid,
-  .auth-signal-card .auth-field-grid,
-  .auth-signal-card .auth-method-grid,
-  .auth-signal-card .role-choice-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .auth-signal-tile,
-  .auth-signal-card .role-choice {
-    min-height: auto;
-  }
-
-  .auth-signal-card .button,
-  .auth-passkey-actions .button,
-  .auth-code-actions .button {
-    width: 100%;
-  }
-
-  .auth-trust-row {
-    justify-content: center;
-  }
-}
-
-@media (max-width: 768px) {
-  /* Login's marketing copy (headline, description, 3-tile signal grid) is
-     redundant on mobile — the pitch already happened on Index, and pushing
-     the actual sign-in card below a full hero forces a scroll to use it. */
-  .auth-signal-page-compact .auth-signal-copy {
-    display: none;
-  }
-  .auth-signal-page-compact .auth-signal-shell {
-    grid-template-columns: 1fr;
-  }
-  .auth-signal-page-compact.auth-signal-page {
-    padding: 1.25rem 16px;
-    min-height: 0;
-  }
-  .auth-signal-page-compact .auth-signal-card {
-    padding: 1.35rem;
   }
 }
 
