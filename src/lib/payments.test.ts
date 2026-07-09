@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { getPaymentProcessingReadiness } from '@/lib/payments';
 
 const original = {
+  NODE_ENV: process.env.NODE_ENV,
   FEATURE_ENABLE_TICKET_PAYMENTS: process.env.FEATURE_ENABLE_TICKET_PAYMENTS,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
@@ -42,9 +43,21 @@ describe('payment processing readiness', () => {
     expect(readiness.blockers).toHaveLength(2);
   });
 
-  it('is ready only when the switch and both secrets are configured', () => {
+  it('rejects Stripe test credentials when production ticketing is enabled', () => {
+    process.env.NODE_ENV = 'production';
     process.env.FEATURE_ENABLE_TICKET_PAYMENTS = 'true';
     process.env.STRIPE_SECRET_KEY = 'sk_test_example';
+    process.env.STRIPE_WEBHOOK_SECRET = 'whsec_example';
+
+    const readiness = getPaymentProcessingReadiness();
+    expect(readiness.ready).toBe(false);
+    expect(readiness.blockers.join(' ')).toContain('live Stripe secret key');
+  });
+
+  it('is ready only when the switch and live-shaped credentials are configured', () => {
+    process.env.NODE_ENV = 'production';
+    process.env.FEATURE_ENABLE_TICKET_PAYMENTS = 'true';
+    process.env.STRIPE_SECRET_KEY = 'sk_live_example';
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_example';
 
     expect(getPaymentProcessingReadiness()).toEqual({ ready: true, blockers: [] });
