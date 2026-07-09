@@ -201,7 +201,7 @@ export function PageEditor({ profileId }: { profileId: string }) {
 
   return (
     <div>
-      <div className="mqg-tabstrip" style={{ gap: 8, flexWrap: 'wrap', marginBottom: 22 }}>
+      <div className="page-editor-tabstrip" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 22 }}>
         {SECTIONS.filter((s) => s.id !== 'details' || !isFan).map((s) => (
           <div
             key={s.id}
