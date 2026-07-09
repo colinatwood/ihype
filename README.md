@@ -1,198 +1,138 @@
-# ihype.org production app starter
+# iHYPE
 
-A production-oriented Next.js application for hosting artist, promoter, venue, and fan pages with beta-safe public pages, account support, hype/upvotes, Prisma/Postgres storage, and Cloudflare Workers deployment.
+iHYPE is a Next.js application for artist, DJ, venue, promoter, and fan pages, event discovery, media uploads, audience engagement, and ticketing. It uses Prisma with PostgreSQL and deploys to Cloudflare Workers through OpenNext.
 
 ## Stack
 
-- Next.js App Router and Route Handlers for the web app and API endpoints. Route Handlers are supported inside the `app` directory in current Next.js docs. citeturn0search1turn0search10turn0search16
-- Prisma ORM with a PostgreSQL datasource for typed data access. Prisma documents `provider = "postgresql"` in the datasource block and uses `DATABASE_URL` for the connection string. citeturn0search2turn0search11turn0search14turn0search17
-- Auth.js credentials auth with Prisma adapter for user accounts.
-- Mux live streaming integration. Mux documents creating live streams via the `/live-streams` endpoint and explains that each stream has a unique stream key and playback ID workflow. citeturn0search3turn0search6turn0search9turn0search12
-
-## Features
-
-- The Promise is the main public start page while the product is in beta.
-- Pages for artists, DJs, and venues.
-- Fan pages with preset-based customization, profile styling, hype tracking, and public fan pages.
-- Platform-wide profile hex IDs for fans, artists, promoters, and venues, plus universal share links at `/profiles/<hexId>`.
-- Curated in-app launch-readiness page for beta launch gates, hype/fraud architecture, legal and operational readiness, and top launch risks.
-- Public integrity page plus transparency snapshot endpoint with versioned feed heuristics and explainable show surfacing.
-- Account registration and login.
-- Password reset by emailed six-digit passcode with a 5-minute reset window.
-- Essential auth cookies only, with session cookies shortened and non-session auth cookies scoped to `/api/auth`.
-- Hype button that works like an upvote, one hype per account per show.
-- Public health endpoint at `/api/health` for uptime monitors, launch blockers, and beta launch checks.
-- Admin beta console for verification review, content reports, support requests, CSV exports, email/MFA delivery, integration readiness, and audit activity.
-- Support intake at `/support` for login, verification, takedown, safety, and ticketing issues.
-- Authenticated API route for creating shows.
-- Authenticated API route for provisioning a Mux live stream and storing playback info.
-- Mux webhook endpoint to flip show status between `LIVE` and `ENDED`.
-- Prisma schema and seed data for quick local startup.
-- Manual launch seed workflow for safe production starter content.
-- Dockerfile and `docker-compose.yml` for local production-style runs.
+- Next.js App Router and route handlers
+- React and TypeScript
+- Auth.js with Prisma
+- PostgreSQL and Prisma ORM
+- Cloudflare Workers, Durable Objects, and object storage
+- Resend/SMTP for transactional email
+- Stripe for optional paid ticketing and payouts
+- Playwright and Vitest for automated checks
 
 ## Local setup
 
-1. Copy `.env.example` to `.env` and fill in values.
+1. Copy `.env.example` to `.env` and replace every placeholder.
 2. Start PostgreSQL.
-3. Install dependencies:
+3. Install dependencies and generate Prisma Client:
 
 ```bash
-npm install
+npm ci
+npx prisma generate
 ```
 
-4. Generate Prisma client and apply migrations:
+4. Apply the local schema and seed development data:
 
 ```bash
-npx prisma migrate dev --name init
-```
-
-5. Seed the database:
-
-```bash
+npx prisma migrate dev
 npm run prisma:seed
 ```
 
-6. Run the app:
+5. Start the application:
 
 ```bash
 npm run dev
 ```
 
-## Local demo users only
-
-- `fan@ihype.org`
-- `promoter@ihype.org`
-- `artist@ihype.org`
-- `venue@ihype.org`
-- `admin@ihype.org`
-
-Password for all demo users:
-
-```text
-demo12345
-```
-
-Demo logins currently use email and password only.
-
-These demo accounts are for local development and controlled staging only. Production should not expose shared demo credentials, and the app now locks demo logins by default in production unless `FEATURE_ENABLE_DEMO_LOGINS=true` is explicitly set.
-
-## Important production notes
-
-- Use a real OAuth provider, email verification, password reset flow, and bot protection before launch.
-- Put the app behind a CDN and WAF.
-- Add object storage for poster images and media uploads.
-- Replace the simple webhook verification helper with the exact provider-recommended verification flow for your chosen streaming vendor.
-- Add observability, background jobs, chat moderation, and rate limiting before trusting the internet with it. The internet is not a serious place.
-- Public signup reserves `@ihype.org` email addresses for internal use only.
-- Optional invite-only signup is controlled by `FEATURE_REQUIRE_INVITE_CODE=true` and comma-separated `BETA_INVITE_CODES`.
-- Auth, signup, and workbench pages are intentionally marked `noindex`.
-- The Prisma seed is for local/demo data only and refuses production runs unless `ALLOW_PRODUCTION_SEEDING=true` is explicitly set.
-- Production starter content uses `.github/workflows/seed-launch-content.yml` and requires the manual confirmation phrase `seed ihype launch`.
-- Admin bootstrap is disabled unless `ALLOW_ADMIN_SETUP=true` and `ADMIN_SETUP_SECRET` are set; disable both immediately after the first admin passkey is registered.
-- Security hardening ties JWT sessions to `userSecurityVersion`, so deployments may force legacy sessions without that claim to sign in again.
-- Post-deploy smoke tests run against `/api/health`, `/`, `/login`, `/shows`, and `/status`.
-
-## Cookie posture
-
-- The app only keeps essential authentication cookies.
-- The session cookie is limited to a 12-hour max age.
-- Transient auth cookies such as callback and CSRF cookies are scoped to `/api/auth` and expire quickly.
-
-## Launch readiness page
-
-- Route: `/launch-readiness`
-- Focus: executive launch gates, beta pilot planning, hype/fraud architecture, legal and operational readiness, and top launch risks.
-- Source: curated from the extended HYPE Network launch-readiness package rather than copied verbatim, so the highest-signal launch material is visible in-product.
-
-## Integrity and transparency
-
-- Route: `/integrity`
-- API: `/api/transparency`
-- Trust center: `/trust`
-- Health endpoint: `/api/health`
-- What it adds:
-  - versioned public feed heuristics
-  - plain-language “Why are you seeing this?” explanations on show surfaces
-  - aggregate transparency counters for shows, profiles, hype, and venue requests
-  - product commitments around explainability and non-targeted trust posture
-
-## Cloudflare deployment quick start
-
-1. Add `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL`, and `DIRECT_URL` to the GitHub `Production - ihype` environment.
-2. Push to `main`.
-3. GitHub Actions runs migrations, builds the OpenNext Cloudflare bundle, deploys the Worker and cron Worker, then runs production smoke checks.
-5. Add your Mux credentials and webhook secret.
-6. Add `OPENAI_API_KEY` if you want fan avatar generation enabled.
-7. Add SMTP delivery settings (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`) for live sign-in MFA, sign-up verification, ticket emails, and password reset emails.
-8. Add `BLOB_READ_WRITE_TOKEN` before allowing production media uploads.
-9. Add `STRIPE_SECRET_KEY` before opening paid ticket capture. Ticket reservations are allowed, but capture is intentionally blocked until real payment processing is configured.
-10. Configure email authentication for `ihype.org`: SPF, DKIM, and DMARC for whichever SMTP provider sends MFA, password reset, support, and ticket emails.
-11. Enable Vercel Web Analytics, Speed Insights, and an uptime monitor pointed at `/api/health`.
-12. Configure database backups and practice one restore into a Preview database before public beta.
-13. Have counsel review nonprofit language, user-uploaded media terms, takedown process, ticketing/refund language, tax handling, and payment terms.
-14. Deploy with the included `vercel.json`, which runs `npm run vercel-build`.
-15. Point your production domain to Vercel and verify auth callbacks, password reset email delivery, show creation, hype voting, Mux webhooks, fan avatar generation, support intake, CSV exports, and the integrity/transparency routes.
-
-## Smoke checks
-
-After starting the app locally or deploying to production, run a lightweight public-route check:
+## Development checks
 
 ```bash
-SMOKE_BASE_URL=https://ihype.org npm run smoke
-SMOKE_BASE_URL=https://ihype.org npm run smoke:flows
+npm run lint
+npm test
+npm run test:e2e
+npm run cf:build
 ```
 
-Without `SMOKE_BASE_URL`, the script checks `http://localhost:3000`.
+Pull requests also run a mandatory Chromium smoke test against scratch PostgreSQL and boot the built application in the Workers runtime.
 
-## Beta operations checklist
+## Demo accounts
 
-- Monitoring: enable Vercel Web Analytics and Speed Insights, add an uptime check for `/api/health`, and review Vercel function errors after each deployment.
-- Email delivery: verify SPF, DKIM, and DMARC for `ihype.org`; confirm MFA, reset, ticket, and support emails from the production SMTP provider.
-- Ticketing: keep paid capture blocked until `STRIPE_SECRET_KEY` and webhook verification are configured; reconcile ticket orders with CSV exports.
-- Backups: schedule database backups and test restoring a backup into the Preview database.
-- Legal: review nonprofit positioning, uploaded-media rights, copyright/takedown flow, ticketing/refund terms, privacy, and tax/payment handling before public launch.
-- Support: triage `/support` requests from the admin console and export support/report/audit CSVs for review.
+The seed creates local development accounts for fan, artist, promoter, venue, and admin roles. Shared demo credentials are for local or controlled staging use only. Production disables demo login unless `FEATURE_ENABLE_DEMO_LOGINS=true` is deliberately configured.
 
-### Vercel config refresh
+## Paid ticketing launch gate
 
-- `package.json` now uses `postinstall: prisma generate` so Prisma Client is regenerated during Vercel installs.
-- `package.json` now exposes `vercel-build` to keep the Vercel build pipeline explicit: `node scripts/prisma-migrate-retry.mjs && prisma generate && next build`.
-- `vercel.json` now points `buildCommand` at `npm run vercel-build` and keeps the function duration override scoped to `src/app/api/**/route.{ts,js}`.
-- The old `installCommand` override was removed so Vercel can use its framework-default install behavior.
+Paid ticketing is disabled by default:
 
-### Preview database note
+```dotenv
+FEATURE_ENABLE_TICKET_PAYMENTS=false
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+```
 
-- Prisma recommends using a separate `DATABASE_URL` for Vercel Preview so schema migrations from pull requests do not modify the Production database.
-- Set `DATABASE_URL` once for Production and again for Preview in the Vercel dashboard.
+Stripe credentials alone do not enable charges. Paid ticketing becomes available only when all three conditions are met:
 
-## Cloudflare nameserver handoff for `ihype.org`
+1. `FEATURE_ENABLE_TICKET_PAYMENTS=true`
+2. `STRIPE_SECRET_KEY` contains a valid Stripe secret key
+3. `STRIPE_WEBHOOK_SECRET` contains a valid webhook signing secret
 
-- Cloudflare zone status is now active for `ihype.org`.
-- Active nameservers: `sofia.ns.cloudflare.com` and `trace.ns.cloudflare.com`.
-- Next step is not nameserver propagation anymore. The next step is adding the exact Vercel DNS records inside Cloudflare DNS.
+Keep the feature switch false until payment-provider onboarding, refund policy, tax handling, accounting, and production reconciliation procedures are approved. While disabled, paid purchase and capture endpoints fail closed and do not create payment reservations, captured orders, tickets, or payout liabilities.
 
-## SSL/TLS for `ihype.org`
+## Closed-beta invite codes
 
-- This app now assumes HTTPS in production.
-- Browser routes are redirected to HTTPS in production, and the app sends `Strict-Transport-Security` plus related security headers from `next.config.mjs`.
-- If you are using Cloudflare in front of Vercel, set Cloudflare SSL/TLS encryption mode to `Full (strict)` so Cloudflare uses validated HTTPS to the origin.
-- Vercel provisions and renews TLS certificates for custom domains automatically after the domain is correctly attached and DNS is pointed at Vercel.
-- Keep `AUTH_URL` and `NEXT_PUBLIC_APP_URL` on `https://ihype.org` in Production so auth callbacks and generated absolute URLs stay on TLS.
+Set `FEATURE_REQUIRE_INVITE_CODE=true` and provide comma-separated random codes in `BETA_INVITE_CODES`. Production ignores short or known sample codes. Generate each code with at least 16 random characters, for example:
 
-## `ihype.org` registrar -> Cloudflare -> Vercel steps
+```bash
+openssl rand -hex 16
+```
 
-1. In Vercel, add `ihype.org` to the project first, then add `www.ihype.org` if you want the `www` host to work explicitly or redirect.
-2. In Cloudflare DNS, point the apex domain `ihype.org` to Vercel using the exact records Vercel shows for the project.
-3. In Cloudflare DNS, point `www.ihype.org` to Vercel using the exact CNAME target Vercel shows for the project.
-4. In Cloudflare SSL/TLS settings, use `Full (strict)` once the Vercel domain is attached and certificate issuance is active.
-5. In Vercel, verify the domain configuration and set your preferred redirect between apex and `www`.
-6. In Vercel Production environment variables, make sure `AUTH_URL` and `NEXT_PUBLIC_APP_URL` are both set to `https://ihype.org` unless you intentionally want `www` as the primary hostname.
-7. In Vercel Preview environment variables, set a separate preview `DATABASE_URL`.
-8. After DNS is live, verify HTTPS, login callbacks, integrity route responses, and any webhook URLs that depend on the final production domain.
+## Media storage
 
-## Included deployment files
+Production uploads require configured object storage. Temporary database-backed media storage is disabled by default. Artist uploads are limited by file size, request rate, track count, and cumulative profile storage.
 
-- `.env.example` for required runtime variables
-- `vercel.json` for install/build/function settings
-- `next.config.mjs` for production-safe Next.js config
+## Security posture
+
+- Authentication sessions are tied to a user security version and expire after 12 hours.
+- Magic-link bearer tokens are stored as one-way hashes and consumed atomically.
+- Passkeys require user verification.
+- Browser routes receive a nonce-based script Content Security Policy.
+- Ticket scans, ticket capacity reservations, and order state changes use conditional database transitions.
+- Webhook business changes and idempotency markers commit in the same transaction.
+- Production rate limiting requires the atomic Durable Object backend and fails closed if it is unavailable.
+- Public health checks expose liveness only. Detailed dependency health requires an admin session or monitoring bearer token.
+
+## Privacy export
+
+Authenticated users can download account, profile, content, activity, ticket, moderation, notification, follow, booking, and advertising records associated with their account. Credential secrets, session tokens, payment-processor identifiers, push credentials, and raw binary media are intentionally excluded from the export.
+
+## Production deployment
+
+The production workflow:
+
+1. Installs dependencies and generates Prisma Client.
+2. Runs type checks, design checks, and unit tests.
+3. Builds the Cloudflare Workers bundle.
+4. Applies migrations through the direct/non-pooled database URL.
+5. Deploys the application and cron Worker.
+6. Runs authenticated production health and public smoke checks.
+7. Purges the Cloudflare cache.
+
+The workflow builds before applying migrations so a compilation failure cannot advance the production schema.
+
+Required GitHub environment secrets include:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `DATABASE_URL`
+- `DIRECT_URL`
+- `AUTH_SECRET`
+- `CRON_SECRET`
+- email-provider credentials
+
+Stripe secrets are not required while `FEATURE_ENABLE_TICKET_PAYMENTS=false`.
+
+## Launch configuration check
+
+Run the configuration validator before beta or production changes:
+
+```bash
+node -r dotenv/config scripts/beta-launch-check.mjs
+```
+
+The check validates required secrets, rejects weak invite codes, and requires Stripe settings only when paid ticketing is explicitly enabled.
+
+## Operational requirements
+
+Before public launch, establish database backups and restore drills, email-domain authentication, content moderation and takedown procedures, incident response, privacy request handling, media-rights review, payment reconciliation, refund operations, and legal review of nonprofit and ticketing language.
