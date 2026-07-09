@@ -6,7 +6,11 @@ import {
 } from '@prisma/client';
 import { createSerializedTicketId } from '@/lib/tickets';
 
-type Tx = Prisma.TransactionClient;
+type DbClient = typeof import('@/lib/db').db;
+type Tx = Pick<
+  DbClient,
+  'ticketOrder' | 'ticket' | 'accountsPayableEntry' | 'show'
+>;
 
 function buildPayableEntries(
   show: { id: string; venueProfileId: string | null; headlinerProfileId: string | null },
