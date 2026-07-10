@@ -81,6 +81,7 @@ export function TicketSaleCard({
   const [quantity, setQuantity] = useState('1');
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [ageGated, setAgeGated] = useState(false);
   const [issuedTickets, setIssuedTickets] = useState<IssuedTicket[]>([]);
 
   const remainingTickets = ticketCapacity === null ? null : Math.max(ticketCapacity - ticketsSoldCount, 0);
@@ -131,6 +132,7 @@ export function TicketSaleCard({
     event.preventDefault();
     setPending(true);
     setMessage(null);
+    setAgeGated(false);
 
     const response = await fetch(`/api/shows/${showId}/tickets`, {
       method: 'POST',
@@ -149,6 +151,7 @@ export function TicketSaleCard({
       setMessage(data.message ?? (data.captureMode === 'captured' ? 'Tickets issued.' : 'Tickets reserved.'));
       router.refresh();
     } else {
+      setAgeGated(data.code === 'AGE_18_REQUIRED');
       setMessage(data.error ?? 'Could not complete the ticket request.');
     }
 
@@ -333,7 +336,17 @@ export function TicketSaleCard({
                   ? 'Charge stored token now'
                   : 'Reserve tickets'}
             </button>
-            {message ? <span className="meta">{message}</span> : null}
+            {message ? (
+              <span className="meta">
+                {message}
+                {ageGated ? (
+                  <>
+                    {' '}
+                    <Link href="/me/settings">Confirm your age in Settings →</Link>
+                  </>
+                ) : null}
+              </span>
+            ) : null}
           </div>
         </form>
       )}
