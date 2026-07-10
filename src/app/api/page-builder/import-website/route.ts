@@ -84,13 +84,15 @@ async function fetchPublicPage(startUrl: URL): Promise<string | null> {
 }
 
 function decodeEntities(text: string): string {
+  // &amp; must decode last: doing it first would turn &amp;lt; into &lt; and
+  // then into a real <, double-unescaping attacker-controlled text.
   return text
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#0?39;|&apos;/g, "'")
-    .replace(/&nbsp;/g, ' ');
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&');
 }
 
 interface ExtractedSite {
@@ -128,9 +130,9 @@ function extractSiteContent(html: string, baseUrl: URL): ExtractedSite {
 
   const text = decodeEntities(
     html
-      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-      .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+      .replace(/<script\b[\s\S]*?<\/script[^>]*>/gi, ' ')
+      .replace(/<style\b[\s\S]*?<\/style[^>]*>/gi, ' ')
+      .replace(/<noscript\b[\s\S]*?<\/noscript[^>]*>/gi, ' ')
       .replace(/<[^>]+>/g, ' '),
   )
     .replace(/\s+/g, ' ')
