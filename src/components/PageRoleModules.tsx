@@ -36,11 +36,11 @@ function ModuleHead({ icon, color, title, sub, trailing }: {
       }}>
         {icon}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--ink)' }}>
+      <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, letterSpacing: '-.01em', color: 'var(--ink)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
           {title}
         </div>
-        <div style={{ fontSize: 12, color: 'rgba(240,235,229,.5)', marginTop: 2 }}>{sub}</div>
+        <div style={{ fontSize: 12, color: 'rgba(240,235,229,.5)', marginTop: 2, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{sub}</div>
       </div>
       <div style={{ flexShrink: 0, color: 'rgba(240,235,229,.45)', display: 'flex', alignItems: 'center' }}>{trailing}</div>
     </>
@@ -247,7 +247,7 @@ export function PageRoleModules({ profile, color }: { profile: ModuleProfile; co
         <ExpandModule
           color={color}
           icon={icons.stats(color)}
-          sub="Hypes, followers, listeners — real numbers for this page"
+          sub="Your hypes, followers & listeners"
           title="Stats"
         >
           <ProfileInsights profileId={profile.id} profileType={profile.type} />
@@ -258,7 +258,7 @@ export function PageRoleModules({ profile, color }: { profile: ModuleProfile; co
             color={color}
             href="/events/new"
             icon={icons.event(color)}
-            sub={isVenue ? 'Book a show in your room — keep 45% of every ticket' : 'Set up a show and sell tickets direct — keep 45%'}
+            sub={isVenue ? 'Book your room — keep 45%' : 'Sell tickets direct — keep 45%'}
             title="Event creator"
           />
         )}
@@ -268,8 +268,8 @@ export function PageRoleModules({ profile, color }: { profile: ModuleProfile; co
             color={color}
             href="/radio/studio"
             icon={icons.radio(color)}
-            sub="Schedule or go live with an audio-only radio show"
-            title="Radio show creator"
+            sub="Go live or schedule a show"
+            title="Radio show"
           />
         )}
 
@@ -277,8 +277,8 @@ export function PageRoleModules({ profile, color }: { profile: ModuleProfile; co
           <ExpandModule
             color={color}
             icon={icons.tour(color)}
-            sub="Where fan demand says you should play next"
-            title="Tour recommendations"
+            sub="Cities fans want you to play"
+            title="Tour picks"
           >
             <TourRecsBody />
           </ExpandModule>
@@ -288,8 +288,8 @@ export function PageRoleModules({ profile, color }: { profile: ModuleProfile; co
           <ExpandModule
             color={color}
             icon={icons.ads(color)}
-            sub="AI campaign ideas built from this page's profile"
-            title="Advertising recommendations"
+            sub="AI ad ideas for this page"
+            title="Ad ideas"
           >
             <AdRecsBody profileId={profile.id} />
           </ExpandModule>
