@@ -1,6 +1,6 @@
 # iHYPE — Security & Compliance Review
 
-**Reviewed:** 2026-07-11 (full-codebase verification pass on branch `claude/security-compliance-review-c9n0x0`)
+**Reviewed:** 2026-07-11, updated 2026-07-11 (remediation pass closing G-1, G-2, G-3, G-5, G-6, G-7 on branch `claude/security-compliance-review-c9n0x0`)
 **Frameworks assessed:** ISO/IEC 27002:2022, SOC 2 (Trust Services Criteria), NIST CSF 2.0, PCI DSS v4, CIS Controls v8, GDPR, ISO/IEC 27701
 
 Every "Implemented" claim below was verified against the code on this date, with file
@@ -61,8 +61,11 @@ controls below are in place.
 | Persistent audit log (actor, action, entity, IP, metadata) for security-relevant events: privacy requests/exports, age attestation, admin actions, failed admin-setup attempts | `src/lib/audit.ts`, `AuditLog` model, call sites across `src/app/api` |
 | Email delivery log with status/provider/error | `src/lib/audit.ts:45-65` |
 | Error monitoring via Sentry (server + client), with DO/rate-limit failures explicitly routed there | `sentry.*.config.ts`, `src/lib/rate-limit.ts` |
-| Scheduled ops jobs: anomaly detection, daily backup liveness check (emails admin, warns on zero counts), capacity alerts, DMCA enforcement, health endpoint | `src/app/api/cron/*`, `src/lib/anomaly-detect.ts`, `src/lib/health.ts` |
+| Scheduled ops jobs: anomaly detection, daily backup check (row counts, migration parity, write-freshness, monthly restore-drill reminder), capacity alerts, DMCA enforcement, health endpoint | `src/app/api/cron/*`, `src/lib/anomaly-detect.ts`, `src/lib/health.ts` |
 | Rate-limit abuse metrics retained for review | `src/lib/rate-limit.ts` (`rate-limit-hits:*`) |
+| Written incident-response runbook (detect/contain/72h GDPR clock/evidence sources/vendor contacts/user-notification template) | `docs/runbooks/incident-response.md` |
+| Written monthly restore-drill runbook (Supabase PITR restore to a fork, verify, teardown, record) | `docs/runbooks/backup-restore-drill.md` |
+| Written annual PCI SAQ A attestation checklist | `docs/runbooks/pci-saq-a.md` |
 
 ### Change management & secure SDLC
 | Control | Evidence |
@@ -71,12 +74,15 @@ controls below are in place.
 | Actions pinned to commit SHAs; workflow `permissions: contents: read` | `.github/workflows/ci.yml` |
 | Dependabot enabled; CodeQL scanning active at the GitHub level (alerts triaged — e.g. #32 SSRF dismissed as by-design with an in-code guard) | `.github/dependabot.yml`, DESIGN_SYNC row 189 |
 | Fail-closed migration deploy pipeline (deploy verified against `_prisma_migrations`) | DESIGN_SYNC rows 188–189, `DEPLOY.md` |
-| Production dependency audit: **0 vulnerabilities** (`npm audit --omit=dev`, 2026-07-11) | see Gap G-5 for dev-only advisories |
+| Production dependency audit: **0 vulnerabilities** (`npm audit --omit=dev`, 2026-07-11); 17 moderate advisories remain but are transitively pinned by dev-only `@sentry/nextjs`/`lighthouse` packages with no non-breaking fix available (`npm audit fix --dry-run` confirmed) | `package.json` |
 
 ### Privacy (GDPR / ISO 27701 technical measures)
 | Control | Evidence |
 |---|---|
-| Data subject rights UX: deletion, early identity detachment, hype-history wipe — each files a staff-reviewed, audit-logged, rate-limited request; 30-day response commitment published | `src/app/api/privacy/request/route.ts`, `/legal?tab=privacy` (`src/app/legal/page.tsx`) |
+| **Automated 30-day identity detachment**: daily cron strips IP addresses from audit-log entries older than the published 30-day default, sitewide; matches the copy on `/legal` and Settings exactly | `src/lib/privacy-actions.ts` (`scrubAgedAuditLogIps`), `identity-detach` cron job in `src/app/api/cron/route.ts`, scheduled in `workers/cron.ts`/`wrangler.cron.toml` |
+| **Instant self-serve detach/hype-wipe**: "detach now" and "wipe hype history" execute immediately (not just a ticket) — IP/location scrubbed or hype events deleted with aggregate `hypeCount` decremented by the exact amount removed, audit-logged | `src/lib/privacy-actions.ts` (`executeIdentityDetach`, `executeHypeWipe`), `src/app/api/privacy/request/route.ts` |
+| **Admin-executable account erasure**: staff-reviewed deletion requests are executed from the admin console (anonymization-based — deletes personal rows, scrubs embedded PII in retained financial/ticket records, anonymizes owned profiles in place, reduces the User row to a shell, kills all sessions) rather than ad-hoc manual SQL; requires a fresh admin passkey re-auth | `src/lib/privacy-actions.ts` (`executeAccountErasure`), `src/app/api/admin/privacy-requests/[id]/route.ts`, `src/components/AdminPrivacyRequestActions.tsx`, admin dashboard support-requests panel |
+| Data subject rights UX: deletion, early identity detachment, hype-history wipe — each files an audit-logged, rate-limited request (detach/hype-wipe execute instantly; deletion stays staff-reviewed); 30-day response commitment published and now backed by the automated cron above | `src/app/api/privacy/request/route.ts`, `/legal?tab=privacy` (`src/app/legal/page.tsx`) |
 | Data portability: self-serve full JSON export, authenticated, rate-limited, audit-logged | `src/app/api/privacy/export/route.ts` |
 | Consent: analytics beacon loads **only after** explicit "Accept all" (opt-in, default off; essential-only honored) | `src/components/AnalyticsBeacon.tsx`, NavShell consent banner |
 | Published privacy notice: GDPR + CCPA rights, lawful bases (contract, legitimate interest), cookie policy, no data sale, no AI training on user data | `src/app/legal/page.tsx:47-54` |
@@ -96,41 +102,47 @@ Legend: ✅ technical controls in place · 🟡 partial / gap noted · 🏢 requ
 - ✅ 8.24 cryptography in transit/at rest, 8.20 network security (TLS, HSTS, CSP)
 - ✅ 8.28 secure coding (CI gates, lint policy, CodeQL, SSRF/input validation, zod schemas)
 - ✅ 8.15/8.16 logging & monitoring (audit log, Sentry, anomaly cron)
-- ✅ 8.8 technical vulnerability management (Dependabot, CodeQL, clean prod `npm audit`) — 🟡 see G-5
+- ✅ 8.8 technical vulnerability management (Dependabot, CodeQL, clean prod `npm audit`; remaining moderate advisories are dev-only, see closed G-5)
 - ✅ 5.25/vulnerability disclosure — `/.well-known/security.txt` (RFC 9116) added in this review
-- 🏢 5.1 policies, 5.9 asset inventory, 5.19–5.23 supplier management, 6.x people controls, 5.24–5.28 incident management *process*, 5.29–5.30 continuity: require written policies and an owner — see §3
+- ✅ 5.24 incident management planning — `docs/runbooks/incident-response.md` (closed G-6)
+- ✅ 5.29–5.30 continuity — `docs/runbooks/backup-restore-drill.md` (closed G-2)
+- 🏢 5.1 policies, 5.9 asset inventory, 5.19–5.23 supplier management, 6.x people controls: still require an owner beyond code — see §3 (G-8)
 
 ### SOC 2 (Trust Services Criteria)
 - ✅ CC6 logical access (auth, RBAC, session revocation, fail-closed secrets)
 - ✅ CC7.1–7.2 monitoring (Sentry, anomaly detection, audit trail, admin login alerts)
 - ✅ CC8 change management *tooling* (PR-gated CI, pinned actions, protected main via PR flow)
-- 🟡 A1 availability: rate-limit fail-degraded design, health checks, capacity alerts exist; backup verification is a liveness count, not a restore test (G-2)
-- 🏢 SOC 2 is an *attestation of an org over an audit period*: needs written policies, risk assessment, vendor reviews, access-review cadence, incident-response runbook, and a CPA audit. The code provides evidence; it cannot provide the attestation.
+- ✅ A1 availability: rate-limit fail-degraded design, health checks, capacity alerts, backup check now verifies migration parity + write-freshness and reminds on the monthly restore drill (closed G-2); the drill itself is a process action (§3)
+- ✅ CC7.3–7.5 incident response — written runbook with the 72h GDPR clock, evidence sources, vendor contacts, notification template (closed G-6)
+- 🏢 SOC 2 is an *attestation of an org over an audit period*: needs written policies, risk assessment, vendor reviews, access-review cadence, and a CPA audit. The code and runbooks now provide the evidence trail; they cannot provide the attestation itself.
 
 ### NIST CSF 2.0
 - ✅ PROTECT and DETECT functions are the strongest: see IAM, network, logging tables above
+- ✅ RESPOND/RECOVER: written incident-response runbook and a restore-drill runbook with a monthly cron reminder now exist (closed G-2, G-6)
 - 🟡 IDENTIFY: this document + export deny-list serve as a de-facto data inventory; no formal asset/risk register (🏢)
-- 🟡 RESPOND/RECOVER: alerts and backup-liveness exist; no written incident-response or recovery plan (G-2, G-6)
 - 🏢 GOVERN (new in 2.0): explicitly organizational — roles, policy, supply-chain risk strategy
 
 ### PCI DSS v4
 - ✅ Architecture is **SAQ A shaped**: card data is entered only into Stripe.js iframes; iHYPE stores only opaque Stripe IDs (customer/payment-intent/connect-account), which the data export additionally refuses to emit; webhooks verified; test-mode keys blocked in prod
 - ✅ Requirement 4 (encrypt in transit), 6 (secure SLDC), 8 (auth), 10 (logging) technical portions
-- 🏢 G-7: the actual SAQ A self-assessment questionnaire + attestation of compliance must be completed in the Stripe dashboard annually; confirm no card PANs can appear in logs (none found — the server never receives them)
+- ✅ Annual attestation checklist written — `docs/runbooks/pci-saq-a.md` (closed G-7's code side)
+- 🏢 G-7: the actual SAQ A self-assessment questionnaire + attestation of compliance must still be *completed* in the Stripe dashboard annually (a process action the runbook cannot do on your behalf); confirm no card PANs can appear in logs (none found — the server never receives them)
 
 ### CIS Controls v8
 - ✅ 3 data protection, 4 secure configuration (headers, fail-closed defaults), 6 access control, 8 audit logs, 13 network monitoring (partial), 16 application software security
+- ✅ 17 incident response — written runbook (closed G-6)
 - 🟡 7 continuous vulnerability management: Dependabot + CodeQL cover code; no scheduled external pentest (🏢 G-8)
-- 🏢 1–2 inventories, 14 security awareness training, 17 incident response
+- 🏢 1–2 inventories, 14 security awareness training
 
 ### GDPR
 - ✅ Art. 12–23 rights plumbing: access/portability (export), erasure/restriction (request flow), published 30-day SLA, no-cost exercise
 - ✅ Art. 25 data protection by design: minimization (passwordless, Stripe-held payment data), opt-in analytics consent, audit logging
 - ✅ Art. 32 security of processing: see technical tables
 - ✅ Art. 8 children: 13+ gate; 18+ gate for financial features
-- 🟡 **G-1 (real gap):** product copy promises a "default 30-day window" after which identity is detached from activity logs, but no code implements automated detachment — the only path is the manual support request. Either build the automated job or fix the copy; as written it is an unkept processing promise (Art. 5(1)(a) fairness/transparency risk).
-- 🟡 G-3: erasure/detachment execution is fully manual with no admin tooling or SLA tracking — workable at current scale, but the 30-day clock is only as reliable as the inbox
-- 🏢 Art. 30 records of processing, Art. 28 DPAs with processors (Supabase, Cloudflare, Stripe, Resend, Sentry), breach-notification procedure (Art. 33: 72 h), DPO/representative decision — see §3
+- ✅ **G-1 closed:** the published "default 30-day window" for identity detachment is now implemented by a daily cron (`identity-detach`), and self-serve "detach now" executes instantly instead of only filing a ticket. Copy in Settings and Support → Privacy corrected to describe the real mechanism (IP/location scrub, not "verification link deletion").
+- ✅ **G-3 closed:** erasure/detachment/hype-wipe are now admin-executable from the console with a passkey-reauth gate and full audit trail, instead of ad-hoc manual SQL.
+- ✅ Art. 33 breach-notification procedure — `docs/runbooks/incident-response.md` §3 (closed G-6)
+- 🏢 Art. 30 records of processing, Art. 28 DPAs with processors (Supabase, Cloudflare, Stripe, Resend, Sentry), DPO/representative decision — organizational, see §3 (G-8)
 
 ### ISO/IEC 27701 (privacy information management)
 - ✅ Technical PII controls map from the GDPR row above (minimization, consent, rights, export deny-list as PII inventory)
@@ -142,16 +154,17 @@ Legend: ✅ technical controls in place · 🟡 partial / gap noted · 🏢 requ
 
 | # | Gap | Severity | Owner | Status |
 |---|---|---|---|---|
-| G-1 | **Promised 30-day identity detachment is not implemented** — legal copy and the "detach early" support flow both reference a default 30-day detach window; no cron/job performs it. Implement an automated detach job or amend the copy. | High (policy/implementation mismatch) | code | Open |
-| G-2 | Backup verification (`api/cron/backup-verify`) checks row-count liveness only — it never exercises a restore. Schedule a periodic real restore drill (Supabase PITR restore to a branch, verify counts/checksums). | Medium | code + process | Open |
-| G-3 | No admin tooling to execute privacy requests (deletion cascade / detachment / hype-wipe with aggregate-counter handling); execution is ad-hoc manual SQL. Build an admin "execute privacy request" action with audit trail + SLA countdown. | Medium | code | Open |
 | G-4 | CSP allows `style-src 'unsafe-inline'` (Next.js inline styles) and broad `img-src https:` (user-supplied avatar URLs, documented in-code). Accepted risk; revisit if Next.js style-nonce support matures. | Low | code | Accepted |
-| G-5 | 17 moderate `npm audit` advisories, all **dev-only** (`@opentelemetry/core <2.8.0` transitively under `@sentry/nextjs` instrumentation and `lighthouse`); production audit (`--omit=dev`) is clean. Clears when Sentry bumps its pins — do not `audit fix --force`. | Low | code | Watching |
-| G-6 | No written incident-response / breach-notification runbook (GDPR Art. 33 72-hour clock; SOC 2 CC7.3–7.5; CIS 17). One page is enough at this scale: who is notified, where evidence lives (AuditLog + Sentry), Supabase/Cloudflare/Stripe support contacts, user-notification template. | Medium | process | Open |
-| G-7 | PCI SAQ A self-assessment + attestation not on record — complete annually in the Stripe dashboard. | Medium | process | Open |
-| G-8 | Organizational program for any certification path (SOC 2 / ISO 27001 / 27701): written policies, risk register, DPAs & subprocessor list, access-review cadence, external pentest. Sequencing recommendation stands: PCI SAQ (G-7) → GDPR gaps (G-1, G-3, G-6) → unified SOC2/NIST/CIS program → ISO certification only if contractually required. | — | organization | Open |
+| G-7 (process half) | PCI SAQ A self-assessment must still be **completed and submitted** in the Stripe dashboard annually — the checklist (`docs/runbooks/pci-saq-a.md`) cannot do this step for you. | Medium | process | Open — action required outside this repo |
+| G-8 | Organizational program for any certification path (SOC 2 / ISO 27001 / 27701): written policies, risk register, DPAs & subprocessor list, access-review cadence, external pentest. Sequencing recommendation stands: PCI SAQ (G-7) → unified SOC2/NIST/CIS program → ISO certification only if contractually required. | — | organization | Open |
 
-### Closed in this review
+### Closed in this review (2026-07-11, remediation pass)
+- ✅ **G-1 — identity detachment.** Added `scrubAgedAuditLogIps()` + the `identity-detach` daily cron (`src/lib/privacy-actions.ts`, `src/app/api/cron/route.ts`, scheduled in `workers/cron.ts` and `wrangler.cron.toml`) so the published 30-day default is real. `executeIdentityDetach()` makes self-serve "detach now" run immediately instead of only filing a ticket. Corrected copy in `src/app/settings/page.tsx` and `src/components/SupportPrivacyPanel.tsx` that falsely claimed the mechanism was "deleting your email verification link" — it's an IP/location scrub of the activity log.
+- ✅ **G-3 — admin execution tooling.** `src/lib/privacy-actions.ts` adds `executeHypeWipe()` (deletes hype events, decrements the exact matching `hypeCount` on each affected show/profile, clamps against drift) and `executeAccountErasure()` (anonymization-based: deletes purely-personal rows, scrubs PII embedded in retained financial/ticket records, anonymizes owned profiles in place rather than cascading their deletion — which would have destroyed other people's ticket/payout history — reduces the User row to an inert shell, kills all sessions via `userSecurityVersion`; refuses to run on ADMIN accounts). Wired to a new admin-only route (`src/app/api/admin/privacy-requests/[id]/route.ts`, passkey-reauth gated) and a console action (`src/components/AdminPrivacyRequestActions.tsx`) surfaced on the existing support-requests panel. detach/hype-wipe requests now auto-execute at submission and land in the queue already `DONE`; only deletion stays `OPEN` for a human to trigger. 6 unit tests added (`src/lib/__tests__/privacy-actions.test.ts`) covering the ADMIN-account refusal, counter-decrement math, embedded-PII scrubbing, and in-place profile anonymization.
+- ✅ **G-2 — backup verification.** `src/app/api/cron/backup-verify/route.ts` now also checks `_prisma_migrations` parity and audit-log write-freshness (catches silent write failures a pure row-count can't), and flags the 1st of each month as "restore drill due." Added `docs/runbooks/backup-restore-drill.md` — the actual monthly restore-to-a-fork procedure, which no cron can execute for you.
+- ✅ **G-5 — dependency advisories investigated.** `npm audit fix --dry-run` confirmed the 17 moderate advisories have no non-breaking fix available (they're transitively pinned by `@sentry/nextjs` and `lighthouse`, both dev-only); left as-is per the original recommendation rather than force-upgrading and risking breakage.
+- ✅ **G-6 — incident response.** `docs/runbooks/incident-response.md`: detection signals, containment steps (session kill via `userSecurityVersion`, secret rotation), the GDPR Art. 33 72-hour clock, an evidence-source list (AuditLog/Sentry/Supabase/Cloudflare/Stripe/Resend/GitHub) with retention caveats, vendor support contacts, and a user-notification template.
+- ✅ **G-7 (code half) — PCI SAQ A.** `docs/runbooks/pci-saq-a.md`: annual checklist confirming the SAQ A architecture still holds, plus the Stripe-dashboard completion steps. The attestation submission itself remains a process action (see table above).
 - ✅ Added `/.well-known/security.txt` (RFC 9116 vulnerability-disclosure contact, `admin@ihype.org`, expires 2027-07-01) — ISO 27002 5.25 / CIS 7 / NIST CSF RS.MA channel.
 - ✅ Corrected a misleading `sentry.client.config.ts` comment claiming payment routes are traced "at full rate" (code samples auth/register/shows at 50%; payment routes were never in the list).
 - ✅ This document (the framework map referenced by DESIGN_SYNC row 93 was never committed to this repo).
@@ -164,5 +177,7 @@ Legend: ✅ technical controls in place · 🟡 partial / gap noted · 🏢 requ
 2. Never store card numbers, bank details, or government IDs — Stripe holds them. If a new field could contain a secret or third-party PII, add it to `OMITTED_EXPORT_KEYS` in the privacy export in the same PR.
 3. Outbound fetches to user-supplied URLs must go through `validatePublicHttpUrl` (`src/lib/safe-external-url.ts`).
 4. Bearer-token-gated endpoints must use `verifyBearerToken` (constant-time, fails closed on missing secret).
-5. Any change to the promises on `/legal` (rights, SLAs, retention windows) requires a matching implementation, and vice versa — G-1 is what happens otherwise.
+5. Any change to the promises on `/legal` (rights, SLAs, retention windows) requires a matching implementation in `src/lib/privacy-actions.ts` and vice versa — a copy/code mismatch here is a GDPR Art. 5(1)(a) fairness risk, not just a bug.
 6. Keep `security.txt` `Expires:` current (annual refresh).
+7. Account/profile deletion must always go through `executeAccountErasure()` (anonymize in place) — never add a `db.user.delete()` or `db.profile.delete()` path; cascades would destroy other people's ticket, payout, and show history.
+8. Run the monthly restore drill (`docs/runbooks/backup-restore-drill.md`) and the annual PCI SAQ A checklist (`docs/runbooks/pci-saq-a.md`) on schedule — the crons remind you, but the actions themselves are manual.

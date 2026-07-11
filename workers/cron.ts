@@ -38,6 +38,7 @@ const JOBS: CronJob[] = [
   { path: '/api/cron?job=expire-ads',       schedule: '0 2 * * *'    },
   { path: '/api/cron?job=session-cleanup',  schedule: '0 3 * * *'    },
   { path: '/api/cron?job=push-cleanup',     schedule: '0 3 * * *'    },
+  { path: '/api/cron?job=identity-detach',  schedule: '0 3 * * *'    },
   { path: '/api/cron?job=feature-shows',    schedule: '0 6 * * *'    },
 
   // Weekly jobs — Monday morning
