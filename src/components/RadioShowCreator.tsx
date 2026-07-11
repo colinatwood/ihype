@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { DragEvent } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, postJson } from '@/lib/api-client';
 import {
@@ -57,6 +57,14 @@ type RecorderState =
   | { phase: 'processing' }
   | { phase: 'done'; url: string; durationSecs: number };
 
+function PreviewIcon({ playing }: { playing: boolean }) {
+  return playing ? (
+    <svg fill="currentColor" height="12" viewBox="0 0 24 24" width="12"><rect height="16" width="4" x="6" y="4" /><rect height="16" width="4" x="14" y="4" /></svg>
+  ) : (
+    <svg fill="currentColor" height="12" viewBox="0 0 24 24" width="12"><path d="M7 4v16l13-8z" /></svg>
+  );
+}
+
 export function RadioShowCreator({ initialCrate, profile }: { initialCrate: CrateTrack[]; profile: DjProfile }) {
   const router = useRouter();
   const [title, setTitle] = useState('Untitled show');
@@ -71,6 +79,7 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
   const [saving, setSaving] = useState<'draft' | 'schedule' | 'live' | null>(null);
   const [recorder, setRecorder] = useState<RecorderState>({ phase: 'idle' });
   const [samplePicker, setSamplePicker] = useState(false);
+  const [adPreviewClips, setAdPreviewClips] = useState<ShowAdClip[] | null>(null);
   const [adPlan, setAdPlan] = useState<DjAdPlan | null>(null);
   const scopeTouchedRef = useRef(false);
 
@@ -89,10 +98,13 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
   }, []);
 
   const dragRef = useRef<DragPayload | null>(null);
+  const timelineBodyRef = useRef<HTMLDivElement | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<BlobPart[]>([]);
   const padCounterRef = useRef(0);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
 
   function showToast(msg: string) {
     setToast(msg);
@@ -138,6 +150,32 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
     showToast(`Added “${t.title}” to the show`);
   }
 
+  // Preview: a single shared <audio> element auditions whichever sample or
+  // ad clip the DJ taps play on — in the sample picker and the ad-break
+  // preview modal — before it commits to the show.
+  function togglePreview(previewId: string, url: string) {
+    const audio = previewAudioRef.current;
+    if (!audio) return;
+    if (previewingId === previewId) {
+      audio.pause();
+      setPreviewingId(null);
+      return;
+    }
+    audio.src = url;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+    setPreviewingId(previewId);
+  }
+  function stopPreview() {
+    previewAudioRef.current?.pause();
+    setPreviewingId(null);
+  }
+
+  function closeSamplePicker() {
+    setSamplePicker(false);
+    stopPreview();
+  }
+
   function addSample(sample: ShowSamplePad) {
     padCounterRef.current = (padCounterRef.current % 16) + 1;
     const instance: ShowSamplePad = { ...sample, assignedPad: padCounterRef.current };
@@ -145,58 +183,93 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
       ...b,
       { uid: uid(), kind: 'SAMPLE', label: sample.title, sub: 'Free-use · cleared', dur: 6, color: TYPE_META.SAMPLE.color, samplePad: instance },
     ]);
-    setSamplePicker(false);
+    closeSamplePicker();
     showToast(`Added “${sample.title}” sample`);
   }
 
-  function addAdBreak() {
+  function openAdPreview() {
     const clips = buildAutoAdBreak(scope, adPlan?.breakDurationSecs ?? 90);
     if (!clips.length) {
       showToast('No ad clips available for this scope yet');
       return;
     }
+    setAdPreviewClips(clips);
+  }
+  function closeAdPreview() {
+    setAdPreviewClips(null);
+    stopPreview();
+  }
+  function confirmAdBreak() {
+    const clips = adPreviewClips;
+    if (!clips?.length) return;
     const dur = clips.reduce((s, c) => s + (c.durationSeconds ?? 0), 0);
     setBlocks((b) => [
       ...b,
       { uid: uid(), kind: 'AD', label: `Ad break · ${scope}`, sub: `${clips.length} spot${clips.length > 1 ? 's' : ''}`, dur, color: TYPE_META.AD.color, adClips: clips },
     ]);
-    showToast(`Auto-filled a ${fmt(dur)} ad break from the placeholder ad catalog`);
+    showToast(`Added a ${fmt(dur)} ad break to the timeline`);
+    closeAdPreview();
   }
 
   function removeBlock(u: string) {
     setBlocks((b) => b.filter((x) => x.uid !== u));
   }
 
-  function onDragStartCrate(t: CrateTrack, e: DragEvent) {
-    dragRef.current = { kind: 'crate', track: t };
-    e.dataTransfer.effectAllowed = 'copy';
-  }
-  function onDragStartBlock(i: number, e: DragEvent) {
-    dragRef.current = { kind: 'block', index: i };
-    e.dataTransfer.effectAllowed = 'move';
-  }
-  function onDragEnd() {
-    dragRef.current = null;
-    setOverIndex(null);
-  }
-  function onTimelineDragOver(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    const items = [...e.currentTarget.querySelectorAll('[data-block]')] as HTMLElement[];
+  // Pointer Events (not the HTML5 drag-and-drop API) drive both the
+  // crate→timeline insert and the in-timeline reorder. The native
+  // draggable/dragstart/dragover/drop events this used to run on never fire
+  // from touch input on iOS or Android — only from a mouse — so on a phone
+  // the whole feature silently did nothing. Pointer Events unify
+  // mouse/touch/pen behind one API and support setPointerCapture, so the
+  // grip that starts the gesture keeps receiving move/up events for its
+  // duration no matter where the finger travels on screen.
+  function computeOverIndexAt(clientY: number): number | null {
+    const container = timelineBodyRef.current;
+    if (!container) return null;
+    const items = [...container.querySelectorAll('[data-block]')] as HTMLElement[];
     let idx = items.length;
     for (let i = 0; i < items.length; i++) {
       const r = items[i].getBoundingClientRect();
-      if (e.clientY < r.top + r.height / 2) {
+      if (clientY < r.top + r.height / 2) {
         idx = i;
         break;
       }
     }
-    setOverIndex(idx);
+    return idx;
   }
-  function onTimelineDrop(e: DragEvent<HTMLDivElement>) {
+  function isPointOverTimeline(x: number, y: number): boolean {
+    const el = timelineBodyRef.current;
+    if (!el) return false;
+    const r = el.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
+  function beginDrag(payload: DragPayload, e: ReactPointerEvent<HTMLElement>) {
+    dragRef.current = payload;
+    e.currentTarget.setPointerCapture(e.pointerId);
     e.preventDefault();
+  }
+  function onCratePointerDown(t: CrateTrack, e: ReactPointerEvent<HTMLElement>) {
+    beginDrag({ kind: 'crate', track: t }, e);
+  }
+  function onBlockPointerDown(i: number, e: ReactPointerEvent<HTMLElement>) {
+    beginDrag({ kind: 'block', index: i }, e);
+  }
+  function onDragPointerMove(e: ReactPointerEvent<HTMLElement>) {
+    if (!dragRef.current) return;
+    e.preventDefault();
+    const over = isPointOverTimeline(e.clientX, e.clientY);
+    setOverIndex(over ? computeOverIndexAt(e.clientY) : null);
+  }
+  function onDragPointerUp(e: ReactPointerEvent<HTMLElement>) {
     const d = dragRef.current;
-    const idx = overIndex == null ? blocks.length : overIndex;
-    if (d?.kind === 'crate') {
+    dragRef.current = null;
+    setOverIndex(null);
+    if (!d) return;
+    const over = isPointOverTimeline(e.clientX, e.clientY);
+    if (!over) return; // released outside the timeline — cancel, nothing moves
+    const idx = computeOverIndexAt(e.clientY) ?? blocks.length;
+
+    if (d.kind === 'crate') {
       const t = d.track;
       setBlocks((b) => {
         const nb = [...b];
@@ -204,7 +277,7 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
         return nb;
       });
       showToast(`Placed “${t.title}” in the timeline`);
-    } else if (d?.kind === 'block') {
+    } else {
       setBlocks((b) => {
         const nb = [...b];
         const [moved] = nb.splice(d.index, 1);
@@ -214,6 +287,8 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
         return nb;
       });
     }
+  }
+  function onDragPointerCancel() {
     dragRef.current = null;
     setOverIndex(null);
   }
@@ -454,7 +529,7 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
       </div>
 
       <div className="rsc-body">
-        <div className="rsc-panel">
+        <div className="rsc-panel rsc-crate-col">
           <div className="rsc-panel-head">
             <span className="rsc-panel-title">Your crate · {initialCrate.length} cleared</span>
             <span className="rsc-drag-hint">Drag →</span>
@@ -464,8 +539,14 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
               <p className="rsc-empty-note">No free-use tracks yet. Upload some from your DJ page&apos;s Crate tab.</p>
             ) : (
               initialCrate.map((t) => (
-                <div className="rsc-crate-item" draggable key={t.hexId} onDragEnd={onDragEnd} onDragStart={(e) => onDragStartCrate(t, e)}>
-                  <span className="rsc-grip">
+                <div className="rsc-crate-item" key={t.hexId}>
+                  <span
+                    className="rsc-grip"
+                    onPointerCancel={onDragPointerCancel}
+                    onPointerDown={(e) => onCratePointerDown(t, e)}
+                    onPointerMove={onDragPointerMove}
+                    onPointerUp={onDragPointerUp}
+                  >
                     <svg fill="currentColor" height="12" viewBox="0 0 24 24" width="12"><circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" /></svg>
                   </span>
                   <div className="rsc-crate-art" style={{ background: 'linear-gradient(135deg,#ff3e9a,#b983ff)' }} />
@@ -497,6 +578,7 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
             {recorder.phase === 'done' && (
               <div className="rsc-recording-card">
                 <span>Recorded · {fmt(recorder.durationSecs)}</span>
+                <audio className="rsc-vo-preview" controls src={recorder.url} />
                 <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                   <button className="rsc-btn rsc-btn-solid" onClick={placeVoiceover} type="button">Add to timeline</button>
                   <button className="rsc-btn rsc-btn-ghost" onClick={discardRecording} type="button">Discard</button>
@@ -514,12 +596,12 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
           </div>
         </div>
 
-        <div>
+        <div className="rsc-timeline-col">
           <div className="rsc-panel">
             <div className="rsc-panel-head">
               <span className="rsc-panel-title">Show timeline</span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="rsc-ad-btn" onClick={addAdBreak} type="button">
+                <button className="rsc-ad-btn" onClick={openAdPreview} type="button">
                   <svg fill="none" height="13" stroke="currentColor" strokeLinecap="round" strokeWidth="2.2" viewBox="0 0 24 24" width="13"><path d="M12 5v14M5 12h14" /></svg>
                   Ad break · ~1:30
                 </button>
@@ -534,7 +616,7 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
                 ))}
               </div>
             )}
-            <div className="rsc-panel-body rsc-tl-scroll" onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverIndex(null); }} onDragOver={onTimelineDragOver} onDrop={onTimelineDrop}>
+            <div className="rsc-panel-body rsc-tl-scroll" ref={timelineBodyRef}>
               {blocks.length === 0 && (
                 <div className="rsc-tl-empty">
                   <svg fill="none" height="40" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4" viewBox="0 0 24 24" width="40"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
@@ -548,7 +630,16 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
                 return (
                   <div key={b.uid}>
                     {overIndex === i && <div className="rsc-drop-line" />}
-                    <div className={b.kind === 'AD' ? 'rsc-tl-item rsc-tl-item-ad' : 'rsc-tl-item'} data-block draggable onDragEnd={onDragEnd} onDragStart={(e) => onDragStartBlock(i, e)}>
+                    <div className={b.kind === 'AD' ? 'rsc-tl-item rsc-tl-item-ad' : 'rsc-tl-item'} data-block>
+                      <span
+                        className="rsc-tl-grip"
+                        onPointerCancel={onDragPointerCancel}
+                        onPointerDown={(e) => onBlockPointerDown(i, e)}
+                        onPointerMove={onDragPointerMove}
+                        onPointerUp={onDragPointerUp}
+                      >
+                        <svg fill="currentColor" height="12" viewBox="0 0 24 24" width="12"><circle cx="9" cy="6" r="1.6" /><circle cx="15" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" /><circle cx="15" cy="18" r="1.6" /></svg>
+                      </span>
                       <span className="rsc-tl-pos">{fmt(starts[i])}</span>
                       <span className="rsc-tl-type" style={{ background: meta.color }} />
                       <div className="rsc-tl-main">
@@ -594,26 +685,75 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
       </div>
 
       {samplePicker && (
-        <div className="rsc-modal-wrap" onClick={(e) => { if (e.target === e.currentTarget) setSamplePicker(false); }}>
+        <div className="rsc-modal-wrap" onClick={(e) => { if (e.target === e.currentTarget) closeSamplePicker(); }}>
           <div className="rsc-modal">
             <div className="rsc-modal-head">
               <span>Add a sample</span>
-              <span onClick={() => setSamplePicker(false)} style={{ cursor: 'pointer' }}>×</span>
+              <span onClick={closeSamplePicker} style={{ cursor: 'pointer' }}>×</span>
             </div>
             <div className="rsc-modal-body">
               {royaltyFreeSampleClips.map((sample) => (
-                <button className="rsc-sample-row" key={sample.sampleId} onClick={() => addSample(sample)} type="button">
+                <div className="rsc-sample-row" key={sample.sampleId}>
+                  <button
+                    className="rsc-sample-preview"
+                    onClick={() => togglePreview(sample.sampleId, sample.url)}
+                    title={previewingId === sample.sampleId ? 'Pause preview' : 'Preview sample'}
+                    type="button"
+                  >
+                    <PreviewIcon playing={previewingId === sample.sampleId} />
+                  </button>
                   <span className="rsc-sample-swatch" style={{ background: sample.colorHex ?? '#22e5d4' }} />
-                  <div style={{ flex: 1, textAlign: 'left' }}>
+                  <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                     <div style={{ fontWeight: 700, fontSize: 13 }}>{sample.title}</div>
                     <div style={{ fontSize: 11, color: 'rgba(240,235,229,.5)' }}>{sample.category ?? 'fx'} · {sample.notes}</div>
                   </div>
-                </button>
+                  <button className="rsc-sample-add" onClick={() => addSample(sample)} title="Add to show" type="button">
+                    <svg fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeWidth="2.2" viewBox="0 0 24 24" width="14"><path d="M12 5v14M5 12h14" /></svg>
+                  </button>
+                </div>
               ))}
             </div>
           </div>
         </div>
       )}
+
+      {adPreviewClips && (
+        <div className="rsc-modal-wrap" onClick={(e) => { if (e.target === e.currentTarget) closeAdPreview(); }}>
+          <div className="rsc-modal">
+            <div className="rsc-modal-head">
+              <span>Preview ad break</span>
+              <span onClick={closeAdPreview} style={{ cursor: 'pointer' }}>×</span>
+            </div>
+            <div className="rsc-modal-body">
+              <p className="rsc-fineprint" style={{ margin: '0 4px 4px' }}>
+                Auto-picked from the placeholder ad catalog for &quot;{scope}&quot; reach — preview each spot, then add the break to your timeline.
+              </p>
+              {adPreviewClips.map((clip) => (
+                <div className="rsc-sample-row" key={clip.clipId}>
+                  <button
+                    className="rsc-sample-preview"
+                    onClick={() => togglePreview(clip.clipId, clip.url)}
+                    title={previewingId === clip.clipId ? 'Pause preview' : 'Preview ad'}
+                    type="button"
+                  >
+                    <PreviewIcon playing={previewingId === clip.clipId} />
+                  </button>
+                  <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>{clip.title}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(240,235,229,.5)' }}>{clip.scope} · :{clip.durationSeconds ?? 0}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, padding: '0 14px 14px' }}>
+              <button className="rsc-btn rsc-btn-solid" onClick={confirmAdBreak} type="button">Add to timeline</button>
+              <button className="rsc-btn rsc-btn-ghost" onClick={closeAdPreview} type="button">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <audio onEnded={() => setPreviewingId(null)} ref={previewAudioRef} style={{ display: 'none' }} />
 
       {toast && <div className="rsc-toast">{toast}</div>}
 
@@ -639,16 +779,22 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
         .rsc-stat .v { font-family: var(--font-display); font-weight: 800; font-size: 20px; }
         .rsc-stat .l { font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .12em; color: rgba(240,235,229,.55); margin-top: 3px; }
         .rsc-body { display: grid; grid-template-columns: 340px 1fr; gap: 24px; padding: 26px 32px 0; align-items: start; }
-        @media (max-width: 820px) { .rsc-body { grid-template-columns: 1fr; } }
+        @media (max-width: 820px) {
+          .rsc-body { grid-template-columns: 1fr; }
+          /* Timeline first on mobile — crate tracks to drag/tap in sit below it. */
+          .rsc-timeline-col { order: 1; }
+          .rsc-crate-col { order: 2; }
+        }
         .rsc-panel { border: 1px solid rgba(255,255,255,.07); border-radius: 14px; background: var(--bg2); overflow: hidden; }
         .rsc-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.06); }
         .rsc-panel-title { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; color: rgba(240,235,229,.6); }
         .rsc-drag-hint { font-family: var(--font-mono); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; color: rgba(240,235,229,.5); }
         .rsc-panel-body { padding: 12px; }
         .rsc-empty-note { font-size: 12px; color: rgba(240,235,229,.5); padding: 8px 4px; }
-        .rsc-crate-item { display: flex; gap: 11px; align-items: center; padding: 9px 10px; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.02); margin-bottom: 8px; cursor: grab; }
+        .rsc-crate-item { display: flex; gap: 11px; align-items: center; padding: 9px 10px; border: 1px solid rgba(255,255,255,.06); border-radius: 9px; background: rgba(255,255,255,.02); margin-bottom: 8px; }
         .rsc-crate-item:hover { background: var(--bg3); border-color: rgba(255,255,255,.12); }
-        .rsc-grip { color: rgba(240,235,229,.28); flex-shrink: 0; display: flex; }
+        .rsc-grip { color: rgba(240,235,229,.28); flex-shrink: 0; display: flex; padding: 6px; margin: -6px; cursor: grab; touch-action: none; }
+        .rsc-grip:active { cursor: grabbing; }
         .rsc-crate-art { width: 40px; height: 40px; border-radius: 7px; flex-shrink: 0; }
         .rsc-crate-info { flex: 1; min-width: 0; }
         .rsc-crate-info h5 { font-family: var(--font-display); font-weight: 800; font-size: 13px; margin: 0 0 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -663,12 +809,15 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
         .rsc-upload-t { font-family: var(--font-display); font-weight: 800; font-size: 13px; }
         .rsc-upload-s { font-size: 11px; color: rgba(240,235,229,.55); margin-top: 1px; }
         .rsc-recording-card { padding: 12px; border-radius: 10px; background: rgba(255,80,41,.08); border: 1px solid rgba(255,80,41,.25); margin-bottom: 8px; font-size: 13px; }
+        .rsc-vo-preview { display: block; width: 100%; margin-top: 8px; }
         .rsc-rec-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-right: 6px; animation: rsc-pulse 1s ease-in-out infinite; }
         @keyframes rsc-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
         .rsc-fineprint { font-size: 11px; color: rgba(240,235,229,.5); line-height: 1.55; margin: 6px 4px 0; }
         .rsc-tl-scroll { min-height: 320px; }
-        .rsc-tl-item { position: relative; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid rgba(255,255,255,.07); border-radius: 10px; background: rgba(255,255,255,.02); margin-bottom: 9px; cursor: grab; }
+        .rsc-tl-item { position: relative; display: flex; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid rgba(255,255,255,.07); border-radius: 10px; background: rgba(255,255,255,.02); margin-bottom: 9px; }
         .rsc-tl-item-ad { background: rgba(255,80,41,.05); border-color: rgba(255,80,41,.22); align-items: flex-start; }
+        .rsc-tl-grip { color: rgba(240,235,229,.32); flex-shrink: 0; display: flex; align-self: center; padding: 6px; margin: -6px 0; cursor: grab; touch-action: none; }
+        .rsc-tl-grip:active { cursor: grabbing; }
         .rsc-tl-pos { font-family: var(--font-mono); font-size: 10px; color: rgba(240,235,229,.55); width: 42px; flex-shrink: 0; text-align: right; }
         .rsc-tl-type { width: 8px; align-self: stretch; border-radius: 4px; flex-shrink: 0; }
         .rsc-tl-main { flex: 1; min-width: 0; }
@@ -702,9 +851,12 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
         .rsc-modal { width: 100%; max-width: 420px; background: var(--bg2); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; overflow: hidden; max-height: 80vh; overflow-y: auto; }
         .rsc-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,.06); font-family: var(--font-display); font-weight: 800; font-size: 15px; }
         .rsc-modal-body { padding: 10px; display: flex; flex-direction: column; gap: 6px; }
-        .rsc-sample-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 9px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.02); cursor: pointer; }
+        .rsc-sample-row { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 9px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.02); }
         .rsc-sample-row:hover { background: var(--bg3); }
         .rsc-sample-swatch { width: 28px; height: 28px; border-radius: 7px; flex-shrink: 0; }
+        .rsc-sample-preview, .rsc-sample-add { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; border: 1px solid rgba(255,255,255,.14); background: transparent; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .rsc-sample-preview:hover { background: rgba(34,229,212,.14); border-color: rgba(34,229,212,.4); color: #22e5d4; }
+        .rsc-sample-add:hover { background: rgba(255,62,154,.14); border-color: rgba(255,62,154,.4); color: #ff3e9a; }
         .rsc-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid rgba(34,229,212,.35); color: var(--ink); padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 1100; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
       `}</style>
     </div>
