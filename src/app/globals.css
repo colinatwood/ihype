@@ -1,4 +1,7 @@
 :root {
+  /* Match native controls (scrollbars, selects, date pickers) to the dark
+     UI. Flipped to `light` under [data-theme="light"] below. */
+  color-scheme: dark;
   /* ── Surfaces (warm near-black, low → high elevation) ─────────────── */
   --bg:    #0a0805;
   --bg-2:  #100d09;
@@ -147,6 +150,7 @@
 
 /* Opt-in light theme. Dark is canonical. */
 [data-theme="light"] {
+  color-scheme: light;
   --bg:    #f5f2ed;
   --bg-2:  #ede9e2;
   --bg-3:  #e4dfd6;
@@ -157,6 +161,29 @@
   --ink-4: #b0a898;
   --line:   rgba(0,0,0,.08);
   --line-2: rgba(0,0,0,.16);
+}
+
+/* The default `body` rule hardcodes a dark gradient (see far below), which
+   otherwise overrides the light --bg token and leaves light mode rendering
+   dark-on-light. Mirror that rule's structure — two soft brand-tinted
+   radials over a vertical base — in warm light tones so the shipped theme
+   toggle actually works. Dark mode is untouched. */
+[data-theme="light"] body {
+  background:
+    radial-gradient(circle at top, rgba(255, 80, 41, 0.06), transparent 24%),
+    radial-gradient(circle at 82% 18%, rgba(185, 131, 255, 0.05), transparent 20%),
+    linear-gradient(180deg, #f7f4ef 0%, #f2ede6 42%, #ece6dd 100%);
+  /* A later `body` rule hardcodes near-white text; restore dark ink so
+     default/inherited copy is readable on the light background. */
+  color: var(--ink);
+}
+/* The decorative background grid draws near-white lines for the dark UI;
+   swap to faint dark lines so the texture survives in light mode. */
+[data-theme="light"] .site-background {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 52px 52px;
 }
 
 /* Reduced-motion: neutralize all animation so vestibular users aren't affected. */
@@ -177,7 +204,7 @@ html {
   scroll-behavior: smooth;
 }
 html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: var(--f-b, 'DM Sans', 'Segoe UI', sans-serif); }
-::selection { background: rgba(255,80,41,.22); color: #f0ebe5; }
+::selection { background: rgba(255,80,41,.22); color: var(--ink); }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 button, input, select, textarea { font: inherit; }
