@@ -276,6 +276,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ok: true, deleted: result.count });
     }
 
+    case 'identity-detach': {
+      // Published privacy promise (/legal, Support → Privacy): identity
+      // metadata is detached from activity logs after 30 days by default.
+      const { scrubAgedAuditLogIps } = await import('@/lib/privacy-actions');
+      const scrubbed = await scrubAgedAuditLogIps();
+      await pingCronAlive('identity-detach');
+      return NextResponse.json({ ok: true, scrubbed });
+    }
+
     case 'audit-log-rotate': {
       const { db } = await import('@/lib/db');
       const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);

@@ -121,7 +121,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kind: 'detach' }),
       });
-      alert('Identity detached. Your email is no longer linked to your activity log.');
+      alert('Identity detached — IP and location data have been removed from your activity log.');
     } finally {
       setDetaching(false);
     }
@@ -269,7 +269,7 @@ export default function SettingsPage() {
             <div className="settings-group">
               <Row
                 action={<button className="settings-btn settings-btn-ghost" disabled={detaching} onClick={detachIdentity} type="button">{detaching ? 'Detaching…' : 'Detach now'}</button>}
-                detail="Detach email from activity log now (default: 24h)"
+                detail="Remove IP & location from your activity log now (automatic after 30 days)"
                 label="Early identity detachment"
               />
               <Row

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { AdminSignupTestPanel } from '@/components/AdminSignupTestPanel';
 import { redirect } from 'next/navigation';
 import { AdminReportActions, AdminVerificationActions } from '@/components/AdminModerationActions';
+import { AdminPrivacyRequestActions } from '@/components/AdminPrivacyRequestActions';
 import { AdminFeatureFlags } from '@/components/AdminFeatureFlags';
 import { FeatureToggle } from '@/components/admin/FeatureToggle';
 import { BulkActions } from '@/components/admin/BulkActions';
@@ -672,6 +673,9 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
                   <small>
                     {request.type} | {request.status} | {request.email ?? request.name ?? 'anonymous'}
                   </small>
+                  {request.type.startsWith('PRIVACY_') && request.status === 'OPEN' ? (
+                    <AdminPrivacyRequestActions requestId={request.id} requestType={request.type} />
+                  ) : null}
                 </div>
               ))
             ) : (

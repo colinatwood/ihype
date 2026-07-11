@@ -6,9 +6,9 @@ import Link from 'next/link';
 type Kind = 'deletion' | 'detach' | 'hype-wipe';
 
 const DONE_LABEL: Record<Kind, string> = {
-  deletion: 'Account deletion requested — we’ll email you to confirm within 24h.',
-  detach: 'Identity detached — your email verification link has been deleted.',
-  'hype-wipe': 'Hype history wiped — your past votes have been cleared.',
+  deletion: 'Account deletion requested — our team will confirm by email and complete it within 30 days.',
+  detach: 'Identity detached — IP and location data have been removed from your activity log.',
+  'hype-wipe': 'Hype history wiped — your past votes have been cleared and public counts adjusted.',
 };
 
 export function SupportPrivacyPanel({ onReportProblem }: { onReportProblem: () => void }) {
@@ -133,7 +133,7 @@ export function SupportPrivacyPanel({ onReportProblem }: { onReportProblem: () =
                   <span style={{ fontSize: 20, flexShrink: 0 }} aria-hidden="true">⛓️</span>
                   <span>
                     <span style={{ display: 'block', fontFamily: 'var(--font-display)', fontSize: 14, fontWeight: 800, marginBottom: 2 }}>Detach identity early</span>
-                    <span style={{ fontSize: 12, color: 'rgba(240,235,229,.5)' }}>Delete email verification link now instead of after 30 days</span>
+                    <span style={{ fontSize: 12, color: 'rgba(240,235,229,.5)' }}>Remove IP &amp; location from your activity log now instead of after 30 days</span>
                   </span>
                 </button>
 
