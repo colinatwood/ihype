@@ -1,0 +1,80 @@
+// Canonical music-genre taxonomy for iHYPE. One shared list so the radio-show
+// creator's dropdown, the artist/DJ genre picker, and anything else that offers
+// genre choices stay consistent and comprehensive. Genres users type freely
+// (e.g. the profile genre field) are still allowed — this is the suggested set,
+// not a hard allow-list. Ordered loosely by family so the dropdown reads well;
+// electronic leads since the platform skews DJ/electronic, but it's cross-genre.
+export const MUSIC_GENRES: string[] = [
+  // Electronic / dance
+  'House',
+  'Deep House',
+  'Tech House',
+  'Progressive House',
+  'Afro House',
+  'Melodic Techno',
+  'Techno',
+  'Minimal',
+  'Trance',
+  'Electro',
+  'Drum & Bass',
+  'Dubstep',
+  'Bass',
+  'Garage',
+  'Breakbeat',
+  'Downtempo',
+  'Ambient',
+  'Synthwave',
+  'IDM',
+  'Electronic',
+  // Hip-hop / R&B / soul
+  'Hip-Hop',
+  'Rap',
+  'Trap',
+  'R&B',
+  'Soul',
+  'Neo-Soul',
+  'Funk',
+  'Lo-Fi',
+  // Pop
+  'Pop',
+  'Synth-Pop',
+  'Electropop',
+  'Hyperpop',
+  'K-Pop',
+  // Rock / indie / alternative
+  'Rock',
+  'Indie',
+  'Indie Rock',
+  'Alternative',
+  'Punk',
+  'Post-Punk',
+  'Shoegaze',
+  'Dream Pop',
+  'Psych Rock',
+  'Metal',
+  'Hardcore',
+  // Jazz / blues
+  'Jazz',
+  'Blues',
+  'Fusion',
+  // Folk / country / acoustic
+  'Folk',
+  'Singer-Songwriter',
+  'Country',
+  'Americana',
+  'Bluegrass',
+  // Global / Latin / Afro / Caribbean
+  'Latin',
+  'Reggaeton',
+  'Afrobeats',
+  'Amapiano',
+  'Dancehall',
+  'Reggae',
+  'Ska',
+  'World',
+  // Other
+  'Classical',
+  'Soundtrack',
+  'Experimental',
+  'Spoken Word',
+];

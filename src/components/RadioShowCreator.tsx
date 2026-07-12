@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, postJson } from '@/lib/api-client';
+import { MUSIC_GENRES } from '@/lib/genres';
 import {
   royaltyFreeSampleClips,
   buildAutoAdBreak,
@@ -37,7 +38,7 @@ const TYPE_META: Record<Block['kind'], { label: string; color: string }> = {
   AD: { label: 'Ad break', color: '#ff5029' },
 };
 
-const GENRES = ['Deep House', 'Tech House', 'Techno', 'Electronic', 'Indie', 'Ambient'];
+const GENRES = MUSIC_GENRES;
 const SCOPES: AdvertisingScope[] = ['local', 'regional', 'national', 'global'];
 
 type DjAdPlan = {
