@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { MUSIC_GENRES } from '@/lib/genres';
 
 const PROOF: Record<string, string[]> = {
   ARTIST: [
@@ -101,7 +102,10 @@ export function VerifyForm({ profileId, type, initialName, initialCity, initialG
         {type !== 'VENUE' && (
           <>
             <label style={labelStyle} htmlFor="verify-genres">Genre (3+ tags)</label>
-            <input id="verify-genres" style={fieldStyle} value={genres} onChange={(e) => setGenres(e.target.value)} placeholder="dream-pop, shoegaze, lo-fi" />
+            <input id="verify-genres" list="ihype-genre-suggestions" style={fieldStyle} value={genres} onChange={(e) => setGenres(e.target.value)} placeholder="dream-pop, shoegaze, lo-fi" />
+            <datalist id="ihype-genre-suggestions">
+              {MUSIC_GENRES.map((g) => <option key={g} value={g} />)}
+            </datalist>
           </>
         )}
 
