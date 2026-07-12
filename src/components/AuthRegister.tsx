@@ -17,6 +17,8 @@ import {
 import type { AuthMethod, RegisterStep, RoleOption, SignupVariant } from '@/components/AuthShared';
 import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/TurnstileWidget';
 
+type PasskeyRegistrationOptions = Parameters<typeof startRegistration>[0]['optionsJSON'];
+
 const ROLE_COLOR: Record<RoleOption, string> = {
   FAN: '#b983ff',
   ARTIST: '#ff5029',
@@ -49,6 +51,10 @@ export function RegisterScreen({
   const [step, setStep] = useState<RegisterStep>('form');
   const [createdAccountId, setCreatedAccountId] = useState('');
   const turnstileRef = useRef<TurnstileWidgetHandle>(null);
+  // Holds a pre-fetched WebAuthn challenge so the "Try passkey again" tap can
+  // call startRegistration() with no awaited network in between — see
+  // registerPasskeyForAccount for why iOS Safari needs that.
+  const preparedPasskeyOptionsRef = useRef<PasskeyRegistrationOptions | null>(null);
   // TurnstileWidget renders nothing when this is unset (local/dev without a
   // site key configured) — only gate submission on a token when the widget
   // can actually produce one, or signup would deadlock in those environments.
@@ -104,14 +110,35 @@ export function RegisterScreen({
     trackSignupFunnel('login_magic_link_sent', { role, method: 'email', step: 'register', variant: signupVariant });
   }
 
-  async function registerPasskeyForAccount(userId: string) {
+  async function fetchPasskeyOptions(userId: string): Promise<PasskeyRegistrationOptions> {
+    const optRes = await fetch(`/api/auth/passkey/register-first?userId=${userId}`);
+    if (!optRes.ok) throw new Error('Could not start passkey setup.');
+    return optRes.json();
+  }
+
+  // Pre-fetch the WebAuthn challenge in the background so a later button tap
+  // can start the ceremony synchronously. iOS Safari only runs
+  // navigator.credentials.create() inside the transient user activation from a
+  // tap; if an awaited fetch sits between the tap and the ceremony it consumes
+  // that activation and the Face ID / passkey sheet silently never appears
+  // (the "Waiting for your device passkey prompt" hang). Fire-and-forget and
+  // tolerant — the ceremony falls back to an inline fetch if this hasn't
+  // resolved yet.
+  function preparePasskeyOptions(userId: string) {
+    preparedPasskeyOptionsRef.current = null;
+    void fetchPasskeyOptions(userId)
+      .then((options) => { preparedPasskeyOptionsRef.current = options; })
+      .catch(() => { preparedPasskeyOptionsRef.current = null; });
+  }
+
+  async function registerPasskeyForAccount(userId: string, prefetched?: PasskeyRegistrationOptions | null) {
     setStep('passkey');
     setStatus('Follow your device prompt. If it closes, retry here or finish with a magic link.');
     trackSignupFunnel('passkey_prompt', { role, method: 'passkey', step: 'register', variant: signupVariant, ...getPasskeyDiagnostics() });
 
-    const optRes = await fetch(`/api/auth/passkey/register-first?userId=${userId}`);
-    if (!optRes.ok) throw new Error('Could not start passkey setup.');
-    const options = await optRes.json();
+    // When options are already in hand, startRegistration() is the first
+    // awaited call after the user gesture — keeping iOS's activation valid.
+    const options = prefetched ?? await fetchPasskeyOptions(userId);
     trackSignupFunnel('passkey_prompt_ready', { role, method: 'passkey', step: 'register', variant: signupVariant, ...getPasskeyDiagnostics() });
     const credential = await startRegistration({ optionsJSON: options });
     const verifyRes = await postJson<{ redirect?: string }>('/api/auth/passkey/register-first', credential);
@@ -125,6 +152,7 @@ export function RegisterScreen({
     setStatus('');
     setIsSubmitting(true);
     let accountCreated = Boolean(createdAccountId);
+    let accountId = createdAccountId;
 
     try {
       // Turnstile's challenge usually resolves in well under a second, but it's
@@ -140,6 +168,7 @@ export function RegisterScreen({
       trackSignupFunnel('submit', { role, method: authMethod, step: 'form', variant: signupVariant });
       const result = await createAccountOnce();
       accountCreated = true;
+      accountId = result.id;
 
       if (authMethod === 'passkey') {
         await registerPasskeyForAccount(result.id);
@@ -159,6 +188,9 @@ export function RegisterScreen({
       if (accountCreated) {
         setStep('passkey');
         setStatus('Your account was created. Retry the passkey prompt or use a magic link to finish signing in.');
+        // Warm a fresh challenge so the retry tap can open the prompt without
+        // an awaited fetch first — the fix for iOS never showing the sheet.
+        if (authMethod === 'passkey' && accountId) preparePasskeyOptions(accountId);
       } else {
         setStep('form');
         // Turnstile tokens are single-use — a failed /api/register call already
@@ -182,13 +214,19 @@ export function RegisterScreen({
 
     setError('');
     setIsSubmitting(true);
+    // Consume the pre-fetched challenge (if warmed) so startRegistration()
+    // runs inside this tap's user activation — the whole point on iOS.
+    const prefetched = preparedPasskeyOptionsRef.current;
+    preparedPasskeyOptionsRef.current = null;
     try {
-      await registerPasskeyForAccount(createdAccountId);
+      await registerPasskeyForAccount(createdAccountId, prefetched);
     } catch (err) {
       const reason = getErrorMessage(err, 'Passkey setup was interrupted.');
       trackSignupFunnel('passkey_retry_failed', { role, method: 'passkey', step: 'register', reason, variant: signupVariant, ...getPasskeyDiagnostics(err) });
       setError(reason);
       setStatus('Retry the passkey prompt, or use a magic link to finish signing in.');
+      // Re-arm a fresh challenge for the next tap.
+      preparePasskeyOptions(createdAccountId);
     } finally {
       setIsSubmitting(false);
     }
