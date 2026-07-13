@@ -40,8 +40,10 @@ explicitly list every piece of backend logic being preserved before touching any
 | `src/app/shows/[slug]/page.tsx` | Full show detail; HypeButton; TicketSaleCard; ShowSequencePlayer |
 | `src/app/artists/[slug]/page.tsx` | Artist/DJ profile; media assets; upcoming shows |
 | `src/app/venues/[slug]/page.tsx` | Venue profile; calendar; show listing |
-| `src/app/home/page.tsx` | Workbench shell; WorkbenchData from DB via `getWorkbenchData()` |
-| `middleware.ts` | HTTPS enforcement; www→apex redirect; auth protection for /home /dashboard /admin |
+| `src/components/ListenHome.tsx` | Discovery/radio/charts tabs at `/listen` — the real post-auth landing page (`src/app/home/page.tsx` is now just a `redirect('/listen')` alias for old links) |
+| `src/components/EventsHome.tsx` | Events tab at `/shows` — local/for-you feeds, My Tickets (QR/transfer/cancel/archive) |
+| `src/components/PagesHome.tsx` + `PageEditor.tsx` | Pages tab at `/pages` — page customizer, AI Page Studio, role toolkit (`PageRoleModules.tsx`) |
+| `middleware.ts` | HTTPS enforcement; www→apex redirect; auth protection for `/listen` (`WORKBENCH_PATH` in `src/lib/auth-redirects.ts`), `/dashboard`, `/admin` |
 | `src/lib/permissions.ts` | `isAdminSession()` — checks `role === 'ADMIN'` |
 | `src/lib/runtime-flags.ts` | Feature flags: invite codes, demo logins, media storage |
 
@@ -95,7 +97,6 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 |---|---|---|
 | Index.dc.html | / | src/app/page.tsx |
 | About.dc.html | /about | src/app/about/page.tsx |
-| Beta.dc.html | /beta | src/app/beta/page.tsx |
 | Charter.dc.html | /charter | src/app/charter/page.tsx |
 | Legal.dc.html | /legal | src/app/legal/page.tsx |
 | Privacy.dc.html | /privacy | src/app/privacy/page.tsx |
@@ -113,7 +114,7 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 ### Fan product
 | .dc.html | Route | src/app path |
 |---|---|---|
-| FanHome.dc.html | /home | src/app/home/page.tsx |
+| FanHome.dc.html | /listen | src/app/listen/page.tsx (renders `ListenHome.tsx`) |
 | Discover.dc.html | /discover | src/app/discover/page.tsx |
 | Search.dc.html | /search | src/app/search/page.tsx |
 | Notifications.dc.html | /me/notifications | src/app/notifications/page.tsx |
@@ -124,6 +125,7 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 ### Events
 | .dc.html | Route | src/app path |
 |---|---|---|
+| Events.dc.html | /shows | src/app/shows/page.tsx (renders `EventsHome.tsx`) |
 | Show.dc.html | /shows/[slug] | src/app/shows/[slug]/page.tsx |
 | EventCreator.dc.html | /events/new | src/app/events/new/page.tsx |
 | Payout.dc.html | /payout/[eventId] | src/app/payout/[id]/page.tsx |
@@ -136,13 +138,17 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 | WebRadio.dc.html | /radio | src/app/radio/page.tsx |
 | Pages.dc.html | /pages | src/app/pages/page.tsx |
 
-**Retired:** Studio.dc.html (the generic creator workbench) is gone — `/studio` is now a bare `redirect('/home')` with no auth gate, no `StudioDashboard` component, and nothing in the app links to it. Its former responsibilities live on Home (dashboard), EventCreator (event creation), and WebRadio (DJ radio management).
+**Retired:** Studio.dc.html (the generic creator workbench) is gone — `/studio` is now a bare `redirect('/listen')` with no auth gate, no `StudioDashboard` component, and nothing in the app links to it. Its former responsibilities live on Listen (discovery/radio), EventCreator (event creation), and WebRadio (DJ radio management).
+
+**Retired:** Home.dc.html (the role-switching Fan/Artist/Venue/DJ single-dashboard mockup) has no live route — the Workbench/Home dashboard it depicted was superseded by the Listen/Events/Pages tab architecture; `/home` is now just a `redirect('/listen')` alias for old bookmarks/links. Its Fan section's responsibilities live on Listen (`ListenHome.tsx`); its Artist/Venue/DJ sections live on Pages' role toolkit (`PageRoleModules.tsx`) and each role's own profile page.
+
+**Retired (2026-07-13):** Beta.dc.html was deleted from Claude Design — no design source exists for a standalone `/beta` marketing page anymore. `/beta` is now a bare `redirect('/register')`, matching the Studio.dc.html precedent; its former invite-code CTA content is fully covered by `/register` itself.
 
 ### Venue & Promoter
 | .dc.html | Route | src/app path |
 |---|---|---|
 | Venue.dc.html | /venues/[slug] | src/app/venues/[slug]/page.tsx |
-| PromoterHome.dc.html | /home?role=promoter | src/app/home/page.tsx |
+| PromoterHome.dc.html | /me/promote | src/app/me/promote/page.tsx |
 
 ### Admin
 | .dc.html | Route | src/app path |
