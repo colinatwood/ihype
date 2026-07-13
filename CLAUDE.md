@@ -43,7 +43,7 @@ explicitly list every piece of backend logic being preserved before touching any
 | `src/components/ListenHome.tsx` | Discovery/radio/charts tabs at `/listen` — the real post-auth landing page (`src/app/home/page.tsx` is now just a `redirect('/listen')` alias for old links) |
 | `src/components/EventsHome.tsx` | Events tab at `/shows` — local/for-you feeds, My Tickets (QR/transfer/cancel/archive) |
 | `src/components/PagesHome.tsx` + `PageEditor.tsx` | Pages tab at `/pages` — page customizer, AI Page Studio, role toolkit (`PageRoleModules.tsx`) |
-| `middleware.ts` | HTTPS enforcement; www→apex redirect; auth protection for `/listen` (`WORKBENCH_PATH` in `src/lib/auth-redirects.ts`), `/dashboard`, `/admin` |
+| `middleware.ts` | HTTPS enforcement; www→apex redirect; auth protection for `/listen` (`WORKBENCH_PATH` in `src/lib/auth-redirects.ts`), `/dashboard`, `/admin`; CSP/security headers. **Do not rename to `proxy.ts`** — Next.js 16's `proxy` convention defaults to the Node.js runtime with no way to opt back into Edge (`runtime` config throws in proxy files), and this project's Cloudflare Workers deploy via OpenNext rejects Node.js-runtime middleware outright. The deprecation warning at build time is a known, accepted cost until OpenNext/Cloudflare supports it. |
 | `src/lib/permissions.ts` | `isAdminSession()` — checks `role === 'ADMIN'` |
 | `src/lib/runtime-flags.ts` | Feature flags: invite codes, demo logins, media storage |
 
