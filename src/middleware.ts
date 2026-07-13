@@ -106,7 +106,7 @@ const authMiddleware = auth((request) => {
   );
 });
 
-export default function proxy(request: NextRequest) {
+export default function middleware(request: NextRequest) {
   const host = (request.headers.get('host') ?? request.nextUrl.hostname)
     .split(':')[0]
     .toLowerCase();

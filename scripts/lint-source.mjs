@@ -70,20 +70,20 @@ if (!scanRoute.includes('updateMany') || !scanRoute.includes("status: 'VALID'"))
   fail('src/app/api/tickets/[serializedId]/scan/route.ts', 'ticket scanning must be a conditional atomic transition.');
 }
 
-const proxyFile = await text('src/proxy.ts');
-const scriptDirective = proxyFile.match(/script-src[^`\n]*/)?.[0] ?? '';
+const middleware = await text('src/middleware.ts');
+const scriptDirective = middleware.match(/script-src[^`\n]*/)?.[0] ?? '';
 if (scriptDirective.includes("'unsafe-inline'")) {
-  fail('src/proxy.ts', 'script-src must not allow unsafe-inline scripts.');
+  fail('src/middleware.ts', 'script-src must not allow unsafe-inline scripts.');
 }
-if (!proxyFile.includes("'nonce-${nonce}'")) {
-  fail('src/proxy.ts', 'script-src must include a per-request nonce.');
+if (!middleware.includes("'nonce-${nonce}'")) {
+  fail('src/middleware.ts', 'script-src must include a per-request nonce.');
 }
 
 const nextConfig = await text('next.config.mjs');
 if (/key:\s*['"]Content-Security-Policy['"]/.test(nextConfig)) {
   fail(
     'next.config.mjs',
-    "must not set Content-Security-Policy — it's set exclusively by src/proxy.ts (a static header here applies to the same routes and silently wins over the proxy's per-request nonce, making the CSP script-src check above meaningless in practice)."
+    "must not set Content-Security-Policy — it's set exclusively by src/middleware.ts (a static header here applies to the same routes and silently wins over middleware's per-request nonce, making the CSP script-src check above meaningless in practice)."
   );
 }
 

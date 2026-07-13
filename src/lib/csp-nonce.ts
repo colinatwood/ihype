@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 
-// proxy.ts stamps a fresh per-request nonce onto the request headers
+// middleware.ts stamps a fresh per-request nonce onto the request headers
 // (see requestHeaders.set('x-nonce', ...)) so the strict CSP's script-src
 // can allow specific inline/external <script> tags without 'unsafe-inline'.
 // Any Server Component that renders a <script> tag must read this and pass

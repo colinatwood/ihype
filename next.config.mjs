@@ -1,15 +1,15 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
 
 /** @type {import('next').NextConfig} */
-// src/proxy.ts sets Content-Security-Policy, X-Frame-Options,
+// src/middleware.ts sets Content-Security-Policy, X-Frame-Options,
 // X-Content-Type-Options, Referrer-Policy, and Permissions-Policy on every
 // route its matcher covers (everything except /api, /_next/static,
 // /_next/image, and /favicon.ico) — CSP needs a fresh per-request nonce
-// the proxy alone can provide. Setting those same 5 headers here for
+// middleware alone can provide. Setting those same 5 headers here for
 // '/:path*' too would send two values for each on every page (browsers often
 // treat duplicate/conflicting header values as invalid rather than picking
 // one, which can silently disable the protection instead of enforcing it).
-// Keep this file's copies scoped to exactly the routes the proxy excludes,
+// Keep this file's copies scoped to exactly the routes middleware excludes,
 // and don't reintroduce them under '/:path*'.
 const baselineSecurityHeaders = [
   {
@@ -34,7 +34,7 @@ const baselineSecurityHeaders = [
   }
 ];
 
-// Mirrors src/proxy.ts's non-CSP security headers, for the routes its
+// Mirrors src/middleware.ts's non-CSP security headers, for the routes its
 // matcher doesn't reach (API routes and static/image assets).
 const middlewareExcludedRouteHeaders = [
   {
