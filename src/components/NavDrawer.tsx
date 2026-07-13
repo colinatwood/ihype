@@ -143,6 +143,20 @@ export function NavDrawer({
                 </div>
               )}
             </div>
+            {accountName && (
+              <ul className="nav-drawer-list">
+                <li>
+                  <Link
+                    href="/me/wrapped"
+                    className={`nav-drawer-link${pathname === '/me/wrapped' ? ' active' : ''}`}
+                    onClick={() => setOpen(false)}
+                  >
+                    <svg {...ico}><path d="M12 3l2.5 5.7 6 .5-4.5 4 1.4 6-5.4-3.2L6.6 19l1.4-6-4.5-4 6-.5L12 3Z" /></svg>
+                    My Scene
+                  </Link>
+                </li>
+              </ul>
+            )}
             <ul className="nav-drawer-list">
               {menuLinks.map((link) => {
                 const isActive = pathname === link.href;
