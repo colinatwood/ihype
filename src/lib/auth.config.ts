@@ -5,7 +5,7 @@
 //   4. Run the OTP, magic-link, passkey, and session persistence tests.
 //   5. Update the pinned dependency and override together.
 //
-// Edge-safe: this file is imported by middleware and must not import Node-only modules.
+// Edge-safe: this file is imported by the proxy and must not import Node-only modules.
 import type { NextAuthConfig } from 'next-auth';
 import {
   AUTH_SESSION_MAX_AGE_SECONDS,
