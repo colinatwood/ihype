@@ -4,8 +4,8 @@ import { RouteShellSlot } from '@/components/RouteShellSlot';
 
 export const metadata: Metadata = {
   title: 'Events · iHYPE',
-  description: "Face value, zero fees. Every ticket — 45% artist, 45% venue, 10% promoters.",
-  openGraph: { title: 'Events · iHYPE', description: 'Face value, zero fees. Every ticket — 45% artist, 45% venue, 10% promoters.' },
+  description: "Face value, zero fees. Every ticket — 70% artist, 20% venue, 10% promoters.",
+  openGraph: { title: 'Events · iHYPE', description: 'Face value, zero fees. Every ticket — 70% artist, 20% venue, 10% promoters.' },
   twitter: { card: 'summary_large_image', title: 'Events · iHYPE', description: 'Face value, zero fees.' },
 };
 

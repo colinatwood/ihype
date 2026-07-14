@@ -134,9 +134,9 @@ async function main() {
       isTicketed: true,
       ticketPriceCents: 1200,
       ticketCapacity: 150,
-      venuePayoutPercent: 50,
-      artistPayoutPercent: 45,
-      promoterPayoutPercent: 5,
+      venuePayoutPercent: 20,
+      artistPayoutPercent: 70,
+      promoterPayoutPercent: 10,
       tags: ['launch', 'zero-fee', 'chicago'],
       hypeCount: 31
     }

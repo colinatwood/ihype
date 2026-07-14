@@ -82,7 +82,7 @@ export async function createConnectOnboardingUrl({
  * here) omitting `transfer_data.amount` means Stripe transfers the ENTIRE
  * captured charge to that one account — so the previous version routed
  * 100% of every ticket sale to a single party (venue, or artist if no
- * venue) instead of the charter's 45/45/10 split. The full charge now
+ * venue) instead of the charter's 70/20/10 split. The full charge now
  * captures to the platform's own Stripe balance; the actual per-party
  * split is paid out afterward as real `stripe.transfers.create()` calls
  * (see `createPayoutTransfer` below), one per `AccountsPayableEntry`,

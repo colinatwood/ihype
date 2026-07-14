@@ -716,7 +716,7 @@ export default async function ShowDetailPage({
                   <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--ink-a80)', margin: 0 }}>
                     Ticket sales haven&apos;t opened on iHYPE yet. RSVP free above to hold your spot —
                     we&apos;ll remind you before the show, and face-value pricing with the locked
-                    45/45/10 split kicks in the moment sales open.
+                    70/20/10 split kicks in the moment sales open.
                   </p>
                 </div>
               ) : (

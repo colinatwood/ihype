@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Join iHYPE — your local music scene, completely free',
-  description: 'Completely free. Join iHYPE — 0% ticket fees, 45% artist / 45% venue / 10% promoters.',
+  description: 'Completely free. Join iHYPE — 0% ticket fees, 70% artist / 20% venue / 10% promoters.',
   robots: { index: false, follow: false },
 };
 

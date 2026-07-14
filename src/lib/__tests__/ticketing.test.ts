@@ -14,14 +14,14 @@ describe('platform constants', () => {
     expect(PLATFORM_COMMISSION_PERCENT).toBe(0);
   });
 
-  it('defaults promoter affiliate to 5%', () => {
-    expect(DEFAULT_PROMOTER_AFFILIATE_PERCENT).toBe(5);
+  it('defaults promoter affiliate to 10%', () => {
+    expect(DEFAULT_PROMOTER_AFFILIATE_PERCENT).toBe(10);
   });
 });
 
 describe('getRemainingPayoutPercent', () => {
-  it('returns 95% with default 5% promoter', () => {
-    expect(getRemainingPayoutPercent()).toBe(95);
+  it('returns 90% with default 10% promoter', () => {
+    expect(getRemainingPayoutPercent()).toBe(90);
   });
 
   it('returns 90% when promoter takes 10%', () => {
@@ -34,9 +34,9 @@ describe('getRemainingPayoutPercent', () => {
 });
 
 describe('validateTicketSplit', () => {
-  it('accepts a valid 45/45/5/5 split', () => {
+  it('accepts a valid 70/20/10 split', () => {
     expect(() =>
-      validateTicketSplit({ venuePayoutPercent: 45, artistPayoutPercent: 50 })
+      validateTicketSplit({ venuePayoutPercent: 20, artistPayoutPercent: 70 })
     ).not.toThrow();
   });
 
@@ -55,7 +55,7 @@ describe('validateTicketSplit', () => {
   it('rejects when venue + artist do not sum to remaining percent', () => {
     expect(() =>
       validateTicketSplit({ venuePayoutPercent: 50, artistPayoutPercent: 50 })
-    ).toThrow('must total 95%');
+    ).toThrow('must total 90%');
   });
 
   it('rejects negative venue percent', () => {

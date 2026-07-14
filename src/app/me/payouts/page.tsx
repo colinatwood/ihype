@@ -19,7 +19,7 @@ function fmtCents(cents: number) {
  * Real payout history for the signed-in user's own profiles — every
  * AccountsPayableEntry that actually moved money via a Stripe transfer
  * (src/lib/show-payouts.ts's triggerShowPayouts), not a projection. Distinct
- * from /payout/[id], which shows a computed 45/45/10 breakdown for one show
+ * from /payout/[id], which shows a computed 70/20/10 breakdown for one show
  * the user created, whether or not it's paid out yet.
  */
 export default async function MyPayoutsPage() {

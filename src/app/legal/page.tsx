@@ -63,8 +63,8 @@ function LegalTabs() {
         <p>You must be 13 or older to use iHYPE. To purchase tickets, you must be 18 or the age of majority in your jurisdiction. By creating an account you agree to these terms.</p>
         <h2>Tickets</h2>
         <p>All tickets are sold at face value. iHYPE charges $0 in platform fees — this is locked in our charter and cannot be changed. Ticket purchases are final. Refunds are issued only if an event is cancelled by the organizer.</p>
-        <h2>The 45/45/10 split</h2>
-        <p>Every ticket sold through iHYPE splits as follows: 45% to the artist, 45% to the venue, 10% to the promoter pool (distributed proportionally among referrers). iHYPE receives 0%. This is a founding constraint, not a policy — it cannot be altered by management, the board, or investors.</p>
+        <h2>The 70/20/10 split</h2>
+        <p>Every ticket sold through iHYPE splits as follows: 70% to the artist, 20% to the venue, 10% to the promoter pool (distributed proportionally among referrers). iHYPE receives 0%. This is a founding constraint, not a policy — it cannot be altered by management, the board, or investors.</p>
         <h2>Promoter referrals</h2>
         <p>Any user may share a referral link to any event. If a ticket is purchased through your link, you receive your proportional share of the 10% promoter pool. Manipulating referral tracking (e.g. purchasing through your own link) is prohibited and will result in account termination.</p>
         <h2>Content</h2>
@@ -87,7 +87,7 @@ function LegalTabs() {
         <h2>The founding constraint</h2>
         <p>iHYPE was incorporated with a single non-negotiable structural commitment: the platform takes nothing from ticket sales. This commitment is embedded in the company&apos;s founding documents and cannot be amended by management, board resolution, investor pressure, or acquisition.</p>
         <h2>The split</h2>
-        <p className="legal-split-display">45% artist · 45% venue · 10% promoters · 0% iHYPE.</p>
+        <p className="legal-split-display">70% artist · 20% venue · 10% promoters · 0% iHYPE.</p>
         <p>This is not a pricing strategy. It is a constraint. We built the business model around it, not the other way around. Anyone can get paid to promote a show through their own referral link — real word-of-mouth income, not payola.</p>
         <h2>Open by design</h2>
         <p>Our code and our moderation heuristics are published for public audit. Nothing about how the split is calculated, how uploads are screened, or how the platform ranks anything is a secret — anyone can check that it does exactly what we say.</p>
@@ -102,7 +102,7 @@ function LegalTabs() {
         <h2>Why lock it in?</h2>
         <p>Because every platform that started with good intentions eventually faced a board meeting where fees made sense. We wanted to make that conversation impossible. The charter is the answer to &quot;what if the company needs revenue?&quot; — the answer is: find another way. Not this.</p>
         <h2>What &quot;locked in&quot; means</h2>
-        <p>The 45/45/10 split is a condition of incorporation. Changing it would require dissolving the company and re-incorporating under a different structure. No board vote, no shareholder approval, no acquisition clause overrides it.</p>
+        <p>The 70/20/10 split is a condition of incorporation. Changing it would require dissolving the company and re-incorporating under a different structure. No board vote, no shareholder approval, no acquisition clause overrides it.</p>
       </div>
 
       <style>{`

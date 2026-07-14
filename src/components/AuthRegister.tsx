@@ -255,7 +255,7 @@ export function RegisterScreen({
           ? 'Retry the device prompt or finish with a magic link. Your account is not stranded.'
           : step === 'magic-link-sent'
           ? 'Check your inbox for a one-tap link to finish signing in. You can add a passkey later from Settings.'
-          : 'Zero fees. 45/45/10. iHYPE takes nothing.'
+          : 'Zero fees. 70/20/10. iHYPE takes nothing.'
       }
       title="Create account."
     >

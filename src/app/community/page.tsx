@@ -87,7 +87,7 @@ export default async function CommunityPage() {
         <section className="community-cta">
           <div>
             <h2>Every vote and every dollar, on the record.</h2>
-            <p>The 45/45/10 split and the vote you just cast are both spelled out in the charter — not a marketing promise.</p>
+            <p>The 70/20/10 split and the vote you just cast are both spelled out in the charter — not a marketing promise.</p>
           </div>
           <Link className="ihype-btn-primary" href="/charter" style={{ flexShrink: 0, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
             Read the charter →

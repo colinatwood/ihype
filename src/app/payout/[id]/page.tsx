@@ -55,8 +55,8 @@ export default async function PayoutPage({ params }: { params: Promise<{ id: str
   const priceCents = show.ticketPriceCents ?? 0;
   const sold = show.ticketsSoldCount ?? 0;
   const grossCents = priceCents * sold;
-  const artistPct = show.artistPayoutPercent ?? 45;
-  const venuePct = show.venuePayoutPercent ?? 45;
+  const artistPct = show.artistPayoutPercent ?? 70;
+  const venuePct = show.venuePayoutPercent ?? 20;
   const promoterPct = show.promoterPayoutPercent ?? 10;
   const artistCents = Math.round(grossCents * artistPct / 100);
   const venueCents = Math.round(grossCents * venuePct / 100);
@@ -123,8 +123,8 @@ export default async function PayoutPage({ params }: { params: Promise<{ id: str
           {sold.toLocaleString()} tickets × {fmtCents(priceCents)} = <strong style={{ color: 'var(--ink)' }}>{fmtCents(grossCents)} gross.</strong> Here&apos;s every dollar, accounted for.
         </p>
         <div style={{ display: 'flex', height: 10, borderRadius: 999, overflow: 'hidden', gap: 2, marginBottom: 20 }}>
-          <div style={{ flex: 45, background: '#ff5029', borderRadius: '999px 0 0 999px' }} />
-          <div style={{ flex: 45, background: '#22e5d4' }} />
+          <div style={{ flex: 70, background: '#ff5029', borderRadius: '999px 0 0 999px' }} />
+          <div style={{ flex: 20, background: '#22e5d4' }} />
           <div style={{ flex: 10, background: '#b983ff', borderRadius: '0 999px 999px 0' }} />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
