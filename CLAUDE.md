@@ -117,7 +117,7 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 | FanHome.dc.html | /listen | src/app/listen/page.tsx (renders `ListenHome.tsx`) |
 | Discover.dc.html | /discover | src/app/discover/page.tsx |
 | Search.dc.html | /search | src/app/search/page.tsx |
-| Notifications.dc.html | — | **No live page exists.** Only the backend is built (`GET`/`POST /api/me/notifications`) — the UI was never translated from the design. Real gap, not a mapping error. |
+| Notifications.dc.html | /me/notifications | src/app/me/notifications/page.tsx (renders `NotificationsList.tsx`) |
 | FanProfile.dc.html | /fans/[slug] | src/app/fans/[slug]/page.tsx |
 | Tickets.dc.html | /tickets | src/app/tickets/page.tsx (`/me/tickets` is a thin redirect alias to this) |
 | Settings.dc.html | /settings | src/app/settings/page.tsx (`/me/settings` is a thin redirect alias to this) |

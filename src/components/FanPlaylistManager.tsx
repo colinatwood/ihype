@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { ShareButton } from '@/components/ShareButton';
 
 type MediaTrack = {
   id: string;
@@ -391,8 +392,11 @@ export function FanPlaylistManager({
               {activePlaylist ? (
                 <>
                   <div className="fan-playlist-viewer-head">
-                    <strong>{activePlaylist.name}</strong>
-                    <span className="meta">Drag and drop to reorder.</span>
+                    <div>
+                      <strong>{activePlaylist.name}</strong>
+                      <span className="meta">Drag and drop to reorder.</span>
+                    </div>
+                    <ShareButton className="button small secondary" label="Share" path={`/playlist/${activePlaylist.id}`} title={activePlaylist.name} />
                   </div>
 
                   <div className="fan-playlist-items">
