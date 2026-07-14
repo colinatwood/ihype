@@ -21,6 +21,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   'profile-image': 'Profile images',
   show: 'Shows',
   comment: 'Comments',
+  'ad-audio': 'Ad audio spots',
 };
 
 export default async function AuditPage() {
@@ -153,7 +154,7 @@ export default async function AuditPage() {
             {
               icon: '◈',
               head: 'AI screening on upload',
-              body: 'Every track, avatar, hero, and gallery image is screened automatically the moment it\'s uploaded, and every radio ad campaign\'s copy is AI-vetted against our music-industry-only policy — before any of it can go live.',
+              body: 'Every track, avatar, hero, and gallery image is screened automatically the moment it\'s uploaded, and every radio ad campaign\'s copy and audio (transcribed, then screened) are AI-vetted against our music-industry-only policy — before any of it can go live.',
             },
             {
               icon: '⬟',

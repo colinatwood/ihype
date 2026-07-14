@@ -7,6 +7,7 @@ import { sortShowsForFeed } from '@/lib/integrity';
 import { canManageOwnedResource, isAdminSession } from '@/lib/permissions';
 import { getDemoCreatorExclusion } from '@/lib/runtime-flags';
 import { showProductionPlanSchema } from '@/lib/show-composer';
+import { resolveAdBreakClips } from '@/lib/ad-clip-selection';
 import { DEFAULT_PROMOTER_AFFILIATE_PERCENT, validateTicketSplit } from '@/lib/ticketing';
 import { slugify } from '@/lib/utils';
 import { consumeRateLimit, rateLimitHeaders, rateLimitKey } from '@/lib/rate-limit';
@@ -158,6 +159,17 @@ export async function POST(request: NextRequest) {
 
     const modCheck = checkContent(`${body.title} ${body.description ?? ''}`);
     const moderationStatus = modCheck.flagged ? 'FLAGGED' : 'APPROVED';
+
+    // A DJ can toggle "advertising enabled" on without ever manually
+    // previewing/confirming an ad break in the timeline — that used to leave
+    // advertising.clips empty, so buildResolvedSequence's frequency-based
+    // auto-injection (src/lib/show-composer.ts) had nothing to inject and
+    // silently never ran despite the toggle being on. Fill it here so
+    // "auto" actually means automatic — prefers real marketplace campaigns,
+    // falls back to the placeholder catalog.
+    if (body.productionPlan?.advertising?.enabled && body.productionPlan.advertising.clips.length === 0) {
+      body.productionPlan.advertising.clips = await resolveAdBreakClips(body.productionPlan.advertising.scope);
+    }
 
     if (body.isRadioShow && body.productionPlan) {
       // Rich production-plan path (Radio Show Creator) — an alternate,

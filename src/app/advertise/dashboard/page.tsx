@@ -19,6 +19,33 @@ export default async function AdvertiserDashboard() {
   const totalImpressions = campaigns.reduce((s, c) => s + c.impressions, 0);
   const totalClicks = campaigns.reduce((s, c) => s + c.clicks, 0);
 
+  // Day-by-day breakdown, last 14 days, aggregated across all the
+  // advertiser's campaigns. AdImpression rows have no per-day rollup
+  // column, and Prisma can't truncate a timestamp to a date in a groupBy
+  // without raw SQL, so this fetches the raw rows for the window and
+  // buckets them in JS — fine at this volume (a self-serve advertiser's
+  // own campaigns, 14 days).
+  const DAYS = 14;
+  const since = new Date(Date.now() - DAYS * 24 * 60 * 60 * 1000);
+  const dailyImpressions = campaigns.length
+    ? await db.adImpression.findMany({
+        where: { adId: { in: campaigns.map((c) => c.id) }, createdAt: { gte: since } },
+        select: { createdAt: true },
+      })
+    : [];
+
+  const dayBuckets = new Map<string, number>();
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+    dayBuckets.set(d.toISOString().slice(0, 10), 0);
+  }
+  for (const row of dailyImpressions) {
+    const key = row.createdAt.toISOString().slice(0, 10);
+    if (dayBuckets.has(key)) dayBuckets.set(key, (dayBuckets.get(key) ?? 0) + 1);
+  }
+  const dailyRows = Array.from(dayBuckets.entries());
+  const maxDaily = Math.max(1, ...dailyRows.map(([, n]) => n));
+
   return (
     <div className="container" style={{ paddingTop: 24, paddingBottom: 60 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
@@ -47,6 +74,23 @@ export default async function AdvertiserDashboard() {
 
       {campaigns.length === 0 && (
         <p className="meta">No campaigns yet. <Link href="/advertise">Submit your first ad</Link>.</p>
+      )}
+
+      {campaigns.length > 0 && (
+        <div className="panel" style={{ padding: '16px 20px', marginBottom: 24 }}>
+          <div style={{ fontWeight: 600, marginBottom: 12 }}>Impressions, last {DAYS} days</div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 80 }}>
+            {dailyRows.map(([day, count]) => (
+              <div key={day} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }} title={`${day}: ${count} impressions`}>
+                <div style={{ width: '100%', minHeight: 2, height: `${Math.max(2, (count / maxDaily) * 64)}px`, background: 'var(--accent, #ff5029)', borderRadius: 2 }} />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+            <span className="meta">{dailyRows[0]?.[0]}</span>
+            <span className="meta">{dailyRows[dailyRows.length - 1]?.[0]}</span>
+          </div>
+        </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

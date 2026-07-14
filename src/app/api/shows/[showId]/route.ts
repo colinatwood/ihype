@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { getDemoCreatorExclusion } from '@/lib/runtime-flags';
+import { showProductionPlanSchema } from '@/lib/show-composer';
+import { resolveAdBreakClips } from '@/lib/ad-clip-selection';
 
 export const dynamic = 'force-dynamic';
 
@@ -89,12 +91,25 @@ export async function PATCH(
       return NextResponse.json({ error: 'Only draft or scheduled shows can be edited' }, { status: 400 });
     }
 
+    let productionPlan = body.productionPlan;
+    if (productionPlan !== undefined) {
+      const parsed = showProductionPlanSchema.safeParse(productionPlan);
+      // Same auto-fill as POST /api/shows: a DJ can save with "advertising
+      // enabled" on but no clips ever manually confirmed into the timeline,
+      // which otherwise leaves the frequency-based ad-break auto-injection
+      // with nothing to inject.
+      if (parsed.success && parsed.data.advertising.enabled && parsed.data.advertising.clips.length === 0) {
+        parsed.data.advertising.clips = await resolveAdBreakClips(parsed.data.advertising.scope);
+        productionPlan = parsed.data;
+      }
+    }
+
     const updated = await db.show.update({
       where: { id: show.id },
       data: {
         ...(body.title !== undefined && { title: body.title }),
         ...(body.description !== undefined && { description: body.description }),
-        ...(body.productionPlan !== undefined && { productionPlan: body.productionPlan as object }),
+        ...(productionPlan !== undefined && { productionPlan: productionPlan as object }),
         ...(body.startsAt !== undefined && { startsAt: new Date(body.startsAt) }),
       },
       select: { id: true, slug: true, status: true },

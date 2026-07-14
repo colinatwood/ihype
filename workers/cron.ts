@@ -35,7 +35,6 @@ const JOBS: CronJob[] = [
   { path: '/api/cron?job=new-to-scene',     schedule: '0 10 * * *'   },
   { path: '/api/cron?job=show-reminders',   schedule: '0 12 * * *'   },
   { path: '/api/cron?job=onboarding',       schedule: '0 14 * * *'   },
-  { path: '/api/cron?job=expire-ads',       schedule: '0 2 * * *'    },
   { path: '/api/cron?job=session-cleanup',  schedule: '0 3 * * *'    },
   { path: '/api/cron?job=push-cleanup',     schedule: '0 3 * * *'    },
   { path: '/api/cron?job=identity-detach',  schedule: '0 3 * * *'    },

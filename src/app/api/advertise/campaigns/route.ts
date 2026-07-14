@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { vetAdvertisement, adCampaignStatusFromVetting } from '@/lib/ad-vetting';
+import { vetAdvertisement, vetAdAudioContent, adCampaignStatusFromVetting } from '@/lib/ad-vetting';
 import { recordAuditEvent } from '@/lib/audit';
 import {
   isAdScope, isAdRunLengthDays, quoteAdCampaign,
@@ -73,7 +73,28 @@ export async function POST(request: NextRequest) {
     campaignWebsite: clickUrl,
     adTextCopy: title,
   });
-  const status = adCampaignStatusFromVetting(vetting);
+  let status = adCampaignStatusFromVetting(vetting);
+  let reasoning = vetting.reasoning;
+
+  // Also screen what's actually said in the spot — vetAdvertisement above
+  // only judges the declared title, never the audio content itself.
+  // Best-effort: a fetch failure (e.g. the inline data: URL fallback used
+  // when object storage isn't configured) fails open, same as every other
+  // vetting call in this codebase.
+  let audioVetting: { isApproved: boolean; reasoning: string; requiresManualReview: boolean } | null = null;
+  try {
+    const audioRes = await fetch(audioUrl);
+    if (audioRes.ok) {
+      const audioBytes = new Uint8Array(await audioRes.arrayBuffer());
+      audioVetting = await vetAdAudioContent(audioBytes);
+    }
+  } catch {
+    // Fail open — audio vetting is best-effort, not a hard gate.
+  }
+  if (audioVetting && (!audioVetting.isApproved || audioVetting.requiresManualReview) && status !== 'REJECTED') {
+    status = 'PENDING';
+    reasoning = `${reasoning} Audio spot flagged: ${audioVetting.reasoning}`;
+  }
 
   const ad = await db.ad.create({
     data: {
@@ -99,15 +120,26 @@ export async function POST(request: NextRequest) {
     action: `ad.campaign.auto_vetting.${status.toLowerCase()}`,
     entityType: 'Ad',
     entityId: ad.id,
-    metadata: { reasoning: vetting.reasoning, quote },
+    metadata: { reasoning, quote },
   }).catch(() => {});
+
+  if (audioVetting && (!audioVetting.isApproved || audioVetting.requiresManualReview)) {
+    await db.contentReport.create({
+      data: {
+        targetType: 'ad-audio',
+        targetId: ad.id,
+        reason: 'auto_flag_audio',
+        details: audioVetting.reasoning,
+      },
+    }).catch(() => {});
+  }
 
   return NextResponse.json({
     ad,
     quote,
     vetting: {
       status,
-      reasoning: vetting.reasoning,
+      reasoning,
       message:
         status === 'APPROVED' ? 'Campaign passed automated vetting and is live.'
         : status === 'REJECTED' ? 'Campaign did not meet the music-industry supporter policy.'
