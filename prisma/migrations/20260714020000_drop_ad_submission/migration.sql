@@ -1,0 +1,24 @@
+-- ============================================================================
+-- DESTRUCTIVE — DO NOT APPLY BLIND.
+--
+-- Drops the AdSubmission table. This pipeline (the "Supporter" text/image
+-- banner ad system — AdBanner.tsx, POST /api/ads/upload, etc.) was retired
+-- in DESIGN_SYNC.md row 214: every application code path that could create
+-- a new AdSubmission row was removed because none of them were ever reachable
+-- from the live product (no submission form anywhere ever called
+-- /api/ads/upload). That only proves no *new* rows can be created going
+-- forward — it does NOT prove the table is empty today.
+--
+-- Before running this migration against production:
+--   1. Confirm row count: SELECT count(*) FROM "AdSubmission";
+--   2. If non-zero, confirm with the business owner that losing that
+--      historical data (past submissions, impression/click counts, any
+--      Stripe-linked subscription records) is acceptable, or export it first.
+--   3. Only then apply.
+--
+-- This sandbox has no live database connection, so this has been hand-written
+-- and reviewed against the schema but never run or verified against real
+-- data, same as every other migration in this repository this pass.
+-- ============================================================================
+
+DROP TABLE "AdSubmission";

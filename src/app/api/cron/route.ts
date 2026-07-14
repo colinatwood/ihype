@@ -165,16 +165,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ok: true, ...result });
     }
 
-    case 'expire-ads': {
-      const { db } = await import('@/lib/db');
-      const cutoff = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const result = await db.adSubmission.updateMany({
-        where: { status: 'pending', createdAt: { lt: cutoff } },
-        data: { status: 'expired' }
-      });
-      return NextResponse.json({ ok: true, expired: result.count });
-    }
-
     case 'feature-shows': {
       const { db } = await import('@/lib/db');
       const hotShows = await db.show.findMany({

@@ -3,6 +3,7 @@
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const VISION_MODEL = '@cf/llava-hf/llava-1.5-7b-hf';
+const WHISPER_MODEL = '@cf/openai/whisper';
 
 type Message = { role: 'system' | 'user' | 'assistant'; content: string };
 
@@ -58,6 +59,25 @@ export async function runVisionAI(
     });
     const text = result.description ?? result.response;
     return typeof text === 'string' ? text : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Speech-to-text (Whisper) for audio content vetting — radio ad spots,
+ * which the text-only `runAI` and vision-only `runVisionAI` above can't
+ * inspect. Returns null when the AI binding is unavailable (local dev),
+ * the call fails, or the clip has no discernible speech; every caller must
+ * degrade to its fail-open default, matching the existing vetting
+ * convention.
+ */
+export async function runTranscription(audioBytes: Uint8Array): Promise<string | null> {
+  const ai = getAiBinding();
+  if (!ai) return null;
+  try {
+    const result = await ai.run(WHISPER_MODEL, { audio: Array.from(audioBytes) });
+    return typeof result.text === 'string' ? result.text : null;
   } catch {
     return null;
   }

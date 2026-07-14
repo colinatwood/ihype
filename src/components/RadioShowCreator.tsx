@@ -190,19 +190,21 @@ export function RadioShowCreator({ initialCrate, profile }: { initialCrate: Crat
   }
 
   async function openAdPreview() {
-    // Real, purchased marketplace ads (Coverage Builder campaigns) take
-    // priority over the placeholder catalog — the whole point of the
-    // interjection module is to actually pay out to real advertisers once
-    // any exist for this scope.
+    // GET /api/radio/ad-clips already prefers real, purchased marketplace
+    // ads (Coverage Builder campaigns) and only falls back to the
+    // placeholder catalog server-side when none exist for this scope —
+    // `isMarketplace` tells us which one came back so the modal copy stays
+    // honest either way.
     try {
-      const data = await apiFetch<{ clips?: ShowAdClip[] }>(`/api/radio/ad-clips?scope=${scope}`);
+      const data = await apiFetch<{ clips?: ShowAdClip[]; isMarketplace?: boolean }>(`/api/radio/ad-clips?scope=${scope}`);
       if (data?.clips?.length) {
-        setAdPreviewIsMarketplace(true);
+        setAdPreviewIsMarketplace(Boolean(data.isMarketplace));
         setAdPreviewClips(data.clips);
         return;
       }
     } catch {
-      // Fall through to the placeholder catalog below.
+      // Fall through to the client-side placeholder catalog below —
+      // only reached if the request itself fails (e.g. offline).
     }
 
     const clips = buildAutoAdBreak(scope, adPlan?.breakDurationSecs ?? 90);

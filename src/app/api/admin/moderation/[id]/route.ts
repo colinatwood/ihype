@@ -9,7 +9,10 @@ import { isAdminSession } from '@/lib/permissions';
  * (deleted since the report was filed) is not an error — the report still
  * gets marked ACTIONED. Types with no safe automated action ('profile' —
  * no way to know which field/text was the problem) fall through with no
- * side effect beyond the status flip.
+ * side effect beyond the status flip. 'ad-creative' (the retired AdSubmission
+ * pipeline's image-flag category) falls through the same way now that the
+ * table is gone — any pre-existing report of that type can still be
+ * dismissed/actioned in the queue, it just has no target left to act on.
  */
 const PROFILE_IMAGE_FIELDS = new Set(['heroImage', 'avatarImage', 'logoImage', 'galleryImage']);
 
@@ -24,8 +27,8 @@ async function enforceRemoval(targetType: string, targetId: string, reason: stri
     case 'show':
       await db.show.updateMany({ where: { id: targetId }, data: { status: 'CANCELED' } });
       break;
-    case 'ad-creative':
-      await db.adSubmission.updateMany({ where: { id: targetId }, data: { status: 'rejected' } });
+    case 'ad-audio':
+      await db.ad.updateMany({ where: { id: targetId }, data: { status: 'REJECTED' } });
       break;
     case 'profile-image': {
       // Field name is encoded as "auto_flag_image:<field>" by upload-graphic's

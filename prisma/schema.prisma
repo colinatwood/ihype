@@ -956,26 +956,6 @@ model SetlistTemplate {
   @@index([profileId])
 }
 
-model AdSubmission {
-  id               String    @id @default(cuid())
-  advertiserName   String
-  advertiserType   String
-  campaignWebsite  String
-  adTextCopy       String
-  creativeAssetUrl String?
-  status           String    @default("pending")
-  aiReasoning      String?
-  reviewedAt       DateTime?
-  reviewedBy       String?
-  impressions      Int       @default(0)
-  clicks           Int       @default(0)
-  budgetCents      Int       @default(0)
-  spentCents       Int       @default(0)
-  tier             String    @default("standard")
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-}
-
 model Badge {
   id        String   @id @default(cuid())
   userId    String
