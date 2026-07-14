@@ -11,9 +11,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') ?? undefined;
 
-    const ads = await db.adSubmission.findMany({
+    const ads = await db.ad.findMany({
       where: status ? { status } : undefined,
       orderBy: { createdAt: 'desc' },
+      include: { advertiser: { select: { name: true, email: true } }, slot: { select: { name: true } } },
     });
 
     return NextResponse.json({ ads });
@@ -29,13 +30,13 @@ export async function PATCH(request: Request) {
     if (!isAdminSession(session)) return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
 
     const { id, status } = await request.json();
-    if (!id || !['approved', 'rejected'].includes(status)) {
+    if (!id || !['APPROVED', 'REJECTED'].includes(status)) {
       return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
     }
 
-    const ad = await db.adSubmission.update({
+    const ad = await db.ad.update({
       where: { id },
-      data: { status, reviewedAt: new Date(), reviewedBy: session?.user?.id ?? null },
+      data: { status },
     });
 
     return NextResponse.json({ ad });

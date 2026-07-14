@@ -29,12 +29,18 @@ export async function POST(request: NextRequest) {
 
   let body: {
     scope?: unknown; spotsPerDay?: unknown; runDays?: unknown;
-    title?: unknown; audioUrl?: unknown; audioDurationSecs?: unknown; imageUrl?: unknown; clickUrl?: unknown;
+    title?: unknown; audioUrl?: unknown; audioDurationSecs?: unknown; clickUrl?: unknown;
   };
   try { body = await request.json(); } catch { return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 }); }
 
   const title = typeof body.title === 'string' ? body.title.trim() : '';
   if (!title) return NextResponse.json({ error: 'title is required.' }, { status: 400 });
+
+  // iHYPE only ever runs radio-style audio spots — no visual/image ad
+  // placements — so a campaign isn't a campaign without one. Uploaded via
+  // POST /api/advertise/audio-upload first.
+  const audioUrl = typeof body.audioUrl === 'string' ? body.audioUrl.trim() : '';
+  if (!audioUrl) return NextResponse.json({ error: 'audioUrl is required — upload your ad audio first.' }, { status: 400 });
 
   if (!isAdScope(body.scope)) {
     return NextResponse.json({ error: 'scope must be one of LOCAL, REGIONAL, NATIONAL, GLOBAL.' }, { status: 400 });
@@ -75,11 +81,10 @@ export async function POST(request: NextRequest) {
       advertiserId: session.user.id,
       title,
       scope: body.scope,
-      audioUrl: typeof body.audioUrl === 'string' ? body.audioUrl : undefined,
+      audioUrl,
       audioDurationSecs: typeof body.audioDurationSecs === 'number' && Number.isFinite(body.audioDurationSecs)
         ? Math.max(0, Math.round(body.audioDurationSecs))
         : undefined,
-      imageUrl: typeof body.imageUrl === 'string' ? body.imageUrl : undefined,
       clickUrl: typeof body.clickUrl === 'string' ? body.clickUrl : undefined,
       budgetCents: quote.totalCostCents,
       startsAt,

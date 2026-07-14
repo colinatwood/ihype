@@ -21,7 +21,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   'profile-image': 'Profile images',
   show: 'Shows',
   comment: 'Comments',
-  'ad-creative': 'Ad creatives',
 };
 
 export default async function AuditPage() {
@@ -45,10 +44,10 @@ export default async function AuditPage() {
     db.contentReport.groupBy({ by: ['targetType'], _count: { _all: true } }),
     db.profile.count({ where: { isVerified: true } }),
     db.profile.count({ where: { verificationReviewedAt: { not: null } } }),
-    db.adSubmission.count(),
-    db.adSubmission.count({ where: { status: 'approved' } }),
-    db.adSubmission.count({ where: { status: 'rejected' } }),
-    db.adSubmission.count({ where: { status: 'manual_review' } }),
+    db.ad.count(),
+    db.ad.count({ where: { status: 'APPROVED' } }),
+    db.ad.count({ where: { status: 'REJECTED' } }),
+    db.ad.count({ where: { status: 'PENDING' } }),
   ]);
 
   const categoryRows = reportsByCategory
@@ -67,7 +66,7 @@ export default async function AuditPage() {
   ];
 
   const AD_STATS = [
-    { label: 'Ad submissions vetted', val: adTotal.toLocaleString(), c: '#ff5029' },
+    { label: 'Radio ad campaigns vetted', val: adTotal.toLocaleString(), c: '#ff5029' },
     { label: 'Approved', val: adApproved.toLocaleString(), c: '#22e5d4' },
     { label: 'Sent to manual review', val: adManualReview.toLocaleString(), c: '#b983ff' },
     { label: 'Rejected', val: adRejected.toLocaleString(), c: '#ff3e9a' },
@@ -115,10 +114,10 @@ export default async function AuditPage() {
       )}
 
       <section className="lp-hype-explainer">
-        <p className="lp-hype-eyebrow">SUPPORTER ADS</p>
+        <p className="lp-hype-eyebrow">RADIO ADS</p>
         <h2 className="lp-section-head">Ad vetting</h2>
         <p className="lp-hero-sub" style={{ margin: '8px 0 20px' }}>
-          Every ad submission is screened by AI for both its copy and its creative image before it can run.
+          iHYPE only ever runs radio-style audio ad spots — no banners, no visual placements. Every campaign is screened by AI before it can run.
         </p>
         <section className="lp-stats" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
           {AD_STATS.map((s) => (
@@ -154,7 +153,7 @@ export default async function AuditPage() {
             {
               icon: '◈',
               head: 'AI screening on upload',
-              body: 'Every track, avatar, hero, gallery image, and ad creative is screened automatically the moment it\'s uploaded — before it can go live.',
+              body: 'Every track, avatar, hero, and gallery image is screened automatically the moment it\'s uploaded, and every radio ad campaign\'s copy is AI-vetted against our music-industry-only policy — before any of it can go live.',
             },
             {
               icon: '⬟',

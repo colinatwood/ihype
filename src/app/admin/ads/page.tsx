@@ -6,6 +6,10 @@ import { AdminAdsClient } from '@/components/AdminAdsClient';
 
 const PAGE_SIZE = 20;
 
+// Reviews real, purchased self-serve radio ad campaigns (the Ad/AdSlot
+// Coverage Builder pipeline — src/app/api/advertise/campaigns). This used to
+// review the separate AdSubmission "Supporter" pipeline (text/image banner
+// ads), which was retired — iHYPE only ever runs radio-style audio spots.
 export default async function AdminAdsPage({
   searchParams,
 }: {
@@ -22,23 +26,24 @@ export default async function AdminAdsPage({
   const where: Record<string, unknown> = {};
   if (status) where.status = status;
   if (q) where.OR = [
-    { advertiserName: { contains: q, mode: 'insensitive' } },
-    { campaignWebsite: { contains: q, mode: 'insensitive' } },
+    { title: { contains: q, mode: 'insensitive' } },
+    { clickUrl: { contains: q, mode: 'insensitive' } },
   ];
 
   const [ads, total] = await Promise.all([
-    db.adSubmission.findMany({
+    db.ad.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: PAGE_SIZE,
       skip: (page - 1) * PAGE_SIZE,
+      include: { advertiser: { select: { name: true, email: true } }, slot: { select: { name: true } } },
     }),
-    db.adSubmission.count({ where }),
+    db.ad.count({ where }),
   ]);
 
   return (
     <div className="container section">
-      <h1 className="title">Supporter Submissions <span className="meta">({total})</span></h1>
+      <h1 className="title">Radio Ad Campaigns <span className="meta">({total})</span></h1>
       <AdminAdsClient ads={ads} status={status} q={q} page={page} total={total} pageSize={PAGE_SIZE} />
     </div>
   );

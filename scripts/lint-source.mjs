@@ -89,7 +89,6 @@ if (/key:\s*['"]Content-Security-Policy['"]/.test(nextConfig)) {
 
 for (const webhookFile of [
   'src/app/api/stripe/webhook/route.ts',
-  'src/app/api/ads/stripe-webhook/route.ts',
   'src/app/api/webhooks/resend/route.ts',
 ]) {
   const content = await text(webhookFile);
