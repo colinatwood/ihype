@@ -96,7 +96,7 @@ export default async function PromotePage() {
       </div>
 
       <p className="promo-foot">
-        Earnings settle to your payout account once it&apos;s connected. Splits are locked at 45% artist / 45% venue / 10% promoters.
+        Earnings settle to your payout account once it&apos;s connected. Splits are locked at 70% artist / 20% venue / 10% promoters.
       </p>
 
       <style>{`

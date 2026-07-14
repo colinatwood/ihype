@@ -75,14 +75,25 @@ export async function createConnectOnboardingUrl({
   return link.url;
 }
 
+/**
+ * "Separate charges and transfers" pattern — deliberately does NOT set
+ * `transfer_data.destination`. A destination charge only supports ONE
+ * Connect account per PaymentIntent, and (this codebase's real bug, fixed
+ * here) omitting `transfer_data.amount` means Stripe transfers the ENTIRE
+ * captured charge to that one account — so the previous version routed
+ * 100% of every ticket sale to a single party (venue, or artist if no
+ * venue) instead of the charter's 70/20/10 split. The full charge now
+ * captures to the platform's own Stripe balance; the actual per-party
+ * split is paid out afterward as real `stripe.transfers.create()` calls
+ * (see `createPayoutTransfer` below), one per `AccountsPayableEntry`,
+ * driven by `src/lib/show-payouts.ts`.
+ */
 export async function createTicketPaymentIntent({
   amountCents,
   stripeCustomerId,
   paymentMethodId,
   showId,
   ticketOrderConfirmationCode,
-  venueConnectAccountId,
-  artistConnectAccountId,
   venuePayoutCents,
   artistPayoutCents
 }: {
@@ -91,13 +102,10 @@ export async function createTicketPaymentIntent({
   paymentMethodId: string;
   showId: string;
   ticketOrderConfirmationCode: string;
-  venueConnectAccountId: string | null | undefined;
-  artistConnectAccountId: string | null | undefined;
   venuePayoutCents: number;
   artistPayoutCents: number;
 }): Promise<{ paymentIntentId: string; status: Stripe.PaymentIntent.Status }> {
   const stripe = getStripe();
-  const primaryConnectAccountId = venueConnectAccountId ?? artistConnectAccountId;
 
   const paymentIntent = await stripe.paymentIntents.create(
     {
@@ -113,15 +121,47 @@ export async function createTicketPaymentIntent({
         showId,
         venuePayoutCents: String(venuePayoutCents),
         artistPayoutCents: String(artistPayoutCents)
-      },
-      ...(primaryConnectAccountId
-        ? { transfer_data: { destination: primaryConnectAccountId } }
-        : {})
+      }
     },
     { idempotencyKey: `ticket-order:${ticketOrderConfirmationCode}` }
   );
 
   return { paymentIntentId: paymentIntent.id, status: paymentIntent.status };
+}
+
+/**
+ * Real per-party payout — one Stripe transfer from the platform balance to
+ * a venue/artist/promoter's Connect account, for exactly their share of one
+ * captured ticket order (an `AccountsPayableEntry` row). Idempotent per
+ * entry via `transfer_group` + the entry's own id as the idempotency key,
+ * so a retried payout run can never double-pay the same entry.
+ */
+export async function createPayoutTransfer({
+  amountCents,
+  connectAccountId,
+  payableEntryId,
+  showId,
+  description
+}: {
+  amountCents: number;
+  connectAccountId: string;
+  payableEntryId: string;
+  showId: string;
+  description: string;
+}): Promise<string> {
+  const stripe = getStripe();
+  const transfer = await stripe.transfers.create(
+    {
+      amount: amountCents,
+      currency: 'usd',
+      destination: connectAccountId,
+      transfer_group: `show:${showId}`,
+      description,
+      metadata: { payableEntryId, showId }
+    },
+    { idempotencyKey: `payable-entry:${payableEntryId}` }
+  );
+  return transfer.id;
 }
 
 export async function captureTicketPaymentIntent(paymentIntentId: string): Promise<void> {
@@ -132,6 +172,22 @@ export async function captureTicketPaymentIntent(paymentIntentId: string): Promi
 export async function cancelTicketPaymentIntent(paymentIntentId: string): Promise<void> {
   const stripe = getStripe();
   await stripe.paymentIntents.cancel(paymentIntentId, {}, { idempotencyKey: `cancel:${paymentIntentId}` });
+}
+
+/**
+ * Full refund of a captured ticket order. Safe to call against the
+ * PaymentIntent directly (rather than needing to reverse a transfer) as
+ * long as no payout has happened yet — true by construction here, since
+ * `triggerShowPayouts` only ever transfers money for ENDED shows, and this
+ * is only ever called for orders more than 48h before their show starts.
+ */
+export async function refundTicketPaymentIntent(paymentIntentId: string): Promise<string> {
+  const stripe = getStripe();
+  const refund = await stripe.refunds.create(
+    { payment_intent: paymentIntentId },
+    { idempotencyKey: `refund:${paymentIntentId}` }
+  );
+  return refund.id;
 }
 
 /**

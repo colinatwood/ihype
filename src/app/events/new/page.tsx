@@ -157,8 +157,8 @@ export default function EventsNewPage() {
           isTicketed: priceDollars > 0,
           ticketPriceCents: Math.round(priceDollars * 100),
           ticketCapacity: cap || undefined,
-          venuePayoutPercent: 45,
-          artistPayoutPercent: 45,
+          venuePayoutPercent: 20,
+          artistPayoutPercent: 70,
           promoterPayoutPercent: 10,
           tags: ticketType === 'vip' ? ['vip'] : undefined,
           headlinerProfileId: headliner?.id ?? undefined,
@@ -200,7 +200,7 @@ export default function EventsNewPage() {
           <>
             <div className="cover-slot">Event cover art</div>
             <h1>Create an event.</h1>
-            <p className="sub">Fill in the details. The 45/45/10 split is automatic — no configuration needed.</p>
+            <p className="sub">Fill in the details. The 70/20/10 split is automatic — no configuration needed.</p>
             <div className="field">
               <label htmlFor="event-title">Event title</label>
               <input id="event-title" onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Midnight Echo — Live at The Echo" value={title} />
@@ -225,7 +225,7 @@ export default function EventsNewPage() {
         {step === 1 && (
           <>
             <h1>Ticketing.</h1>
-            <p className="sub">Set face value and capacity. The split is fixed: 45% artist · 45% venue · 10% promoters · $0 iHYPE.</p>
+            <p className="sub">Set face value and capacity. The split is fixed: 70% artist · 20% venue · 10% promoters · $0 iHYPE.</p>
             <div className="grid2">
               <div className="field">
                 <label htmlFor="event-price">Face value ($)</label>
@@ -239,18 +239,18 @@ export default function EventsNewPage() {
             <div className="card">
               <div className="label" style={{ marginBottom: 10 }}>If it sells out</div>
               <div className="split-bar" style={{ marginBottom: 14 }}>
-                <div style={{ flex: 45, background: '#ff5029', borderRadius: '999px 0 0 999px' }} />
-                <div style={{ flex: 45, background: '#22e5d4' }} />
+                <div style={{ flex: 70, background: '#ff5029', borderRadius: '999px 0 0 999px' }} />
+                <div style={{ flex: 20, background: '#22e5d4' }} />
                 <div style={{ flex: 10, background: '#b983ff', borderRadius: '0 999px 999px 0' }} />
               </div>
               <div style={{ display: 'flex', gap: 0 }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: '#ff5029' }}>{fmt$(gross * .45)}</div>
-                  <div className="label" style={{ marginTop: 3 }}>45% Artist</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: '#ff5029' }}>{fmt$(gross * .7)}</div>
+                  <div className="label" style={{ marginTop: 3 }}>70% Artist</div>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: '#22e5d4' }}>{fmt$(gross * .45)}</div>
-                  <div className="label" style={{ marginTop: 3 }}>45% Venue</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: '#22e5d4' }}>{fmt$(gross * .2)}</div>
+                  <div className="label" style={{ marginTop: 3 }}>20% Venue</div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '1.1rem', color: '#b983ff' }}>{fmt$(gross * .1)}</div>
@@ -325,17 +325,17 @@ export default function EventsNewPage() {
                 {date || 'TBD'} · {venueProfile?.name ?? 'TBD'} · ${priceDollars || 0} · {cap || 0} cap
               </div>
               <div className="split-bar" style={{ marginBottom: 12 }}>
-                <div style={{ flex: 45, background: '#ff5029', borderRadius: '999px 0 0 999px' }} />
-                <div style={{ flex: 45, background: '#22e5d4' }} />
+                <div style={{ flex: 70, background: '#ff5029', borderRadius: '999px 0 0 999px' }} />
+                <div style={{ flex: 20, background: '#22e5d4' }} />
                 <div style={{ flex: 10, background: '#b983ff', borderRadius: '0 999px 999px 0' }} />
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '.72rem', color: 'var(--ink-3)' }}>
-                {fmt$(gross * .45)} artist · {fmt$(gross * .45)} venue · {fmt$(gross * .1)} promoters · $0 iHYPE
+                {fmt$(gross * .7)} artist · {fmt$(gross * .2)} venue · {fmt$(gross * .1)} promoters · $0 iHYPE
               </div>
             </div>
             <div style={{ padding: '12px 14px', borderRadius: 12, border: '1px solid rgba(34,229,212,.2)', background: 'rgba(34,229,212,.04)', marginBottom: 14 }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '.72rem', color: '#22e5d4', lineHeight: 1.5 }}>
-                iHYPE takes $0 · 45/45/10 split locked in charter · tickets go on sale immediately
+                iHYPE takes $0 · 70/20/10 split locked in charter · tickets go on sale immediately
               </div>
             </div>
             {error && <p style={{ color: '#ff5029', fontSize: 13, marginBottom: 12 }}>{error}</p>}

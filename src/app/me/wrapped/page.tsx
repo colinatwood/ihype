@@ -81,7 +81,7 @@ export default async function WrappedPage() {
 
         <footer className="wrapped-foot">
           <span className="wrapped-foot-brand">iHYPE</span>
-          <span className="wrapped-foot-meta">0% fees · 45/45/10</span>
+          <span className="wrapped-foot-meta">0% fees · 70/20/10</span>
         </footer>
       </div>
 

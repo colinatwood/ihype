@@ -270,8 +270,8 @@ export default async function RootPage() {
           <div className="grid grid-2 idx-roles-grid" style={{ gap: '0.75rem' }}>
             {[
               { role: 'Fans', color: '#b983ff', icon: '🎶', href: '/register?role=FAN', items: ['Discover new music before it blows up', 'Buy tickets with no fees', 'Earn 10% on tickets you refer', 'Track your scene with hype streaks'] },
-              { role: 'Artists', color: '#ff5029', icon: '🎸', href: '/register?role=ARTIST', items: ['45% of every ticket you sell', 'Upload music as swipeable Seeds', 'Build your public page and catalog', 'See who\'s hyping your work'] },
-              { role: 'Venues', color: '#22e5d4', icon: '🏟️', href: '/register?role=VENUE', items: ['45% of every show you host', 'Zero ticketing fees for buyers', 'Demand radar shows what\'s trending', 'Connect with artists and promoters'] },
+              { role: 'Artists', color: '#ff5029', icon: '🎸', href: '/register?role=ARTIST', items: ['70% of every ticket you sell', 'Upload music as swipeable Seeds', 'Build your public page and catalog', 'See who\'s hyping your work'] },
+              { role: 'Venues', color: '#22e5d4', icon: '🏟️', href: '/register?role=VENUE', items: ['20% of every show you host', 'Zero ticketing fees for buyers', 'Demand radar shows what\'s trending', 'Connect with artists and promoters'] },
               { role: 'Promoters / DJs', color: '#ffb84a', icon: '📣', href: '/register?role=DJ', items: ['10% referral on every ticket you drive', 'Host radio shows on the platform', 'Build a following and grow your scene', 'Referral links for every event'] },
             ].map(r => (
               <div className="idx-role-card" key={r.role} style={{
@@ -324,7 +324,7 @@ export default async function RootPage() {
         <div className="container">
           <div style={{ marginBottom: '2rem' }}>
             <p style={{ fontFamily: 'var(--f-m)', fontSize: '0.75rem', letterSpacing: '.2em', color: 'var(--accent)', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
-              The 45/45/10 promise
+              The 70/20/10 promise
             </p>
             <h2 style={{ fontFamily: 'var(--f-d)', fontWeight: 800, fontSize: 'clamp(1.8rem, 4vw, 3rem)', letterSpacing: '-0.03em', color: 'var(--ink)', margin: 0 }}>
               Every ticket sale. Every time.
@@ -337,8 +337,8 @@ export default async function RootPage() {
 
           <div className="grid grid-3" style={{ gap: '1rem' }}>
             {[
-              { pct: '45%', role: 'Artist', color: '#ff5029', desc: 'Per ticket sold at your show. No deductions, no hidden processing cuts. Paid out automatically.', icon: '🎸' },
-              { pct: '45%', role: 'Venue', color: '#22e5d4', desc: 'Per ticket for hosting the show. The room makes money too — not just the act on stage.', icon: '🏟️' },
+              { pct: '70%', role: 'Artist', color: '#ff5029', desc: 'Per ticket sold at your show. No deductions, no hidden processing cuts. Paid out automatically.', icon: '🎸' },
+              { pct: '20%', role: 'Venue', color: '#22e5d4', desc: 'Per ticket for hosting the show. The room makes money too — not just the act on stage.', icon: '🏟️' },
               { pct: '10%', role: 'Promoter', color: '#b983ff', desc: 'To whoever brought the fan — DJ, promoter, or friend with a referral link. Grow the scene, get paid.', icon: '📣' },
             ].map(c => (
               <div key={c.role} style={{

@@ -143,7 +143,7 @@ export async function GET(request: NextRequest) {
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: teal, display: 'flex' }} />
-            0% fees · 45/45/10 split
+            0% fees · 70/20/10 split
           </div>
         </div>
 

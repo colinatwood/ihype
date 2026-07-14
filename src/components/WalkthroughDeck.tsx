@@ -129,8 +129,8 @@ function ListRow({ icon, iconTint = 'var(--accent)', title, subtitle }: {
 // ─── SplitBar ────────────────────────────────────────────────────────────────
 
 const SPLIT = [
-  { key: 'artist', pct: 45, color: 'var(--role-artist)', label: 'Artist' },
-  { key: 'venue', pct: 45, color: 'var(--role-venue)', label: 'Venue' },
+  { key: 'artist', pct: 70, color: 'var(--role-artist)', label: 'Artist' },
+  { key: 'venue', pct: 20, color: 'var(--role-venue)', label: 'Venue' },
   { key: 'promoter', pct: 10, color: 'var(--role-promoter)', label: 'Promoter' },
 ];
 
@@ -386,7 +386,7 @@ function Slide07Ticket() {
         <Num>04 / 06 · FAN</Num>
         <H size={60} style={{ marginTop: 18 }}>A ticket, at face value.</H>
         <Body style={{ fontSize: 21, maxWidth: '46ch', marginTop: 22 }}>
-          $18 is $18. Zero service fees. And every buyer can see exactly where their money goes — 45% artist, 45% venue, 10% promoter.
+          $18 is $18. Zero service fees. And every buyer can see exactly where their money goes — 70% artist, 20% venue, 10% promoter.
         </Body>
         <div style={{ marginTop: 34, maxWidth: 420 }}>
           <SplitBar total={18} />
@@ -437,7 +437,7 @@ function Slide10Surfaces() {
     { title: 'Studio', body: 'Creator workbench, demand radar, payout receipts' },
     { title: 'Ticketing', body: '0%-fee checkout → QR pass' },
     { title: 'Design system', body: '31 components, 112 tokens, 5 templates' },
-    { title: 'Brand', body: 'Warm-dark, Syne display, the 45/45/10 promise' },
+    { title: 'Brand', body: 'Warm-dark, Syne display, the 70/20/10 promise' },
   ];
   return (
     <section style={{ ...SLIDE_STYLE, background: '#100d09', padding: 88, flexDirection: 'column', justifyContent: 'center' }}>
@@ -459,7 +459,7 @@ function Slide11Quote() {
   return (
     <section style={{ ...SLIDE_STYLE, background: 'linear-gradient(135deg,#ff5029,#ff3e9a 55%,#b983ff)', padding: 96, flexDirection: 'column', justifyContent: 'center' }}>
       <div style={{ fontFamily: 'var(--f-s)', fontSize: 62, lineHeight: 1.18, color: '#fff', maxWidth: '24ch' }}>
-        &ldquo;45% to the artist, 45% to the venue, 10% to whoever brought the fan. iHYPE takes nothing.&rdquo;
+        &ldquo;70% to the artist, 20% to the venue, 10% to whoever brought the fan. iHYPE takes nothing.&rdquo;
       </div>
       <div style={{ fontFamily: 'var(--f-m)', fontSize: 18, letterSpacing: '.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,.8)', marginTop: 40 }}>
         Locked in the charter

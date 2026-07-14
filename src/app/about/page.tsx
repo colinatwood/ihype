@@ -58,7 +58,7 @@ export default function AboutPage() {
         <h2 className="lp-section-head">How we got here</h2>
         <div style={{ marginTop: 28, display: 'flex', flexDirection: 'column', gap: 0 }}>
           {[
-            { date: 'January 2026', head: 'Founded in Portland, ME', body: 'iHYPE incorporated as a not-for-profit organization in Portland, Maine. The founding charter locked in 0% platform fees and the 45/45/10 revenue split.' },
+            { date: 'January 2026', head: 'Founded in Portland, ME', body: 'iHYPE incorporated as a not-for-profit organization in Portland, Maine. The founding charter locked in 0% platform fees and the 70/20/10 revenue split.' },
             { date: 'February 2026', head: 'Design system & charter published', body: 'The iHYPE design system and community charter were published openly. The revenue split, governance model, and founding principles are locked in the charter.' },
             { date: 'March 2026', head: 'Platform beta launched', body: 'Beta access opened to artists, venues, and promoters in the Portland area. First shows went live on the platform.' },
             { date: 'June 2026', head: 'Expanded beta & radio shows', body: 'Fan beta access opened nationally. Audio-only radio shows and live DJ sets went live. iHYPE has never hosted video and never will.' },

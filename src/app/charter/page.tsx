@@ -17,14 +17,14 @@ export default function CharterPage() {
       </p>
 
       <div className="charter-split-bar">
-        <div style={{ flex: 45, background: 'var(--accent)' }} />
-        <div style={{ flex: 45, background: 'var(--role-venue)' }} />
+        <div style={{ flex: 70, background: 'var(--accent)' }} />
+        <div style={{ flex: 20, background: 'var(--role-venue)' }} />
         <div style={{ flex: 10, background: 'var(--role-fan)' }} />
       </div>
 
       <p className="charter-split-display">
-        <span className="charter-accent">45%</span> artist ·{' '}
-        <span className="charter-venue">45%</span> venue ·{' '}
+        <span className="charter-accent">70%</span> artist ·{' '}
+        <span className="charter-venue">20%</span> venue ·{' '}
         <span className="charter-fan">10%</span> promoters ·{' '}
         0% iHYPE.
       </p>
@@ -37,7 +37,7 @@ export default function CharterPage() {
       <p className="charter-p">Because every platform that started with good intentions eventually faced a board meeting where fees made sense. We wanted to make that conversation impossible. The charter is the answer to &quot;what if the company needs revenue?&quot; — the answer is: find another way. Not this.</p>
 
       <h2 className="charter-h2">What &quot;locked in&quot; means</h2>
-      <p className="charter-p">The 45/45/10 split is a condition of incorporation. Changing it would require dissolving the company and re-incorporating under a different structure. No board vote, no shareholder approval, no acquisition clause overrides it.</p>
+      <p className="charter-p">The 70/20/10 split is a condition of incorporation. Changing it would require dissolving the company and re-incorporating under a different structure. No board vote, no shareholder approval, no acquisition clause overrides it.</p>
 
       <h2 className="charter-h2">How iHYPE makes money</h2>
       <p className="charter-p">iHYPE earns revenue through optional creator tools, promoted discovery placement, and radio show distribution — none of which touch the ticket split. The split is untouchable. Everything else is fair game.</p>

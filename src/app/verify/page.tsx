@@ -114,7 +114,7 @@ export default async function VerifyPage() {
       <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-a50)', marginBottom: 12 }}>Verification</p>
       <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.7rem', fontWeight: 800, marginBottom: 8 }}>Verify your {TYPE_LABEL[profile.type]} page.</h1>
       <p style={{ fontSize: 14, color: 'var(--ink-a60)', marginBottom: 24, lineHeight: 1.6 }}>
-        Fan accounts are instant. Artist, DJ, and Venue accounts require verification — it protects everyone in the 45/45/10 ecosystem.
+        Fan accounts are instant. Artist, DJ, and Venue accounts require verification — it protects everyone in the 70/20/10 ecosystem.
       </p>
       <VerifyForm
         profileId={profile.id}
