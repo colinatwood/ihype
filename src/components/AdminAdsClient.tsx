@@ -5,23 +5,25 @@ import { useRouter } from 'next/navigation';
 
 interface Ad {
   id: string;
-  advertiserName: string;
-  advertiserType: string;
-  campaignWebsite: string;
-  adTextCopy: string;
+  title: string;
+  scope: string;
+  audioUrl: string | null;
+  audioDurationSecs: number | null;
+  clickUrl: string | null;
   status: string;
-  aiReasoning: string | null;
   impressions: number;
   clicks: number;
-  tier: string;
+  budgetCents: number;
+  spentCents: number;
   createdAt: Date;
+  slot: { name: string } | null;
+  advertiser: { name: string | null; email: string | null } | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  approved: 'success',
-  rejected: 'error',
-  manual_review: 'warning',
-  pending: 'info',
+  APPROVED: 'success',
+  REJECTED: 'error',
+  PENDING: 'warning',
 };
 
 interface Props {
@@ -45,7 +47,7 @@ export function AdminAdsClient({ ads: initial, status, q, page, total, pageSize 
     router.push(`/admin/ads?${params}`);
   }, [status, q, page, router]);
 
-  async function updateStatus(id: string, newStatus: 'approved' | 'rejected') {
+  async function updateStatus(id: string, newStatus: 'APPROVED' | 'REJECTED') {
     setLoading(id);
     const res = await fetch('/api/admin/ads', {
       method: 'PATCH',
@@ -62,7 +64,7 @@ export function AdminAdsClient({ ads: initial, status, q, page, total, pageSize 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <input
           defaultValue={q}
-          placeholder="Search advertiser or URL…"
+          placeholder="Search campaign title or link…"
           className="input"
           style={{ flex: 1, minWidth: 180 }}
           onKeyDown={e => { if (e.key === 'Enter') navigate({ q: (e.target as HTMLInputElement).value, page: '1' }); }}
@@ -75,41 +77,46 @@ export function AdminAdsClient({ ads: initial, status, q, page, total, pageSize 
           onChange={e => navigate({ status: e.target.value, page: '1' })}
         >
           <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="manual_review">Manual review</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
+          <option value="PENDING">Pending review</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
         </select>
       </div>
 
       {/* List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {ads.length === 0 && <p className="empty">No submissions found.</p>}
+        {ads.length === 0 && <p className="empty">No campaigns found.</p>}
         {ads.map((ad) => (
           <div className="panel" key={ad.id} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <strong>{ad.advertiserName}</strong>
-                <span className="meta" style={{ marginLeft: 8 }}>{ad.advertiserType}</span>
-                <span className="meta" style={{ marginLeft: 8 }}>· {ad.tier}</span>
+                <strong>{ad.title}</strong>
+                <span className="meta" style={{ marginLeft: 8 }}>{ad.slot?.name ?? ad.scope}</span>
+                {ad.advertiser?.email && <span className="meta" style={{ marginLeft: 8 }}>· {ad.advertiser.name ?? ad.advertiser.email}</span>}
               </div>
               <span className={`badge ${STATUS_COLORS[ad.status] ?? ''}`}>{ad.status}</span>
             </div>
-            <p className="meta">
-              <a href={ad.campaignWebsite} rel="noopener noreferrer" target="_blank">{ad.campaignWebsite}</a>
-            </p>
-            <p>&ldquo;{ad.adTextCopy}&rdquo;</p>
-            {ad.aiReasoning && <p className="meta">AI: {ad.aiReasoning}</p>}
-            <div style={{ display: 'flex', gap: 16 }}>
+            {ad.clickUrl && (
+              <p className="meta">
+                <a href={ad.clickUrl} rel="noopener noreferrer" target="_blank">{ad.clickUrl}</a>
+              </p>
+            )}
+            {ad.audioUrl ? (
+              <audio controls preload="none" src={ad.audioUrl} style={{ height: 32, maxWidth: 320 }} />
+            ) : (
+              <p className="meta">No ad audio uploaded.</p>
+            )}
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <span className="meta">{new Date(ad.createdAt).toLocaleString()}</span>
+              {typeof ad.audioDurationSecs === 'number' && <span className="meta">:{ad.audioDurationSecs}</span>}
               <span className="meta">{ad.impressions.toLocaleString()} impressions</span>
               <span className="meta">{ad.clicks.toLocaleString()} clicks</span>
-              {ad.impressions > 0 && <span className="meta">CTR {((ad.clicks / ad.impressions) * 100).toFixed(1)}%</span>}
+              <span className="meta">${((ad.budgetCents - ad.spentCents) / 100).toFixed(2)} budget remaining</span>
             </div>
-            {(ad.status === 'manual_review' || ad.status === 'pending') && (
+            {ad.status === 'PENDING' && (
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="button small" disabled={loading === ad.id} onClick={() => updateStatus(ad.id, 'approved')}>Approve</button>
-                <button className="button small secondary" disabled={loading === ad.id} onClick={() => updateStatus(ad.id, 'rejected')}>Reject</button>
+                <button className="button small" disabled={loading === ad.id} onClick={() => updateStatus(ad.id, 'APPROVED')}>Approve</button>
+                <button className="button small secondary" disabled={loading === ad.id} onClick={() => updateStatus(ad.id, 'REJECTED')}>Reject</button>
               </div>
             )}
           </div>

@@ -25,7 +25,6 @@ import { formatShowTime, getBaseUrl } from '@/lib/utils';
 import { ShowEngagement } from '@/components/ShowEngagement';
 import { ShowSetlistVote } from '@/components/ShowSetlistVote';
 import { ShowSetlistEditor } from '@/components/ShowSetlistEditor';
-import { AdBanner } from '@/components/AdBanner';
 import { ShowRecapForm } from '@/components/ShowRecapForm';
 import { ShowTabs } from '@/components/ShowTabs';
 
@@ -776,10 +775,6 @@ export default async function ShowDetailPage({
               </div>
             </aside>
           ) : null}
-        </div>
-
-        <div style={{ marginTop: 24 }}>
-          <AdBanner />
         </div>
       </div>
     </>

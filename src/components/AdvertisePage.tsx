@@ -175,7 +175,7 @@ function CoverageBuilder() {
   const cpm = quote.effectiveCpmCents / 100;
   const everyH = 24 / spots;
   const spotsNote = spots >= 24 ? '≈ hourly placements, all day long'
-    : `≈ one placement every ${everyH >= 1 ? everyH.toFixed(everyH % 1 ? 1 : 0) : '<1'} hours across the feed`;
+    : `≈ one ad break every ${everyH >= 1 ? everyH.toFixed(everyH % 1 ? 1 : 0) : '<1'} hours across radio shows`;
 
   // Dot grid
   const dots = Array.from({ length: 48 }, (_, i) => {
@@ -200,13 +200,17 @@ function CoverageBuilder() {
       setSubmit({ phase: 'error', error: 'Wait for the ad audio to finish uploading first.' });
       return;
     }
+    if (audio.phase !== 'done') {
+      setSubmit({ phase: 'error', error: 'Upload your ad audio first — every iHYPE campaign is a radio-style audio spot.' });
+      return;
+    }
     setSubmit({ phase: 'submitting' });
     try {
       const result = await postJson<{
         vetting: { status: 'APPROVED' | 'REJECTED' | 'PENDING'; reasoning: string; message: string };
       }>('/api/advertise/campaigns', {
         scope, spotsPerDay: spots, runDays: days, title: title.trim(), clickUrl: clickUrl.trim(),
-        ...(audio.phase === 'done' ? { audioUrl: audio.url, audioDurationSecs: audio.durationSecs ?? undefined } : {}),
+        audioUrl: audio.url, audioDurationSecs: audio.durationSecs ?? undefined,
       });
       setSubmit({ phase: 'done', ...result.vetting });
     } catch (err) {
@@ -304,7 +308,7 @@ function CoverageBuilder() {
               />
               <div>
                 <label className="adv-btn-ghost adv-btn-sm" style={{ display: 'inline-flex', cursor: 'pointer' }}>
-                  {audio.phase === 'uploading' ? 'Uploading…' : audio.phase === 'done' ? 'Replace ad audio' : 'Upload ad audio (optional)'}
+                  {audio.phase === 'uploading' ? 'Uploading…' : audio.phase === 'done' ? 'Replace ad audio' : 'Upload ad audio (required)'}
                   <input accept="audio/*" onChange={handleAudioChange} style={{ display: 'none' }} type="file" />
                 </label>
                 {audio.phase === 'done' && (
@@ -316,7 +320,7 @@ function CoverageBuilder() {
                   <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 10, color: '#ff5a5a', marginTop: 8 }}>{audio.error}</div>
                 )}
                 <div style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9.5, color: '#5a5048', marginTop: 6 }}>
-                  No audio uploaded? Your campaign still runs as a text/image placement — audio just isn&apos;t eligible for radio ad breaks.
+                  Ad audio is required for your campaign to run — iHYPE only ever plays radio-style audio spots, never a visual banner or feed placement.
                 </div>
               </div>
             </div>
@@ -349,7 +353,7 @@ function CoverageBuilder() {
 
           {/* Placement chips */}
           <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
-            {[{ color: '#b983ff', label: 'Discover feed' }, { color: '#22e5d4', label: 'Chart interstitials' }, { color: '#ffb84a', label: 'Seed swipe cards' }].map(p => (
+            {[{ color: '#b983ff', label: 'DJ radio ad breaks' }, { color: '#22e5d4', label: 'Live show intermissions' }].map(p => (
               <span key={p.label} style={{ fontFamily: 'var(--f-m,monospace)', fontSize: 9.5, letterSpacing: '.06em', color: '#9e9080', padding: '6px 11px', borderRadius: 99, border: '1px solid var(--hair-70)', display: 'flex', alignItems: 'center', gap: 7 }}>
                 <span style={{ display: 'inline-block', width: '.55em', height: '.55em', borderRadius: '50%', background: p.color }} />
                 {p.label}
@@ -747,7 +751,7 @@ export function AdvertisePage({ stats }: { stats: AdvertisePageStats }) {
               Pick your <em style={{ fontFamily: 'Instrument Serif,serif', fontStyle: 'italic', fontWeight: 400, color: '#ff5029' }}>reach.</em> Pick your <em style={{ fontFamily: 'Instrument Serif,serif', fontStyle: 'italic', fontWeight: 400, color: '#ff5029' }}>volume.</em>
             </h2>
             <p style={{ fontFamily: 'Instrument Serif,serif', fontStyle: 'italic', fontSize: 19, color: '#9e9080', lineHeight: 1.4, marginTop: 14, maxWidth: '58ch' }}>
-              Coverage scales from your block to the whole platform. Spots are impressions placed across discovery, charts, and seed feeds — priced per day, billed per spot.
+              Coverage scales from your block to the whole platform. Spots are audio ad breaks played inside DJ radio shows — priced per day, billed per spot.
             </p>
           </div>
           <div>

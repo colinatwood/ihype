@@ -56,7 +56,6 @@ export default async function ModerationPage({ searchParams }: { searchParams?: 
           <option value="show">Show</option>
           <option value="comment">Comment</option>
           <option value="track">Track</option>
-          <option value="ad-creative">Ad creative</option>
         </select>
         <input type="hidden" name="page" value="1" />
         <button className="button" type="submit">Filter</button>
