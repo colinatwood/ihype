@@ -201,6 +201,10 @@
 .ops-rail-glyph{font-size:16px;line-height:1}
 .ops-rail-label{font-size:8px}
 .ops-main{flex:1;overflow-y:auto;min-width:0}
+.ops-subnav{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--line);overflow-x:auto}
+.ops-subnav-link{font-family:var(--f-m,monospace);font-size:10px;letter-spacing:.06em;color:#9e9080;text-decoration:none;padding:4px 9px;border-radius:5px;border:1px solid var(--line);white-space:nowrap;transition:color .15s,border-color .15s}
+.ops-subnav-link:hover{color:var(--ink)}
+.ops-subnav-link.ops-subnav-active{color:#ff5029;border-color:rgba(255,80,41,.35);background:rgba(255,80,41,.08)}
 .ops-bottom-bar{display:none}
 @media(max-width:700px){
   .ops-rail{display:none}

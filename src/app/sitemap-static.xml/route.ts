@@ -14,6 +14,7 @@ const STATIC: Array<{ path: string; freq: string; priority: number }> = [
   { path: '/fans', freq: 'weekly', priority: 0.6 },
   { path: '/about', freq: 'monthly', priority: 0.5 },
   { path: '/transparency', freq: 'monthly', priority: 0.4 },
+  { path: '/audit', freq: 'monthly', priority: 0.4 },
   { path: '/journal', freq: 'weekly', priority: 0.7 }
 ];
 
