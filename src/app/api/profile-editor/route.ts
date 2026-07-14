@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { db, withDbRetry } from '@/lib/db';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { editorSchema } from '@/lib/profile-editor-schema';
+import { statOptionsForRole } from '@/lib/profile-stats-catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,7 @@ const EDITOR_FIELDS = {
   themeAccentTone: true,
   themeBackdropTone: true,
   fanShareEnabled: true,
+  pinnedStats: true,
 } as const;
 
 export async function GET(request: Request) {
@@ -148,7 +150,13 @@ export async function PATCH(request: Request) {
     themePreset: body.themePreset || undefined,
     themeAccentTone: emptyToNull(body.themeAccentTone),
     themeBackdropTone: emptyToNull(body.themeBackdropTone),
-    fanShareEnabled: body.fanShareEnabled
+    fanShareEnabled: body.fanShareEnabled,
+    // Re-validated against the profile's actual type here (not just the
+    // catalog) so a stale client can't pin a stat that doesn't apply to
+    // this role — e.g. a Venue can't pin "Tickets Bought" (a fan-only stat).
+    pinnedStats: body.pinnedStats
+      ? body.pinnedStats.filter((key) => statOptionsForRole(profile!.type).some((s) => s.key === key)).slice(0, 4)
+      : undefined,
   };
 
   let updated: { id: string; slug: string; type: string; updatedAt: Date };

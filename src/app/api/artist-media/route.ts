@@ -155,18 +155,22 @@ export async function POST(request: Request) {
     const fileBytes = new Uint8Array(await file.arrayBuffer());
     const durationSecs = parseAudioDuration(fileBytes) ?? null;
 
-    let effectiveFreeUse = freeUseEnabled;
-    let vetting: Awaited<ReturnType<typeof vetFreeUseSample>> | null = null;
-    if (freeUseEnabled) {
-      vetting = await vetFreeUseSample({
-        title,
-        notes: notesValue || null,
-        fileName: file.name || '',
-        artistName: profile.name,
-        durationSecs,
-      });
-      effectiveFreeUse = vetting.cleared;
-    }
+    // Every upload gets the same metadata vetting the shared free-use crate
+    // has always required — previously this only ran for freeUseEnabled
+    // uploads, so the large majority of tracks (kept on the artist's own
+    // page, never opted into the shared pool) had zero automated content
+    // screening at all. A flagged non-free-use track still goes live
+    // (fail-open, same as before) but now also raises a ContentReport into
+    // the existing admin moderation queue for a human to look at, instead of
+    // silently doing nothing.
+    const vetting = await vetFreeUseSample({
+      title,
+      notes: notesValue || null,
+      fileName: file.name || '',
+      artistName: profile.name,
+      durationSecs,
+    });
+    const effectiveFreeUse = freeUseEnabled && vetting.cleared;
 
     let reservedAssetId: string | null = null;
     let storedMedia: Awaited<ReturnType<typeof uploadArtistMediaToBlob>> | null = null;
@@ -276,15 +280,31 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    if (vetting) {
-      await recordAuditEvent({
-        actorUserId: session.user.id,
-        action: vetting.cleared ? 'media.free_use.auto_cleared' : 'media.free_use.auto_flagged',
-        entityType: 'ArtistMediaAsset',
-        entityId: hexId,
-        metadata: {
-          reasoning: vetting.reasoning,
-          requiresManualReview: vetting.requiresManualReview,
+    await recordAuditEvent({
+      actorUserId: session.user.id,
+      action: vetting.cleared ? 'media.upload.auto_cleared' : 'media.upload.auto_flagged',
+      entityType: 'ArtistMediaAsset',
+      entityId: hexId,
+      metadata: {
+        reasoning: vetting.reasoning,
+        requiresManualReview: vetting.requiresManualReview,
+        freeUseRequested: freeUseEnabled,
+      },
+    }).catch(() => {});
+
+    // Fail-open by design (matches vetFreeUseSample's own doc comment): a
+    // flagged track still goes live immediately rather than blocking a
+    // legitimate artist on an automated call that can't hear the actual
+    // audio. It now also raises a ContentReport into the existing admin
+    // moderation queue (/admin/moderation?type=track) so a human sees it —
+    // previously a flagged non-free-use upload left zero trace anywhere.
+    if (!vetting.cleared) {
+      await db.contentReport.create({
+        data: {
+          targetType: 'track',
+          targetId: hexId,
+          reason: vetting.requiresManualReview ? 'auto_flag_ambiguous' : 'auto_flag_copyright',
+          details: vetting.reasoning,
         },
       }).catch(() => {});
     }
@@ -295,13 +315,14 @@ export async function POST(request: Request) {
         url: `/api/media/${asset.hexId}`,
         shareUrl: `/api/media/${asset.hexId}`,
       },
-      ...(vetting && !vetting.cleared
+      ...(!vetting.cleared
         ? {
             vetting: {
-              freeUseWithheld: true,
+              freeUseWithheld: freeUseEnabled,
               reasoning: vetting.reasoning,
-              message:
-                'Uploaded, but automated vetting kept it out of the shared free-use radio crate. It stays available on your own page.',
+              message: freeUseEnabled
+                ? 'Uploaded, but automated vetting kept it out of the shared free-use radio crate. It stays available on your own page.'
+                : 'Uploaded — automated vetting flagged this track for a closer look. It stays live while that review happens.',
             },
           }
         : {}),

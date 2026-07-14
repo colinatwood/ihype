@@ -7,6 +7,8 @@ import { db } from '@/lib/db';
 import { HypeButton } from '@/components/HypeButton';
 import { VenueRequestForm } from '@/components/VenueRequestForm';
 import { ProfileInsights } from '@/components/ProfileInsights';
+import { getPinnedStatValues } from '@/lib/profile-stats';
+import { PinnedStatTiles } from '@/components/PinnedStatTiles';
 import { getDemoCreatorExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
 
@@ -85,6 +87,7 @@ export default async function VenuePage({
   const avgFillPct = shows.length > 0
     ? Math.round(shows.reduce((sum, s) => sum + (s.ticketCapacity ? Math.min(1, s.ticketsSoldCount / s.ticketCapacity) : 0), 0) / shows.length * 100)
     : 0;
+  const pinnedStats = await getPinnedStatValues(profile.id, profile.type, profile.pinnedStats);
 
   return (
     <div className="venue-page" style={(themeVars ?? undefined) as React.CSSProperties | undefined}>
@@ -147,6 +150,7 @@ export default async function VenuePage({
                 {venueAddress}{profile.hoursText ? ` · ${profile.hoursText}` : ''}
               </p>
             )}
+            <PinnedStatTiles accent="var(--profile-accent, var(--role-venue, #22e5d4))" stats={pinnedStats} />
             <div className="venue-split-card">
               <div className="venue-split-title">How every ticket is split here</div>
               <div className="venue-split-bar">

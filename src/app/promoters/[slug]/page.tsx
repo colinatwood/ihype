@@ -8,6 +8,8 @@ import { HypeButton } from '@/components/HypeButton';
 import { FollowButton } from '@/components/FollowButton';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
 import { ProfileInsights } from '@/components/ProfileInsights';
+import { getPinnedStatValues } from '@/lib/profile-stats';
+import { PinnedStatTiles } from '@/components/PinnedStatTiles';
 import { getSafeImageUrl } from '@/lib/asset-safety';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
 import { canManageOwnedResource } from '@/lib/permissions';
@@ -94,6 +96,7 @@ export default async function DJProfilePage({
     const key = o.show.title;
     earningsByShow.set(key, (earningsByShow.get(key) ?? 0) + o.promoterPayoutCents);
   }
+  const pinnedStats = await getPinnedStatValues(profile.id, profile.type, profile.pinnedStats);
 
   return (
     <div className="dj-page" style={(themeVars ?? undefined) as React.CSSProperties | undefined}>
@@ -132,6 +135,7 @@ export default async function DJProfilePage({
           <div><div className="dj-stat-val">{profile.hypeCount.toLocaleString()}</div><div className="dj-stat-label">Hypes</div></div>
           {isOwner && <div><div className="dj-stat-val">${(totalEarnedCents / 100).toFixed(0)}</div><div className="dj-stat-label">Referral Earned</div></div>}
         </div>
+        <PinnedStatTiles accent="#ff3e9a" stats={pinnedStats} />
       </div>
 
       <div className="dj-content">

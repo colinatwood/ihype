@@ -193,6 +193,9 @@ model Profile {
   themeAccentTone               String?
   themeBackdropTone             String?
   fanShareEnabled               Boolean                     @default(false)
+  // Up to 4 stat keys (see src/lib/profile-stats.ts STAT_CATALOG) the owner
+  // chose to display on their public profile's stat tiles.
+  pinnedStats                   String[]                    @default([])
   genres                        String[]
   genre                         String?
   links                         String?

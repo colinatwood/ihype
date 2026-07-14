@@ -1,0 +1,39 @@
+// Dependency-light on purpose: imported by the client-side PageEditor.tsx
+// picker (must never pull in @/lib/db / Prisma into the browser bundle) and
+// by profile-stats.ts's server-side computation. Keep this file free of any
+// import that isn't itself dependency-light.
+
+export type StatKey =
+  | 'hypeTotal'
+  | 'followerCount'
+  | 'monthlyListeners'
+  | 'trackCompletionRate'
+  | 'ticketsSold'
+  | 'showCompletionRate'
+  | 'showsAttended'
+  | 'artistsHyped'
+  | 'ticketsBought';
+
+export type StatDef = { key: StatKey; label: string };
+
+// Only stats that are already safe to show publicly — same bar as what's
+// already hardcoded on Artist/Venue/FanProfile hero rows today (hype counts,
+// follower counts, show/ticket counts). Financial data (ticketRevenueCents,
+// booking-request pipeline) is deliberately excluded; it's owner-only via
+// ProfileInsights, never pinnable to a public tile.
+export const STAT_CATALOG: Record<StatKey, StatDef & { roles: string[] }> = {
+  hypeTotal: { key: 'hypeTotal', label: 'Total Hypes', roles: ['ARTIST', 'DJ', 'VENUE'] },
+  followerCount: { key: 'followerCount', label: 'Followers', roles: ['ARTIST', 'DJ', 'VENUE', 'LISTENER'] },
+  monthlyListeners: { key: 'monthlyListeners', label: 'Monthly Listeners', roles: ['ARTIST', 'DJ'] },
+  trackCompletionRate: { key: 'trackCompletionRate', label: 'Track Completion', roles: ['ARTIST', 'DJ'] },
+  ticketsSold: { key: 'ticketsSold', label: 'Tickets Sold', roles: ['VENUE'] },
+  showCompletionRate: { key: 'showCompletionRate', label: 'Show Completion', roles: ['VENUE'] },
+  showsAttended: { key: 'showsAttended', label: 'Shows Attended', roles: ['LISTENER'] },
+  artistsHyped: { key: 'artistsHyped', label: 'Artists Hyped', roles: ['LISTENER'] },
+  ticketsBought: { key: 'ticketsBought', label: 'Tickets Bought', roles: ['LISTENER'] },
+};
+
+export function statOptionsForRole(profileType: string): StatDef[] {
+  const role = profileType === 'LISTENER' ? 'LISTENER' : profileType;
+  return Object.values(STAT_CATALOG).filter((s) => s.roles.includes(role));
+}
