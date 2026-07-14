@@ -46,6 +46,8 @@ explicitly list every piece of backend logic being preserved before touching any
 | `middleware.ts` | HTTPS enforcement; www→apex redirect; auth protection for `/listen` (`WORKBENCH_PATH` in `src/lib/auth-redirects.ts`), `/dashboard`, `/admin`; CSP/security headers. **Do not rename to `proxy.ts`** — Next.js 16's `proxy` convention defaults to the Node.js runtime with no way to opt back into Edge (`runtime` config throws in proxy files), and this project's Cloudflare Workers deploy via OpenNext rejects Node.js-runtime middleware outright. The deprecation warning at build time is a known, accepted cost until OpenNext/Cloudflare supports it. |
 | `src/lib/permissions.ts` | `isAdminSession()` — checks `role === 'ADMIN'` |
 | `src/lib/runtime-flags.ts` | Feature flags: invite codes, demo logins, media storage |
+| `src/lib/profile-stats-catalog.ts` | Pure stat-key catalog for the pinned-stats picker — dependency-light on purpose (no `@/lib/db` import) since `PageEditor.tsx` (a client component) imports it directly. Never add a `db`/Prisma import here; put DB-dependent logic in `src/lib/profile-stats.ts` instead. |
+| `src/app/api/artist-media/route.ts` | Every track upload (not just free-use ones) now runs AI metadata vetting via `vetFreeUseSample()` — fail-open, still publishes on a flag, but raises a `ContentReport` (`targetType: 'track'`) into the existing `/admin/moderation` queue. |
 
 ---
 
@@ -134,7 +136,7 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 | .dc.html | Route | src/app path |
 |---|---|---|
 | Artist.dc.html | /artists/[slug] | src/app/artists/[slug]/page.tsx |
-| DJProfile.dc.html | /artists/[slug]?role=dj | src/app/artists/[slug]/page.tsx |
+| DJProfile.dc.html | /promoters/[slug] | src/app/promoters/[slug]/page.tsx — despite living in the `/artists/[slug]` file per the original design mapping, real DJ profiles are gated `profile.type !== 'DJ' → notFound()` at `/promoters/[slug]` (see the "Additional live routes" table below); `artists/[slug]/page.tsx` is ARTIST-only (`profile.type !== 'ARTIST' → notFound()`) |
 | WebRadio.dc.html | /radio | src/app/radio/page.tsx |
 | Pages.dc.html | /pages | src/app/pages/page.tsx |
 

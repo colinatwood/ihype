@@ -7,6 +7,8 @@ import { HypeButton } from '@/components/HypeButton';
 import { FollowButton } from '@/components/FollowButton';
 import { ShareButton } from '@/components/ShareButton';
 import { PromoteShareButton } from '@/components/PromoteShareButton';
+import { getPinnedStatValues } from '@/lib/profile-stats';
+import { PinnedStatTiles } from '@/components/PinnedStatTiles';
 import { canManageOwnedResource } from '@/lib/permissions';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
 import { getDemoShowRelationExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
@@ -91,6 +93,7 @@ export default async function FanProfilePage({
   const upcomingShows = shows.filter((show) => show.status === 'LIVE' || show.startsAt >= now);
   const topFiveItems = getTopFiveItems(profile.topFiveContent);
   const baseUrl = getBaseUrl();
+  const pinnedStats = await getPinnedStatValues(profile.id, profile.type, profile.pinnedStats);
 
   return (
     <div className="fan-page" style={(themeVars ?? undefined) as React.CSSProperties | undefined}>
@@ -131,6 +134,7 @@ export default async function FanProfilePage({
           <div><div className="fan-stat-val">{upcomingShows.length}</div><div className="fan-stat-label">Shows Attending</div></div>
           <div><div className="fan-stat-val">{profile._count.followers.toLocaleString()}</div><div className="fan-stat-label">Followers</div></div>
         </div>
+        <PinnedStatTiles accent="var(--profile-accent, var(--role-fan, #b983ff))" stats={pinnedStats} />
       </div>
 
       <div className="fan-content">

@@ -11,6 +11,7 @@ import {
 } from '@/lib/profile-design';
 import { AI_FIELD_LABELS } from '@/lib/page-refine';
 import { parsePressKit, serializePressKit } from '@/lib/press-kit';
+import { statOptionsForRole, type StatKey } from '@/lib/profile-stats-catalog';
 
 type EditorProfile = {
   id: string;
@@ -48,6 +49,7 @@ type EditorProfile = {
   themeAccentTone: string | null;
   themeBackdropTone: string | null;
   fanShareEnabled: boolean | null;
+  pinnedStats: string[];
 };
 
 const SECTIONS = [
@@ -56,6 +58,7 @@ const SECTIONS = [
   { id: 'media', label: 'Media' },
   { id: 'details', label: 'Details' },
   { id: 'presskit', label: 'Press kit' },
+  { id: 'stats', label: 'Stats' },
   { id: 'theme', label: 'Theme' },
   { id: 'ai', label: 'AI' },
 ] as const;
@@ -426,6 +429,53 @@ export function PageEditor({ profileId }: { profileId: string }) {
           <p style={{ fontSize: 12, color: 'var(--ink-a45)', margin: '10px 0 0' }}>
             Save your changes first — the press kit page prints cleanly to PDF for sharing.
           </p>
+        </div>
+      )}
+
+      {section === 'stats' && (
+        <div className="sub-panel">
+          <p style={{ fontSize: 13, color: 'var(--ink-a60)', margin: '0 0 16px', lineHeight: 1.55 }}>
+            Pick up to 4 real stats to show on your public page. These are the same numbers already
+            shown in your Insights tab — nothing here is estimated or made up.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {statOptionsForRole(data.type).map((opt) => {
+              const checked = data.pinnedStats.includes(opt.key);
+              const atLimit = data.pinnedStats.length >= 4;
+              return (
+                <label
+                  key={opt.key}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                    borderRadius: 10, border: '1px solid var(--hair-100)',
+                    background: checked ? 'var(--hair-50)' : 'transparent',
+                    cursor: !checked && atLimit ? 'not-allowed' : 'pointer',
+                    opacity: !checked && atLimit ? 0.5 : 1,
+                  }}
+                >
+                  <input
+                    checked={checked}
+                    disabled={!checked && atLimit}
+                    onChange={(e) => {
+                      const key = opt.key as StatKey;
+                      if (e.target.checked) {
+                        if (!atLimit) set('pinnedStats', [...data.pinnedStats, key]);
+                      } else {
+                        set('pinnedStats', data.pinnedStats.filter((k) => k !== key));
+                      }
+                    }}
+                    type="checkbox"
+                  />
+                  <span style={{ fontSize: 14, color: 'var(--ink)' }}>{opt.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          {data.pinnedStats.length >= 4 && (
+            <p style={{ fontSize: 12, color: 'var(--ink-a50)', margin: '10px 0 0' }}>
+              4 selected — uncheck one to swap it for another.
+            </p>
+          )}
         </div>
       )}
 

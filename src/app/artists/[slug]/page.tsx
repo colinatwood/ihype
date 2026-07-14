@@ -10,6 +10,8 @@ import { FollowButton } from '@/components/FollowButton';
 import { ShareButton } from '@/components/ShareButton';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
 import { ProfileInsights } from '@/components/ProfileInsights';
+import { getPinnedStatValues } from '@/lib/profile-stats';
+import { PinnedStatTiles } from '@/components/PinnedStatTiles';
 import { getSafeImageUrl } from '@/lib/asset-safety';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
 import { canManageOwnedResource } from '@/lib/permissions';
@@ -94,6 +96,7 @@ export default async function ArtistPage({
 
   const playCountMap = new Map(playCounts.map((r) => [r.mediaId, r._count._all]));
   const totalPlays = playCounts.reduce((sum, r) => sum + r._count._all, 0);
+  const pinnedStats = await getPinnedStatValues(profile.id, profile.type, profile.pinnedStats);
 
   const now = new Date();
   const upcomingShows = shows.filter((s) => s.status === 'LIVE' || s.startsAt >= now);
@@ -149,6 +152,7 @@ export default async function ArtistPage({
         {activeSection === 'about' && (
           <div>
             <p className="artist-about-text">{profile.aboutContent || profile.bio || 'This artist has not filled out the About section yet.'}</p>
+            <PinnedStatTiles accent="var(--profile-accent, var(--accent))" stats={pinnedStats} />
             <div className="artist-split-card">
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--ink-a50)' }}>Charter Split · Every ticket</div>
               <div className="artist-split-bar">
