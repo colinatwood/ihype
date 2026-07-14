@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { vetAdvertisement, adSubmissionStatusFromVetting } from '@/lib/ad-vetting';
+import { vetImageUpload } from '@/lib/image-vetting';
 import { consumeRateLimit } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
 import { getBaseUrl } from '@/lib/utils';
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
   }
 
   let creativeAssetUrl: string | undefined;
+  let imageVetting: { cleared: boolean; reasoning: string } | undefined;
   if (file) {
     if (file.size > MAX_FILE_BYTES) {
       return NextResponse.json({ error: 'Creative asset must be under 5 MB.' }, { status: 400 });
@@ -69,6 +71,7 @@ export async function POST(request: Request) {
     if (!validateImageMagicBytes(buffer, file.type)) {
       return NextResponse.json({ error: 'Creative asset content does not match the declared image type.' }, { status: 400 });
     }
+    imageVetting = await vetImageUpload(new Uint8Array(buffer), 'ad creative');
     const { storeMediaFile, isObjectStorageConfigured } = await import('@/lib/object-storage');
     if (!isObjectStorageConfigured()) {
       return NextResponse.json({ error: 'Creative asset storage is not configured.' }, { status: 503 });
@@ -87,7 +90,14 @@ export async function POST(request: Request) {
     adTextCopy,
   });
 
-  const status = adSubmissionStatusFromVetting(vettingResult);
+  let status = adSubmissionStatusFromVetting(vettingResult);
+  let aiReasoning = vettingResult.reasoning;
+  // Image vetting is text-vetting's peer, not subordinate to it — a flagged
+  // creative routes to manual review even when the ad copy itself is clean.
+  if (imageVetting && !imageVetting.cleared && status !== 'rejected') {
+    status = 'manual_review';
+    aiReasoning = `${aiReasoning} Creative image flagged: ${imageVetting.reasoning}`;
+  }
 
   const submission = await db.adSubmission.create({
     data: {
@@ -97,10 +107,21 @@ export async function POST(request: Request) {
       adTextCopy,
       creativeAssetUrl,
       status,
-      aiReasoning: vettingResult.reasoning,
+      aiReasoning,
       tier,
     },
   });
+
+  if (imageVetting && !imageVetting.cleared) {
+    await db.contentReport.create({
+      data: {
+        targetType: 'ad-creative',
+        targetId: submission.id,
+        reason: 'auto_flag_image',
+        details: imageVetting.reasoning,
+      },
+    }).catch(() => {});
+  }
 
   // Fire-and-forget admin alert
   import('@/lib/mailer').then(({ sendGenericEmail }) =>

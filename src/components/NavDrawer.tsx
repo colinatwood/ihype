@@ -36,6 +36,10 @@ export const menuLinks = [
     icon: <svg {...ico}><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12Z" /><circle cx="12" cy="12" r="2.5" /></svg>,
   },
   {
+    href: '/audit', label: 'Trust & Safety',
+    icon: <svg {...ico}><path d="M12 3 4 6v6c0 4.4 3.4 8.2 8 9 4.6-.8 8-4.6 8-9V6Z" /><path d="m9 12 2 2 4-4" /></svg>,
+  },
+  {
     href: '/legal', label: 'Legal',
     icon: <svg {...ico}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" /><path d="M14 3v5h5" /><path d="M9 13h6M9 17h6" /></svg>,
   },

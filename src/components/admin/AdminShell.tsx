@@ -11,8 +11,8 @@ function sectionFromPathname(p: string): AdminSection {
   if (p.startsWith('/admin/finance')) return 'finance';
   if (p.startsWith('/admin/ads')) return 'ads';
   if (p.startsWith('/admin/moderation') || p.startsWith('/admin/feedback') || p.startsWith('/admin/dmca')) return 'support';
-  if (p.startsWith('/admin/setup') || p.startsWith('/admin/audit') || p.startsWith('/admin/rate-limits') || p.startsWith('/admin/invite') || p.startsWith('/admin/feature')) return 'system';
-  if (p.startsWith('/admin/growth') || p.startsWith('/admin/journal') || p.startsWith('/admin/collab')) return 'growth';
+  if (p.startsWith('/admin/setup') || p.startsWith('/admin/audit') || p.startsWith('/admin/rate-limits') || p.startsWith('/admin/invite') || p.startsWith('/admin/feature') || p.startsWith('/admin/device-register')) return 'system';
+  if (p.startsWith('/admin/growth') || p.startsWith('/admin/journal') || p.startsWith('/admin/collab') || p.startsWith('/admin/playlists')) return 'growth';
   return 'overview';
 }
 
@@ -26,6 +26,32 @@ const NAV: Array<{s: AdminSection; label: string; href: string; glyph: string}> 
   {s:'system',   label:'System',   href:'/admin/setup',      glyph:'⚙'},
   {s:'growth',   label:'Growth',   href:'/admin/growth',     glyph:'△'},
 ];
+
+// Every real /admin/* subpage that doesn't have its own primary rail item —
+// grouped under the section sectionFromPathname() already assigns it to, so
+// every page in the app is reachable by a click, not just a typed URL.
+// (device-register is deliberately excluded: it's only ever reached via a
+// emailed one-time-token link during device re-registration, never a nav
+// destination.)
+const SUBNAV: Partial<Record<AdminSection, Array<{label: string; href: string}>>> = {
+  overview: [
+    {label: 'Broadcast', href: '/admin/broadcast'},
+    {label: 'Community', href: '/admin/community'},
+  ],
+  support: [
+    {label: 'Moderation Queue', href: '/admin/moderation'},
+    {label: 'Feedback', href: '/admin/feedback'},
+  ],
+  system: [
+    {label: 'Setup', href: '/admin/setup'},
+    {label: 'Audit Log', href: '/admin/audit'},
+  ],
+  growth: [
+    {label: 'Growth', href: '/admin/growth'},
+    {label: 'Journal', href: '/admin/journal'},
+    {label: 'Playlists', href: '/admin/playlists'},
+  ],
+};
 
 interface Props {
   children: React.ReactNode;
@@ -48,6 +74,7 @@ export function AdminShell({ children, name, email }: Props) {
   const pathname = usePathname();
   const active = sectionFromPathname(pathname);
   const ops = initials(name, email);
+  const subnav = SUBNAV[active];
 
   return (
     <div className="ops-shell">
@@ -80,7 +107,22 @@ export function AdminShell({ children, name, email }: Props) {
         </aside>
 
         {/* Main content */}
-        <main className="ops-main">{children}</main>
+        <main className="ops-main">
+          {subnav && (
+            <nav className="ops-subnav">
+              {subnav.map(item => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`ops-subnav-link${pathname.startsWith(item.href) ? ' ops-subnav-active' : ''}`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          )}
+          {children}
+        </main>
       </div>
 
       {/* Mobile bottom bar */}

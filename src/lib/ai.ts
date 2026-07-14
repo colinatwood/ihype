@@ -2,11 +2,12 @@
 // returns null in local dev so callers fall through to their error paths.
 
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+const VISION_MODEL = '@cf/llava-hf/llava-1.5-7b-hf';
 
 type Message = { role: 'system' | 'user' | 'assistant'; content: string };
 
 interface AiBinding {
-  run(model: string, inputs: { messages: Message[]; max_tokens?: number }): Promise<{ response?: string }>;
+  run(model: string, inputs: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
 function getAiBinding(): AiBinding | null {
@@ -29,7 +30,34 @@ export async function runAI(
   if (!ai) return null;
   try {
     const result = await ai.run(MODEL, { messages, max_tokens: maxTokens });
-    return result.response ?? null;
+    return typeof result.response === 'string' ? result.response : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Vision-capable Workers AI call (llava-1.5-7b) for image content vetting —
+ * uploaded avatars/heroes/gallery images and ad creatives, which the
+ * text-only `runAI` above cannot inspect. Returns null when the AI binding
+ * is unavailable (local dev) or the call fails; every caller must degrade
+ * to its fail-open default, matching the existing text-vetting convention.
+ */
+export async function runVisionAI(
+  imageBytes: Uint8Array,
+  prompt: string,
+  maxTokens = 128
+): Promise<string | null> {
+  const ai = getAiBinding();
+  if (!ai) return null;
+  try {
+    const result = await ai.run(VISION_MODEL, {
+      image: Array.from(imageBytes),
+      prompt,
+      max_tokens: maxTokens,
+    });
+    const text = result.description ?? result.response;
+    return typeof text === 'string' ? text : null;
   } catch {
     return null;
   }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { storeMediaFile, isObjectStorageConfigured } from '@/lib/object-storage';
+import { vetImageUpload } from '@/lib/image-vetting';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -37,6 +38,18 @@ export async function POST(request: Request) {
   const buffer = Buffer.from(await file.arrayBuffer());
   if (!validateMagicBytes(buffer, file.type)) {
     return NextResponse.json({ error: 'File content does not match declared type' }, { status: 400 });
+  }
+
+  const vetting = await vetImageUpload(new Uint8Array(buffer), field && ALLOWED_FIELDS.has(field) ? field : 'profile image');
+  if (!vetting.cleared) {
+    await db.contentReport.create({
+      data: {
+        targetType: 'profile-image',
+        targetId: profile.id,
+        reason: 'auto_flag_image',
+        details: vetting.reasoning,
+      },
+    }).catch(() => {});
   }
 
   const base64 = buffer.toString('base64');
