@@ -21,7 +21,16 @@ export async function GET() {
   });
 
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(user);
+
+  let profile: { id: string; stripeConnectOnboarded: boolean } | null = null;
+  if (['ARTIST', 'DJ', 'VENUE'].includes(user.role)) {
+    profile = await db.profile.findFirst({
+      where: { ownerId: user.id },
+      select: { id: true, stripeConnectOnboarded: true },
+    });
+  }
+
+  return NextResponse.json({ ...user, profileId: profile?.id ?? null, stripeConnectOnboarded: profile?.stripeConnectOnboarded ?? false });
 }
 
 export async function PATCH(req: Request) {

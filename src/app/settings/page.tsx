@@ -49,6 +49,9 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [detaching, setDetaching] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [payoutConnected, setPayoutConnected] = useState(false);
+  const [connectingPayout, setConnectingPayout] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -60,10 +63,35 @@ export default function SettingsPage() {
         setRole(data.role ?? 'FAN');
         setIsAdult(Boolean(data.isEighteenOrOlder));
         if (data.notificationPreference) setPrefs(data.notificationPreference);
+        setProfileId(data.profileId ?? null);
+        setPayoutConnected(Boolean(data.stripeConnectOnboarded));
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
+
+  async function connectPayout() {
+    if (!profileId) return;
+    setConnectingPayout(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/stripe/connect/onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.onboardingUrl) {
+        setError(d.error ?? 'Could not start payout setup.');
+        setConnectingPayout(false);
+        return;
+      }
+      window.location.href = d.onboardingUrl;
+    } catch {
+      setError('Network error');
+      setConnectingPayout(false);
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -186,7 +214,7 @@ export default function SettingsPage() {
                       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={roleColor} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div className="settings-row-label">No payout destination connected yet</div>
+                      <div className="settings-row-label">{payoutConnected ? 'Payout destination connected' : 'No payout destination connected yet'}</div>
                       <div className="settings-row-detail">Payouts land within 2 business days of a show closing</div>
                       <div className="settings-split-mini">
                         <span style={{ color: roleColor }}>{role === 'VENUE' ? '20% you' : '70% you'}</span>
@@ -194,7 +222,18 @@ export default function SettingsPage() {
                         <span style={{ color: 'var(--ink-a50)' }}>10% promoters</span>
                       </div>
                     </div>
-                    <Link className="settings-btn settings-btn-ghost" href="/me/promote">Connect</Link>
+                    {payoutConnected ? (
+                      <span className="settings-btn settings-btn-ghost" style={{ opacity: 0.6 }}>Connected</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="settings-btn settings-btn-ghost"
+                        onClick={connectPayout}
+                        disabled={connectingPayout || !profileId}
+                      >
+                        {connectingPayout ? 'Redirecting…' : 'Connect'}
+                      </button>
+                    )}
                   </div>
                   <Row action={<Link className="settings-btn settings-btn-ghost" href="/me/payouts">View</Link>} detail="Every payout receipt, itemized 70/20/10" label="Payout history" />
                 </>
