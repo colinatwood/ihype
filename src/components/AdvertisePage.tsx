@@ -427,7 +427,7 @@ function AIScanner() {
           { n: '01', title: 'Verified buyers only', desc: 'Only verified artists, venues, DJs, and music-related organizations reach checkout. No verified badge, no buy button.' },
           { n: '02', title: 'Audio relevance scan', desc: 'The submission is scored against your advertiser profile. If it isn\'t about live music, releases, gear, or merch, it doesn\'t run.' },
           { n: '03', title: 'Listener safety', desc: 'Hate speech, harassment, explicit content outside rating, scams, and unsafe claims are flagged before a listener ever hears it.' },
-          { n: '04', title: 'Copyright firewall', desc: 'Audio is fingerprinted and copy is scanned for protected song titles, lyrics, and artist name-drops you don\'t have rights to. Auto-rejected on any match.' },
+          { n: '04', title: 'Copyright firewall', desc: 'Ad copy and creative are AI-screened for protected song titles, lyrics, and artist name-drops you don\'t have rights to. Auto-rejected on any match.' },
           { n: '05', title: 'Reputation risk', desc: 'A final pass for misleading pricing, fake scarcity, impersonation, or off-platform resale — anything that would tarnish the scene.' },
         ].map(c => (
           <div key={c.n} style={{ display: 'flex', gap: 14, padding: '18px', border: '1px solid var(--hair-70)', borderRadius: 14, background: '#100d09' }}>
