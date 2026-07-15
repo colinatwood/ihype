@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 import { getVenueBookingRecommendations } from '@/lib/venueBooking';
+import { VenueRecommendationsPanel } from '@/components/VenueRecommendationsPanel';
 import type { Metadata } from 'next';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,11 @@ export default async function BookingPage() {
           <p>This recommender is for venue accounts. Set up a venue page to see artists to book.</p>
           <Link href="/pages" className="booking-cta">Set up your venue</Link>
         </div>
-      ) : feed.candidates.length === 0 ? (
+      ) : (
+        <VenueRecommendationsPanel />
+      )}
+
+      {feed.hasVenue && (feed.candidates.length === 0 ? (
         <div className="booking-empty">
           <p>No new artist matches right now — check back as more artists join your scene.</p>
           <Link href="/discover" className="booking-cta">Browse artists</Link>
@@ -64,7 +69,7 @@ export default async function BookingPage() {
             </li>
           ))}
         </ul>
-      )}
+      ))}
     </div>
   );
 }

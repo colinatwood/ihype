@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { HypeButton } from '@/components/HypeButton';
+import { ReportButton } from '@/components/ReportButton';
+import { BookingRequestButton } from '@/components/BookingRequestButton';
 import { VenueRequestForm } from '@/components/VenueRequestForm';
 import { ProfileInsights } from '@/components/ProfileInsights';
 import { getPinnedStatValues } from '@/lib/profile-stats';
@@ -120,6 +122,8 @@ export default async function VenuePage({
           )}
           <div className="venue-hero-actions">
             <HypeButton entityLabel="venue" initialCount={profile.hypeCount} initiallyHyped={!!userHype} targetId={profile.id} targetType="profile" />
+            <ReportButton className="venue-hero-btn" targetId={profile.id} targetType="profile" />
+            {!isOwner && <BookingRequestButton className="venue-hero-btn" profileId={profile.id} />}
             {isOwner && (
               <>
                 <Link className="venue-hero-btn" href="/me/booking">Book artists</Link>

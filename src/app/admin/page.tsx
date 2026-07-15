@@ -8,6 +8,8 @@ import { AdminFeatureFlags } from '@/components/AdminFeatureFlags';
 import { FeatureToggle } from '@/components/admin/FeatureToggle';
 import { BulkActions } from '@/components/admin/BulkActions';
 import { SocialPostCopy } from '@/components/admin/SocialPostCopy';
+import { AdminAbTestsForm } from '@/components/admin/AdminAbTestsForm';
+import { AdminInviteCodesGenerate } from '@/components/admin/AdminInviteCodesGenerate';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getBetaMetrics } from '@/lib/beta-metrics';
@@ -877,8 +879,9 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
             Send test email
           </a>
         </div>
+        <AdminInviteCodesGenerate />
         {recentInviteCodes.length === 0 ? (
-          <p className="meta">No invite codes yet. POST to /api/admin/invite-codes to generate some.</p>
+          <p className="meta">No invite codes yet.</p>
         ) : (
           <div className="admin-list">
             {recentInviteCodes.map((code) => (
@@ -986,10 +989,11 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
       {/* ── A/B Tests ─────────────────────────────────────────── */}
       <section className="section">
         <h2>A/B Tests</h2>
+        <AdminAbTestsForm />
         {abTests.length === 0 ? (
-          <p className="meta">No A/B tests configured. POST to /api/admin/ab-tests to create one.</p>
+          <p className="meta" style={{ marginTop: 8 }}>No A/B tests configured yet.</p>
         ) : (
-          <div className="admin-list">
+          <div className="admin-list" style={{ marginTop: 8 }}>
             {abTests.map((t) => (
               <div className="admin-list-row" key={t.key}>
                 <code>{t.key}</code>
@@ -1000,9 +1004,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: Promi
             ))}
           </div>
         )}
-        <p className="meta" style={{ marginTop: 8 }}>
-          Manage via <code>POST /api/admin/ab-tests</code> with <code>{`{key, description, enabled}`}</code>.
-        </p>
       </section>
 
       {/* ── Ads ───────────────────────────────────────────────── */}

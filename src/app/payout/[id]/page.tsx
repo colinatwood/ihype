@@ -158,7 +158,7 @@ export default async function PayoutPage({ params }: { params: Promise<{ id: str
           <Link href="/me/payouts" style={{ fontFamily: 'var(--font-mono)', fontSize: '.72rem', color: 'var(--ink-2, #9e9080)' }}>
             View all payouts →
           </Link>
-          <PayoutActions title={show.title} />
+          <PayoutActions grossCents={grossCents} showId={show.id} title={show.title} />
         </div>
       </div>
 

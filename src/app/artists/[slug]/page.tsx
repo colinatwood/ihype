@@ -8,6 +8,8 @@ import { buildArtistMediaCollection } from '@/lib/media';
 import { HypeButton } from '@/components/HypeButton';
 import { FollowButton } from '@/components/FollowButton';
 import { ShareButton } from '@/components/ShareButton';
+import { ReportButton } from '@/components/ReportButton';
+import { BookingRequestButton } from '@/components/BookingRequestButton';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
 import { TrackUploadPanel } from '@/components/TrackUploadPanel';
 import { ProfileInsights } from '@/components/ProfileInsights';
@@ -124,6 +126,8 @@ export default async function ArtistPage({
             <div className="artist-hero-actions">
               <FollowButton profileId={profile.id} variant="hero" />
               <ShareButton className="artist-hero-btn" label="Share" path={`/artists/${profile.slug}`} title={profile.name} />
+              <ReportButton className="artist-hero-btn" targetId={profile.id} targetType="profile" />
+              {!isOwner && <BookingRequestButton className="artist-hero-btn" profileId={profile.id} />}
               {isOwner && (
                 <>
                   <Link className="artist-hero-btn" href="/pages">Customize</Link>

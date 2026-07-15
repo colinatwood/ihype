@@ -13,6 +13,15 @@ type TourData = {
 
 type AdRec = { headline: string; body: string; channel: string; cta: string };
 
+type BookingRequest = {
+  id: string;
+  message: string;
+  status: string;
+  createdAt: string;
+  fromUser?: { name: string | null; username: string | null };
+  toProfile: { name: string; type: string };
+};
+
 const cardBase: React.CSSProperties = {
   border: '1px solid var(--hair-70)', borderRadius: 14,
   background: 'var(--hair-30)', overflow: 'hidden',
@@ -198,6 +207,103 @@ function AdRecsBody({ profileId }: { profileId: string }) {
   );
 }
 
+/**
+ * Booking-request inbox — surfaces the previously-unwired
+ * GET/PATCH /api/booking-requests engine: direct "I want to book you"
+ * messages sent to this profile, plus requests this user has sent out.
+ */
+function BookingRequestsBody() {
+  const [data, setData] = useState<{ received: BookingRequest[]; sent: BookingRequest[] } | null>(null);
+  const [error, setError] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/booking-requests')
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(setData)
+      .catch(() => setError(true));
+  }, []);
+
+  async function respond(id: string, status: 'accepted' | 'declined') {
+    setBusyId(id);
+    try {
+      const res = await fetch('/api/booking-requests', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status }),
+      });
+      if (res.ok) {
+        setData((prev) => prev && {
+          ...prev,
+          received: prev.received.map((r) => (r.id === id ? { ...r, status } : r)),
+        });
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  if (error) return <LoadNote text="Couldn't load booking requests right now." />;
+  if (!data) return <LoadNote text="Checking your inbox…" />;
+
+  const pendingReceived = data.received.filter((r) => r.status === 'pending');
+  const resolvedReceived = data.received.filter((r) => r.status !== 'pending');
+
+  if (data.received.length === 0 && data.sent.length === 0) {
+    return <LoadNote text="No booking requests yet — they'll show up here as people reach out." />;
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {pendingReceived.map((r) => (
+        <div key={r.id} style={{ border: '1px solid var(--hair-70)', borderRadius: 12, padding: '12px 14px', background: 'var(--hair-20)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}>
+            {r.fromUser?.name || r.fromUser?.username || 'Someone'}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-a65)', lineHeight: 1.5, marginBottom: 10 }}>{r.message}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              disabled={busyId === r.id}
+              onClick={() => respond(r.id, 'accepted')}
+              style={{ fontSize: 12, fontWeight: 700, color: '#22e5d4', background: 'rgba(34,229,212,.12)', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
+              type="button"
+            >
+              Accept
+            </button>
+            <button
+              disabled={busyId === r.id}
+              onClick={() => respond(r.id, 'declined')}
+              style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-a55)', background: 'var(--line)', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}
+              type="button"
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      ))}
+      {resolvedReceived.slice(0, 5).map((r) => (
+        <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12, color: 'var(--ink-a50)', padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+          <span>{r.fromUser?.name || r.fromUser?.username || 'Someone'}</span>
+          <span style={{ textTransform: 'capitalize' }}>{r.status}</span>
+        </div>
+      ))}
+      {data.sent.length > 0 && (
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-a40)', margin: '4px 0 8px' }}>
+            SENT BY YOU
+          </div>
+          {data.sent.map((r) => (
+            <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 12, color: 'var(--ink-a55)', padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+              <span>{r.toProfile.name}</span>
+              <span style={{ textTransform: 'capitalize' }}>{r.status}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const icons = {
   stats: (color: string) => (
     <svg fill="none" height="18" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24" width="18">
@@ -222,6 +328,11 @@ const icons = {
   ads: (color: string) => (
     <svg fill="none" height="18" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24" width="18">
       <path d="M3 11l18-5v12L3 13v-2z" /><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+    </svg>
+  ),
+  inbox: (color: string) => (
+    <svg fill="none" height="18" stroke={color} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.7" viewBox="0 0 24 24" width="18">
+      <path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z" />
     </svg>
   ),
 };
@@ -258,9 +369,20 @@ export function PageRoleModules({ profile, color }: { profile: ModuleProfile; co
             color={color}
             href="/events/new"
             icon={icons.event(color)}
-            sub={isVenue ? 'Book your room — keep 45%' : 'Sell tickets direct — keep 45%'}
+            sub={isVenue ? 'Book your room — keep 20%' : 'Sell tickets direct — keep 70%'}
             title="Event creator"
           />
+        )}
+
+        {(isArtist || isVenue || isDj) && (
+          <ExpandModule
+            color={color}
+            icon={icons.inbox(color)}
+            sub="Direct booking requests sent to this page"
+            title="Booking requests"
+          >
+            <BookingRequestsBody />
+          </ExpandModule>
         )}
 
         {isDj && (

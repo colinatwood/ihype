@@ -29,10 +29,26 @@ export function TicketCardActions({
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelDone, setCancelDone] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const router = useRouter();
 
   const hoursUntilShow = showsAt ? (new Date(showsAt).getTime() - Date.now()) / 3_600_000 : null;
   const tooLateToCancel = hoursUntilShow !== null && hoursUntilShow < 48;
+
+  async function resendConfirmation() {
+    setResending(true);
+    setResendMessage(null);
+    try {
+      const res = await fetch('/api/tickets/resend-confirmation', { method: 'POST' });
+      const data = await res.json();
+      setResendMessage(res.ok ? 'Confirmation email sent.' : (data.error ?? 'Could not resend confirmation.'));
+    } catch {
+      setResendMessage('Network error');
+    } finally {
+      setResending(false);
+    }
+  }
 
   async function requestCancellation() {
     setCancelSubmitting(true);
@@ -109,10 +125,18 @@ export function TicketCardActions({
         </button>
         <button className="btn" onClick={() => setTransferOpen(true)} type="button">Transfer</button>
         <button className="btn" onClick={share} type="button">Share</button>
+        <button className="btn" disabled={resending} onClick={resendConfirmation} type="button">
+          {resending ? 'Sending…' : 'Resend confirmation'}
+        </button>
         {showCancel && (
           <button className="btn" onClick={() => setCancelOpen(true)} style={{ color: '#ff5029' }} type="button">Cancel ticket</button>
         )}
       </div>
+      {resendMessage && (
+        <p style={{ fontSize: 12, color: resendMessage === 'Confirmation email sent.' ? '#22e5d4' : '#ff5029', marginTop: 8 }}>
+          {resendMessage}
+        </p>
+      )}
 
       {showQr && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 16 }}>

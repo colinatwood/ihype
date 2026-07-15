@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { PasskeyManager } from '@/components/AuthScreens';
+import { FollowingPrefsPanel } from '@/components/FollowingPrefsPanel';
+import { PushNotificationToggle } from '@/components/PushNotificationToggle';
+import { PremiumInterestRow } from '@/components/PremiumInterestRow';
 
 interface Prefs {
   newShows: boolean;
@@ -252,8 +255,13 @@ export default function SettingsPage() {
               <Row action={<Toggle checked={prefs.milestones} onChange={(v) => setPrefs((p) => ({ ...p, milestones: v }))} />} detail="When your tracks hit hype thresholds" label="Hype milestones" />
               <Row action={<Toggle checked={prefs.journalPosts} onChange={(v) => setPrefs((p) => ({ ...p, journalPosts: v }))} />} detail="New posts from creators you follow" label="Journal posts" />
               <Row action={<Toggle checked={prefs.weeklyDigest} onChange={(v) => setPrefs((p) => ({ ...p, weeklyDigest: v }))} />} detail="A weekly summary of upcoming shows and activity" label="Weekly digest" />
+              <PushNotificationToggle />
             </div>
           </div>
+
+          <FollowingPrefsPanel />
+
+          <PremiumInterestRow email={email} />
 
           {/* Security */}
           <div className="settings-section">

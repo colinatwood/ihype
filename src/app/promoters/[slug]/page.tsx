@@ -6,6 +6,8 @@ import { db } from '@/lib/db';
 import { buildArtistMediaCollection } from '@/lib/media';
 import { HypeButton } from '@/components/HypeButton';
 import { FollowButton } from '@/components/FollowButton';
+import { ReportButton } from '@/components/ReportButton';
+import { BookingRequestButton } from '@/components/BookingRequestButton';
 import { ArtistMediaPlaylist } from '@/components/ArtistMediaPlaylist';
 import { TrackUploadPanel } from '@/components/TrackUploadPanel';
 import { ProfileInsights } from '@/components/ProfileInsights';
@@ -121,6 +123,8 @@ export default async function DJProfilePage({
             <div className="dj-hero-actions">
               <FollowButton profileId={profile.id} variant="hero" />
               <Link className="dj-hero-btn" href="/radio">Tune In →</Link>
+              <ReportButton className="dj-hero-btn" targetId={profile.id} targetType="profile" />
+              {!isOwner && <BookingRequestButton className="dj-hero-btn" profileId={profile.id} />}
               {isOwner && (
                 <>
                   {profile.type === 'DJ' && <Link className="dj-hero-btn" href="/radio/studio">Radio Studio</Link>}

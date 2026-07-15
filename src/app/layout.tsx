@@ -19,6 +19,7 @@ import { getCspNonce } from '@/lib/csp-nonce';
 import { MobileShellProvider } from '@/lib/MobileShellContext';
 import { MobileAppShellLoader } from '@/components/MobileAppShellLoader';
 import { AppSplash } from '@/components/AppSplash';
+import { BugReportWidget } from '@/components/BugReportWidget';
 
 const syne = Syne({ subsets: ['latin'], weight: ['700', '800'], variable: '--font-syne', display: 'swap' });
 const dmSans = DM_Sans({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-dm', display: 'swap' });
@@ -97,6 +98,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             <SitePlayerDock />
             <CookieConsent />
             <ServiceWorkerRegister />
+            <BugReportWidget />
           </MobileShellProvider>
         </AppProviders>
         {process.env.NEXT_PUBLIC_CF_BEACON_TOKEN ? (

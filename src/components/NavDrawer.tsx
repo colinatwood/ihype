@@ -6,6 +6,8 @@ import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { AccessibilityControls } from '@/components/AccessibilityControls';
+import { OPEN_BUG_REPORT_EVENT } from '@/components/BugReportWidget';
+import { HypeStreakBadge } from '@/components/HypeStreakBadge';
 
 const ico = {
   fill: 'none' as const,
@@ -22,6 +24,10 @@ export const menuLinks = [
   {
     href: '/community', label: 'Community',
     icon: <svg {...ico}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.3 2.9-5.5 6.5-5.5s6.5 2.2 6.5 5.5" /><circle cx="17" cy="9" r="2.5" /><path d="M16.5 14.6c2.9.3 5 2.2 5 5.4" /></svg>,
+  },
+  {
+    href: '/collab-board', label: 'Collab Board',
+    icon: <svg {...ico}><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z" /></svg>,
   },
   {
     href: '/advertise', label: 'Advertise',
@@ -167,7 +173,22 @@ export function NavDrawer({
                   >
                     <svg {...ico}><path d="M12 3l2.5 5.7 6 .5-4.5 4 1.4 6-5.4-3.2L6.6 19l1.4-6-4.5-4 6-.5L12 3Z" /></svg>
                     My Scene
+                    <HypeStreakBadge />
                   </Link>
+                </li>
+                <li>
+                  <button
+                    className="nav-drawer-link"
+                    onClick={() => {
+                      setOpen(false);
+                      window.dispatchEvent(new CustomEvent(OPEN_BUG_REPORT_EVENT));
+                    }}
+                    style={{ background: 'none', border: 'none', width: '100%', textAlign: 'left', cursor: 'pointer', font: 'inherit' }}
+                    type="button"
+                  >
+                    <svg {...ico}><path d="M12 8v4M12 16h.01" /><path d="M8.5 3.5 12 7l3.5-3.5M4 14a8 8 0 1 0 16 0 8 8 0 0 0-16 0Z" /></svg>
+                    Report a bug
+                  </button>
                 </li>
               </ul>
             )}
