@@ -211,6 +211,15 @@ export function ArtistMediaPlaylist({
                 </span>
               )}
               <span className="artist-media-index">{String(index + 1).padStart(2, '0')}</span>
+              {entry.previewImageUrl ? (
+                <img
+                  alt=""
+                  className="artist-media-track-art"
+                  height={60}
+                  src={entry.previewImageUrl}
+                  width={64}
+                />
+              ) : null}
               <div style={{ flex: 1 }}>
                 <div className="composer-media-code">{entry.hexId}</div>
 

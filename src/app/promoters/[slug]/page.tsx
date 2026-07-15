@@ -60,7 +60,7 @@ export default async function DJProfilePage({
       owner: { select: { email: true, username: true } },
       mediaUploads: {
         where: { freeUseEnabled: true },
-        select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, sortOrder: true },
+        select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, artworkUrl: true, sortOrder: true },
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
       },
     },

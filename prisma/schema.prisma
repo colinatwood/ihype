@@ -319,6 +319,7 @@ model ArtistMediaAsset {
   storageUrl       String?
   freeUseEnabled   Boolean          @default(false)
   durationSecs     Int?
+  artworkUrl       String?
   sortOrder        Int              @default(0)
   profileId        String
   publishAt        DateTime?
