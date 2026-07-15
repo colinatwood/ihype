@@ -67,7 +67,7 @@ export default async function ArtistPage({
       owner: { select: { email: true, username: true } },
       _count: { select: { followers: true } },
       mediaUploads: {
-        select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, sortOrder: true },
+        select: { hexId: true, title: true, notes: true, mimeType: true, fileSizeBytes: true, createdAt: true, freeUseEnabled: true, artworkUrl: true, sortOrder: true },
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
       },
     },

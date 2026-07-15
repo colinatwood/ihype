@@ -27,6 +27,7 @@ export type ArtistMediaUploadRecord = {
   fileSizeBytes: number;
   createdAt: Date;
   freeUseEnabled?: boolean;
+  artworkUrl?: string | null;
 };
 
 export function getArtistMediaApiPath(hexId: string) {
@@ -158,6 +159,7 @@ export function buildUploadedArtistMediaEntries(uploads: ArtistMediaUploadRecord
       mimeType: upload.mimeType,
       fileSizeBytes: upload.fileSizeBytes,
       createdAt: upload.createdAt,
+      previewImageUrl: upload.artworkUrl ?? null,
       freeUseEnabled: upload.freeUseEnabled ?? false
     };
   });

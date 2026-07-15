@@ -10,6 +10,8 @@ import { areDatabaseMediaUploadsEnabledRuntime } from '@/lib/runtime-flags';
 import { validateAudioMagicBytes } from '@/lib/validate-upload';
 import { parseAudioDuration } from '@/lib/audio-duration';
 import { runTrackScanPipeline } from '@/lib/media-vetting';
+import { isObjectStorageConfigured, storeMediaFile } from '@/lib/object-storage';
+import { vetImageUpload } from '@/lib/image-vetting';
 import { recordAuditEvent } from '@/lib/audit';
 import { consumeRateLimit, rateLimitKey } from '@/lib/rate-limit';
 import { readClientAddress } from '@/lib/request-meta';
@@ -17,6 +19,8 @@ import { readClientAddress } from '@/lib/request-meta';
 export const dynamic = 'force-dynamic';
 
 const MAX_AUDIO_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const MAX_ARTWORK_FILE_SIZE_BYTES = 8 * 1024 * 1024;
+const ARTWORK_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const MAX_PROFILE_STORAGE_BYTES = 250 * 1024 * 1024;
 const MAX_PROFILE_TRACKS = 100;
 
@@ -58,6 +62,7 @@ export async function GET(request: Request) {
         mimeType: true,
         fileSizeBytes: true,
         freeUseEnabled: true,
+        artworkUrl: true,
         createdAt: true,
       },
     }),
@@ -74,6 +79,15 @@ function deriveTitleFromFileName(value: string) {
     .replace(/[-_]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function validateArtworkMagicBytes(buf: Uint8Array, mime: string): boolean {
+  if (buf.length < 4) return false;
+  if (mime === 'image/jpeg') return buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+  if (mime === 'image/png') return buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  if (mime === 'image/gif') return buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46;
+  if (mime === 'image/webp') return buf.length >= 12 && buf[0] === 0x52 && buf[1] === 0x49 && buf[2] === 0x46 && buf[3] === 0x46 && buf[8] === 0x57 && buf[9] === 0x45 && buf[10] === 0x42 && buf[11] === 0x50;
+  return false;
 }
 
 export async function POST(request: Request) {
@@ -100,6 +114,7 @@ export async function POST(request: Request) {
     const notesValue = String(formData.get('notes') ?? '').trim().slice(0, 1000);
     const freeUseEnabled = String(formData.get('freeUseEnabled') ?? '').toLowerCase() === 'true';
     const file = formData.get('file');
+    const artworkFile = formData.get('artwork');
 
     if (!profileId) {
       return NextResponse.json({ error: 'Artist profile is required.' }, { status: 400 });
@@ -109,6 +124,14 @@ export async function POST(request: Request) {
     }
     if (!file.type.startsWith('audio/')) {
       return NextResponse.json({ error: 'Only audio files are supported.' }, { status: 400 });
+    }
+    if (artworkFile instanceof File) {
+      if (!ARTWORK_ALLOWED_TYPES.includes(artworkFile.type)) {
+        return NextResponse.json({ error: 'Cover art must be JPEG, PNG, GIF, or WebP.' }, { status: 400 });
+      }
+      if (artworkFile.size > MAX_ARTWORK_FILE_SIZE_BYTES) {
+        return NextResponse.json({ error: 'Cover art is limited to 8MB.' }, { status: 400 });
+      }
     }
 
     const mediaValidationError = validateArtistMediaUpload(file);
@@ -174,6 +197,40 @@ export async function POST(request: Request) {
     const vetting = { cleared: scan.cleared, requiresManualReview: scan.requiresManualReview, reasoning: scan.reasoning };
     const effectiveFreeUse = freeUseEnabled && vetting.cleared;
 
+    // Optional cover art — same magic-byte + AI-vetting + storage pattern
+    // already used for profile graphics (src/app/api/profile/upload-graphic
+    // /route.ts), reused here rather than reinvented. Purely additive: a
+    // flagged or missing image never blocks the track upload itself.
+    let artworkUrl: string | null = null;
+    if (artworkFile instanceof File) {
+      const artworkBytes = new Uint8Array(await artworkFile.arrayBuffer());
+      if (!validateArtworkMagicBytes(artworkBytes, artworkFile.type)) {
+        return NextResponse.json({ error: 'Cover art file content does not match its declared type.' }, { status: 400 });
+      }
+      const artworkVetting = await vetImageUpload(artworkBytes, 'track cover art');
+      if (!artworkVetting.cleared) {
+        await db.contentReport.create({
+          data: {
+            targetType: 'track-artwork',
+            targetId: hexId,
+            reason: 'auto_flag_image',
+            details: artworkVetting.reasoning,
+          },
+        }).catch(() => {});
+      } else {
+        const base64 = Buffer.from(artworkBytes).toString('base64');
+        const dataUrl = `data:${artworkFile.type};base64,${base64}`;
+        if (isObjectStorageConfigured()) {
+          const ext = artworkFile.type.split('/')[1] ?? 'bin';
+          const key = `artist-media/${profile.id}/artwork/${hexId}.${ext}`;
+          const stored = await storeMediaFile(key, dataUrl, artworkFile.type);
+          artworkUrl = stored.url;
+        } else {
+          artworkUrl = dataUrl;
+        }
+      }
+    }
+
     let reservedAssetId: string | null = null;
     let storedMedia: Awaited<ReturnType<typeof uploadArtistMediaToBlob>> | null = null;
     let asset: {
@@ -183,6 +240,7 @@ export async function POST(request: Request) {
       mimeType: string;
       fileSizeBytes: number;
       freeUseEnabled: boolean;
+      artworkUrl: string | null;
       createdAt: Date;
     };
 
@@ -223,6 +281,7 @@ export async function POST(request: Request) {
               storageProvider: 'pending',
               freeUseEnabled: effectiveFreeUse,
               durationSecs,
+              artworkUrl,
               profileId: profile.id,
               isPublished: false,
             },
@@ -254,6 +313,7 @@ export async function POST(request: Request) {
             mimeType: true,
             fileSizeBytes: true,
             freeUseEnabled: true,
+            artworkUrl: true,
             createdAt: true,
           },
         }),

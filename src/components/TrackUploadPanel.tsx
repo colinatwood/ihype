@@ -30,6 +30,7 @@ export function TrackUploadPanel({
   const [notes, setNotes] = useState('');
   const [freeUseEnabled, setFreeUseEnabled] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [artworkFile, setArtworkFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scanLayers, setScanLayers] = useState<ScanLayer[] | null>(null);
@@ -82,6 +83,7 @@ export function TrackUploadPanel({
       formData.set('notes', notes.trim());
       formData.set('freeUseEnabled', String(freeUseEnabled));
       formData.set('file', file);
+      if (artworkFile) formData.set('artwork', artworkFile);
 
       const response = await fetch('/api/artist-media', { method: 'POST', body: formData });
       const data = await response.json();
@@ -96,6 +98,7 @@ export function TrackUploadPanel({
       setNotes('');
       setFreeUseEnabled(false);
       setFile(null);
+      setArtworkFile(null);
       onUploaded?.();
       router.refresh();
     } catch {
@@ -126,6 +129,15 @@ export function TrackUploadPanel({
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           type="file"
         />
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem' }}>
+          Cover art (optional)
+          <input
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            disabled={submitting}
+            onChange={(e) => setArtworkFile(e.target.files?.[0] ?? null)}
+            type="file"
+          />
+        </label>
         <input
           className="field"
           disabled={submitting}

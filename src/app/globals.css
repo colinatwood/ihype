@@ -2835,6 +2835,14 @@ fieldset.authcard-field { border: 0; padding: 0; }
   font-weight: 800;
   letter-spacing: 0.08em;
 }
+.artist-media-track-art {
+  width: 64px;
+  height: 60px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--hair-80);
+}
 .artist-media-actions {
   display: flex;
   flex-wrap: wrap;
