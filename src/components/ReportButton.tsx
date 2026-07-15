@@ -9,7 +9,7 @@ export function ReportButton({
   targetId,
   className,
 }: {
-  targetType: 'profile' | 'show' | 'media' | 'ticket';
+  targetType: 'profile' | 'show' | 'track';
   targetId: string;
   className?: string;
 }) {

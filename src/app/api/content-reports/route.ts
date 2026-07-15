@@ -7,7 +7,7 @@ import { readClientAddress } from '@/lib/request-meta';
 import { consumeRateLimit, rateLimitKey } from '@/lib/rate-limit';
 
 const reportSchema = z.object({
-  targetType: z.enum(['profile', 'show', 'media', 'ticket']),
+  targetType: z.enum(['profile', 'show', 'track']),
   targetId: z.string().min(3).max(120),
   reason: z.string().trim().min(3).max(120),
   details: z.string().trim().max(1200).optional(),

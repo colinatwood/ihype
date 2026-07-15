@@ -341,7 +341,7 @@ export default async function ShowDetailPage({
               Download poster
             </a>{' '}
             <ShareButton className="button small secondary" path={`/shows/${slug}`} title={show.title} />
-            <ReportButton className="button small secondary" targetId={show.id} targetType="show" />
+            {!isShowOwner && <ReportButton className="button small secondary" targetId={show.id} targetType="show" />}
             <ShowEngagement
               canRemind={Boolean(session?.user?.id)}
               canRsvp={Boolean(session?.user?.id)}

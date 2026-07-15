@@ -160,6 +160,9 @@ export async function POST(request: Request) {
     if (!canManageOwnedResource(session, profile.ownerId)) {
       return NextResponse.json({ error: 'Only the profile owner can upload media.' }, { status: 403 });
     }
+    if (profile.type === 'ARTIST' && !(artworkFile instanceof File)) {
+      return NextResponse.json({ error: 'Cover art is required for artist track uploads.' }, { status: 400 });
+    }
 
     const title = (requestedTitle || deriveTitleFromFileName(file.name)).slice(0, 160);
     const hexId = createHexId();
@@ -197,10 +200,12 @@ export async function POST(request: Request) {
     const vetting = { cleared: scan.cleared, requiresManualReview: scan.requiresManualReview, reasoning: scan.reasoning };
     const effectiveFreeUse = freeUseEnabled && vetting.cleared;
 
-    // Optional cover art — same magic-byte + AI-vetting + storage pattern
-    // already used for profile graphics (src/app/api/profile/upload-graphic
-    // /route.ts), reused here rather than reinvented. Purely additive: a
-    // flagged or missing image never blocks the track upload itself.
+    // Cover art — required for ARTIST uploads (feeds the Seed discovery
+    // card), optional for DJ crate items. Same magic-byte + AI-vetting +
+    // storage pattern already used for profile graphics
+    // (src/app/api/profile/upload-graphic/route.ts), reused here rather
+    // than reinvented. A flagged image never blocks the track upload
+    // itself — it's just left off (fail-open, same as other vetting here).
     let artworkUrl: string | null = null;
     if (artworkFile instanceof File) {
       const artworkBytes = new Uint8Array(await artworkFile.arrayBuffer());

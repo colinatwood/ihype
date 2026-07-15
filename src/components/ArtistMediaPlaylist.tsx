@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState } from 'react';
 import { useMediaPlayer, type MediaTrack } from '@/components/GlobalMediaPlayer';
+import { ReportButton } from '@/components/ReportButton';
 import type { ArtistMediaEntry } from '@/lib/media';
 
 type ArtistMediaPlaylistProps = {
@@ -297,6 +298,9 @@ export function ArtistMediaPlaylist({
                   )}
                   {canEdit && (
                     <button className="button small secondary" onClick={() => removeUpload(entry)} type="button">Delete</button>
+                  )}
+                  {!isOwner && (
+                    <ReportButton className="button small secondary" targetId={entry.hexId} targetType="track" />
                   )}
                 </>
               )}

@@ -125,7 +125,7 @@ export default async function FanProfilePage({
                 <>
                   <FollowButton profileId={profile.id} variant="hero" />
                   <ShareButton className="fan-hero-btn" label="Share" path={`/fans/${profile.slug}`} title={profile.name} />
-                  <ReportButton className="fan-hero-btn" targetId={profile.id} targetType="profile" />
+                  {!isOwner && <ReportButton className="fan-hero-btn" targetId={profile.id} targetType="profile" />}
                 </>
               )}
             </div>

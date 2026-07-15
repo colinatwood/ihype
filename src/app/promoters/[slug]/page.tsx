@@ -123,7 +123,7 @@ export default async function DJProfilePage({
             <div className="dj-hero-actions">
               <FollowButton profileId={profile.id} variant="hero" />
               <Link className="dj-hero-btn" href="/radio">Tune In →</Link>
-              <ReportButton className="dj-hero-btn" targetId={profile.id} targetType="profile" />
+              {!isOwner && <ReportButton className="dj-hero-btn" targetId={profile.id} targetType="profile" />}
               {!isOwner && <BookingRequestButton className="dj-hero-btn" profileId={profile.id} />}
               {isOwner && (
                 <>

@@ -20,6 +20,7 @@ type ListenTab = (typeof TABS)[number]['id'];
 type Seed = {
   id: string;
   title: string;
+  artworkUrl: string | null;
   artistName: string;
   genres: string[];
   hypeCount: number;
@@ -207,7 +208,9 @@ function SeedDeck({ seeds, onAct }: { seeds: Seed[]; onAct: (seed: Seed, action:
         {next && (
           <div style={{
             position: 'absolute', inset: 0, borderRadius: 28, overflow: 'hidden', border: '1px solid var(--hair-120)',
-            background: `linear-gradient(155deg, ${nextColor}, ${nextG2})`,
+            background: next.artworkUrl
+              ? `linear-gradient(rgba(0,0,0,.15), rgba(0,0,0,.15)), url(${next.artworkUrl}) center / cover no-repeat, linear-gradient(155deg, ${nextColor}, ${nextG2})`
+              : `linear-gradient(155deg, ${nextColor}, ${nextG2})`,
             transform: `scale(${Math.min(1, 0.94 + Math.abs(drag.x) / 2600)}) translateY(${Math.max(0, 10 - Math.abs(drag.x) / 26)}px)`,
             opacity: Math.min(0.78, 0.55 + Math.abs(drag.x) / 900),
             transition: drag.active ? 'none' : 'transform .23s cubic-bezier(.4,0,.2,1), opacity .23s ease',
@@ -222,7 +225,9 @@ function SeedDeck({ seeds, onAct }: { seeds: Seed[]; onAct: (seed: Seed, action:
           style={{
             position: 'absolute', inset: 0, borderRadius: 28, overflow: 'hidden', border: '1px solid var(--hair-120)',
             boxShadow: `0 ${24 + lift * 30}px ${70 + lift * 60}px rgba(0,0,0,${0.6 + lift * 0.15})`,
-            background: `linear-gradient(155deg, ${color}, ${g2})`,
+            background: card.artworkUrl
+              ? `url(${card.artworkUrl}) center / cover no-repeat, linear-gradient(155deg, ${color}, ${g2})`
+              : `linear-gradient(155deg, ${color}, ${g2})`,
             display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', userSelect: 'none', cursor: 'grab',
             transform: `translateX(${drag.x}px) translateY(${drag.y * 0.22 + (drag.active ? -lift * 10 : 0)}px) rotate(${rot}deg) scale(${1 + lift * 0.035})`,
             transition: drag.active ? 'none' : 'transform .28s cubic-bezier(.34,1.2,.4,1), box-shadow .28s ease',

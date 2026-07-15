@@ -71,6 +71,7 @@ export function TrackUploadPanel({
   async function submit() {
     if (!file) { setError('Choose an audio file first.'); return; }
     if (!title.trim()) { setError('Give the track a title.'); return; }
+    if (!isDj && !artworkFile) { setError('Add a cover graphic for this track.'); return; }
     setSubmitting(true);
     setError(null);
     setScanLayers(null);
@@ -130,7 +131,7 @@ export function TrackUploadPanel({
           type="file"
         />
         <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.8rem' }}>
-          Cover art (optional)
+          {isDj ? 'Cover art (optional)' : 'Cover art — shown on your track and when this track plays as a Seed'}
           <input
             accept="image/jpeg,image/png,image/gif,image/webp"
             disabled={submitting}
@@ -164,7 +165,7 @@ export function TrackUploadPanel({
           />
           Allow free use (promoters/DJs can add this to shows and playlists)
         </label>
-        <button className="button small" disabled={submitting} onClick={submit} type="button">
+        <button className="button small" disabled={submitting || !file || !title.trim() || (!isDj && !artworkFile)} onClick={submit} type="button">
           {submitting ? 'Uploading…' : submitLabel}
         </button>
       </div>

@@ -25,7 +25,7 @@ const STEPS: Record<Role, { n: number; title: string; desc: string }[]> = {
   VENUE: [
     { n: 1, title: 'Complete your page', desc: 'Add your venue details, capacity, and location.' },
     { n: 2, title: 'Book from the radar', desc: 'See which artists have demand in your city.' },
-    { n: 3, title: 'Host a show', desc: 'Partner with an artist — 45% is yours, automatically.' },
+    { n: 3, title: 'Host a show', desc: 'Partner with an artist — 20% is yours, automatically.' },
   ],
   DJ: [
     { n: 1, title: 'Build your crate', desc: 'Browse free-use tracks. Only cleared music in your sets.' },
@@ -51,7 +51,7 @@ const PREVIEW: Record<Role, {
     color: '#ff5029', border: 'rgba(255,80,41,.25)', bg: 'rgba(255,80,41,.06)',
     art: 'linear-gradient(135deg,#ff5029,#b983ff)',
     icon: <><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></>,
-    eyebrow: 'YOUR PAGE IS LIVE', title: 'Your Artist Page', sub2: '45% split locked in · 0 tracks uploaded yet',
+    eyebrow: 'YOUR PAGE IS LIVE', title: 'Your Artist Page', sub2: '70% split locked in · 0 tracks uploaded yet',
     cta: 'Create a show', href: '/events/new',
   },
   VENUE: {

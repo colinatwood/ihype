@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const actionedIds = new Set(actioned.map(s => s.mediaId));
 
     // --- Collaborative filtering (v2) with time-decay scoring --------
-    let cfMedia: Array<{ id: string; title: string; profile: { name: string; genres: string[]; nowPlaying: string | null; journalContent: string | null } | null }> = [];
+    let cfMedia: Array<{ id: string; title: string; artworkUrl: string | null; profile: { name: string; genres: string[]; nowPlaying: string | null; journalContent: string | null } | null }> = [];
     if (genres.length === 0) {
       const hypedByMe = await db.profileHypeEvent.findMany({
         where: { userId: session.user.id },
@@ -74,6 +74,7 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 title: true,
+                artworkUrl: true,
                 profile: { select: { name: true, genres: true, nowPlaying: true, journalContent: true } }
               }
             });
@@ -96,6 +97,7 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             title: true,
+            artworkUrl: true,
             profile: { select: { name: true, genres: true, nowPlaying: true, journalContent: true } }
           },
         });
@@ -124,6 +126,7 @@ export async function GET(request: NextRequest) {
         id: m.id,
         trackId: m.id,
         title: m.title,
+        artworkUrl: m.artworkUrl,
         artistName: m.profile?.name ?? 'Unknown Artist',
         genres: m.profile?.genres ?? [],
         hypeCount: hypeCountMap.get(m.id) ?? 0,

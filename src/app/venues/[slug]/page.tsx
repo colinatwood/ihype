@@ -112,7 +112,7 @@ export default async function VenuePage({
           <div className="venue-stats">
             <div className="venue-stat"><div className="venue-stat-val">{shows.length}</div><div className="venue-stat-label">Shows hosted</div></div>
             <div className="venue-stat"><div className="venue-stat-val">{totalTicketsSold.toLocaleString()}</div><div className="venue-stat-label">Tickets sold</div></div>
-            <div className="venue-stat"><div className="venue-stat-val">45%</div><div className="venue-stat-label">Your cut, always</div></div>
+            <div className="venue-stat"><div className="venue-stat-val">20%</div><div className="venue-stat-label">Your cut, always</div></div>
           </div>
           {shows.length > 0 && (
             <div className="venue-capacity-row">
@@ -122,7 +122,7 @@ export default async function VenuePage({
           )}
           <div className="venue-hero-actions">
             <HypeButton entityLabel="venue" initialCount={profile.hypeCount} initiallyHyped={!!userHype} targetId={profile.id} targetType="profile" />
-            <ReportButton className="venue-hero-btn" targetId={profile.id} targetType="profile" />
+            {!isOwner && <ReportButton className="venue-hero-btn" targetId={profile.id} targetType="profile" />}
             {!isOwner && <BookingRequestButton className="venue-hero-btn" profileId={profile.id} />}
             {isOwner && (
               <>
@@ -158,8 +158,8 @@ export default async function VenuePage({
             <div className="venue-split-card">
               <div className="venue-split-title">How every ticket is split here</div>
               <div className="venue-split-bar">
-                <div className="venue-split-seg venue-artist-seg"><div className="venue-seg-pct" style={{ color: '#ff5029' }}>45%</div><div className="venue-seg-label" style={{ color: '#ff5029' }}>Artist</div></div>
-                <div className="venue-split-seg venue-venue-seg"><div className="venue-seg-pct" style={{ color: 'var(--role-venue)' }}>45%</div><div className="venue-seg-label" style={{ color: 'var(--role-venue)' }}>{profile.name}</div></div>
+                <div className="venue-split-seg venue-artist-seg"><div className="venue-seg-pct" style={{ color: '#ff5029' }}>70%</div><div className="venue-seg-label" style={{ color: '#ff5029' }}>Artist</div></div>
+                <div className="venue-split-seg venue-venue-seg"><div className="venue-seg-pct" style={{ color: 'var(--role-venue)' }}>20%</div><div className="venue-seg-label" style={{ color: 'var(--role-venue)' }}>{profile.name}</div></div>
                 <div className="venue-split-seg venue-promoter-seg"><div className="venue-seg-pct" style={{ color: '#ff3e9a' }}>10%</div><div className="venue-seg-label" style={{ color: '#ff3e9a' }}>Promoters</div></div>
               </div>
               <p style={{ fontSize: 12, color: 'var(--ink-a50)', marginTop: 12 }}>$0 fees for ticket buyers. iHYPE takes nothing — locked in the charter.</p>
