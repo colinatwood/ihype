@@ -29,6 +29,21 @@ for (const file of sourceFiles) {
   const content = await text(file);
   if (/\beval\s*\(/.test(content)) fail(file, 'eval() is forbidden.');
   if (/\bnew\s+Function\s*\(/.test(content)) fail(file, 'new Function() is forbidden.');
+
+  // The platform's default ticket split is 70% artist / 20% venue / 10%
+  // promoters (DESIGN_SYNC row 220) — it used to be 45/45/10 and that rename
+  // missed several display-copy spots twice over (rows 220 and 223), each
+  // time only caught by manually looking at a rendered page. Outside test
+  // fixtures (which legitimately use 45 as an arbitrary example per-show
+  // split, not the platform default), a literal "45%"/"45/45/10" in source
+  // can only be stale default-split copy — real per-show splits are always
+  // interpolated from data, never hardcoded as literal percentage text.
+  if (!file.includes('__tests__')) {
+    // Excludes an exactly-quoted '45%'/"45%" — a CSS width/height dimension
+    // (e.g. loading-skeleton placeholder widths), not split-copy text.
+    if (/(?<!['"])45\s*%(?!['"])/.test(content)) fail(file, 'literal "45%" found — the default split is 70/20/10, not 45/45/10; if this is a real per-show value it must be interpolated from data, not hardcoded.');
+    if (/45\s*\/\s*45\s*\/\s*10/.test(content)) fail(file, 'literal "45/45/10" found — the default split is 70/20/10.');
+  }
 }
 
 const readme = await text('README.md');
