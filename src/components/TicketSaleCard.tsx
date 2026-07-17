@@ -82,6 +82,7 @@ export function TicketSaleCard({
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [ageGated, setAgeGated] = useState(false);
+  const [emailUnverified, setEmailUnverified] = useState(false);
   const [issuedTickets, setIssuedTickets] = useState<IssuedTicket[]>([]);
 
   const remainingTickets = ticketCapacity === null ? null : Math.max(ticketCapacity - ticketsSoldCount, 0);
@@ -133,6 +134,7 @@ export function TicketSaleCard({
     setPending(true);
     setMessage(null);
     setAgeGated(false);
+    setEmailUnverified(false);
 
     const response = await fetch(`/api/shows/${showId}/tickets`, {
       method: 'POST',
@@ -152,6 +154,7 @@ export function TicketSaleCard({
       router.refresh();
     } else {
       setAgeGated(data.code === 'AGE_18_REQUIRED');
+      setEmailUnverified(data.code === 'EMAIL_NOT_VERIFIED');
       setMessage(data.error ?? 'Could not complete the ticket request.');
     }
 
@@ -343,6 +346,12 @@ export function TicketSaleCard({
                   <>
                     {' '}
                     <Link href="/me/settings">Confirm your age in Settings →</Link>
+                  </>
+                ) : null}
+                {emailUnverified ? (
+                  <>
+                    {' '}
+                    <Link href="/verify-email">Verify your email →</Link>
                   </>
                 ) : null}
               </span>

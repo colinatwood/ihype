@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { type NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { getStripe, isStripeConfigured } from '@/lib/stripe';
+import { getProfilePathForType } from '@/lib/profile-paths';
 
 /**
  * GET /api/stripe/connect/return?profileId=<cuid>
@@ -11,17 +12,20 @@ import { getStripe, isStripeConfigured } from '@/lib/stripe';
  * as onboarded if Stripe has approved it.
  */
 export async function GET(request: NextRequest) {
+  let fallback = '/listen';
   try {
     const profileId = request.nextUrl.searchParams.get('profileId');
 
     if (!profileId || !isStripeConfigured()) {
-      redirect('/home?view=tickets');
+      redirect(fallback);
     }
 
     const profile = await db.profile.findUnique({
       where: { id: profileId },
       select: { id: true, stripeConnectAccountId: true, slug: true, type: true }
     });
+
+    if (profile) fallback = getProfilePathForType(profile.type, profile.slug);
 
     if (profile?.stripeConnectAccountId) {
       const stripe = getStripe();
@@ -35,11 +39,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    redirect('/home?view=tickets');
+    redirect(`${fallback}?payout=connected`);
   } catch (err) {
     // Re-throw redirect errors (Next.js redirect() throws internally)
     if (err instanceof Error && err.message === 'NEXT_REDIRECT') throw err;
     console.error('[api/stripe/connect/return] error', err);
-    redirect('/home?view=tickets');
+    redirect(fallback);
   }
 }

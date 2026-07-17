@@ -12,7 +12,7 @@ function sectionFromPathname(p: string): AdminSection {
   if (p.startsWith('/admin/ads')) return 'ads';
   if (p.startsWith('/admin/moderation') || p.startsWith('/admin/feedback') || p.startsWith('/admin/dmca')) return 'support';
   if (p.startsWith('/admin/setup') || p.startsWith('/admin/audit') || p.startsWith('/admin/rate-limits') || p.startsWith('/admin/invite') || p.startsWith('/admin/feature') || p.startsWith('/admin/device-register')) return 'system';
-  if (p.startsWith('/admin/growth') || p.startsWith('/admin/journal') || p.startsWith('/admin/collab') || p.startsWith('/admin/playlists')) return 'growth';
+  if (p.startsWith('/admin/growth') || p.startsWith('/admin/journal') || p.startsWith('/admin/collab') || p.startsWith('/admin/playlists') || p.startsWith('/admin/ab-tests')) return 'growth';
   return 'overview';
 }
 
@@ -45,11 +45,13 @@ const SUBNAV: Partial<Record<AdminSection, Array<{label: string; href: string}>>
   system: [
     {label: 'Setup', href: '/admin/setup'},
     {label: 'Audit Log', href: '/admin/audit'},
+    {label: 'Status', href: '/status'},
   ],
   growth: [
     {label: 'Growth', href: '/admin/growth'},
     {label: 'Journal', href: '/admin/journal'},
     {label: 'Playlists', href: '/admin/playlists'},
+    {label: 'A/B Tests', href: '/admin/ab-tests'},
   ],
 };
 

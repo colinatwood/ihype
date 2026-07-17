@@ -1,9 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={null}>
+      <VerifyEmailForm />
+    </Suspense>
+  );
+}
+
+function VerifyEmailForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [code, setCode] = useState('');
+  const [confirmStatus, setConfirmStatus] = useState<'idle' | 'confirming' | 'error'>('idle');
 
   async function handleResend() {
     setStatus('sending');
@@ -16,6 +29,26 @@ export default function VerifyEmailPage() {
       setStatus(res.ok ? 'sent' : 'error');
     } catch {
       setStatus('error');
+    }
+  }
+
+  async function handleConfirm(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setConfirmStatus('confirming');
+    try {
+      const res = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm', code }),
+      });
+      if (res.ok) {
+        router.push(searchParams.get('callbackUrl') || '/');
+        router.refresh();
+        return;
+      }
+      setConfirmStatus('error');
+    } catch {
+      setConfirmStatus('error');
     }
   }
 
@@ -56,11 +89,11 @@ export default function VerifyEmailPage() {
           lineHeight: 1.65,
           margin: '0 0 28px',
         }}>
-          We sent a verification link to your email address. Click the link to verify your account and continue.
+          We sent a 6-digit verification code to your email address. Enter it below to verify your account and continue.
         </p>
         {status === 'sent' && (
           <p style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: '#22e5d4', marginBottom: 16 }}>
-            Verification email sent! Check your inbox.
+            Verification code sent! Check your inbox.
           </p>
         )}
         {status === 'error' && (
@@ -68,13 +101,59 @@ export default function VerifyEmailPage() {
             Something went wrong. Please try again.
           </p>
         )}
+        <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="000000"
+            maxLength={6}
+            required
+            style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--line-2)',
+              borderRadius: 8,
+              padding: '12px 16px',
+              color: 'var(--ink)',
+              fontFamily: 'var(--f-m)',
+              fontSize: 18,
+              letterSpacing: '.3em',
+              textAlign: 'center',
+            }}
+          />
+          {confirmStatus === 'error' && (
+            <p style={{ fontFamily: 'var(--f-m)', fontSize: 12, color: 'var(--accent)', margin: 0 }}>
+              That code is invalid or expired. Request a new one below.
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={confirmStatus === 'confirming' || code.length !== 6}
+            style={{
+              background: 'var(--accent)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 28px',
+              fontFamily: 'var(--f-m)',
+              fontSize: 13,
+              letterSpacing: '.04em',
+              cursor: confirmStatus === 'confirming' || code.length !== 6 ? 'not-allowed' : 'pointer',
+              opacity: confirmStatus === 'confirming' || code.length !== 6 ? 0.6 : 1,
+              width: '100%',
+            }}
+          >
+            {confirmStatus === 'confirming' ? 'Verifying…' : 'Verify code'}
+          </button>
+        </form>
         <button
           onClick={handleResend}
           disabled={status === 'sending' || status === 'sent'}
           style={{
-            background: 'var(--accent)',
-            color: '#fff',
-            border: 'none',
+            background: 'transparent',
+            color: 'var(--ink-2)',
+            border: '1px solid var(--line-2)',
             borderRadius: 8,
             padding: '12px 28px',
             fontFamily: 'var(--f-m)',
@@ -85,7 +164,7 @@ export default function VerifyEmailPage() {
             width: '100%',
           }}
         >
-          {status === 'sending' ? 'Sending…' : status === 'sent' ? 'Email sent!' : 'Resend verification email'}
+          {status === 'sending' ? 'Sending…' : status === 'sent' ? 'Code sent!' : 'Resend code'}
         </button>
         <a
           href="/login"

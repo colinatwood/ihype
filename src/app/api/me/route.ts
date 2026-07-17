@@ -13,7 +13,7 @@ export async function GET() {
     where: { id: session.user.id },
     select: {
       id: true, name: true, email: true, username: true, role: true,
-      isEighteenOrOlder: true,
+      isEighteenOrOlder: true, emailVerified: true,
       notificationPreference: {
         select: { newShows: true, journalPosts: true, milestones: true, weeklyDigest: true },
       },
