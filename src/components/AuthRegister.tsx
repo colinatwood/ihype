@@ -16,6 +16,7 @@ import {
 } from '@/components/AuthShared';
 import type { AuthMethod, RegisterStep, RoleOption, SignupVariant } from '@/components/AuthShared';
 import { TurnstileWidget, type TurnstileWidgetHandle } from '@/components/TurnstileWidget';
+import { RequestBetaAccessForm } from '@/components/RequestBetaAccessForm';
 
 type PasskeyRegistrationOptions = Parameters<typeof startRegistration>[0]['optionsJSON'];
 
@@ -284,6 +285,12 @@ export function RegisterScreen({
         </div>
       ) : (
         <form onSubmit={createAccount}>
+          {inviteOnly ? (
+            <div className="authcard-alpha-banner">
+              <strong>iHYPE is currently in private alpha.</strong> New accounts need a beta invite code — request
+              access below and we&apos;ll reach out for the official beta launch.
+            </div>
+          ) : null}
           <fieldset className="authcard-field">
             <legend>I&apos;m joining as</legend>
             <div className="authcard-role-grid">
@@ -376,16 +383,19 @@ export function RegisterScreen({
           </div>
 
           {inviteOnly ? (
-            <div className="authcard-field">
-              <label>Beta invite code</label>
-              <input
-                autoComplete="off"
-                onChange={(event) => setInviteCode(event.target.value)}
-                required
-                type="text"
-                value={inviteCode}
-              />
-            </div>
+            <>
+              <div className="authcard-field">
+                <label>Beta invite code</label>
+                <input
+                  autoComplete="off"
+                  onChange={(event) => setInviteCode(event.target.value)}
+                  required
+                  type="text"
+                  value={inviteCode}
+                />
+              </div>
+              <RequestBetaAccessForm role={role} />
+            </>
           ) : null}
 
           <label className="authcard-check-row">
