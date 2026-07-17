@@ -11,6 +11,7 @@ import { getPinnedStatValues } from '@/lib/profile-stats';
 import { PinnedStatTiles } from '@/components/PinnedStatTiles';
 import { getDemoCreatorExclusion, isDemoUser, shouldHideDemoContent } from '@/lib/runtime-flags';
 import { resolveProfileThemeVars } from '@/lib/profile-design';
+import { ConnectPayoutButton } from '@/components/ConnectPayoutButton';
 
 export const revalidate = 60;
 
@@ -207,7 +208,14 @@ export default async function VenuePage({
         )}
 
         {activeSection === 'insights' && isOwner && (
-          <ProfileInsights profileId={profile.id} profileType={profile.type} />
+          <>
+            <ConnectPayoutButton
+              profileId={profile.id}
+              connected={profile.stripeConnectOnboarded}
+              hasStarted={Boolean(profile.stripeConnectAccountId)}
+            />
+            <ProfileInsights profileId={profile.id} profileType={profile.type} />
+          </>
         )}
       </div>
 

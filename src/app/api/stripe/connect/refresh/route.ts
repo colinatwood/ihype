@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { createConnectOnboardingUrl, isStripeConfigured } from '@/lib/stripe';
-
-const SETTINGS_URL = '/home?view=settings';
+import { getProfilePathForType } from '@/lib/profile-paths';
 
 /**
  * GET /api/stripe/connect/refresh?profileId=<id>
@@ -14,7 +13,7 @@ const SETTINGS_URL = '/home?view=settings';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const profileId = searchParams.get('profileId');
-  const fallback = NextResponse.redirect(new URL(SETTINGS_URL, origin));
+  const fallback = NextResponse.redirect(new URL('/listen', origin));
 
   if (!isStripeConfigured() || !profileId) return fallback;
 
@@ -27,6 +26,8 @@ export async function GET(request: Request) {
     where: { id: profileId },
     select: {
       id: true,
+      slug: true,
+      type: true,
       stripeConnectAccountId: true,
       owner: { select: { id: true } },
     },
@@ -36,7 +37,9 @@ export async function GET(request: Request) {
     !profile?.stripeConnectAccountId ||
     (profile.owner.id !== session.user.id && session.user.role !== 'ADMIN')
   ) {
-    return fallback;
+    return profile
+      ? NextResponse.redirect(new URL(getProfilePathForType(profile.type, profile.slug), origin))
+      : fallback;
   }
 
   try {
