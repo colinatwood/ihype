@@ -127,7 +127,10 @@ export async function POST(
       return NextResponse.json({ error: 'Only fan accounts can reserve or purchase tickets.' }, { status: 403 });
     }
     if (!user.emailVerified) {
-      return NextResponse.json({ error: 'Verify your email address before purchasing tickets.' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Verify your email address before purchasing tickets.', code: 'EMAIL_NOT_VERIFIED' },
+        { status: 403 },
+      );
     }
     if (!user.isEighteenOrOlder) {
       return NextResponse.json(

@@ -165,6 +165,11 @@ export default async function VenuePage({
 
         {activeSection === 'shows' && (
           <div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+              <Link href={`/venues/${profile.slug}/calendar`} className="text-link" style={{ fontSize: 13 }}>
+                Full calendar →
+              </Link>
+            </div>
             {upcomingShows.length === 0 ? (
               <p style={{ color: 'var(--ink-a50)' }}>No upcoming shows yet.</p>
             ) : (

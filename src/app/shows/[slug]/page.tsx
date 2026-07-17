@@ -572,7 +572,13 @@ export default async function ShowDetailPage({
 
             {recentTicketOrders.length ? (
               <div className="panel" style={{ padding: '1.25rem', marginTop: 24 }}>
-                <h2>Recent ticket order totals</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                  <h2 style={{ margin: 0 }}>Recent ticket order totals</h2>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    <Link href={`/payout/${show.slug}`} className="meta">Full payout breakdown →</Link>
+                    <Link href={`/shows/${show.slug}/scan`} className="meta">Scan tickets at the door →</Link>
+                  </div>
+                </div>
                 <table className="table">
                   <thead>
                     <tr>

@@ -39,6 +39,7 @@ function Row({ label, detail, action }: { label: string; detail: string; action?
 export default function SettingsPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [emailVerified, setEmailVerified] = useState(true);
   const [role, setRole] = useState('FAN');
   const [isAdult, setIsAdult] = useState(false);
   const [attesting, setAttesting] = useState(false);
@@ -57,6 +58,7 @@ export default function SettingsPage() {
       .then((data) => {
         setName(data.name ?? '');
         setEmail(data.email ?? '');
+        setEmailVerified(Boolean(data.emailVerified));
         setRole(data.role ?? 'FAN');
         setIsAdult(Boolean(data.isEighteenOrOlder));
         if (data.notificationPreference) setPrefs(data.notificationPreference);
@@ -222,7 +224,13 @@ export default function SettingsPage() {
                 detail="Shown on your profile"
                 label="Display name"
               />
-              <Row action={<span className="settings-row-detail">Contact admin@ihype.org to change</span>} detail={email} label="Email" />
+              <Row
+                action={emailVerified
+                  ? <span className="settings-row-detail">Contact admin@ihype.org to change</span>
+                  : <Link className="settings-btn settings-btn-ghost" href="/verify-email">Verify</Link>}
+                detail={emailVerified ? email : `${email} · not verified`}
+                label="Email"
+              />
               <Row
                 action={<Link className="settings-btn settings-btn-ghost" href="/verify">Manage</Link>}
                 detail={role.charAt(0) + role.slice(1).toLowerCase()}

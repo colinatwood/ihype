@@ -45,6 +45,7 @@ const SUBNAV: Partial<Record<AdminSection, Array<{label: string; href: string}>>
   system: [
     {label: 'Setup', href: '/admin/setup'},
     {label: 'Audit Log', href: '/admin/audit'},
+    {label: 'Status', href: '/status'},
   ],
   growth: [
     {label: 'Growth', href: '/admin/growth'},

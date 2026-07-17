@@ -253,6 +253,9 @@ export default async function RootPage() {
                   </div>
                 </div>
               ))}
+              <Link href="/walkthrough" className="text-link" style={{ fontSize: 13, alignSelf: 'flex-start' }}>
+                See the full walkthrough: how a hype becomes a paid show →
+              </Link>
             </div>
           </div>
         </div>
