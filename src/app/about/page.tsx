@@ -27,7 +27,7 @@ export default function AboutPage() {
           {[
             { icon: '◐', head: '0% ticket fee', body: 'Face value is face value. Every cent from a ticket sale goes directly to the artist or venue — no platform deduction, ever.' },
             { icon: '♡', head: 'No streaming cuts', body: 'iHYPE does not take royalties. Hypes are a demand signal, not a revenue share mechanism.' },
-            { icon: '◇', head: 'No ads', body: 'The platform is funded by the community, not by advertisers. Your listening habits are never sold.' },
+            { icon: '◇', head: 'No data for sale', body: 'iHYPE runs music-only ads to stay funded, but your listening habits are never sold or shared with advertisers.' },
             { icon: '◉', head: 'Open to all', body: 'Any independent artist, venue, or promoter can join for free. There is no gated tier, no premium listing, no pay-to-surface.' },
           ].map((r) => (
             <div key={r.icon} className="lp-reason-card">
@@ -46,7 +46,9 @@ export default function AboutPage() {
         <p className="lp-hype-body">
           iHYPE is funded entirely by advertising, the same way terrestrial radio has always worked — and those
           ads are restricted to music-related sources only, forever. No user-data resale funds this platform,
-          and no ticket revenue is ever touched.
+          and no ticket revenue is ever touched. The only fee anywhere in the ticketing flow is the card
+          processor&apos;s own cost — 2.9% + $0.30 per transaction (3.5% + $0.30 for Amex) — passed through
+          at cost, on top of the 70/20/10 split.
         </p>
         <span className="lp-coming-soon">Detailed funding breakdown coming soon</span>
       </section>
