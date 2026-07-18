@@ -197,6 +197,10 @@ export function ProfileInsights({ profileId, profileType }: { profileId: string;
         </Section>
       )}
 
+      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--ink-a40)', margin: 0 }}>
+        Cohorts under 5 fans are never shown
+      </p>
+
       <Section title="Booking requests">
         <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
           <Stat label="Pending" value={data.bookingRequests.pending} color="#ff5029" />

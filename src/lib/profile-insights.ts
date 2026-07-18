@@ -23,6 +23,9 @@ export type ProfileInsights = {
 
 const TOP_CITIES_LIMIT = 5;
 const TOP_TRACKS_LIMIT = 5;
+// Same k-anonymity floor as /audit — a cohort this small (a city's ticket
+// buyers, a track's listeners) could otherwise identify a specific fan.
+const K_ANON_FLOOR = 5;
 
 function topByCount<T extends string>(counts: Record<T, number>, limit: number): { key: T; count: number }[] {
   return Object.entries(counts)
@@ -68,6 +71,7 @@ async function getListenerStats(profileId: string) {
   const titleByHexId = new Map(assets.map((a) => [a.hexId, a.title]));
   const topTracks = playCounts
     .map((r) => ({ title: titleByHexId.get(r.mediaId) ?? 'Untitled', plays: r._count._all }))
+    .filter((t) => t.plays >= K_ANON_FLOOR)
     .sort((a, b) => b.plays - a.plays)
     .slice(0, TOP_TRACKS_LIMIT);
   const totalPlays = playCounts.reduce((sum, r) => sum + r._count._all, 0);
@@ -125,7 +129,9 @@ async function getShowBasedStats(showWhere: ShowWhere) {
     }
   }
 
-  const topCities = topByCount(cityCounts, TOP_CITIES_LIMIT).map((c) => ({ city: c.key, count: c.count }));
+  const topCities = topByCount(cityCounts, TOP_CITIES_LIMIT)
+    .filter((c) => c.count >= K_ANON_FLOOR)
+    .map((c) => ({ city: c.key, count: c.count }));
 
   return {
     hypeTimeline: { buckets: hypeTimelineBuckets, untracked: hypeTimelineUntracked },
