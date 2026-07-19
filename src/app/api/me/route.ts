@@ -15,7 +15,10 @@ export async function GET() {
       id: true, name: true, email: true, username: true, role: true,
       isEighteenOrOlder: true, emailVerified: true,
       notificationPreference: {
-        select: { newShows: true, journalPosts: true, milestones: true, weeklyDigest: true },
+        select: {
+          newShows: true, journalPosts: true, milestones: true, weeklyDigest: true,
+          radioLive: true, crateUploads: true, bookingRequests: true,
+        },
       },
     },
   });
@@ -28,7 +31,14 @@ export async function PATCH(req: Request) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  let body: { name?: string; attestEighteenOrOlder?: boolean; notificationPreference?: { newShows: boolean; journalPosts: boolean; milestones: boolean; weeklyDigest: boolean } };
+  let body: {
+    name?: string;
+    attestEighteenOrOlder?: boolean;
+    notificationPreference?: {
+      newShows: boolean; journalPosts: boolean; milestones: boolean; weeklyDigest: boolean;
+      radioLive?: boolean; crateUploads?: boolean; bookingRequests?: boolean;
+    };
+  };
   try {
     body = await req.json();
   } catch {
@@ -53,11 +63,19 @@ export async function PATCH(req: Request) {
   }
 
   if (body.notificationPreference) {
-    const { newShows, journalPosts, milestones, weeklyDigest } = body.notificationPreference;
+    const { newShows, journalPosts, milestones, weeklyDigest, radioLive, crateUploads, bookingRequests } = body.notificationPreference;
     await db.notificationPreference.upsert({
       where: { userId: session.user.id },
-      create: { userId: session.user.id, newShows, journalPosts, milestones, weeklyDigest },
-      update: { newShows, journalPosts, milestones, weeklyDigest },
+      create: {
+        userId: session.user.id, newShows, journalPosts, milestones, weeklyDigest,
+        radioLive: radioLive ?? true, crateUploads: crateUploads ?? true, bookingRequests: bookingRequests ?? true,
+      },
+      update: {
+        newShows, journalPosts, milestones, weeklyDigest,
+        ...(radioLive !== undefined && { radioLive }),
+        ...(crateUploads !== undefined && { crateUploads }),
+        ...(bookingRequests !== undefined && { bookingRequests }),
+      },
     });
   }
 

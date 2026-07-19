@@ -216,6 +216,9 @@ model Profile {
   verificationRequested         Boolean                     @default(false)
   verificationProofUrl          String?
   hypeCount                     Int                         @default(0)
+  // Settings' "Show me in discovery" / "Show me in demand radar" toggle —
+  // honored by /discover, search, and the venue booking demand radar.
+  discoverable                  Boolean                     @default(true)
   ownerId                       String
   owner                         User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt                     DateTime                    @default(now())
@@ -843,14 +846,21 @@ model PremiumInterest {
 }
 
 model NotificationPreference {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  newShows     Boolean  @default(true)
-  journalPosts Boolean  @default(true)
-  milestones   Boolean  @default(true)
-  weeklyDigest Boolean  @default(true)
-  updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  newShows       Boolean  @default(true)
+  journalPosts   Boolean  @default(true)
+  milestones     Boolean  @default(true)
+  weeklyDigest   Boolean  @default(true)
+  // Added for the per-role settings pages (Artist/DJ/Venue/Fan/Promoter
+  // Settings.dc.html templates) — categories with no honest match among the
+  // 4 fields above. Everything else in those templates reuses the fields
+  // above with role-contextual copy rather than growing this table further.
+  radioLive      Boolean  @default(true) // a followed DJ goes live
+  crateUploads   Boolean  @default(true) // your own track/crate upload clears vetting
+  bookingRequests Boolean @default(true) // a venue receives a new booking request
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ProcessedWebhookEvent {

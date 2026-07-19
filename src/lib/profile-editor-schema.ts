@@ -41,5 +41,6 @@ export const editorSchema = z.object({
   themeAccentTone: text(80),
   themeBackdropTone: text(80),
   fanShareEnabled: z.boolean().optional(),
+  discoverable: z.boolean().optional(),
   pinnedStats: z.array(z.string()).max(4).optional()
 });
