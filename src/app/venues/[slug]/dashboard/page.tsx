@@ -44,7 +44,7 @@ export default async function VenueDashboardPage({ params }: { params: Promise<{
           <h1>{profile.name}</h1>
         </div>
         <div className="vdash-head-actions">
-          <Link className="vdash-btn vdash-btn-outline" href="/me/booking">Booking Inbox</Link>
+          <Link className="vdash-btn vdash-btn-outline" href={`/venues/${profile.slug}/booking-inbox`}>Booking Inbox</Link>
           <Link className="vdash-btn vdash-btn-solid" href="/events/new">+ Create Event</Link>
         </div>
       </header>
@@ -128,7 +128,7 @@ export default async function VenueDashboardPage({ params }: { params: Promise<{
         <div>
           <div className="vdash-eyebrow-sm">Quick Actions</div>
           <div className="vdash-actions">
-            <Link className="vdash-action" href="/me/booking">Review booking requests</Link>
+            <Link className="vdash-action" href={`/venues/${profile.slug}/booking-inbox`}>Review booking requests</Link>
             <Link className="vdash-action" href={`/venues/${profile.slug}/calendar`}>View calendar</Link>
             {data.nextScannableShowSlug && (
               <Link className="vdash-action" href={`/shows/${data.nextScannableShowSlug}/scan`}>Door check-in scanner</Link>

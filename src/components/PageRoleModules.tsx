@@ -310,6 +310,16 @@ export function PageRoleModules({ profile, color }: { profile: ModuleProfile; co
           />
         )}
 
+        {isVenue && (
+          <LinkModule
+            color={color}
+            href={`/venues/${profile.slug}/booking-inbox`}
+            icon={icons.event(color)}
+            sub="Accept or decline artist & DJ requests"
+            title="Booking inbox"
+          />
+        )}
+
         {isDj && (
           <LinkModule
             color={color}
