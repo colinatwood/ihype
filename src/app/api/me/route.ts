@@ -24,7 +24,18 @@ export async function GET() {
   });
 
   if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(user);
+
+  // The "Show me in discovery" toggle lives on Profile (a user can own
+  // several), not User — surface the first ARTIST/DJ/VENUE profile's value
+  // here so /settings' single unified page doesn't need a second fetch.
+  // Fan-only accounts have nothing to toggle (LISTENER profiles never
+  // appear in /discover), so this is simply omitted for them.
+  const creatorProfile = await db.profile.findFirst({
+    where: { ownerId: session.user.id, type: { in: ['ARTIST', 'DJ', 'VENUE'] } },
+    select: { id: true, discoverable: true },
+  });
+
+  return NextResponse.json({ ...user, creatorProfile });
 }
 
 export async function PATCH(req: Request) {
@@ -34,6 +45,7 @@ export async function PATCH(req: Request) {
   let body: {
     name?: string;
     attestEighteenOrOlder?: boolean;
+    discoverable?: boolean;
     notificationPreference?: {
       newShows: boolean; journalPosts: boolean; milestones: boolean; weeklyDigest: boolean;
       radioLive?: boolean; crateUploads?: boolean; bookingRequests?: boolean;
@@ -51,6 +63,16 @@ export async function PATCH(req: Request) {
   if (body.attestEighteenOrOlder === true) updates.isEighteenOrOlder = true;
 
   await db.user.update({ where: { id: session.user.id }, data: updates });
+
+  if (typeof body.discoverable === 'boolean') {
+    const creatorProfile = await db.profile.findFirst({
+      where: { ownerId: session.user.id, type: { in: ['ARTIST', 'DJ', 'VENUE'] } },
+      select: { id: true },
+    });
+    if (creatorProfile) {
+      await db.profile.update({ where: { id: creatorProfile.id }, data: { discoverable: body.discoverable } });
+    }
+  }
 
   if (updates.isEighteenOrOlder) {
     // Age attestations need a compliance trail — record who attested and when.
