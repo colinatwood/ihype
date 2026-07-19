@@ -152,8 +152,10 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 |---|---|---|
 | Artist.dc.html | /artists/[slug] | src/app/artists/[slug]/page.tsx |
 | ArtistDashboard.dc.html | /artists/[slug]/dashboard | src/app/artists/[slug]/dashboard/page.tsx (owner-only) |
+| ArtistAnalytics.dc.html | /artists/[slug]/analytics | src/app/artists/[slug]/analytics/page.tsx (owner-only) |
 | DJProfile.dc.html | /promoters/[slug] | src/app/promoters/[slug]/page.tsx — despite living in the `/artists/[slug]` file per the original design mapping, real DJ profiles are gated `profile.type !== 'DJ' → notFound()` at `/promoters/[slug]` (see the "Additional live routes" table below); `artists/[slug]/page.tsx` is ARTIST-only (`profile.type !== 'ARTIST' → notFound()`) |
 | DJDashboard.dc.html | /promoters/[slug]/dashboard | src/app/promoters/[slug]/dashboard/page.tsx (owner-only) |
+| DJAnalytics.dc.html | /promoters/[slug]/analytics | src/app/promoters/[slug]/analytics/page.tsx (owner-only) |
 | WebRadio.dc.html | /radio | src/app/radio/page.tsx |
 | Pages.dc.html | /pages | src/app/pages/page.tsx |
 
@@ -170,8 +172,11 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 |---|---|---|
 | Venue.dc.html | /venues/[slug] | src/app/venues/[slug]/page.tsx |
 | VenueDashboard.dc.html | /venues/[slug]/dashboard | src/app/venues/[slug]/dashboard/page.tsx (owner-only) |
+| VenueAnalytics.dc.html | /venues/[slug]/analytics | src/app/venues/[slug]/analytics/page.tsx (owner-only) |
 | PromoterHome.dc.html | /me/promote | src/app/me/promote/page.tsx |
+| PromoterAnalytics.dc.html | /me/promote/analytics | src/app/me/promote/analytics/page.tsx |
 | FanDashboard.dc.html | /me/dashboard | src/app/me/dashboard/page.tsx (any authenticated user) |
+| FanAnalytics.dc.html | /me/analytics | src/app/me/analytics/page.tsx (any authenticated user) |
 
 ### Admin
 | .dc.html | Route | src/app path |
