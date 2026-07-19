@@ -19,7 +19,7 @@ import { isInviteCodeRequiredRuntime, isReservedPlatformEmail, isValidInviteCode
 import { getUsernameValidationMessage, isValidUsername, normalizeUsername } from '@/lib/usernames';
 import { generateUniqueNonwordSlug } from '@/lib/nonword-slug';
 import { log } from '@/lib/logger';
-import { runRegistrationPostProcessing } from '@/lib/registration-post-processing';
+import { resolveReferrer, runRegistrationPostProcessing } from '@/lib/registration-post-processing';
 import {
   createPasskeyBootstrapCapability,
   getPasskeyBootstrapCookieName,
@@ -163,11 +163,17 @@ export async function POST(request: Request) {
 
     const inviteCodeRequired = await isInviteCodeRequiredRuntime();
     const submittedInviteCode = body.inviteCode?.trim() || null;
-    // Two invite channels: shared codes from BETA_INVITE_CODES (one per
-    // distribution channel), and single-use codes minted by admins via
-    // /api/admin/invite-codes. The DB code is claimed inside the signup
-    // transaction below so a code can never admit two accounts.
+    // Three invite channels: shared codes from BETA_INVITE_CODES (one per
+    // distribution channel), single-use codes minted by admins via
+    // /api/admin/invite-codes (claimed inside the signup transaction below
+    // so a code can never admit two accounts), and — during closed beta — a
+    // real existing user's own personal /invite/[code] link (their
+    // Profile.hexId, or their username). Unlike an admin-minted code this
+    // is never "claimed"/consumed: it identifies a real account, not a
+    // one-time token, so the same alpha user can invite any number of
+    // friends with the same link.
     let dbInviteCodeId: string | null = null;
+    let refSatisfiesInviteGate = false;
     if (inviteCodeRequired && !isValidInviteCode(submittedInviteCode, inviteCodeRequired)) {
       if (submittedInviteCode) {
         const dbCode = await db.inviteCode.findUnique({
@@ -178,7 +184,11 @@ export async function POST(request: Request) {
           dbInviteCodeId = dbCode.id;
         }
       }
-      if (!dbInviteCodeId) {
+      if (!dbInviteCodeId && body.ref) {
+        const referrer = await resolveReferrer(body.ref.trim());
+        refSatisfiesInviteGate = referrer !== null;
+      }
+      if (!dbInviteCodeId && !refSatisfiesInviteGate) {
         return NextResponse.json(
           { error: 'A valid beta invite code is required while invite-only signup is enabled.' },
           { status: 403 },

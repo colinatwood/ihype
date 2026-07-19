@@ -34,12 +34,15 @@ async function checkRegistrationSpam({
   }
 }
 
-async function processReferral(user: RegistrationUser, refValue: string) {
-  let resolvedUsername: string | null = null;
-  let referrerId: string | null = null;
-  let referrerProfileId: string | null = null;
-  let referrerIsAdult = false;
-
+/**
+ * Resolves a `ref` value (a username, or a Profile.hexId from a personal
+ * /invite/[code] link) to the real user behind it. Shared by the referral
+ * crediting below and by /api/register's invite-only-signup gate — a
+ * personal invite link only ever identifies a real existing account, so
+ * unlike an admin-minted InviteCode it's inherently reusable and never
+ * "claimed"/consumed.
+ */
+export async function resolveReferrer(refValue: string) {
   const refUser = await db.user.findUnique({
     where: { username: refValue },
     select: {
@@ -51,22 +54,36 @@ async function processReferral(user: RegistrationUser, refValue: string) {
   });
 
   if (refUser) {
-    resolvedUsername = refUser.username;
-    referrerId = refUser.id;
-    referrerIsAdult = refUser.isEighteenOrOlder;
-    referrerProfileId = refUser.profiles[0]?.id ?? null;
-  } else {
-    const refProfile = await db.profile.findUnique({
-      where: { hexId: refValue },
-      select: { id: true, owner: { select: { id: true, username: true, isEighteenOrOlder: true } } },
-    });
-    if (refProfile?.owner) {
-      resolvedUsername = refProfile.owner.username;
-      referrerId = refProfile.owner.id;
-      referrerIsAdult = refProfile.owner.isEighteenOrOlder;
-      referrerProfileId = refProfile.id;
-    }
+    return {
+      resolvedUsername: refUser.username,
+      referrerId: refUser.id,
+      referrerIsAdult: refUser.isEighteenOrOlder,
+      referrerProfileId: refUser.profiles[0]?.id ?? null,
+    };
   }
+
+  const refProfile = await db.profile.findUnique({
+    where: { hexId: refValue },
+    select: { id: true, owner: { select: { id: true, username: true, isEighteenOrOlder: true } } },
+  });
+  if (refProfile?.owner) {
+    return {
+      resolvedUsername: refProfile.owner.username,
+      referrerId: refProfile.owner.id,
+      referrerIsAdult: refProfile.owner.isEighteenOrOlder,
+      referrerProfileId: refProfile.id,
+    };
+  }
+
+  return null;
+}
+
+async function processReferral(user: RegistrationUser, refValue: string) {
+  const resolved = await resolveReferrer(refValue);
+  const resolvedUsername = resolved?.resolvedUsername ?? null;
+  const referrerId = resolved?.referrerId ?? null;
+  const referrerProfileId = resolved?.referrerProfileId ?? null;
+  const referrerIsAdult = resolved?.referrerIsAdult ?? false;
 
   if (!resolvedUsername || !referrerId || referrerId === user.id) return;
 
