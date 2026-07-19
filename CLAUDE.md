@@ -173,6 +173,7 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 | Venue.dc.html | /venues/[slug] | src/app/venues/[slug]/page.tsx |
 | VenueDashboard.dc.html | /venues/[slug]/dashboard | src/app/venues/[slug]/dashboard/page.tsx (owner-only) |
 | VenueAnalytics.dc.html | /venues/[slug]/analytics | src/app/venues/[slug]/analytics/page.tsx (owner-only) |
+| BookingInbox.dc.html | /venues/[slug]/booking-inbox | src/app/venues/[slug]/booking-inbox/page.tsx (owner-only) |
 | PromoterHome.dc.html | /me/promote | src/app/me/promote/page.tsx |
 | PromoterAnalytics.dc.html | /me/promote/analytics | src/app/me/promote/analytics/page.tsx |
 | FanDashboard.dc.html | /me/dashboard | src/app/me/dashboard/page.tsx (any authenticated user) |
