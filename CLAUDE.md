@@ -151,13 +151,17 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 | .dc.html | Route | src/app path |
 |---|---|---|
 | Artist.dc.html | /artists/[slug] | src/app/artists/[slug]/page.tsx |
+| ArtistDashboard.dc.html | /artists/[slug]/dashboard | src/app/artists/[slug]/dashboard/page.tsx (owner-only) |
 | DJProfile.dc.html | /promoters/[slug] | src/app/promoters/[slug]/page.tsx — despite living in the `/artists/[slug]` file per the original design mapping, real DJ profiles are gated `profile.type !== 'DJ' → notFound()` at `/promoters/[slug]` (see the "Additional live routes" table below); `artists/[slug]/page.tsx` is ARTIST-only (`profile.type !== 'ARTIST' → notFound()`) |
+| DJDashboard.dc.html | /promoters/[slug]/dashboard | src/app/promoters/[slug]/dashboard/page.tsx (owner-only) |
 | WebRadio.dc.html | /radio | src/app/radio/page.tsx |
 | Pages.dc.html | /pages | src/app/pages/page.tsx |
 
+**Reversed (2026-07-19):** the per-role dashboard pattern that Home.dc.html/Studio.dc.html were retired for (see below) is back, by explicit design/product decision — Claude Design's new `templates/` tree (distinct from the legacy `uploads/iHYPE/*.dc.html` set) ships a real `artist-dashboard`/`dj-dashboard`/`venue-dashboard`/`fan-dashboard` template per role. These are NOT a revival of the old role-switching Home.dc.html single mockup — each is its own route, reachable as a "Dashboard" link from that profile's Pages toolkit (`PageRoleModules.tsx`) rather than being the post-login landing page; `/listen` remains the default landing surface. Built 2026-07-19: `src/app/artists/[slug]/dashboard`, `src/app/promoters/[slug]/dashboard` (DJ), `src/app/venues/[slug]/dashboard`, `src/app/me/dashboard` (fan, any authenticated user) — all owner-gated except the fan one, all real Prisma aggregates (no fabricated stats), no schema changes. `src/lib/artist-dashboard.ts`/`src/lib/venue-dashboard.ts` hold the month/week-scoped aggregate helpers that `getProfileInsights` didn't already cover.
+
 **Retired:** Studio.dc.html (the generic creator workbench) is gone — `/studio` is now a bare `redirect('/listen')` with no auth gate, no `StudioDashboard` component, and nothing in the app links to it. Its former responsibilities live on Listen (discovery/radio), EventCreator (event creation), and WebRadio (DJ radio management).
 
-**Retired:** Home.dc.html (the role-switching Fan/Artist/Venue/DJ single-dashboard mockup) has no live route — the Workbench/Home dashboard it depicted was superseded by the Listen/Events/Pages tab architecture; `/home` is now just a `redirect('/listen')` alias for old bookmarks/links. Its Fan section's responsibilities live on Listen (`ListenHome.tsx`); its Artist/Venue/DJ sections live on Pages' role toolkit (`PageRoleModules.tsx`) and each role's own profile page.
+**Retired:** Home.dc.html (the role-switching Fan/Artist/Venue/DJ single-dashboard mockup) has no live route — the Workbench/Home dashboard it depicted was superseded by the Listen/Events/Pages tab architecture; `/home` is now just a `redirect('/listen')` alias for old bookmarks/links. Its Fan section's responsibilities live on Listen (`ListenHome.tsx`); its Artist/Venue/DJ sections live on Pages' role toolkit (`PageRoleModules.tsx`) and each role's own profile page. Its role-switching *pattern* is back (see "Reversed" note above) but as separate per-role routes, not a single mockup page.
 
 **Retired (2026-07-13):** Beta.dc.html was deleted from Claude Design — no design source exists for a standalone `/beta` marketing page anymore. `/beta` is now a bare `redirect('/register')`, matching the Studio.dc.html precedent; its former invite-code CTA content is fully covered by `/register` itself.
 
@@ -165,7 +169,9 @@ If a UI detail is unclear → ask Claude Design to clarify in the .dc.html. Neve
 | .dc.html | Route | src/app path |
 |---|---|---|
 | Venue.dc.html | /venues/[slug] | src/app/venues/[slug]/page.tsx |
+| VenueDashboard.dc.html | /venues/[slug]/dashboard | src/app/venues/[slug]/dashboard/page.tsx (owner-only) |
 | PromoterHome.dc.html | /me/promote | src/app/me/promote/page.tsx |
+| FanDashboard.dc.html | /me/dashboard | src/app/me/dashboard/page.tsx (any authenticated user) |
 
 ### Admin
 | .dc.html | Route | src/app path |
