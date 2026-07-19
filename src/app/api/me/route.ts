@@ -35,7 +35,17 @@ export async function GET() {
     select: { id: true, discoverable: true },
   });
 
-  return NextResponse.json({ ...user, creatorProfile });
+  // Every user (any profile type, including plain fans) has a personal
+  // /invite/[hexId] link — the same identifier /api/register's ref-based
+  // invite-gate bypass and the referral-crediting logic in
+  // registration-post-processing.ts already resolve against.
+  const inviteProfile = await db.profile.findFirst({
+    where: { ownerId: session.user.id },
+    orderBy: { createdAt: 'asc' },
+    select: { hexId: true },
+  });
+
+  return NextResponse.json({ ...user, creatorProfile, inviteHexId: inviteProfile?.hexId ?? null });
 }
 
 export async function PATCH(req: Request) {

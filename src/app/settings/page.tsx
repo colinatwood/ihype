@@ -63,6 +63,8 @@ export default function SettingsPage() {
   });
   const [discoverable, setDiscoverable] = useState(true);
   const [savingDiscoverable, setSavingDiscoverable] = useState(false);
+  const [inviteHexId, setInviteHexId] = useState<string | null>(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -86,6 +88,7 @@ export default function SettingsPage() {
         setIsAdult(Boolean(data.isEighteenOrOlder));
         if (data.notificationPreference) setPrefs((p) => ({ ...p, ...data.notificationPreference }));
         if (data.creatorProfile) setDiscoverable(Boolean(data.creatorProfile.discoverable));
+        if (data.inviteHexId) setInviteHexId(data.inviteHexId);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -227,6 +230,24 @@ export default function SettingsPage() {
       alert('Identity detached — IP and location data have been removed from your activity log.');
     } finally {
       setDetaching(false);
+    }
+  }
+
+  async function shareInviteLink() {
+    if (!inviteHexId) return;
+    const link = `https://ihype.org/invite/${inviteHexId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Join me on iHYPE', text: 'Join me on iHYPE — music discovery, tickets, and more.', url: link });
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+        setInviteCopied(true);
+        setTimeout(() => setInviteCopied(false), 1800);
+      } else {
+        window.prompt('Copy your invite link', link);
+      }
+    } catch {
+      // Ignore canceled shares / clipboard failures.
     }
   }
 
@@ -415,6 +436,27 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* Invite friends */}
+          {inviteHexId && (
+            <div className="settings-section">
+              <div className="settings-section-title">Invite Friends</div>
+              <div className="settings-group">
+                <Row
+                  action={
+                    <button className="settings-btn settings-btn-ghost" onClick={shareInviteLink} type="button">
+                      {inviteCopied ? 'Copied ✓' : 'Share'}
+                    </button>
+                  }
+                  detail={`ihype.org/invite/${inviteHexId}`}
+                  label="Your invite link"
+                />
+                <p className="settings-invite-note">
+                  Anyone who joins through your link skips the beta invite code — no separate code needed.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Danger zone */}
           <div className="settings-section">
             <div className="settings-section-title">Danger Zone</div>
@@ -445,6 +487,7 @@ export default function SettingsPage() {
         .settings-row:last-child { border-bottom: none; }
         .settings-row-label { font-size: 14px; font-weight: 500; color: var(--ink); }
         .settings-row-detail { font-size: 12px; color: var(--ink-a50); margin-top: 3px; }
+        .settings-invite-note { font-size: 11.5px; color: var(--ink-a50); line-height: 1.5; margin: 10px 2px 0; }
         .settings-toggle { position: relative; width: 44px; height: 26px; flex-shrink: 0; display: block; }
         .settings-toggle input { opacity: 0; width: 0; height: 0; }
         .settings-toggle-track { position: absolute; inset: 0; border-radius: 13px; background: var(--hair-120); cursor: pointer; transition: background 200ms; }
