@@ -133,7 +133,7 @@ export default async function VenueDashboardPage({ params }: { params: Promise<{
             {data.nextScannableShowSlug && (
               <Link className="vdash-action" href={`/shows/${data.nextScannableShowSlug}/scan`}>Door check-in scanner</Link>
             )}
-            <Link className="vdash-action" href={`/venues/${profile.slug}`}>View analytics</Link>
+            <Link className="vdash-action" href={`/venues/${profile.slug}/analytics`}>View analytics</Link>
             <Link className="vdash-action" href={`/venues/${profile.slug}`}>Edit my page</Link>
           </div>
         </div>

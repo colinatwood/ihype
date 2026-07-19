@@ -96,7 +96,7 @@ export default async function ArtistDashboardPage({ params }: { params: Promise<
       </div>
 
       <div className="ad-stats-grid">
-        <Link className="ad-stat-card" href={`/artists/${profile.slug}?section=insights`}>
+        <Link className="ad-stat-card" href={`/artists/${profile.slug}/analytics`}>
           <div className="ad-stat-label">This Month</div>
           <div className="ad-stat-val" style={{ color: 'var(--accent)' }}>{formatCurrencyFromCents(dashStats.monthEarningsCents)}</div>
           <div className="ad-stat-sub">Your 70% share · $0 iHYPE fee</div>
@@ -164,7 +164,7 @@ export default async function ArtistDashboardPage({ params }: { params: Promise<
           <div className="ad-section-head"><span className="ad-eyebrow-sm">Quick Actions</span></div>
           <div className="ad-actions-list">
             <Link className="ad-btn ad-btn-outline ad-btn-full" href={`/artists/${profile.slug}?section=tracks`}>Upload a track</Link>
-            <Link className="ad-btn ad-btn-outline ad-btn-full" href={`/artists/${profile.slug}?section=insights`}>View analytics</Link>
+            <Link className="ad-btn ad-btn-outline ad-btn-full" href={`/artists/${profile.slug}/analytics`}>View analytics</Link>
             <Link className="ad-btn ad-btn-outline ad-btn-full" href={`/artists/${profile.slug}`}>Edit my page</Link>
           </div>
         </div>
