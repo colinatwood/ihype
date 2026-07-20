@@ -222,14 +222,6 @@ const getShowsDirectoryDataCached = unstable_cache(
   { revalidate: 60 }
 );
 
-export async function getHomePageData() {
-  return getHomePageDataCached();
-}
-
-export async function getDirectoryProfiles(type: ProfileType) {
-  return getDirectoryProfilesCached(type);
-}
-
 export async function getShowsDirectoryData() {
   return getShowsDirectoryDataCached();
 }

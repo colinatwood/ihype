@@ -18,26 +18,21 @@ export async function GET(request: NextRequest) {
 
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const events = await db.profileHypeEvent.findMany({
-      where: { createdAt: { gte: since } },
-      select: { profile: { select: { city: true } } },
-    });
+    // Grouped in Postgres (Prisma groupBy can't group on a relation field)
+    // instead of pulling every hype event of the last 30 days into Node.
+    const rows = await db.$queryRaw<{ city: string; count: bigint }[]>`
+      SELECT p."city" AS city, COUNT(*)::bigint AS count
+      FROM "ProfileHypeEvent" e
+      JOIN "Profile" p ON p."id" = e."profileId"
+      WHERE e."createdAt" >= ${since} AND p."city" IS NOT NULL AND trim(p."city") <> ''
+      GROUP BY p."city"
+      ORDER BY count DESC
+      LIMIT 20
+    `;
 
-    // Aggregate by city in JS since Prisma groupBy doesn't support relation fields
-    const counts = new Map<string, number>();
-    for (const e of events) {
-      const city = e.profile?.city?.trim();
-      if (!city) continue;
-      counts.set(city, (counts.get(city) ?? 0) + 1);
-    }
-
-    const sorted = Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 20);
-
-    const cities = sorted.map(([city, count], i) => ({
-      city,
-      count,
+    const cities = rows.map((row, i) => ({
+      city: row.city,
+      count: Number(row.count),
       rank: i + 1,
     }));
 

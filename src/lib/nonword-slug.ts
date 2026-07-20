@@ -7,7 +7,7 @@ const CONSONANTS = ['b', 'd', 'f', 'g', 'k', 'l', 'm', 'n', 'p', 'r', 's', 't', 
 const VOWELS = ['a', 'e', 'i', 'o', 'u'] as const;
 
 /** Returns a pronounceable nonword like "veloka" (3 CV syllables, 6 letters). */
-export function generateNonwordSlug(syllables = 3): string {
+function generateNonwordSlug(syllables = 3): string {
   let slug = '';
   for (let i = 0; i < syllables; i += 1) {
     // node:crypto randomInt is unbiased (rejection sampling) and works on

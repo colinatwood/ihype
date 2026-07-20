@@ -28,10 +28,9 @@ describe('statOptionsForRole', () => {
     expect(artistKeys).toContain('monthlyListeners');
   });
 
-  it('gives Venue tickets/show-completion stats but not fan-only stats', () => {
+  it('gives Venue ticket stats but not fan-only stats', () => {
     const keys = statOptionsForRole('VENUE').map((s) => s.key);
     expect(keys).toContain('ticketsSold');
-    expect(keys).toContain('showCompletionRate');
     expect(keys).not.toContain('ticketsBought');
     expect(keys).not.toContain('monthlyListeners');
   });

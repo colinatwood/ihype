@@ -12,8 +12,6 @@ export type ProfileInsights = {
   topTracks?: { title: string; plays: number }[];
   /** % of track listens that reached MediaListen.completedAt — ARTIST/DJ only. */
   trackCompletionRate?: number;
-  /** % of on-demand show listens that reached ShowListen.completedAt — any type with shows. */
-  showCompletionRate?: number;
   /** Count of hypes per tenth of a show's runtime, oldest-first (bucket 0 = show start). */
   hypeTimeline?: { buckets: number[]; untracked: number };
   topCities?: CityBreakdown[];
@@ -26,13 +24,6 @@ const TOP_TRACKS_LIMIT = 5;
 // Same k-anonymity floor as /audit — a cohort this small (a city's ticket
 // buyers, a track's listeners) could otherwise identify a specific fan.
 const K_ANON_FLOOR = 5;
-
-function topByCount<T extends string>(counts: Record<T, number>, limit: number): { key: T; count: number }[] {
-  return Object.entries(counts)
-    .map(([key, count]) => ({ key: key as T, count: count as number }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, limit);
-}
 
 async function getBookingRequestCounts(profileId: string) {
   const rows = await db.bookingRequest.groupBy({
@@ -88,27 +79,25 @@ type ShowWhere =
   | { venueProfileId: string };
 
 async function getShowBasedStats(showWhere: ShowWhere) {
-  const shows = await db.show.findMany({
+  // Hype-timeline bucketing needs each show's own computed duration (from
+  // productionPlan/radioTracks — not a stored column) to place a hype's raw
+  // positionSeconds into a bucket, so that part stays row-level. Ticket and
+  // show-listen totals don't depend on per-show duration, so those are
+  // pushed down to DB aggregates instead of materializing every order/listen.
+  const showsForTimeline = await db.show.findMany({
     where: showWhere,
     select: {
       id: true,
       productionPlan: true,
       radioTracks: { select: { durationSecs: true } },
       hypes: { select: { positionSeconds: true } },
-      showListens: { select: { completedAt: true } },
-      ticketOrders: { where: { status: 'CAPTURED' }, select: { locationCity: true, totalChargeCents: true, quantity: true } },
     },
   });
+  const showIds = showsForTimeline.map((s) => s.id);
 
   const hypeTimelineBuckets = new Array(HYPE_TIMELINE_BUCKET_COUNT).fill(0);
   let hypeTimelineUntracked = 0;
-  const cityCounts: Record<string, number> = {};
-  let ticketRevenueCents = 0;
-  let ticketsSold = 0;
-  let showListenTotal = 0;
-  let showListenCompleted = 0;
-
-  for (const show of shows) {
+  for (const show of showsForTimeline) {
     const durationSecs = computeShowDurationSecs(show);
     for (const hype of show.hypes) {
       if (hype.positionSeconds == null) { hypeTimelineUntracked += 1; continue; }
@@ -116,29 +105,40 @@ async function getShowBasedStats(showWhere: ShowWhere) {
       if (bucket != null) hypeTimelineBuckets[bucket] += 1;
       else hypeTimelineUntracked += 1;
     }
-    for (const listen of show.showListens) {
-      showListenTotal += 1;
-      if (listen.completedAt) showListenCompleted += 1;
-    }
-    for (const order of show.ticketOrders) {
-      ticketRevenueCents += order.totalChargeCents;
-      ticketsSold += order.quantity;
-      if (order.locationCity) {
-        cityCounts[order.locationCity] = (cityCounts[order.locationCity] ?? 0) + order.quantity;
-      }
-    }
   }
 
-  const topCities = topByCount(cityCounts, TOP_CITIES_LIMIT)
+  if (showIds.length === 0) {
+    return {
+      hypeTimeline: { buckets: hypeTimelineBuckets, untracked: hypeTimelineUntracked },
+      topCities: [] as CityBreakdown[],
+      ticketRevenueCents: 0,
+      ticketsSold: 0,
+    };
+  }
+
+  const [ticketTotals, cityGroups] = await Promise.all([
+    db.ticketOrder.aggregate({
+      where: { showId: { in: showIds }, status: 'CAPTURED' },
+      _sum: { totalChargeCents: true, quantity: true },
+    }),
+    db.ticketOrder.groupBy({
+      by: ['locationCity'],
+      where: { showId: { in: showIds }, status: 'CAPTURED', locationCity: { not: null } },
+      _sum: { quantity: true },
+    }),
+  ]);
+
+  const topCities = cityGroups
+    .map((g) => ({ city: g.locationCity as string, count: g._sum.quantity ?? 0 }))
     .filter((c) => c.count >= K_ANON_FLOOR)
-    .map((c) => ({ city: c.key, count: c.count }));
+    .sort((a, b) => b.count - a.count)
+    .slice(0, TOP_CITIES_LIMIT);
 
   return {
     hypeTimeline: { buckets: hypeTimelineBuckets, untracked: hypeTimelineUntracked },
-    showCompletionRate: showListenTotal > 0 ? showListenCompleted / showListenTotal : undefined,
     topCities,
-    ticketRevenueCents,
-    ticketsSold,
+    ticketRevenueCents: ticketTotals._sum.totalChargeCents ?? 0,
+    ticketsSold: ticketTotals._sum.quantity ?? 0,
   };
 }
 
@@ -171,7 +171,6 @@ export async function getProfileInsights(profileId: string, profileType: string)
       listeners,
       topTracks,
       trackCompletionRate,
-      showCompletionRate: showStats.showCompletionRate,
       hypeTimeline: showStats.hypeTimeline,
       topCities: showStats.topCities,
     };
@@ -181,7 +180,6 @@ export async function getProfileInsights(profileId: string, profileType: string)
     const showStats = await getShowBasedStats({ venueProfileId: profileId });
     return {
       ...base,
-      showCompletionRate: showStats.showCompletionRate,
       hypeTimeline: showStats.hypeTimeline,
       topCities: showStats.topCities,
       ticketRevenueCents: showStats.ticketRevenueCents,

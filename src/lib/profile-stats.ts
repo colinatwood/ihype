@@ -12,7 +12,7 @@ export { STAT_CATALOG, statOptionsForRole, type StatDef, type StatKey } from '@/
 
 export type PinnedStatValue = { key: StatKey; label: string; value: number; isPercent: boolean };
 
-const PERCENT_KEYS = new Set<StatKey>(['trackCompletionRate', 'showCompletionRate']);
+const PERCENT_KEYS = new Set<StatKey>(['trackCompletionRate']);
 
 /**
  * Real values only, for the specific stat keys a profile has chosen to pin —
@@ -31,7 +31,7 @@ export async function getPinnedStatValues(
   if (validKeys.length === 0) return [];
 
   const needsInsights = validKeys.some((k) =>
-    ['hypeTotal', 'followerCount', 'monthlyListeners', 'trackCompletionRate', 'ticketsSold', 'showCompletionRate'].includes(k)
+    ['hypeTotal', 'followerCount', 'monthlyListeners', 'trackCompletionRate', 'ticketsSold'].includes(k)
   );
   const needsFanStats = validKeys.some((k) => ['showsAttended', 'artistsHyped', 'ticketsBought'].includes(k));
 
@@ -46,7 +46,6 @@ export async function getPinnedStatValues(
     monthlyListeners: insights?.listeners?.distinctListeners,
     trackCompletionRate: insights?.trackCompletionRate,
     ticketsSold: insights?.ticketsSold,
-    showCompletionRate: insights?.showCompletionRate,
     showsAttended: fanStats?.showsAttended,
     artistsHyped: fanStats?.artistsHyped,
     ticketsBought: fanStats?.ticketsBought,

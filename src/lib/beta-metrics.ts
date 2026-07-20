@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { db } from '@/lib/db';
 import { demoUserEmails } from '@/lib/runtime-flags';
 
@@ -17,16 +18,25 @@ export type BetaMetrics = {
 
 const DAY = 24 * 60 * 60 * 1000;
 
-async function distinctActiveUserIds(since: Date | null): Promise<Set<string>> {
-  const createdAt = since ? { gte: since } : undefined;
-  const [hypes, rsvps, listens] = await Promise.all([
-    db.hypeEvent.findMany({ where: { createdAt }, select: { userId: true }, distinct: ['userId'] }).catch(() => []),
-    db.showRsvp.findMany({ where: { createdAt }, select: { userId: true }, distinct: ['userId'] }).catch(() => []),
-    db.mediaListen.findMany({ where: { createdAt }, select: { userId: true }, distinct: ['userId'] }).catch(() => []),
-  ]);
-  const ids = new Set<string>();
-  for (const row of [...hypes, ...rsvps, ...listens]) ids.add(row.userId);
-  return ids;
+// Counts distinct active users via a DB-side COUNT(DISTINCT), rather than
+// pulling every HypeEvent/ShowRsvp/MediaListen row (unbounded, including a
+// full-table "ever active" scan) into Node just to dedupe in JS.
+async function countDistinctActiveUsers(since: Date | null, excludeUserIds: string[]): Promise<number> {
+  const sinceSql = since ? Prisma.sql`AND "createdAt" >= ${since}` : Prisma.empty;
+  const excludeSql = excludeUserIds.length
+    ? Prisma.sql`AND "userId" NOT IN (${Prisma.join(excludeUserIds)})`
+    : Prisma.empty;
+
+  const rows = await db.$queryRaw<{ count: bigint }[]>(Prisma.sql`
+    SELECT COUNT(DISTINCT "userId")::bigint AS count FROM (
+      SELECT "userId" FROM "HypeEvent" WHERE true ${sinceSql} ${excludeSql}
+      UNION
+      SELECT "userId" FROM "ShowRsvp" WHERE true ${sinceSql} ${excludeSql}
+      UNION
+      SELECT "userId" FROM "MediaListen" WHERE true ${sinceSql} ${excludeSql}
+    ) AS active_users
+  `).catch(() => [{ count: 0n }]);
+  return Number(rows[0]?.count ?? 0);
 }
 
 /**
@@ -49,11 +59,12 @@ export async function getBetaMetrics(): Promise<BetaMetrics> {
   }).catch(() => [] as { id: string }[]);
   const demoIds = new Set(demoUsers.map((u) => u.id));
 
-  const [totalUsers, signups7d, everActive, weeklyActive, radioShowGroups, registrationAudits] = await Promise.all([
-    db.user.count({ where: { id: { notIn: [...demoIds] } } }).catch(() => 0),
-    db.user.count({ where: { createdAt: { gte: week }, id: { notIn: [...demoIds] } } }).catch(() => 0),
-    distinctActiveUserIds(null),
-    distinctActiveUserIds(week),
+  const excludeDemoIds = [...demoIds];
+  const [totalUsers, signups7d, activatedUsers, weeklyActiveUsers, radioShowGroups, registrationAudits] = await Promise.all([
+    db.user.count({ where: { id: { notIn: excludeDemoIds } } }).catch(() => 0),
+    db.user.count({ where: { createdAt: { gte: week }, id: { notIn: excludeDemoIds } } }).catch(() => 0),
+    countDistinctActiveUsers(null, excludeDemoIds),
+    countDistinctActiveUsers(week, excludeDemoIds),
     db.show.groupBy({
       by: ['creatorId'],
       where: { isRadioShow: true, createdAt: { gte: month } },
@@ -65,11 +76,6 @@ export async function getBetaMetrics(): Promise<BetaMetrics> {
       take: 2000,
     }).catch(() => []),
   ]);
-
-  for (const id of demoIds) {
-    everActive.delete(id);
-    weeklyActive.delete(id);
-  }
 
   const djGroups = radioShowGroups.filter((g) => !demoIds.has(g.creatorId));
   const recurringDjs30d = djGroups.filter((g) => g._count.id >= 2).length;
@@ -91,10 +97,10 @@ export async function getBetaMetrics(): Promise<BetaMetrics> {
   return {
     totalUsers,
     signups7d,
-    activatedUsers: everActive.size,
-    activationRate: totalUsers > 0 ? everActive.size / totalUsers : 0,
-    weeklyActiveUsers: weeklyActive.size,
-    weeklyActiveRate: totalUsers > 0 ? weeklyActive.size / totalUsers : 0,
+    activatedUsers,
+    activationRate: totalUsers > 0 ? activatedUsers / totalUsers : 0,
+    weeklyActiveUsers,
+    weeklyActiveRate: totalUsers > 0 ? weeklyActiveUsers / totalUsers : 0,
     radioDjs30d: djGroups.length,
     recurringDjs30d,
     inviteChannels,

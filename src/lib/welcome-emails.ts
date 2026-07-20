@@ -1,14 +1,5 @@
 import { sendMarketingEmail } from '@/lib/mailer';
 
-export async function sendWelcomeEmail(user: { id: string; email: string; name: string | null }) {
-  return sendMarketingEmail(user.id, {
-    to: user.email,
-    subject: 'Welcome to iHYPE 🎵',
-    text: `Hey ${user.name ?? 'there'}, welcome to iHYPE! Start by exploring Seeds to discover new music.\n\nOpen iHYPE: https://ihype.org/home`,
-    html: `<p>Hey ${user.name ?? 'there'}, welcome to iHYPE! Start by exploring Seeds to discover new music.</p><p><a href="https://ihype.org/home">Open iHYPE →</a></p>`,
-  });
-}
-
 export async function sendDay3NudgeEmail(user: { id: string; email: string; name: string | null }) {
   return sendMarketingEmail(user.id, {
     to: user.email,

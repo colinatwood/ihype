@@ -10,15 +10,18 @@ export async function GET(request: NextRequest) {
   const since = new Date();
   since.setDate(since.getDate() - 30);
 
-  const events = await db.profileHypeEvent.findMany({
-    where: { profileId, createdAt: { gte: since } },
-    select: { createdAt: true },
-  }).catch(() => []);
+  // Bucketed by day in Postgres instead of pulling every hype event row
+  // just to group by date in JS.
+  const rows = await db.$queryRaw<{ day: string; count: bigint }[]>`
+    SELECT to_char("createdAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD') AS day, COUNT(*)::bigint AS count
+    FROM "ProfileHypeEvent"
+    WHERE "profileId" = ${profileId} AND "createdAt" >= ${since}
+    GROUP BY day
+  `.catch(() => []);
 
   const counts: Record<string, number> = {};
-  for (const e of events) {
-    const day = e.createdAt.toISOString().slice(0, 10);
-    counts[day] = (counts[day] ?? 0) + 1;
+  for (const row of rows) {
+    counts[row.day] = Number(row.count);
   }
 
   const days: { date: string; count: number }[] = [];

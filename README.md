@@ -72,6 +72,8 @@ Keep the feature switch false until payment-provider onboarding, refund policy, 
 
 **Production status (2026-07-19):** `FEATURE_ENABLE_TICKET_PAYMENTS=true` in `wrangler.toml` — 501c3 status and a live Stripe account attached to the org's bank account have been confirmed. This flag alone does not move money: `STRIPE_SECRET_KEY`/`STRIPE_WEBHOOK_SECRET` are Cloudflare Worker secrets, set out-of-band (never touched by this repo or its CI), and `getPaymentProcessingReadiness()` (`src/lib/payments.ts`) still fails closed if either is missing or `STRIPE_SECRET_KEY` is a `sk_test_` key in production.
 
+**Update (2026-07-20):** the Stripe webhook endpoint (`https://ihype.org/api/stripe/webhook`, subscribed to `payment_intent.amount_capturable_updated`/`payment_intent.succeeded`/`payment_intent.payment_failed`/`payment_intent.canceled`/`account.updated`) is registered and its signing secret is set as `STRIPE_WEBHOOK_SECRET`. Confirmed via Stripe's "Send test webhook" returning `200` — both required secrets are live and signature verification succeeds end-to-end.
+
 ## Closed-beta invite codes
 
 Set `FEATURE_REQUIRE_INVITE_CODE=true` and provide comma-separated random codes in `BETA_INVITE_CODES`. Production ignores short or known sample codes. Generate each code with at least 16 random characters, for example:

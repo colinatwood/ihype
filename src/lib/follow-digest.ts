@@ -35,26 +35,38 @@ export async function sendFollowDigest(): Promise<{ sent: number }> {
   }
   for (const j of newJournalPosts) {
     const p = profileUpdates.get(j.profile.id) ?? { name: j.profile.name, slug: j.profile.slug, shows: [], posts: [] };
-    p.posts.push(`<a href="${BASE}/artists/${escHtml(j.profile.slug)}/journal/${j.id}">${escHtml(j.title)}</a>`);
+    // ArtistJournalPost has no dedicated per-post page anywhere in the app
+    // (no listing or permalink UI exists) — link to the artist's profile,
+    // the closest real destination, rather than a nonexistent journal URL.
+    p.posts.push(`<a href="${BASE}/artists/${escHtml(j.profile.slug)}">${escHtml(j.title)}</a>`);
     profileUpdates.set(j.profile.id, p);
   }
 
   if (profileUpdates.size === 0) return { sent: 0 };
 
-  let sent = 0;
-  for (const [profileId, update] of profileUpdates) {
-    const followers = await db.follow.findMany({
-      where: { followeeProfileId: profileId, notifyShows: true },
-      select: {
-        follower: {
-          select: {
-            id: true,
-            email: true,
-            notificationPreference: { select: { newShows: true, journalPosts: true } }
-          }
+  const allFollows = await db.follow.findMany({
+    where: { followeeProfileId: { in: [...profileUpdates.keys()] }, notifyShows: true },
+    select: {
+      followeeProfileId: true,
+      follower: {
+        select: {
+          id: true,
+          email: true,
+          notificationPreference: { select: { newShows: true, journalPosts: true } }
         }
       }
-    });
+    }
+  });
+  const followersByProfile = new Map<string, typeof allFollows>();
+  for (const f of allFollows) {
+    const list = followersByProfile.get(f.followeeProfileId) ?? [];
+    list.push(f);
+    followersByProfile.set(f.followeeProfileId, list);
+  }
+
+  let sent = 0;
+  for (const [profileId, update] of profileUpdates) {
+    const followers = followersByProfile.get(profileId) ?? [];
     for (const f of followers) {
       if (!f.follower.email) continue;
       // Respect per-category email preferences before sending.

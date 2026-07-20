@@ -132,20 +132,16 @@ export async function finalizeCapturedTicketOrder(
     throw new Error(`Ticket order ${order.id} changed while it was being captured.`);
   }
 
-  const tickets = await Promise.all(
-    Array.from({ length: order.quantity }, () =>
-      tx.ticket.create({
-        data: {
-          serializedId: createSerializedTicketId(),
-          ticketOrderId: order.id,
-          showId: order.showId,
-          venueProfileId: order.show.venueProfileId,
-          holderName: order.buyerName,
-          holderEmail: order.buyerEmail,
-        },
-      }),
-    ),
-  );
+  const tickets = await tx.ticket.createManyAndReturn({
+    data: Array.from({ length: order.quantity }, () => ({
+      serializedId: createSerializedTicketId(),
+      ticketOrderId: order.id,
+      showId: order.showId,
+      venueProfileId: order.show.venueProfileId,
+      holderName: order.buyerName,
+      holderEmail: order.buyerEmail,
+    })),
+  });
 
   // Only ACCEPTED slots are ever paid — a show can't reach SCHEDULED with a
   // pending/declined slot in the first place (see the lineup-response
