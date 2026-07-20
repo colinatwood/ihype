@@ -17,6 +17,22 @@ jobs:
     permissions:
       contents: read
       deployments: write
+    services:
+      # Local-only scratch DB for the pre-deploy Workerd smoke test below —
+      # never touches the real production database.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ihype
+          POSTGRES_PASSWORD: ihype
+          POSTGRES_DB: ihype
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U ihype"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -55,10 +71,48 @@ jobs:
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADSF8WNxaeBIRmR7"
           FEATURE_ENABLE_TICKET_PAYMENTS: 'true'
 
+      - name: Prepare Workerd smoke scratch database
+        run: |
+          psql "postgresql://ihype:ihype@localhost:55432/ihype" -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE EXTENSION IF NOT EXISTS citext;'
+          npx prisma db push --skip-generate --accept-data-loss
+        env:
+          DATABASE_URL: postgresql://ihype:ihype@localhost:55432/ihype
+
+      - name: Pre-deploy Workerd smoke test
+        # Boots the just-built worker.js under REAL workerd (wrangler dev) and
+        # exercises it before touching production migrations or Cloudflare —
+        # a build/typecheck/vitest pass proves nothing about workerd-only
+        # crashes (2026-07-20: @sentry/nextjs's server init took production
+        # down with an AsyncLocalStorage error that only ever surfaced here).
+        # This is the same script ci.yml already runs on every PR — running
+        # it again here means a deploy can't reach Cloudflare even if a PR
+        # was merged before its own CI check finished (exactly what happened
+        # that day). Runs against the local scratch DB above only; never
+        # touches the real production database.
+        timeout-minutes: 20
+        run: |
+          set -o pipefail
+          SKIP_LIGHTHOUSE_BUDGET=1 node scripts/workerd-smoke.mjs 2>&1 | tee workerd-smoke.log
+        env:
+          DATABASE_URL: postgresql://ihype:ihype@localhost:55432/ihype
+          WORKERD_SMOKE_DATABASE_URL: postgresql://ihype:ihype@localhost:55432/ihype
+          WORKERD_SMOKE_CRON_SECRET: predeploy-workerd-health-secret-0123456789
+          AUTH_SECRET: predeploy-only-auth-secret-change-me-0123456789
+          NEXTAUTH_SECRET: predeploy-only-auth-secret-change-me-0123456789
+
+      - name: Upload pre-deploy Workerd smoke diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: predeploy-workerd-smoke-log
+          path: workerd-smoke.log
+          if-no-files-found: ignore
+
       - name: Run migrations
-        # Build first so a compilation failure cannot advance production schema.
-        # Prisma reads DATABASE_URL, so supply the direct/non-pooled secret under
-        # that exact name for migration commands.
+        # Build (and now the Workerd smoke test above) run first so neither a
+        # compilation failure nor a workerd-only crash can advance production
+        # schema. Prisma reads DATABASE_URL, so supply the direct/non-pooled
+        # secret under that exact name for migration commands.
         run: |
           for i in 1 2 3; do
             npx prisma migrate deploy && exit 0
