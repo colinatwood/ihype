@@ -30,9 +30,3 @@ export function getPaymentProcessingReadiness() {
     blockers,
   };
 }
-
-export function assertPaymentProcessingConfigured() {
-  if (!isPaymentProcessingConfigured()) {
-    throw new Error('Paid ticketing is currently unavailable.');
-  }
-}

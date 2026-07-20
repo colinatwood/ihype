@@ -43,16 +43,6 @@ async function sendDigestForProfile(profile: ProfileStub): Promise<void> {
   await sendMarketingEmail(profile.owner.id, { to: profile.owner.email, subject, text, html: `<pre style="font-family:sans-serif;white-space:pre-wrap">${text}</pre>` });
 }
 
-// Legacy single-profile entry point (used by direct API calls)
-export async function sendArtistWeeklyDigest(profileId: string): Promise<void> {
-  const profile = await db.profile.findUnique({
-    where: { id: profileId },
-    select: { id: true, name: true, owner: { select: { id: true, email: true, name: true } } }
-  });
-  if (!profile) return;
-  await sendDigestForProfile(profile);
-}
-
 // Batch entry point used by the cron job — avoids N+1 profile lookups
 export async function sendArtistWeeklyDigestBatch(profiles: ProfileStub[]): Promise<{ sent: number }> {
   let sent = 0;

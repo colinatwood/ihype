@@ -20,14 +20,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ counts: {} });
   }
 
-  const rows = await db.seed.findMany({
+  const groups = await db.seed.groupBy({
+    by: ['mediaId'],
     where: { mediaId: { in: ids }, action: 'hype' },
-    select: { mediaId: true },
+    _count: { _all: true },
   });
 
   const counts: Record<string, number> = {};
-  for (const r of rows) {
-    counts[r.mediaId] = (counts[r.mediaId] ?? 0) + 1;
+  for (const g of groups) {
+    counts[g.mediaId] = g._count._all;
   }
 
   return NextResponse.json({ counts }, { headers: { 'Cache-Control': 'no-store' } });

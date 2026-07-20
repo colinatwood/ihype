@@ -1,5 +1,4 @@
 import { kvGet } from '@/lib/kv';
-import { db } from '@/lib/db';
 
 function parseBooleanFlag(value: unknown, defaultValue: boolean) {
   if (value == null) return defaultValue;
@@ -80,7 +79,7 @@ export const demoUserEmails = [
   'venue@ihype.org',
 ];
 
-export function areDemoLoginsEnabled() {
+function areDemoLoginsEnabled() {
   return parseBooleanFlag(
     process.env.FEATURE_ENABLE_DEMO_LOGINS,
     process.env.NODE_ENV !== 'production',
@@ -91,7 +90,7 @@ export async function areDemoLoginsEnabledRuntime() {
   return getRuntimeFlag('demo_logins', areDemoLoginsEnabled());
 }
 
-export function isDemoIdentifier(identifier: string | null | undefined) {
+function isDemoIdentifier(identifier: string | null | undefined) {
   if (!identifier) return false;
   return demoIdentifiers.has(identifier.trim().toLowerCase());
 }
@@ -136,20 +135,11 @@ export function isReservedPlatformEmail(email: string | null | undefined) {
   return email.trim().toLowerCase().endsWith('@ihype.org');
 }
 
-export async function isFeatureEnabled(key: string): Promise<boolean> {
-  try {
-    const flag = await db.featureFlag.findUnique({ where: { key } });
-    return flag?.enabled ?? false;
-  } catch {
-    return false;
-  }
-}
-
 export function isProductionSeedingAllowed() {
   return parseBooleanFlag(process.env.ALLOW_PRODUCTION_SEEDING, false);
 }
 
-export function areDatabaseMediaUploadsEnabled() {
+function areDatabaseMediaUploadsEnabled() {
   return parseBooleanFlag(
     process.env.FEATURE_ALLOW_DATABASE_MEDIA_STORAGE,
     process.env.NODE_ENV !== 'production',
@@ -160,7 +150,7 @@ export async function areDatabaseMediaUploadsEnabledRuntime() {
   return getRuntimeFlag('blob_media_storage', areDatabaseMediaUploadsEnabled());
 }
 
-export function isInviteCodeRequired() {
+function isInviteCodeRequired() {
   return parseBooleanFlag(process.env.FEATURE_REQUIRE_INVITE_CODE, true);
 }
 

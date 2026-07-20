@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date();
-  let enforced = 0;
 
   // Enforce DMCA on shows past deadline
   const shows = await db.show.findMany({
@@ -26,24 +25,27 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  for (const show of shows) {
-    await db.show.update({
-      where: { id: show.id },
-      data: { status: 'CANCELED', dmcaStatus: 'ENFORCED' },
-    });
+  if (shows.length === 0) {
+    return NextResponse.json({ ok: true, enforced: 0 });
+  }
 
-    const ownerEmail = show.headlinerProfile?.owner?.email;
-    if (ownerEmail) {
-      await sendGenericEmail({
+  await db.show.updateMany({
+    where: { id: { in: shows.map((show) => show.id) } },
+    data: { status: 'CANCELED', dmcaStatus: 'ENFORCED' },
+  });
+
+  await Promise.all(
+    shows.map((show) => {
+      const ownerEmail = show.headlinerProfile?.owner?.email;
+      if (!ownerEmail) return Promise.resolve();
+      return sendGenericEmail({
         to: ownerEmail,
         subject: `[iHYPE] DMCA notice enforced — ${show.title}`,
         text: `Your show "${show.title}" has been canceled due to a DMCA takedown request that was not resolved before the deadline. Contact admin@ihype.org to appeal.`,
         html: `<p>Your show <strong>${show.title}</strong> has been canceled due to an unresolved DMCA notice.</p><p>Contact <a href="mailto:admin@ihype.org">admin@ihype.org</a> to appeal.</p>`,
       }).catch(() => {});
-    }
+    }),
+  );
 
-    enforced++;
-  }
-
-  return NextResponse.json({ ok: true, enforced });
+  return NextResponse.json({ ok: true, enforced: shows.length });
 }

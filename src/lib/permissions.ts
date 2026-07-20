@@ -1,6 +1,6 @@
 import type { Session } from 'next-auth';
 
-export function isAdminRole(role: string | null | undefined) {
+function isAdminRole(role: string | null | undefined) {
   return role === 'ADMIN';
 }
 

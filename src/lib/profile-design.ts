@@ -33,7 +33,7 @@ export const profileBackdropToneIds = [
 
 export type ProfileBackdropTone = (typeof profileBackdropToneIds)[number];
 
-export const profileFontPresetIds = [
+const profileFontPresetIds = [
   'night-broadcast',
   'poster-serif',
   'club-mono',
@@ -44,7 +44,7 @@ export const profileFontPresetIds = [
 
 export type ProfileFontPreset = (typeof profileFontPresetIds)[number];
 
-export const DEFAULT_PROFILE_DESIGN_PRESET: ProfileDesignPreset = 'midnight-neon';
+const DEFAULT_PROFILE_DESIGN_PRESET: ProfileDesignPreset = 'midnight-neon';
 
 type ProfileDesignPresetDefinition = {
   id: ProfileDesignPreset;
@@ -87,21 +87,6 @@ type ProfileFontPresetDefinition = {
   description: string;
   displayFamily: string;
   bodyFamily: string;
-};
-
-export type ProfileSetupRole = 'fan' | 'artist' | 'promoter' | 'venue';
-
-export type ProfileSetupPreset = {
-  id: string;
-  label: string;
-  description: string;
-  themePreset: ProfileDesignPreset;
-  themeFontPreset: ProfileFontPreset;
-  themeAccentTone: ProfileAccentTone;
-  themeBackdropTone: ProfileBackdropTone;
-  starterHeadline?: string;
-  starterBio?: string;
-  starterAbout?: string;
 };
 
 export const profileDesignPresets: ProfileDesignPresetDefinition[] = [
@@ -339,7 +324,7 @@ export const profileBackdropTones: ProfileBackdropToneDefinition[] = [
   }
 ];
 
-export const profileFontPresets: ProfileFontPresetDefinition[] = [
+const profileFontPresets: ProfileFontPresetDefinition[] = [
   {
     id: 'night-broadcast',
     label: 'Night Broadcast',
@@ -384,178 +369,7 @@ export const profileFontPresets: ProfileFontPresetDefinition[] = [
   }
 ];
 
-const profileSetupPresetsByRole: Record<ProfileSetupRole, ProfileSetupPreset[]> = {
-  fan: [
-    {
-      id: 'fan-clean-slate',
-      label: 'Clean Slate',
-      description: 'A crisp modern page for tracking artists, venues, and shows.',
-      themePreset: 'silver-signal',
-      themeFontPreset: 'night-broadcast',
-      themeAccentTone: 'electric-cyan',
-      themeBackdropTone: 'city-lights',
-      starterHeadline: 'Tracking the artists and nights I keep coming back to.',
-      starterBio: 'A fan page built to follow new artists, venues, and moments worth hyping.',
-      starterAbout:
-        'Use this page like a living map of the artists, venues, and live moments that keep pulling you back.'
-    },
-    {
-      id: 'fan-local-radar',
-      label: 'Local Radar',
-      description: 'Sharper nightlife energy with a local-scene glow.',
-      themePreset: 'midnight-neon',
-      themeFontPreset: 'club-mono',
-      themeAccentTone: 'electric-cyan',
-      themeBackdropTone: 'glass-night',
-      starterHeadline: 'Local signal, late-night playlists, and rooms worth finding.',
-      starterBio: 'Built for nearby discovery, repeat listens, and fan-level tracking.',
-      starterAbout:
-        'A fast fan page for surfacing what is hyped nearby, who is new, and which nights are becoming part of the story.'
-    },
-    {
-      id: 'fan-warm-journal',
-      label: 'Warm Journal',
-      description: 'A softer personal page with a cleaner scrapbook feel.',
-      themePreset: 'sunset-paper',
-      themeFontPreset: 'poster-serif',
-      themeAccentTone: 'sunset-gold',
-      themeBackdropTone: 'sunset-haze',
-      starterHeadline: 'Saving the songs, venues, and memories that still feel alive.',
-      starterBio: 'A more personal page for favorite tracks, top five lists, and live history.',
-      starterAbout:
-        'Use this version when you want your fan page to read more like a memory wall than a scoreboard.'
-    }
-  ],
-  artist: [
-    {
-      id: 'artist-clean-press-kit',
-      label: 'Clean Press Kit',
-      description: 'Sharp, clear, and ready for bookers and press.',
-      themePreset: 'silver-signal',
-      themeFontPreset: 'night-broadcast',
-      themeAccentTone: 'electric-cyan',
-      themeBackdropTone: 'glass-night',
-      starterHeadline: 'New music, clean visuals, and a page ready to move.',
-      starterBio: 'A professional artist page that puts the music, contact path, and identity front and center.',
-      starterAbout:
-        'Start here if you want a page that feels polished for fans, promoters, venues, and press from day one.'
-    },
-    {
-      id: 'artist-indie-scrapbook',
-      label: 'Indie Scrapbook',
-      description: 'Textured and personal without feeling cluttered.',
-      themePreset: 'scrapbook-zine',
-      themeFontPreset: 'poster-serif',
-      themeAccentTone: 'sunset-gold',
-      themeBackdropTone: 'sunset-haze',
-      starterHeadline: 'Songs, visuals, and process notes from a page with a pulse.',
-      starterBio: 'A warmer artist page for story-first presentation and handmade energy.',
-      starterAbout:
-        'Use this setup when you want the page to feel personal, visual, and closer to a living scrapbook.'
-    },
-    {
-      id: 'artist-club-live',
-      label: 'Club / Live',
-      description: 'Built for nightlife energy, dark rooms, and sharper motion.',
-      themePreset: 'arcade-afterglow',
-      themeFontPreset: 'club-mono',
-      themeAccentTone: 'electric-cyan',
-      themeBackdropTone: 'warehouse-smoke',
-      starterHeadline: 'Designed for loud rooms, late sets, and a live-first identity.',
-      starterBio: 'A darker stage-forward page for artists who want immediate show energy.',
-      starterAbout:
-        'Start here when the live room matters as much as the recorded release and you want the page to feel performance-ready.'
-    }
-  ],
-  promoter: [
-    {
-      id: 'promoter-signal-board',
-      label: 'Signal Board',
-      description: 'A direct, organized booking page with sharp event focus.',
-      themePreset: 'silver-signal',
-      themeFontPreset: 'club-mono',
-      themeAccentTone: 'electric-cyan',
-      themeBackdropTone: 'city-lights',
-      starterHeadline: 'Booking nights with a clear signal and a strong local read.',
-      starterBio: 'A streamlined promoter page built for lineups, rooms, and trusted event flow.',
-      starterAbout:
-        'Use this layout when you want artists, venues, and fans to understand your event voice in a few seconds.'
-    },
-    {
-      id: 'promoter-after-hours',
-      label: 'After Hours',
-      description: 'Dark, fast, nightlife-forward, and strong for set-driven brands.',
-      themePreset: 'midnight-neon',
-      themeFontPreset: 'night-broadcast',
-      themeAccentTone: 'ultraviolet',
-      themeBackdropTone: 'warehouse-smoke',
-      starterHeadline: 'Late-night curation with room energy built into every lineup.',
-      starterBio: 'A darker promoter setup for nightlife brands, DJ culture, and recurring event series.',
-      starterAbout:
-        'Choose this when you want your promoter page to feel urgent, cinematic, and firmly tied to after-hours discovery.'
-    },
-    {
-      id: 'promoter-rooftop-print',
-      label: 'Rooftop Print',
-      description: 'Warmer poster energy with cleaner editorial contrast.',
-      themePreset: 'sunset-paper',
-      themeFontPreset: 'poster-serif',
-      themeAccentTone: 'sunset-gold',
-      themeBackdropTone: 'sunset-haze',
-      starterHeadline: 'Curating rooms, collaborators, and nights with a warmer touch.',
-      starterBio: 'A cleaner promoter page for event collectives, outdoor rooms, and mixed-format nights.',
-      starterAbout:
-        'Use this setup when your bookings feel more editorial, community-driven, or cross-scene than strictly club-based.'
-    }
-  ],
-  venue: [
-    {
-      id: 'venue-blueprint',
-      label: 'Venue Blueprint',
-      description: 'A clear room profile with booking confidence and cleaner operations.',
-      themePreset: 'silver-signal',
-      themeFontPreset: 'night-broadcast',
-      themeAccentTone: 'electric-cyan',
-      themeBackdropTone: 'glass-night',
-      starterHeadline: 'A room built for clean bookings, strong nights, and repeat discovery.',
-      starterBio: 'A straightforward venue page for hours, booking details, and upcoming events.',
-      starterAbout:
-        'Start here when you want the venue to read as professional, dependable, and easy for artists and fans to navigate.'
-    },
-    {
-      id: 'venue-velvet-night',
-      label: 'Velvet Night',
-      description: 'A darker room-focused look for evening venues and performance spaces.',
-      themePreset: 'midnight-neon',
-      themeFontPreset: 'poster-serif',
-      themeAccentTone: 'laser-rose',
-      themeBackdropTone: 'velvet-room',
-      starterHeadline: 'An intimate room with atmosphere, sharp programming, and a recognizable voice.',
-      starterBio: 'A venue page for spaces that want to feel immersive, intimate, and performance-led.',
-      starterAbout:
-        'Choose this when the room itself is part of the draw and you want the page to feel like stepping inside.'
-    },
-    {
-      id: 'venue-daylight-hall',
-      label: 'Daylight Hall',
-      description: 'A brighter, calmer venue preset for galleries, halls, and mixed-use rooms.',
-      themePreset: 'sunset-paper',
-      themeFontPreset: 'night-broadcast',
-      themeAccentTone: 'sunset-gold',
-      themeBackdropTone: 'sunset-haze',
-      starterHeadline: 'A flexible room for live music, community nights, and artists worth finding.',
-      starterBio: 'A clean venue page for mixed-format spaces that want warmth without clutter.',
-      starterAbout:
-        'Use this setup when your room needs to feel welcoming, professional, and readable across many event types.'
-    }
-  ]
-};
-
-export function getProfileSetupPresets(role: ProfileSetupRole) {
-  return profileSetupPresetsByRole[role];
-}
-
-export function normalizeProfileDesignPreset(value?: string | null): ProfileDesignPreset {
+function normalizeProfileDesignPreset(value?: string | null): ProfileDesignPreset {
   if (value && profileDesignPresetIds.includes(value as ProfileDesignPreset)) {
     return value as ProfileDesignPreset;
   }
@@ -563,7 +377,7 @@ export function normalizeProfileDesignPreset(value?: string | null): ProfileDesi
   return DEFAULT_PROFILE_DESIGN_PRESET;
 }
 
-export function normalizeProfileAccentTone(value?: string | null): ProfileAccentTone {
+function normalizeProfileAccentTone(value?: string | null): ProfileAccentTone {
   if (value && profileAccentToneIds.includes(value as ProfileAccentTone)) {
     return value as ProfileAccentTone;
   }
@@ -571,20 +385,12 @@ export function normalizeProfileAccentTone(value?: string | null): ProfileAccent
   return 'preset';
 }
 
-export function normalizeProfileBackdropTone(value?: string | null): ProfileBackdropTone {
+function normalizeProfileBackdropTone(value?: string | null): ProfileBackdropTone {
   if (value && profileBackdropToneIds.includes(value as ProfileBackdropTone)) {
     return value as ProfileBackdropTone;
   }
 
   return 'preset';
-}
-
-export function normalizeProfileFontPreset(value?: string | null): ProfileFontPreset {
-  if (value && profileFontPresetIds.includes(value as ProfileFontPreset)) {
-    return value as ProfileFontPreset;
-  }
-
-  return 'night-broadcast';
 }
 
 export function getProfileDesignPreset(value?: string | null) {
@@ -600,11 +406,6 @@ export function getProfileAccentTone(value?: string | null) {
 export function getProfileBackdropTone(value?: string | null) {
   const backdropToneId = normalizeProfileBackdropTone(value);
   return profileBackdropTones.find((tone) => tone.id === backdropToneId) ?? profileBackdropTones[0];
-}
-
-export function getProfileFontPreset(value?: string | null) {
-  const fontPresetId = normalizeProfileFontPreset(value);
-  return profileFontPresets.find((preset) => preset.id === fontPresetId) ?? profileFontPresets[0];
 }
 
 /**

@@ -325,13 +325,19 @@ export async function GET(request: NextRequest) {
         take: 5000,
       });
 
+      const alreadyNotified = await db.notification.findMany({
+        where: {
+          userId: { in: activeUserRows.map((r) => r.userId) },
+          type: 'WRAPPED_READY',
+          createdAt: { gte: monthStart },
+        },
+        select: { userId: true },
+      });
+      const alreadyNotifiedIds = new Set(alreadyNotified.map((n) => n.userId));
+
       let notified = 0;
       for (const { userId } of activeUserRows) {
-        const already = await db.notification.findFirst({
-          where: { userId, type: 'WRAPPED_READY', createdAt: { gte: monthStart } },
-          select: { id: true },
-        });
-        if (already) continue;
+        if (alreadyNotifiedIds.has(userId)) continue;
         await notifyUser(userId, {
           type: 'WRAPPED_READY',
           title: 'Your month in the scene',

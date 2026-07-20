@@ -8,7 +8,7 @@ type DigestResult = { sent: boolean; reason?: string; showCount?: number };
  * Send a weekly digest email to a single user listing upcoming shows
  * for artists / profiles the user has hyped.
  */
-export async function sendWeeklyDigest(userId: string): Promise<DigestResult> {
+async function sendWeeklyDigest(userId: string): Promise<DigestResult> {
   const user = await db.user.findUnique({
     where: { id: userId },
     select: { id: true, email: true, name: true }

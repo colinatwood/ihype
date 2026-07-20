@@ -30,7 +30,7 @@ export type ArtistMediaUploadRecord = {
   artworkUrl?: string | null;
 };
 
-export function getArtistMediaApiPath(hexId: string) {
+function getArtistMediaApiPath(hexId: string) {
   return `/api/media/${hexId}`;
 }
 
@@ -115,7 +115,7 @@ function parseMediaLine(line: string, index: number): ArtistMediaEntry | null {
   };
 }
 
-export function parseArtistMediaContent(content: string | null | undefined): ParsedArtistMediaContent {
+function parseArtistMediaContent(content: string | null | undefined): ParsedArtistMediaContent {
   if (!content?.trim()) {
     return { notes: null, entries: [] };
   }
@@ -143,7 +143,7 @@ export function parseArtistMediaContent(content: string | null | undefined): Par
   };
 }
 
-export function buildUploadedArtistMediaEntries(uploads: ArtistMediaUploadRecord[]): ArtistMediaEntry[] {
+function buildUploadedArtistMediaEntries(uploads: ArtistMediaUploadRecord[]): ArtistMediaEntry[] {
   return uploads.map((upload) => {
     const streamUrl = getArtistMediaApiPath(upload.hexId);
 
