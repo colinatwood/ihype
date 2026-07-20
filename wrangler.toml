@@ -36,6 +36,11 @@ NEXT_PUBLIC_APP_URL = "https://ihype.org"
 NEXT_PUBLIC_BASE_URL = "https://ihype.org"
 R2_PUBLIC_BASE_URL = "https://ihype.org"
 NEXT_PUBLIC_TURNSTILE_SITE_KEY = "0x4AAAAAADSF8WNxaeBIRmR7"
+# Sentry DSNs are meant to be public/client-embeddable, not secrets — safe as a plain var.
+# Was previously absent from both here and the build env below, so sentry.client.config.ts/
+# sentry.server.config.ts's `if (process.env.NEXT_PUBLIC_SENTRY_DSN)` guard was always false
+# and Sentry.init() never ran in production (confirmed via zero events ever received).
+NEXT_PUBLIC_SENTRY_DSN = "https://6fcca4160df1fe7b0d5e3aa4b7a73f44@o4511334761103360.ingest.us.sentry.io/4511334762741760"
 # Paid ticketing must remain an explicit configuration change, not dashboard residue.
 FEATURE_ENABLE_TICKET_PAYMENTS = "true"
 
