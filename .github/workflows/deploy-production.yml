@@ -53,7 +53,6 @@ jobs:
           NEXT_PUBLIC_BASE_URL: https://ihype.org
           NEXT_PUBLIC_APP_URL: https://ihype.org
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADSF8WNxaeBIRmR7"
-          NEXT_PUBLIC_SENTRY_DSN: "https://6fcca4160df1fe7b0d5e3aa4b7a73f44@o4511334761103360.ingest.us.sentry.io/4511334762741760"
           FEATURE_ENABLE_TICKET_PAYMENTS: 'true'
 
       - name: Run migrations
@@ -79,7 +78,6 @@ jobs:
           NEXT_PUBLIC_BASE_URL: https://ihype.org
           NEXT_PUBLIC_APP_URL: https://ihype.org
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADSF8WNxaeBIRmR7"
-          NEXT_PUBLIC_SENTRY_DSN: "https://6fcca4160df1fe7b0d5e3aa4b7a73f44@o4511334761103360.ingest.us.sentry.io/4511334762741760"
           FEATURE_ENABLE_TICKET_PAYMENTS: 'true'
 
       - name: Deploy cron Worker
