@@ -118,6 +118,14 @@ export function TrackUploadPanel({
               ? 'Audio only (MP3/WAV/FLAC) — nothing airs until it clears the scan below.'
               : 'Audio only (MP3/WAV/FLAC). Every upload runs an automated scan before it\u2019s marked cleared.'}
           </p>
+          {isDj && (
+            <p className="meta">
+              Need free-use samples?{' '}
+              <a href="https://pixabay.com/" rel="noopener noreferrer" target="_blank">
+                Browse Pixabay&apos;s free audio library &rarr;
+              </a>
+            </p>
+          )}
         </div>
       </div>
 
