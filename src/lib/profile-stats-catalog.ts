@@ -9,7 +9,6 @@ export type StatKey =
   | 'monthlyListeners'
   | 'trackCompletionRate'
   | 'ticketsSold'
-  | 'showCompletionRate'
   | 'showsAttended'
   | 'artistsHyped'
   | 'ticketsBought';
@@ -27,7 +26,6 @@ export const STAT_CATALOG: Record<StatKey, StatDef & { roles: string[] }> = {
   monthlyListeners: { key: 'monthlyListeners', label: 'Monthly Listeners', roles: ['ARTIST', 'DJ'] },
   trackCompletionRate: { key: 'trackCompletionRate', label: 'Track Completion', roles: ['ARTIST', 'DJ'] },
   ticketsSold: { key: 'ticketsSold', label: 'Tickets Sold', roles: ['VENUE'] },
-  showCompletionRate: { key: 'showCompletionRate', label: 'Show Completion', roles: ['VENUE'] },
   showsAttended: { key: 'showsAttended', label: 'Shows Attended', roles: ['LISTENER'] },
   artistsHyped: { key: 'artistsHyped', label: 'Artists Hyped', roles: ['LISTENER'] },
   ticketsBought: { key: 'ticketsBought', label: 'Tickets Bought', roles: ['LISTENER'] },

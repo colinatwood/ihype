@@ -12,8 +12,6 @@ export type ProfileInsights = {
   topTracks?: { title: string; plays: number }[];
   /** % of track listens that reached MediaListen.completedAt — ARTIST/DJ only. */
   trackCompletionRate?: number;
-  /** % of on-demand show listens that reached ShowListen.completedAt — any type with shows. */
-  showCompletionRate?: number;
   /** Count of hypes per tenth of a show's runtime, oldest-first (bucket 0 = show start). */
   hypeTimeline?: { buckets: number[]; untracked: number };
   topCities?: CityBreakdown[];
@@ -112,18 +110,13 @@ async function getShowBasedStats(showWhere: ShowWhere) {
   if (showIds.length === 0) {
     return {
       hypeTimeline: { buckets: hypeTimelineBuckets, untracked: hypeTimelineUntracked },
-      showCompletionRate: undefined,
       topCities: [] as CityBreakdown[],
       ticketRevenueCents: 0,
       ticketsSold: 0,
     };
   }
 
-  // ShowListen.completedAt is a required, non-null column (defaults to
-  // creation time), so every row already counts as "completed" — matches
-  // the prior JS loop's `if (listen.completedAt)`, which was always true.
-  const [showListenTotal, ticketTotals, cityGroups] = await Promise.all([
-    db.showListen.count({ where: { showId: { in: showIds } } }),
+  const [ticketTotals, cityGroups] = await Promise.all([
     db.ticketOrder.aggregate({
       where: { showId: { in: showIds }, status: 'CAPTURED' },
       _sum: { totalChargeCents: true, quantity: true },
@@ -143,7 +136,6 @@ async function getShowBasedStats(showWhere: ShowWhere) {
 
   return {
     hypeTimeline: { buckets: hypeTimelineBuckets, untracked: hypeTimelineUntracked },
-    showCompletionRate: showListenTotal > 0 ? 1 : undefined,
     topCities,
     ticketRevenueCents: ticketTotals._sum.totalChargeCents ?? 0,
     ticketsSold: ticketTotals._sum.quantity ?? 0,
@@ -179,7 +171,6 @@ export async function getProfileInsights(profileId: string, profileType: string)
       listeners,
       topTracks,
       trackCompletionRate,
-      showCompletionRate: showStats.showCompletionRate,
       hypeTimeline: showStats.hypeTimeline,
       topCities: showStats.topCities,
     };
@@ -189,7 +180,6 @@ export async function getProfileInsights(profileId: string, profileType: string)
     const showStats = await getShowBasedStats({ venueProfileId: profileId });
     return {
       ...base,
-      showCompletionRate: showStats.showCompletionRate,
       hypeTimeline: showStats.hypeTimeline,
       topCities: showStats.topCities,
       ticketRevenueCents: showStats.ticketRevenueCents,

@@ -9,7 +9,6 @@ type InsightsData = {
   listeners?: { distinctListeners: number; totalPlays: number };
   topTracks?: { title: string; plays: number }[];
   trackCompletionRate?: number;
-  showCompletionRate?: number;
   hypeTimeline?: { buckets: number[]; untracked: number };
   topCities?: { city: string; count: number }[];
   ticketRevenueCents?: number;
@@ -99,7 +98,6 @@ export function ProfileInsights({ profileId, profileType }: { profileId: string;
         {data.listeners && <Stat label="Listeners" value={data.listeners.distinctListeners} color="#22e5d4" />}
         {typeof data.ticketsSold === 'number' && <Stat label="Tickets sold" value={data.ticketsSold} color="#22e5d4" />}
         {typeof data.trackCompletionRate === 'number' && <PercentStat label="Track completion" value={data.trackCompletionRate} color="#ff3e9a" />}
-        {typeof data.showCompletionRate === 'number' && <PercentStat label="Show completion" value={data.showCompletionRate} color="#ff3e9a" />}
       </div>
 
       {typeof data.ticketRevenueCents === 'number' && (
