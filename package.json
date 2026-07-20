@@ -37,8 +37,7 @@
     "@auth/prisma-adapter": "2.11.2",
     "@capacitor/android": "^8.4.1",
     "@capacitor/app": "^8.1.0",
-    "@capacitor/cli": "^8.4.1",
-    "@capacitor/core": "^8.4.1",
+    "@capacitor/core": "^8.4.2",
     "@capacitor/ios": "^8.4.1",
     "@capacitor/push-notifications": "^8.1.1",
     "@opennextjs/cloudflare": "^1.20.1",
@@ -59,6 +58,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.2",
     "@next/bundle-analyzer": "^16.2.10",
     "@playwright/test": "^1.61.1",
     "@types/bcryptjs": "^3.0.0",
