@@ -80,6 +80,7 @@
   "overrides": {
     "postcss": "^8.5.10",
     "next-auth": "5.0.0-beta.32",
-    "@auth/prisma-adapter": "2.11.3"
+    "@auth/prisma-adapter": "2.11.3",
+    "sharp": "^0.35.3"
   }
 }
