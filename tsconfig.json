@@ -37,7 +37,6 @@
   ],
   "exclude": [
     "node_modules",
-    "prisma/seed.ts",
     "ihype",
     ".open-next",
     ".wrangler",
