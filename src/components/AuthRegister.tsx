@@ -323,6 +323,7 @@ export function RegisterScreen({
           <div className="authcard-method-grid" role="tablist" aria-label="Signup method">
             <button
               aria-selected={authMethod === 'email'}
+              role="tab"
               className={authMethod === 'email' ? 'authcard-method-choice active' : 'authcard-method-choice'}
               onClick={() => {
                 setAuthMethod('email');
@@ -335,6 +336,7 @@ export function RegisterScreen({
             </button>
             <button
               aria-selected={authMethod === 'passkey'}
+              role="tab"
               className={authMethod === 'passkey' ? 'authcard-method-choice active' : 'authcard-method-choice'}
               onClick={() => {
                 setAuthMethod('passkey');
