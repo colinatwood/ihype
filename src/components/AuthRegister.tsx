@@ -287,8 +287,9 @@ export function RegisterScreen({
         <form onSubmit={createAccount}>
           {inviteOnly ? (
             <div className="authcard-alpha-banner">
-              <strong>iHYPE is currently in private alpha.</strong> New accounts need a beta invite code — request
-              access below and we&apos;ll reach out for the official beta launch.
+              <strong>iHYPE is currently in private alpha.</strong> New accounts need a HYPE code from an existing
+              member — ask someone already on iHYPE to share theirs, or request access below and we&apos;ll reach out
+              for the official launch.
             </div>
           ) : null}
           <fieldset className="authcard-field">
@@ -323,6 +324,7 @@ export function RegisterScreen({
           <div className="authcard-method-grid" role="tablist" aria-label="Signup method">
             <button
               aria-selected={authMethod === 'email'}
+              role="tab"
               className={authMethod === 'email' ? 'authcard-method-choice active' : 'authcard-method-choice'}
               onClick={() => {
                 setAuthMethod('email');
@@ -335,6 +337,7 @@ export function RegisterScreen({
             </button>
             <button
               aria-selected={authMethod === 'passkey'}
+              role="tab"
               className={authMethod === 'passkey' ? 'authcard-method-choice active' : 'authcard-method-choice'}
               onClick={() => {
                 setAuthMethod('passkey');
@@ -385,10 +388,11 @@ export function RegisterScreen({
           {inviteOnly ? (
             <>
               <div className="authcard-field">
-                <label>Beta invite code</label>
+                <label>Hype code</label>
                 <input
                   autoComplete="off"
                   onChange={(event) => setInviteCode(event.target.value)}
+                  placeholder="A member's code or @username"
                   required
                   type="text"
                   value={inviteCode}
