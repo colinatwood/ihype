@@ -174,6 +174,11 @@ export async function POST(request: Request) {
     // friends with the same link.
     let dbInviteCodeId: string | null = null;
     let refSatisfiesInviteGate = false;
+    // A HYPE code typed straight into the invite field — an existing member's
+    // own code (their @username or profile hexId, the same value their
+    // /invite/[code] link carries). Captured here so it also credits the
+    // inviter as a referrer, exactly like arriving via their ?ref= link would.
+    let hypeCodeRef: string | null = null;
     if (inviteCodeRequired && !isValidInviteCode(submittedInviteCode, inviteCodeRequired)) {
       if (submittedInviteCode) {
         const dbCode = await db.inviteCode.findUnique({
@@ -183,14 +188,25 @@ export async function POST(request: Request) {
         if (dbCode && !dbCode.usedByUserId && (!dbCode.expiresAt || dbCode.expiresAt > new Date())) {
           dbInviteCodeId = dbCode.id;
         }
+        // Not a shared/admin code — try it as an existing member's HYPE code.
+        // Like a personal invite link (and unlike an admin code), this is
+        // never claimed/consumed, so one member can invite any number of
+        // friends with the same code.
+        if (!dbInviteCodeId) {
+          const hypeReferrer = await resolveReferrer(submittedInviteCode);
+          if (hypeReferrer) {
+            refSatisfiesInviteGate = true;
+            hypeCodeRef = submittedInviteCode;
+          }
+        }
       }
-      if (!dbInviteCodeId && body.ref) {
+      if (!dbInviteCodeId && !refSatisfiesInviteGate && body.ref) {
         const referrer = await resolveReferrer(body.ref.trim());
         refSatisfiesInviteGate = referrer !== null;
       }
       if (!dbInviteCodeId && !refSatisfiesInviteGate) {
         return NextResponse.json(
-          { error: 'A valid beta invite code is required while invite-only signup is enabled.' },
+          { error: 'A HYPE code from an existing member (or a beta invite code) is required while invite-only signup is enabled.' },
           { status: 403 },
         );
       }
@@ -319,7 +335,7 @@ export async function POST(request: Request) {
       user,
       clientAddress,
       spamText,
-      referral: body.ref,
+      referral: body.ref ?? hypeCodeRef ?? undefined,
     });
 
     const response = NextResponse.json({

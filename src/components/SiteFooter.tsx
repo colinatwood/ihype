@@ -23,6 +23,7 @@ export function SiteFooter() {
       <Link href="/advertise" style={{ color: 'inherit', textDecoration: 'none' }}>Advertise</Link>
       <Link href="/legal" style={{ color: 'inherit', textDecoration: 'none' }}>Legal</Link>
       <Link href="/support" style={{ color: 'inherit', textDecoration: 'none' }}>Support</Link>
+      <span className="site-footer-nonprofit">A 501(c)(3) nonprofit</span>
       <span className="site-footer-rights">© 2026 ihype.org<span className="site-footer-rights-suffix"> — all rights reserved</span></span>
     </footer>
   );
