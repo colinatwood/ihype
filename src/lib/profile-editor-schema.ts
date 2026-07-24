@@ -44,5 +44,6 @@ export const editorSchema = z.object({
   discoverable: z.boolean().optional(),
   capacity: z.number().int().min(0).max(200000).optional(),
   roomType: text(40),
+  radioSchedule: text(20),
   pinnedStats: z.array(z.string()).max(4).optional()
 });

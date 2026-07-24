@@ -12,6 +12,7 @@ interface Props {
   initialCity: string;
   initialGenre: string;
   initialLink: string;
+  initialRadioSchedule: 'weekly' | 'occasional';
   initialVerificationStatus: VerificationStatus;
 }
 
@@ -25,6 +26,7 @@ export function DJOnboardingWizard({
   initialCity,
   initialGenre,
   initialLink,
+  initialRadioSchedule,
   initialVerificationStatus,
 }: Props) {
   // Already verified/pending DJs land straight on a status screen instead of
@@ -34,12 +36,11 @@ export function DJOnboardingWizard({
   const [city, setCity] = useState(initialCity);
   const [genre, setGenre] = useState(initialGenre);
   const [link, setLink] = useState(initialLink);
-  // Radio-schedule preference (Weekly / Occasional) is a real, selectable UI
-  // choice per the approved design — but there is no schema field for it
-  // anywhere on Profile, and nothing else in the app reads a DJ's
-  // schedule-frequency preference. This is a deliberate no-op: it advances
-  // local wizard state only and is never sent to any API.
-  const [schedule, setSchedule] = useState<'weekly' | 'occasional'>('occasional');
+  // Radio-schedule preference (Weekly / Occasional) — persisted via
+  // PATCH /api/profile-editor's `radioSchedule` field (Profile.radioSchedule).
+  // Nothing else in the app reads it yet, but it's no longer silently
+  // discarded on submit.
+  const [schedule, setSchedule] = useState<'weekly' | 'occasional'>(initialRadioSchedule);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +90,27 @@ export function DJOnboardingWizard({
         throw new Error(body.error || 'Could not save — try again.');
       }
       setStep(2);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save — try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveSchedule() {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/profile-editor', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId, radioSchedule: schedule }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || 'Could not save — try again.');
+      }
+      setStep(3);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not save — try again.');
     } finally {
@@ -211,10 +233,10 @@ export function DJOnboardingWizard({
             </div>
           ))}
           <div className="djo-actions">
-            {/* Deliberate no-op: this preference has no backing schema field and
-                nothing in the app reads it — Continue only advances local state. */}
-            <button className="djo-btn djo-btn-solid" onClick={() => setStep(3)}>Continue →</button>
-            <button className="djo-btn djo-btn-outline" onClick={() => setStep(1)}>Back</button>
+            <button className="djo-btn djo-btn-solid" disabled={saving} onClick={saveSchedule}>
+              {saving ? 'Saving…' : 'Continue →'}
+            </button>
+            <button className="djo-btn djo-btn-outline" disabled={saving} onClick={() => setStep(1)}>Back</button>
           </div>
         </div>
       )}

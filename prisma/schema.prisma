@@ -249,6 +249,11 @@ model Profile {
   // ticketCapacity (a venue's max room size vs. one event's cap for that night).
   capacity                      Int?
   roomType                      String?
+  // DJ onboarding's "Radio schedule" step (weekly/occasional cadence
+  // preference) — previously collected in the wizard UI but discarded
+  // (no field existed, nothing read it). Now real; still nothing else in
+  // the app reads it, but it's no longer silently dropped on submit.
+  radioSchedule                 String?
   ownerId                       String
   owner                         User                        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   createdAt                     DateTime                    @default(now())

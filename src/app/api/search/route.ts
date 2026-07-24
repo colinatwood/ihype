@@ -35,7 +35,20 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(Math.max(1, isNaN(limitParam) ? 20 : limitParam), 60);
 
   if (!q) {
-    return NextResponse.json({ results: [], genres: [] });
+    // "Trending" chips shown before the user types anything — real top-hyped
+    // discoverable profiles, not the hardcoded placeholder list this used to
+    // return (`['deep house', 'alex rivera', ...]`, static sample data).
+    const trendingProfiles = await db.profile.findMany({
+      where: { discoverable: true, hypeCount: { gt: 0 } },
+      orderBy: { hypeCount: 'desc' },
+      take: 6,
+      select: { name: true },
+    });
+    return NextResponse.json({
+      results: [],
+      genres: [],
+      trending: trendingProfiles.map((p) => p.name),
+    });
   }
 
   const includeArtists = typeFilter === 'all' || typeFilter === 'artist';

@@ -1,6 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-// Smoke test: OTP login flow → session established → workbench loads.
+// Smoke test: OTP login flow → session established → lands on a real
+// post-auth destination. There is no "workbench" anymore — the Workbench/
+// Home single-dashboard concept was retired in favor of the Listen/Events/
+// Pages tabs; a fresh sign-in lands on /welcome first (per
+// src/lib/auth-redirects.ts's WELCOME_PATH), which then routes on to
+// /listen (WORKBENCH_PATH, despite the name — the constant predates the
+// retirement and was never renamed).
 // Requires TEST_USER_EMAIL and TEST_USER_OTP env vars (set via .env.test or CI secrets).
 // The test account must exist in the DB with a pre-seeded OTP (use scripts/reset-test-logins.mjs).
 
@@ -8,7 +14,7 @@ const EMAIL = process.env.TEST_USER_EMAIL ?? 'test@ihype.org';
 const OTP   = process.env.TEST_USER_OTP   ?? '';
 
 test.describe('Authentication', () => {
-  test('OTP login → workbench loads', async ({ page }) => {
+  test('OTP login → real post-auth destination loads', async ({ page }) => {
     // 1. Navigate to login page
     await page.goto('/login');
     await expect(page).toHaveTitle(/iHYPE/i);
@@ -29,22 +35,26 @@ test.describe('Authentication', () => {
     await page.getByRole('textbox', { name: /code|otp|one.time/i }).fill(OTP);
     await page.getByRole('button', { name: /verify|confirm|sign in/i }).click();
 
-    // 5. Should land on /home (workbench)
-    await expect(page).toHaveURL(/\/home/, { timeout: 15000 });
+    // 5. Should land on /welcome (first-time "first move" screen) or, for an
+    // account that's already completed it, straight through to /listen —
+    // both are real, current post-auth destinations; /home is not.
+    await expect(page).toHaveURL(/\/(welcome|listen)/, { timeout: 15000 });
 
-    // 6. Workbench shell is visible
-    await expect(page.locator('.wb-root')).toBeVisible();
-
-    // 7. No Internal Server Error
+    // 6. No Internal Server Error
     await expect(page.locator('body')).not.toContainText('Internal Server Error');
   });
 
   test('Unauthenticated /home redirects to /login', async ({ page }) => {
+    // /home itself has no auth gate — it unconditionally redirects to
+    // /listen (src/app/home/page.tsx) — but /listen IS auth-protected by
+    // middleware, so an unauthenticated visit still ends up at /login one
+    // hop later. This test's final assertion holds; only the reasoning
+    // changed (not "/home is gated", but "/home forwards into a gated route").
     await page.goto('/home');
     await expect(page).toHaveURL(/\/login/, { timeout: 8000 });
   });
 
-  test('Authenticated /login redirects to /home', async ({ page, context }) => {
+  test('Authenticated /login redirects to a real post-auth destination', async ({ page, context }) => {
     // Seed a session cookie if available, else skip
     const sessionCookie = process.env.TEST_SESSION_COOKIE;
     if (!sessionCookie) {
@@ -58,6 +68,6 @@ test.describe('Authentication', () => {
       path: '/',
     }]);
     await page.goto('/login');
-    await expect(page).toHaveURL(/\/home/, { timeout: 8000 });
+    await expect(page).toHaveURL(/\/(welcome|listen)/, { timeout: 8000 });
   });
 });

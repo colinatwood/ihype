@@ -16,6 +16,13 @@
 --      confirmed zero read sites — so it's very unlikely anyone depends on
 --      it, but this sandbox cannot verify the live table's actual contents).
 --   3. Only then apply.
+--
+-- UPDATE (2026-07-24 audit): almost certainly already applied — same
+-- migration-order reasoning as 20260714020000_drop_ad_submission's update
+-- note (this migration is dated before several others DESIGN_SYNC.md
+-- confirms as "applied live," and Prisma enforces strict, contiguous
+-- migration order). Kept as historical record; this sandbox still cannot
+-- independently confirm against the live DB.
 -- ============================================================================
 
 ALTER TABLE "Ad" DROP COLUMN "imageUrl";

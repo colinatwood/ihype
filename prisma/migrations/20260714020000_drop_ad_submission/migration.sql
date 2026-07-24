@@ -19,6 +19,18 @@
 -- This sandbox has no live database connection, so this has been hand-written
 -- and reviewed against the schema but never run or verified against real
 -- data, same as every other migration in this repository this pass.
+--
+-- UPDATE (2026-07-24 audit): this migration is almost certainly already
+-- applied in production. Prisma's migrate deploy requires migrations to
+-- apply in strict, contiguous order — it will not apply a later migration
+-- while an earlier one is still pending. DESIGN_SYNC.md confirms several
+-- migrations dated AFTER this one (e.g. 20260719080000_..., 20260719130000_
+-- add_ad_billing_fields) as "applied live," which is only possible if this
+-- one succeeded first. Kept here as historical record and because this
+-- sandbox still cannot independently query the live DB to confirm outright
+-- — if you ever need to double-check, `SELECT * FROM _prisma_migrations
+-- WHERE migration_name = '20260714020000_drop_ad_submission'` will show a
+-- non-null `finished_at` if it already ran.
 -- ============================================================================
 
 DROP TABLE "AdSubmission";

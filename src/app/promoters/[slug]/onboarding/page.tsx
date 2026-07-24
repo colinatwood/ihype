@@ -35,6 +35,7 @@ export default async function DJOnboardingPage({ params }: { params: Promise<{ s
       city: true,
       genres: true,
       links: true,
+      radioSchedule: true,
       verificationStatus: true,
     },
   });
@@ -51,6 +52,7 @@ export default async function DJOnboardingPage({ params }: { params: Promise<{ s
       initialCity={profile.city ?? ''}
       initialGenre={profile.genres?.[0] ?? ''}
       initialLink={profile.links ?? ''}
+      initialRadioSchedule={profile.radioSchedule === 'weekly' ? 'weekly' : 'occasional'}
       initialVerificationStatus={profile.verificationStatus}
     />
   );

@@ -1,11 +1,19 @@
 param(
-  [string]$Message = "feat: commit Claude app updates"
+  [string]$Message = "feat: commit Claude app updates",
+  # Personal local-sync script (one contributor's own Claude Desktop
+  # checkout, not part of CI or the deployed app) — pass -ClaudeRepo or set
+  # $env:IHYPE_CLAUDE_APP_REPO rather than relying on a hardcoded path that
+  # would silently be wrong for anyone else who runs this.
+  [string]$ClaudeRepo = $env:IHYPE_CLAUDE_APP_REPO
 )
 
 $ErrorActionPreference = "Stop"
 
-$claudeRepo = "C:\Users\djgre\OneDrive\Desktop\Claude iHYPE\ihype-app"
-$safeDir = "C:/Users/djgre/OneDrive/Desktop/Claude iHYPE/ihype-app"
+if (-not $ClaudeRepo) {
+  throw "Set -ClaudeRepo <path> or `$env:IHYPE_CLAUDE_APP_REPO to your local Claude app checkout."
+}
+$claudeRepo = $ClaudeRepo
+$safeDir = $ClaudeRepo -replace '\\', '/'
 
 if (-not (Test-Path -LiteralPath $claudeRepo)) {
   throw "Claude app repo not found: $claudeRepo"

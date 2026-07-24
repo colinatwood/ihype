@@ -1,7 +1,20 @@
 #!/usr/bin/env node
-// Upsert the broken migration record so migrate deploy sees it as already applied.
-// Prisma may use migration_sql from _prisma_migrations rather than the file on disk
-// when re-applying a rolled-back migration, so we update that column too.
+// Break-glass tool: upsert a migration's _prisma_migrations record so
+// `migrate deploy` sees it as already applied — for the case where a
+// migration's SQL genuinely ran against the DB (e.g. applied by hand, or a
+// deploy that crashed after the DDL but before Prisma recorded it) but its
+// row is missing or marked rolled-back, blocking every later migration.
+// Prisma may use migration_sql from _prisma_migrations rather than the file
+// on disk when re-applying a rolled-back migration, so we update that
+// column too.
+//
+// Originally hardcoded to one specific incident
+// (20260507000001_radio_track_block_label) — generalized so it can't be
+// mistaken for a general tool while silently only affecting that one old
+// migration. Verify the migration's SQL actually ran before using this;
+// it does not run any SQL itself, only edits Prisma's bookkeeping.
+//
+// Usage: DIRECT_URL=... node scripts/mark-migration-applied.js <migration_name>
 const { Client } = require('pg');
 const { createHash } = require('crypto');
 const { readFileSync } = require('fs');
@@ -11,7 +24,10 @@ async function main() {
   const url = process.env.DIRECT_URL;
   if (!url) throw new Error('DIRECT_URL env var not set');
 
-  const migrationName = '20260507000001_radio_track_block_label';
+  const migrationName = process.argv[2];
+  if (!migrationName) {
+    throw new Error('Usage: node scripts/mark-migration-applied.js <migration_name>');
+  }
   const migrationFile = path.join(
     process.cwd(),
     'prisma/migrations',
@@ -67,6 +83,6 @@ async function main() {
 }
 
 main().catch(err => {
-  console.error('fix-broken-migration failed:', err.message);
+  console.error('mark-migration-applied failed:', err.message);
   process.exit(1);
 });

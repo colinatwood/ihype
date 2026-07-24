@@ -1,14 +1,27 @@
+param(
+  # Personal local-sync script (one contributor's own Claude Desktop
+  # checkout, not part of CI or the deployed app) — pass -ClaudeRepo or set
+  # $env:IHYPE_CLAUDE_APP_REPO rather than relying on a hardcoded path that
+  # would silently be wrong for anyone else who runs this.
+  [string]$ClaudeRepo = $env:IHYPE_CLAUDE_APP_REPO
+)
+
 $ErrorActionPreference = "Stop"
+
+if (-not $ClaudeRepo) {
+  throw "Set -ClaudeRepo <path> or `$env:IHYPE_CLAUDE_APP_REPO to your local Claude app checkout."
+}
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $gitDir = Join-Path $repoRoot ".git-deploy"
-$claudeRepo = "C:\Users\djgre\OneDrive\Desktop\Claude iHYPE\ihype-app"
+$claudeRepo = $ClaudeRepo
+$safeDir = $ClaudeRepo -replace '\\', '/'
 $bundleDir = Join-Path $repoRoot ".sync-bundles"
 $bundlePath = Join-Path $bundleDir "claude-app-main.bundle"
 
 New-Item -ItemType Directory -Force -Path $bundleDir | Out-Null
 
-git -c safe.directory="C:/Users/djgre/OneDrive/Desktop/Claude iHYPE/ihype-app" `
+git -c safe.directory="$safeDir" `
   -C $claudeRepo `
   bundle create $bundlePath main
 

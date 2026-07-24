@@ -19,9 +19,8 @@ interface ResultItem {
 interface SearchResponse {
   results: ResultItem[];
   genres: string[];
+  trending?: string[];
 }
-
-const TRENDING = ['deep house', 'alex rivera', 'fillmore', 'luna park', 'seeds', 'hype'];
 
 const NoteIcon = ({ c }: { c: string }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>
@@ -51,10 +50,18 @@ function SearchPageInner() {
   const [q, setQ] = useState(searchParams.get('q') || '');
   const [filter, setFilter] = useState<Filter>('all');
   const [data, setData] = useState<SearchResponse | null>(null);
+  const [trending, setTrending] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    fetch('/api/search')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: SearchResponse | null) => { if (body?.trending) setTrending(body.trending); })
+      .catch(() => {});
+  }, []);
 
   function runSearch(val: string, f: Filter) {
     if (!val.trim()) { setData(null); return; }
@@ -126,11 +133,11 @@ function SearchPageInner() {
         <p style={{ color: 'var(--ink-a35)', fontSize: 13, fontFamily: 'var(--font-mono)' }}>Searching…</p>
       )}
 
-      {!q && (
+      {!q && trending.length > 0 && (
         <div>
           <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.14em', color: 'var(--ink-a55)', marginBottom: 14, marginTop: 32 }}>Trending</p>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {TRENDING.map((t) => (
+            {trending.map((t) => (
               <div
                 key={t}
                 onClick={() => handleSearch(t)}
